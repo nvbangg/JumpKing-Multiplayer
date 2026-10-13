@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="700" viewBox="0 0 1000 700" role="img" aria-labelledby="title desc">
+  <title id="title">Kiến trúc JumpKing Multiplayer</title>
+  <desc id="desc">Clients giao tiếp HTTP và WebSocket với một Spring Boot server. Game và persistence dùng các hàng đợi nội bộ; JPA truy cập MySQL ngoài vòng tick. Solo mô phỏng và lưu tại trình duyệt.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto-start-reverse"><path d="M0 0L8 4L0 8" fill="none" stroke="#334155" stroke-width="1.5"/></marker>
+    <style>text{font-family:Arial,sans-serif;fill:#172033;text-anchor:middle;font-size:16px}.heading{font-size:22px;font-weight:bold}.small{font-size:14px;fill:#475569}.box{fill:#fff;stroke:#64748b;stroke-width:1.5;rx:9}.edge{fill:none;stroke:#334155;stroke-width:1.6;marker-end:url(#arrow)}.both{marker-start:url(#arrow)}</style>
+  </defs>
+  <rect width="1000" height="700" fill="#fff"/>
+  <text x="500" y="34" class="heading">JumpKing Multiplayer — Client / Server</text>
+  <rect x="285" y="62" width="430" height="80" class="box" fill="#eff6ff"/>
+  <text x="500" y="92">Browser clients — React / Phaser</text>
+  <text x="500" y="119" class="small">Solo: local simulation / storage; Account metrics sync via HTTP</text>
+  <rect x="60" y="210" width="880" height="400" rx="14" fill="#f8fafc" stroke="#94a3b8" stroke-dasharray="7 5"/>
+  <text x="500" y="238" class="small">ONE SPRING BOOT PROCESS — internal queues and workers</text>
+  <rect x="105" y="270" width="280" height="60" class="box"/>
+  <text x="245" y="307">REST controllers / security</text>
+  <rect x="615" y="270" width="280" height="60" class="box"/>
+  <text x="755" y="307">WebSocket network layer</text>
+  <path d="M400 142V178H245V270" class="edge both"/>
+  <text x="245" y="170" class="small">HTTP / JSON</text>
+  <path d="M600 142V178H755V270" class="edge both"/>
+  <text x="755" y="170" class="small">WebSocket / JSON</text>
+  <rect x="580" y="375" width="350" height="88" class="box"/>
+  <text x="755" y="403">Room / Community queues → game workers</text>
+  <text x="755" y="429" class="small">Java simulation: 60 Hz; snapshots: 20 Hz</text>
+  <text x="755" y="450" class="small">Authoritative state, clock and results</text>
+  <path d="M755 330V375" class="edge both"/>
+  <rect x="600" y="505" width="310" height="60" class="box"/>
+  <text x="755" y="542">Persistence queue / workers</text>
+  <path d="M755 463V505" class="edge"/>
+  <rect x="105" y="500" width="345" height="75" class="box"/>
+  <text x="277" y="530">Services / transactions</text>
+  <text x="277" y="556">JPA repositories / Hibernate</text>
+  <path d="M245 330V500" class="edge"/>
+  <path d="M600 537H450" class="edge"/>
+  <rect x="137" y="643" width="280" height="43" class="box"/>
+  <text x="277" y="670">MySQL — users / play_runs / matches</text>
+  <path d="M277 575V643" class="edge both"/>
+</svg>

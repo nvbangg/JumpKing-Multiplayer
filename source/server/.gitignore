@@ -1,0 +1,7 @@
+/target/
+/config/*
+!/config/*.properties.example
+/logs/
+.classpath
+.project
+.settings/

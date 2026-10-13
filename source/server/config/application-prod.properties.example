@@ -1,0 +1,7 @@
+spring.datasource.url=jdbc:mysql://127.0.0.1:3306/jumpking?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
+spring.datasource.username=jumpking_app
+spring.datasource.password=CHANGE_ME
+server.address=127.0.0.1
+server.port=8080
+# Origin HTTPS mà người chơi dùng để mở game
+app.allowed-origins=https://game.yourdomain.com

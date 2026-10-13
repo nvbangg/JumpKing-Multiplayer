@@ -1,0 +1,29 @@
+{
+  "snapshotRate": 20,
+  "capacity": 10,
+  "minimumRoomPlayers": 2,
+  "roomCodeAlphabet": "ABCDEFGHJKLMNPQRSTUVWXYZ23456789",
+  "roomCodeLength": 6,
+  "countdownMs": 3000,
+  "afkMs": 60000,
+  "communityPauseMs": 900000,
+  "reconnectMs": 300000,
+  "soloSaveMs": 1000,
+  "soloSyncMs": 5000,
+  "timeLimitMinutesMin": 1,
+  "timeLimitMinutesMax": 30,
+  "timeLimitDefaultMinutes": 5,
+  "appearanceColors": [
+    "#ffffff",
+    "#e76f51",
+    "#2a9d8f",
+    "#61a5ff",
+    "#bd8bea",
+    "#f28ab2",
+    "#b7d56c",
+    "#f5a65b",
+    "#67d5df",
+    "#c7cbd5"
+  ],
+  "roomLoadTimeoutMs": 30000
+}

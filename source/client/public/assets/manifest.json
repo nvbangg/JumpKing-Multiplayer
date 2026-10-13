@@ -1,0 +1,7987 @@
+{
+  "screens": [
+    {
+      "layers": [
+        "screens/midground/1"
+      ],
+      "props": [
+        {
+          "type": "Bonfire",
+          "Position": {
+            "X": 154,
+            "Y": 298
+          },
+          "texture": "props/textures/Bonfire",
+          "cells": {
+            "X": 3,
+            "Y": 1
+          },
+          "fps": 10,
+          "durations": []
+        },
+        {
+          "type": "1_water",
+          "Position": {
+            "X": 0,
+            "Y": 283
+          },
+          "texture": "props/textures/1_water",
+          "cells": {
+            "X": 1,
+            "Y": 2
+          },
+          "fps": 5,
+          "durations": []
+        }
+      ],
+      "location": "REDCROWN WOODS",
+      "ambience": [
+        {
+          "name": "Nature bg",
+          "volume": 0.85
+        },
+        {
+          "name": "Small fire and stream",
+          "volume": 0.9
+        }
+      ],
+      "weather": [],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/2"
+      ],
+      "props": [],
+      "location": "REDCROWN WOODS",
+      "ambience": [
+        {
+          "name": "Nature bg",
+          "volume": 0.85
+        }
+      ],
+      "weather": [],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/3"
+      ],
+      "props": [],
+      "location": "REDCROWN WOODS",
+      "ambience": [
+        {
+          "name": "Nature bg",
+          "volume": 0.85
+        }
+      ],
+      "weather": [],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/4"
+      ],
+      "props": [],
+      "location": "REDCROWN WOODS",
+      "ambience": [
+        {
+          "name": "Nature bg",
+          "volume": 0.85
+        },
+        {
+          "name": "Red tree",
+          "volume": 1
+        }
+      ],
+      "weather": [],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "layers": {
+            "Layer": {
+              "texture": "4_clouds",
+              "position": 100,
+              "scroll_multiplier": 0.3
+            }
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/5"
+      ],
+      "props": [],
+      "location": "REDCROWN WOODS",
+      "ambience": [
+        {
+          "name": "Nature bg",
+          "volume": 0.85
+        },
+        {
+          "name": "Red tree",
+          "volume": 1
+        }
+      ],
+      "weather": [],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "layers": {
+            "Layer": {
+              "texture": "4_clouds",
+              "position": 180,
+              "scroll_multiplier": 0.4
+            }
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/6"
+      ],
+      "props": [],
+      "location": "REDCROWN WOODS",
+      "ambience": [
+        {
+          "name": "Nature bg",
+          "volume": 0.5
+        },
+        {
+          "name": "Red tree",
+          "volume": 0.5
+        },
+        {
+          "name": "Sewer",
+          "volume": 0.6
+        }
+      ],
+      "weather": [],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "layers": {
+            "Layer": {
+              "texture": "6_clouds",
+              "position": 330,
+              "scroll_multiplier": 0.2
+            }
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/7"
+      ],
+      "props": [
+        {
+          "type": "SewerDrop",
+          "Position": {
+            "X": 334,
+            "Y": 160
+          },
+          "texture": "props/textures/SewerDrop",
+          "cells": {
+            "X": 10,
+            "Y": 1
+          },
+          "fps": 12,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 303,
+            "Y": 283
+          },
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        }
+      ],
+      "location": "COLOSSAL DRAIN",
+      "ambience": [
+        {
+          "name": "Sewer",
+          "volume": 1
+        }
+      ],
+      "weather": [],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/8"
+      ],
+      "props": [],
+      "location": "COLOSSAL DRAIN",
+      "ambience": [
+        {
+          "name": "Sewer",
+          "volume": 1
+        }
+      ],
+      "weather": [],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/9"
+      ],
+      "props": [],
+      "location": "COLOSSAL DRAIN",
+      "ambience": [
+        {
+          "name": "Sewer",
+          "volume": 1
+        },
+        {
+          "name": "Sewer cage rain",
+          "volume": 1
+        }
+      ],
+      "weather": [
+        {
+          "name": "light_rain",
+          "fps": 12,
+          "screens": {
+            "int": [
+              9,
+              10
+            ]
+          },
+          "mask": "screens/masks/light_rainmask9"
+        }
+      ],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/10"
+      ],
+      "props": [
+        {
+          "type": "DungeonTorch",
+          "Position": {
+            "X": 160,
+            "Y": 64
+          },
+          "texture": "props/textures/DungeonTorch",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "kettle",
+          "Position": {
+            "X": 443,
+            "Y": 64
+          },
+          "texture": "props/textures/kettle",
+          "cells": {
+            "X": 3,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "ovenfire",
+          "Position": {
+            "X": 401,
+            "Y": 83
+          },
+          "texture": "props/textures/ovenfire",
+          "cells": {
+            "X": 3,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": []
+        }
+      ],
+      "location": "COLOSSAL DRAIN",
+      "ambience": [
+        {
+          "name": "Sewer",
+          "volume": 1
+        },
+        {
+          "name": "Light rain",
+          "volume": 1
+        },
+        {
+          "name": "Castlesong",
+          "volume": 0.6
+        }
+      ],
+      "weather": [
+        {
+          "name": "light_rain",
+          "fps": 12,
+          "screens": {
+            "int": [
+              9,
+              10
+            ]
+          },
+          "mask": "screens/masks/light_rainmask10"
+        }
+      ],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/11"
+      ],
+      "props": [
+        {
+          "type": "DungeonTorch",
+          "Position": {
+            "X": 160,
+            "Y": 130
+          },
+          "texture": "props/textures/DungeonTorch",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "DungeonTorch",
+          "Position": {
+            "X": 256,
+            "Y": 203
+          },
+          "texture": "props/textures/DungeonTorch",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "DungeonTorch",
+          "Position": {
+            "X": 256,
+            "Y": 10
+          },
+          "texture": "props/textures/DungeonTorch",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        }
+      ],
+      "location": "FALSE KINGS KEEP",
+      "ambience": [
+        {
+          "name": "Hard rain and fire",
+          "volume": 0.85
+        },
+        {
+          "name": "Castlesong",
+          "volume": 0.9
+        }
+      ],
+      "weather": [
+        {
+          "name": "rain",
+          "fps": 12,
+          "screens": {
+            "int": [
+              11,
+              12,
+              13
+            ]
+          },
+          "mask": "screens/masks/rainmask11"
+        }
+      ],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/12"
+      ],
+      "props": [
+        {
+          "type": "DungeonTorch",
+          "Position": {
+            "X": 295,
+            "Y": 170
+          },
+          "texture": "props/textures/DungeonTorch",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "DungeonTorch",
+          "Position": {
+            "X": 281,
+            "Y": 170
+          },
+          "texture": "props/textures/DungeonTorch",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "DungeonTorch",
+          "Position": {
+            "X": 309,
+            "Y": 170
+          },
+          "texture": "props/textures/DungeonTorch",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "DungeonTorch",
+          "Position": {
+            "X": 285,
+            "Y": 186
+          },
+          "texture": "props/textures/DungeonTorch",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "DungeonTorch",
+          "Position": {
+            "X": 305,
+            "Y": 186
+          },
+          "texture": "props/textures/DungeonTorch",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        }
+      ],
+      "location": "FALSE KINGS KEEP",
+      "ambience": [
+        {
+          "name": "Hard rain and fire",
+          "volume": 0.85
+        },
+        {
+          "name": "Castlesong",
+          "volume": 0.9
+        }
+      ],
+      "weather": [
+        {
+          "name": "rain",
+          "fps": 12,
+          "screens": {
+            "int": [
+              11,
+              12,
+              13
+            ]
+          },
+          "mask": "screens/masks/rainmask12"
+        }
+      ],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/13"
+      ],
+      "props": [],
+      "location": "FALSE KINGS KEEP",
+      "ambience": [
+        {
+          "name": "Hard rain and fire",
+          "volume": 0.85
+        },
+        {
+          "name": "Castlesong",
+          "volume": 0.9
+        }
+      ],
+      "weather": [
+        {
+          "name": "rain",
+          "fps": 12,
+          "screens": {
+            "int": [
+              11,
+              12,
+              13
+            ]
+          },
+          "mask": "screens/masks/rainmask13"
+        }
+      ],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/14"
+      ],
+      "props": [],
+      "location": "FALSE KINGS KEEP",
+      "ambience": [
+        {
+          "name": "Wind 1",
+          "volume": 0.8
+        },
+        {
+          "name": "Castlesong",
+          "volume": 0.32
+        }
+      ],
+      "weather": [],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "layers": {
+            "Layer": [
+              {
+                "texture": "14_clouds_bg",
+                "position": 58,
+                "scroll_multiplier": 0.1
+              },
+              {
+                "texture": "14_clouds_mg",
+                "position": 108,
+                "scroll_multiplier": 0.3
+              },
+              {
+                "texture": "14_clouds_fg",
+                "position": 255,
+                "scroll_multiplier": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/15"
+      ],
+      "props": [
+        {
+          "type": "grammofon",
+          "Position": {
+            "X": 12,
+            "Y": 279
+          },
+          "texture": "props/textures/grammofon",
+          "cells": {
+            "X": 2,
+            "Y": 1
+          },
+          "fps": 6,
+          "durations": []
+        }
+      ],
+      "location": "BARGAINBURG",
+      "ambience": [
+        {
+          "name": "City 1",
+          "volume": 0.4
+        },
+        {
+          "name": "Merchant loop",
+          "volume": 0.65
+        }
+      ],
+      "weather": [],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "foreground": true,
+          "layers": {
+            "Layer": [
+              {
+                "texture": "mist_clouds1",
+                "position": 70,
+                "scroll_multiplier": 0.4
+              },
+              {
+                "texture": "mist_clouds2",
+                "position": 114,
+                "scroll_multiplier": 0.3
+              },
+              {
+                "texture": "mist_clouds3",
+                "position": 280,
+                "scroll_multiplier": 1
+              },
+              {
+                "texture": "bird_cloud",
+                "position": 70,
+                "scroll_multiplier": 1,
+                "layer_mode": "Background",
+                "animation": {
+                  "fps": 8,
+                  "sheet_cells": {
+                    "X": 2,
+                    "Y": 4
+                  },
+                  "frames": ""
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/16"
+      ],
+      "props": [],
+      "location": "BARGAINBURG",
+      "ambience": [
+        {
+          "name": "City 1",
+          "volume": 0.4
+        },
+        {
+          "name": "Merchant loop",
+          "volume": 0.19
+        }
+      ],
+      "weather": [],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "foreground": true,
+          "layers": {
+            "Layer": [
+              {
+                "texture": "mist_clouds1",
+                "position": 300,
+                "scroll_multiplier": 0.3
+              },
+              {
+                "texture": "mist_clouds2",
+                "position": 100,
+                "scroll_multiplier": 0.5
+              },
+              {
+                "texture": "mist_clouds3",
+                "position": 350,
+                "scroll_multiplier": -1
+              },
+              {
+                "texture": "bird_cloud",
+                "position": 212,
+                "scroll_multiplier": -1,
+                "layer_mode": "Background",
+                "animation": {
+                  "fps": 8,
+                  "sheet_cells": {
+                    "X": 2,
+                    "Y": 4
+                  },
+                  "frames": ""
+                }
+              },
+              {
+                "texture": "bird_cloud",
+                "position": 300,
+                "scroll_multiplier": 0.9,
+                "layer_mode": "Background",
+                "animation": {
+                  "fps": 8,
+                  "sheet_cells": {
+                    "X": 2,
+                    "Y": 4
+                  },
+                  "frames": ""
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/17"
+      ],
+      "props": [],
+      "location": "BARGAINBURG",
+      "ambience": [
+        {
+          "name": "City 1",
+          "volume": 0.4
+        }
+      ],
+      "weather": [],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "foreground": true,
+          "layers": {
+            "Layer": [
+              {
+                "texture": "mist_clouds1",
+                "position": 70,
+                "scroll_multiplier": 0.4
+              },
+              {
+                "texture": "mist_clouds2",
+                "position": 150,
+                "scroll_multiplier": 0.3
+              },
+              {
+                "texture": "mist_clouds3",
+                "position": 340,
+                "scroll_multiplier": 1
+              },
+              {
+                "texture": "bird_cloud",
+                "position": 176,
+                "scroll_multiplier": 1,
+                "layer_mode": "Background",
+                "animation": {
+                  "fps": 8,
+                  "sheet_cells": {
+                    "X": 2,
+                    "Y": 4
+                  },
+                  "frames": ""
+                }
+              },
+              {
+                "texture": "bird_cloud",
+                "position": 225,
+                "scroll_multiplier": -0.9,
+                "layer_mode": "Background",
+                "animation": {
+                  "fps": 8,
+                  "sheet_cells": {
+                    "X": 2,
+                    "Y": 4
+                  },
+                  "frames": ""
+                }
+              },
+              {
+                "texture": "bird_cloud",
+                "position": 128,
+                "scroll_multiplier": -1.1,
+                "layer_mode": "Background",
+                "animation": {
+                  "fps": 8,
+                  "sheet_cells": {
+                    "X": 2,
+                    "Y": 4
+                  },
+                  "frames": ""
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/18"
+      ],
+      "props": [],
+      "location": "BARGAINBURG",
+      "ambience": [
+        {
+          "name": "City 1",
+          "volume": 0.4
+        }
+      ],
+      "weather": [],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "foreground": true,
+          "layers": {
+            "Layer": [
+              {
+                "texture": "mist_clouds1",
+                "position": 350,
+                "scroll_multiplier": 0.3
+              },
+              {
+                "texture": "mist_clouds2",
+                "position": 150,
+                "scroll_multiplier": 0.3
+              },
+              {
+                "texture": "mist_clouds3",
+                "position": 120,
+                "scroll_multiplier": 1
+              },
+              {
+                "texture": "bird_cloud",
+                "position": 300,
+                "scroll_multiplier": -1,
+                "layer_mode": "Background",
+                "animation": {
+                  "fps": 8,
+                  "sheet_cells": {
+                    "X": 2,
+                    "Y": 4
+                  },
+                  "frames": ""
+                }
+              },
+              {
+                "texture": "bird_cloud",
+                "position": 150,
+                "scroll_multiplier": 0.9,
+                "layer_mode": "Background",
+                "animation": {
+                  "fps": 8,
+                  "sheet_cells": {
+                    "X": 2,
+                    "Y": 4
+                  },
+                  "frames": ""
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/19"
+      ],
+      "props": [],
+      "location": "BARGAINBURG",
+      "ambience": [
+        {
+          "name": "City 1",
+          "volume": 0.4
+        }
+      ],
+      "weather": [],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "foreground": true,
+          "layers": {
+            "Layer": [
+              {
+                "texture": "mist_clouds1",
+                "position": 70,
+                "scroll_multiplier": 0.4
+              },
+              {
+                "texture": "mist_clouds2",
+                "position": 114,
+                "scroll_multiplier": 0.3
+              },
+              {
+                "texture": "mist_clouds3",
+                "position": 280,
+                "scroll_multiplier": 1
+              },
+              {
+                "texture": "bird_cloud",
+                "position": 278,
+                "scroll_multiplier": 1,
+                "layer_mode": "Background",
+                "animation": {
+                  "fps": 8,
+                  "sheet_cells": {
+                    "X": 2,
+                    "Y": 4
+                  },
+                  "frames": ""
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/20"
+      ],
+      "props": [],
+      "location": "GREAT FRONTIER",
+      "ambience": [
+        {
+          "name": "towers 1",
+          "volume": 1
+        }
+      ],
+      "weather": [],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "layers": {
+            "Layer": [
+              {
+                "texture": "clouds_vakttorn1",
+                "position": 80,
+                "scroll_multiplier": 0.3
+              },
+              {
+                "texture": "clouds_vakttorn2",
+                "position": 170,
+                "scroll_multiplier": 0.6
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/21"
+      ],
+      "props": [],
+      "location": "GREAT FRONTIER",
+      "ambience": [
+        {
+          "name": "towers 1",
+          "volume": 1
+        }
+      ],
+      "weather": [],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "layers": {
+            "Layer": [
+              {
+                "texture": "clouds_vakttorn1",
+                "position": 300,
+                "scroll_multiplier": 0.3
+              },
+              {
+                "texture": "clouds_vakttorn2",
+                "position": 120,
+                "scroll_multiplier": 0.4
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/22"
+      ],
+      "props": [
+        {
+          "type": "Flag",
+          "Position": {
+            "X": 217,
+            "Y": 104
+          },
+          "flipped": true,
+          "texture": "props/textures/Flag",
+          "cells": {
+            "X": 2,
+            "Y": 5
+          },
+          "fps": 8,
+          "durations": []
+        }
+      ],
+      "location": "GREAT FRONTIER",
+      "ambience": [
+        {
+          "name": "towers 1",
+          "volume": 1
+        }
+      ],
+      "weather": [],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "layers": {
+            "Layer": [
+              {
+                "texture": "clouds_vakttorn1",
+                "position": 280,
+                "scroll_multiplier": -0.8
+              },
+              {
+                "texture": "clouds_vakttorn2",
+                "position": 120,
+                "scroll_multiplier": -0.5
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/23"
+      ],
+      "props": [],
+      "location": "GREAT FRONTIER",
+      "ambience": [
+        {
+          "name": "windy towers 2",
+          "volume": 1
+        }
+      ],
+      "weather": [
+        {
+          "name": "light_snow",
+          "fps": 12,
+          "foreground": true,
+          "screens": {
+            "int": [
+              23,
+              24,
+              25,
+              26,
+              32
+            ]
+          },
+          "mask": null
+        }
+      ],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "layers": {
+            "Layer": [
+              {
+                "texture": "clouds_vakttorn1",
+                "position": 350,
+                "scroll_multiplier": 0.4
+              },
+              {
+                "texture": "clouds_vakttorn2",
+                "position": 80,
+                "scroll_multiplier": 0.3
+              },
+              {
+                "texture": "clouds_vakttorn2",
+                "position": 220,
+                "scroll_multiplier": -0.7
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/24"
+      ],
+      "props": [],
+      "location": "GREAT FRONTIER",
+      "ambience": [
+        {
+          "name": "windy towers 2",
+          "volume": 1
+        }
+      ],
+      "weather": [
+        {
+          "name": "light_snow",
+          "fps": 12,
+          "foreground": true,
+          "screens": {
+            "int": [
+              23,
+              24,
+              25,
+              26,
+              32
+            ]
+          },
+          "mask": null
+        }
+      ],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "layers": {
+            "Layer": [
+              {
+                "texture": "clouds_vakttorn2",
+                "position": 350,
+                "scroll_multiplier": 0.9
+              },
+              {
+                "texture": "clouds_vakttorn1",
+                "position": 80,
+                "scroll_multiplier": 1
+              },
+              {
+                "texture": "clouds_vakttorn1",
+                "position": 220,
+                "scroll_multiplier": 1.8
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/25"
+      ],
+      "props": [
+        {
+          "type": "Flag",
+          "Position": {
+            "X": 239,
+            "Y": 88
+          },
+          "flipped": false,
+          "texture": "props/textures/Flag",
+          "cells": {
+            "X": 2,
+            "Y": 5
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Flag",
+          "Position": {
+            "X": 94,
+            "Y": 56
+          },
+          "flipped": false,
+          "texture": "props/textures/Flag",
+          "cells": {
+            "X": 2,
+            "Y": 5
+          },
+          "fps": 8,
+          "durations": []
+        }
+      ],
+      "location": "GREAT FRONTIER",
+      "ambience": [
+        {
+          "name": "windy towers 2",
+          "volume": 1
+        }
+      ],
+      "weather": [
+        {
+          "name": "light_snow",
+          "fps": 12,
+          "foreground": true,
+          "screens": {
+            "int": [
+              23,
+              24,
+              25,
+              26,
+              32
+            ]
+          },
+          "mask": null
+        }
+      ],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "layers": {
+            "Layer": [
+              {
+                "texture": "clouds_vakttorn_dark2",
+                "position": 120,
+                "scroll_multiplier": -1.6
+              },
+              {
+                "texture": "clouds_vakttorn_dark1",
+                "position": 220,
+                "scroll_multiplier": 2
+              },
+              {
+                "texture": "clouds_vakttorn_dark1",
+                "position": 150,
+                "scroll_multiplier": 1.6
+              },
+              {
+                "texture": "clouds_vakttorn_dark2",
+                "position": 180,
+                "scroll_multiplier": -2
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/26"
+      ],
+      "props": [],
+      "location": "WINDSWEPT BLUFF",
+      "ambience": [
+        {
+          "name": "windy snowy 1",
+          "volume": 0.85
+        },
+        {
+          "name": "windy snowy 2",
+          "volume": 0.9
+        }
+      ],
+      "weather": [
+        {
+          "name": "light_snow",
+          "fps": 12,
+          "foreground": true,
+          "screens": {
+            "int": [
+              23,
+              24,
+              25,
+              26,
+              32
+            ]
+          },
+          "mask": null
+        }
+      ],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/27"
+      ],
+      "props": [
+        {
+          "type": "gargoyle",
+          "Position": {
+            "X": 425,
+            "Y": 186
+          },
+          "flipped": true,
+          "texture": "props/textures/gargoyle",
+          "cells": {
+            "X": 2,
+            "Y": 1
+          },
+          "fps": 0.5,
+          "durations": [
+            4,
+            0.1,
+            3,
+            0.1,
+            3.5,
+            0.1,
+            4.5,
+            0.1,
+            6,
+            0.1
+          ]
+        }
+      ],
+      "location": "STORMWALL PASS",
+      "ambience": [
+        {
+          "name": "windy snowy 1",
+          "volume": 0.85
+        },
+        {
+          "name": "windy snowy 2",
+          "volume": 0.9
+        }
+      ],
+      "weather": [
+        {
+          "name": "snow",
+          "fps": 12,
+          "foreground": true,
+          "screens": {
+            "int": [
+              27,
+              28,
+              29,
+              30,
+              31
+            ]
+          },
+          "mask": "screens/masks/snowmask27"
+        }
+      ],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/28"
+      ],
+      "props": [],
+      "location": "STORMWALL PASS",
+      "ambience": [
+        {
+          "name": "windy snowy 1",
+          "volume": 0.85
+        },
+        {
+          "name": "windy snowy 2",
+          "volume": 0.9
+        }
+      ],
+      "weather": [
+        {
+          "name": "snow",
+          "fps": 12,
+          "foreground": true,
+          "screens": {
+            "int": [
+              27,
+              28,
+              29,
+              30,
+              31
+            ]
+          },
+          "mask": "screens/masks/snowmask28"
+        }
+      ],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/29"
+      ],
+      "props": [
+        {
+          "type": "gargoyle",
+          "Position": {
+            "X": 333,
+            "Y": 115
+          },
+          "flipped": true,
+          "texture": "props/textures/gargoyle",
+          "cells": {
+            "X": 2,
+            "Y": 1
+          },
+          "fps": 0.5,
+          "durations": [
+            4,
+            0.1,
+            3,
+            0.1,
+            3.5,
+            0.1,
+            4.5,
+            0.1,
+            6,
+            0.1
+          ]
+        },
+        {
+          "type": "gargoyle",
+          "Position": {
+            "X": 384,
+            "Y": 218
+          },
+          "flipped": true,
+          "texture": "props/textures/gargoyle",
+          "cells": {
+            "X": 2,
+            "Y": 1
+          },
+          "fps": 0.5,
+          "durations": [
+            4,
+            0.1,
+            3,
+            0.1,
+            3.5,
+            0.1,
+            4.5,
+            0.1,
+            6,
+            0.1
+          ]
+        },
+        {
+          "type": "gargoyle",
+          "Position": {
+            "X": 275,
+            "Y": 187
+          },
+          "flipped": false,
+          "texture": "props/textures/gargoyle",
+          "cells": {
+            "X": 2,
+            "Y": 1
+          },
+          "fps": 0.5,
+          "durations": [
+            4,
+            0.1,
+            3,
+            0.1,
+            3.5,
+            0.1,
+            4.5,
+            0.1,
+            6,
+            0.1
+          ]
+        }
+      ],
+      "location": "STORMWALL PASS",
+      "ambience": [
+        {
+          "name": "windy snowy 1",
+          "volume": 0.85
+        },
+        {
+          "name": "windy snowy 2",
+          "volume": 0.9
+        }
+      ],
+      "weather": [
+        {
+          "name": "snow",
+          "fps": 12,
+          "foreground": true,
+          "screens": {
+            "int": [
+              27,
+              28,
+              29,
+              30,
+              31
+            ]
+          },
+          "mask": "screens/masks/snowmask29"
+        }
+      ],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/30"
+      ],
+      "props": [],
+      "location": "STORMWALL PASS",
+      "ambience": [
+        {
+          "name": "windy snowy 1",
+          "volume": 0.85
+        },
+        {
+          "name": "windy snowy 2",
+          "volume": 0.9
+        }
+      ],
+      "weather": [
+        {
+          "name": "snow",
+          "fps": 12,
+          "foreground": true,
+          "screens": {
+            "int": [
+              27,
+              28,
+              29,
+              30,
+              31
+            ]
+          },
+          "mask": "screens/masks/snowmask30"
+        }
+      ],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/31"
+      ],
+      "props": [],
+      "location": "STORMWALL PASS",
+      "ambience": [
+        {
+          "name": "windy snowy 1",
+          "volume": 0.85
+        },
+        {
+          "name": "windy snowy 2",
+          "volume": 0.9
+        }
+      ],
+      "weather": [
+        {
+          "name": "snow",
+          "fps": 12,
+          "foreground": true,
+          "screens": {
+            "int": [
+              27,
+              28,
+              29,
+              30,
+              31
+            ]
+          },
+          "mask": "screens/masks/snowmask31"
+        }
+      ],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/32"
+      ],
+      "props": [],
+      "location": "STORMWALL PASS",
+      "ambience": [
+        {
+          "name": "windy snowy 1",
+          "volume": 0.8
+        },
+        {
+          "name": "Cathedral",
+          "volume": 0.6
+        },
+        {
+          "name": "windy snowy 2",
+          "volume": 0.9
+        }
+      ],
+      "weather": [
+        {
+          "name": "light_snow",
+          "fps": 12,
+          "foreground": true,
+          "screens": {
+            "int": [
+              23,
+              24,
+              25,
+              26,
+              32
+            ]
+          },
+          "mask": null
+        }
+      ],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/33"
+      ],
+      "props": [
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 126,
+            "Y": 226
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 141,
+            "Y": 226
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 156,
+            "Y": 226
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 172,
+            "Y": 226
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 132,
+            "Y": 243
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 165,
+            "Y": 243
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 141,
+            "Y": 243
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 156,
+            "Y": 243
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 212,
+            "Y": 215
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 245,
+            "Y": 215
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 221,
+            "Y": 215
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 236,
+            "Y": 215
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 217,
+            "Y": 223
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 241,
+            "Y": 223
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 267,
+            "Y": 151
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 300,
+            "Y": 151
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 276,
+            "Y": 151
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 291,
+            "Y": 151
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 272,
+            "Y": 159
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 296,
+            "Y": 159
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 388,
+            "Y": 79
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 421,
+            "Y": 79
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 397,
+            "Y": 79
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 412,
+            "Y": 79
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 393,
+            "Y": 87
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 412,
+            "Y": 87
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 92,
+            "Y": 135
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 125,
+            "Y": 135
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 101,
+            "Y": 135
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 116,
+            "Y": 135
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 97,
+            "Y": 143
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 121,
+            "Y": 143
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 165,
+            "Y": 119
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 198,
+            "Y": 119
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 174,
+            "Y": 119
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 189,
+            "Y": 119
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 170,
+            "Y": 127
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 194,
+            "Y": 127
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 292,
+            "Y": 55
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 325,
+            "Y": 55
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 301,
+            "Y": 55
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 316,
+            "Y": 55
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 297,
+            "Y": 63
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 321,
+            "Y": 63
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 332,
+            "Y": 0
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 365,
+            "Y": 0
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 341,
+            "Y": 0
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 356,
+            "Y": 0
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 337,
+            "Y": 8
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 361,
+            "Y": 8
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 108,
+            "Y": 0
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 141,
+            "Y": 0
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 117,
+            "Y": 0
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 132,
+            "Y": 0
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 113,
+            "Y": 8
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 137,
+            "Y": 8
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        }
+      ],
+      "location": "CHAPEL PERILOUS",
+      "ambience": [
+        {
+          "name": "Cathedral",
+          "volume": 0.9
+        }
+      ],
+      "weather": [],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/34"
+      ],
+      "props": [
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 62,
+            "Y": 183
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 95,
+            "Y": 183
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 71,
+            "Y": 183
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 86,
+            "Y": 183
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 67,
+            "Y": 191
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 91,
+            "Y": 191
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 123,
+            "Y": 183
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 156,
+            "Y": 183
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 132,
+            "Y": 183
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 147,
+            "Y": 183
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 128,
+            "Y": 191
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 152,
+            "Y": 191
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 86,
+            "Y": 216
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 132,
+            "Y": 216
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 101,
+            "Y": 216
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 116,
+            "Y": 216
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 92,
+            "Y": 234
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 125,
+            "Y": 234
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 101,
+            "Y": 234
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 116,
+            "Y": 234
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 134,
+            "Y": 263
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 167,
+            "Y": 263
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 143,
+            "Y": 263
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 158,
+            "Y": 263
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 195,
+            "Y": 263
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 228,
+            "Y": 263
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 204,
+            "Y": 263
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 219,
+            "Y": 263
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 139,
+            "Y": 271
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 163,
+            "Y": 271
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 200,
+            "Y": 271
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 224,
+            "Y": 271
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 158,
+            "Y": 296
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 204,
+            "Y": 296
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 173,
+            "Y": 296
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 188,
+            "Y": 296
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 164,
+            "Y": 314
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 197,
+            "Y": 314
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 173,
+            "Y": 314
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 188,
+            "Y": 314
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 214,
+            "Y": 119
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 247,
+            "Y": 119
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 223,
+            "Y": 119
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 239,
+            "Y": 119
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 275,
+            "Y": 119
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 308,
+            "Y": 119
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 284,
+            "Y": 119
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 299,
+            "Y": 119
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 219,
+            "Y": 127
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 243,
+            "Y": 127
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 280,
+            "Y": 127
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 304,
+            "Y": 127
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 238,
+            "Y": 152
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 284,
+            "Y": 152
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 253,
+            "Y": 152
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 268,
+            "Y": 152
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 244,
+            "Y": 170
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 277,
+            "Y": 170
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 253,
+            "Y": 170
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 268,
+            "Y": 170
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 318,
+            "Y": 175
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 351,
+            "Y": 175
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 327,
+            "Y": 175
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 342,
+            "Y": 175
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 379,
+            "Y": 175
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 412,
+            "Y": 175
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 388,
+            "Y": 175
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 403,
+            "Y": 175
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 323,
+            "Y": 183
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 347,
+            "Y": 183
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 384,
+            "Y": 183
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 408,
+            "Y": 183
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 342,
+            "Y": 208
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 357,
+            "Y": 208
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 372,
+            "Y": 208
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 388,
+            "Y": 208
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 348,
+            "Y": 226
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 381,
+            "Y": 226
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 357,
+            "Y": 226
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 372,
+            "Y": 226
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 108,
+            "Y": 323
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 117,
+            "Y": 323
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 141,
+            "Y": 323
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 132,
+            "Y": 323
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 113,
+            "Y": 331
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 137,
+            "Y": 331
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 332,
+            "Y": 323
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 341,
+            "Y": 323
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 365,
+            "Y": 323
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 356,
+            "Y": 323
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 337,
+            "Y": 331
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 361,
+            "Y": 331
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        }
+      ],
+      "location": "CHAPEL PERILOUS",
+      "ambience": [
+        {
+          "name": "Cathedral",
+          "volume": 0.9
+        }
+      ],
+      "weather": [],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/35"
+      ],
+      "props": [
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 238,
+            "Y": 143
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 247,
+            "Y": 143
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 271,
+            "Y": 143
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 262,
+            "Y": 143
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 299,
+            "Y": 143
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 332,
+            "Y": 143
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 308,
+            "Y": 143
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 323,
+            "Y": 143
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 243,
+            "Y": 151
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 267,
+            "Y": 151
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 304,
+            "Y": 151
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 328,
+            "Y": 151
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 262,
+            "Y": 176
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 277,
+            "Y": 176
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 292,
+            "Y": 176
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 308,
+            "Y": 176
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 268,
+            "Y": 194
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 301,
+            "Y": 194
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 277,
+            "Y": 194
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 292,
+            "Y": 194
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 134,
+            "Y": 80
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 143,
+            "Y": 80
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 167,
+            "Y": 80
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 158,
+            "Y": 80
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 195,
+            "Y": 80
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 228,
+            "Y": 80
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 219,
+            "Y": 80
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 204,
+            "Y": 80
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 139,
+            "Y": 88
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 163,
+            "Y": 88
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 200,
+            "Y": 88
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 224,
+            "Y": 88
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 158,
+            "Y": 113
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 173,
+            "Y": 113
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 188,
+            "Y": 113
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 204,
+            "Y": 113
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 164,
+            "Y": 131
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 197,
+            "Y": 131
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 173,
+            "Y": 131
+          },
+          "flipped": true,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        },
+        {
+          "type": "Candle",
+          "Position": {
+            "X": 188,
+            "Y": 131
+          },
+          "flipped": false,
+          "texture": "props/textures/Candle",
+          "cells": {
+            "X": 2,
+            "Y": 2
+          },
+          "fps": 8,
+          "durations": []
+        }
+      ],
+      "location": "CHAPEL PERILOUS",
+      "ambience": [
+        {
+          "name": "Cathedral",
+          "volume": 0.9
+        }
+      ],
+      "weather": [],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/36"
+      ],
+      "props": [],
+      "location": "CHAPEL PERILOUS",
+      "ambience": [
+        {
+          "name": "Cathedral",
+          "volume": 0.35
+        },
+        {
+          "name": "Ice wind new",
+          "volume": 0.9
+        },
+        {
+          "name": "synth drone",
+          "volume": 1
+        }
+      ],
+      "weather": [],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/37"
+      ],
+      "props": [],
+      "location": "BLUE RUIN",
+      "ambience": [
+        {
+          "name": "test song ice",
+          "volume": 1
+        },
+        {
+          "name": "Ice wind new",
+          "volume": 0.9
+        }
+      ],
+      "weather": [],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/38"
+      ],
+      "props": [],
+      "location": "BLUE RUIN",
+      "ambience": [
+        {
+          "name": "test song ice",
+          "volume": 1
+        },
+        {
+          "name": "Ice wind new",
+          "volume": 0.9
+        }
+      ],
+      "weather": [],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/39"
+      ],
+      "props": [],
+      "location": "BLUE RUIN",
+      "ambience": [
+        {
+          "name": "Ice wind new",
+          "volume": 0.9
+        },
+        {
+          "name": "test song ice",
+          "volume": 1
+        }
+      ],
+      "weather": [],
+      "scrolling": null
+    },
+    {
+      "layers": [
+        "screens/midground/40"
+      ],
+      "props": [
+        {
+          "type": "dust1",
+          "Position": {
+            "X": 151,
+            "Y": 111
+          },
+          "flipped": false,
+          "texture": "props/textures/dust1",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            5,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            3,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust3",
+          "Position": {
+            "X": 141,
+            "Y": 111
+          },
+          "flipped": false,
+          "texture": "props/textures/dust3",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            4,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            2,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust2",
+          "Position": {
+            "X": 321,
+            "Y": 159
+          },
+          "flipped": false,
+          "texture": "props/textures/dust2",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            4,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            2,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust1",
+          "Position": {
+            "X": 332,
+            "Y": 159
+          },
+          "flipped": true,
+          "texture": "props/textures/dust1",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            5,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            3,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust3",
+          "Position": {
+            "X": 321,
+            "Y": 287
+          },
+          "flipped": false,
+          "texture": "props/textures/dust3",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            4,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            2,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust3",
+          "Position": {
+            "X": 382,
+            "Y": 15
+          },
+          "flipped": true,
+          "texture": "props/textures/dust3",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            4,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            2,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        }
+      ],
+      "location": "THE TOWER",
+      "ambience": [
+        {
+          "name": "test song ice",
+          "volume": 0
+        },
+        {
+          "name": "Final Climb",
+          "volume": 0.6
+        },
+        {
+          "name": "Earthquake",
+          "volume": 1
+        }
+      ],
+      "weather": [],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "layers": {
+            "Layer": {
+              "texture": "40_clouds",
+              "position": 170,
+              "scroll_multiplier": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/41"
+      ],
+      "props": [
+        {
+          "type": "dust1",
+          "Position": {
+            "X": 343,
+            "Y": 207
+          },
+          "flipped": false,
+          "texture": "props/textures/dust1",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            5,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            3,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust3",
+          "Position": {
+            "X": 340,
+            "Y": 95
+          },
+          "flipped": false,
+          "texture": "props/textures/dust3",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            4,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            2,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust2",
+          "Position": {
+            "X": 347,
+            "Y": 95
+          },
+          "flipped": false,
+          "texture": "props/textures/dust2",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            4,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            2,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust1",
+          "Position": {
+            "X": 91,
+            "Y": 15
+          },
+          "flipped": false,
+          "texture": "props/textures/dust1",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            5,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            3,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust3",
+          "Position": {
+            "X": 107,
+            "Y": 143
+          },
+          "flipped": false,
+          "texture": "props/textures/dust3",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            4,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            2,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust3",
+          "Position": {
+            "X": 132,
+            "Y": 55
+          },
+          "flipped": true,
+          "texture": "props/textures/dust3",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            4,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            2,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust3",
+          "Position": {
+            "X": 253,
+            "Y": 135
+          },
+          "flipped": true,
+          "texture": "props/textures/dust3",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            4,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            2,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        }
+      ],
+      "location": "THE TOWER",
+      "ambience": [
+        {
+          "name": "test song ice",
+          "volume": 0
+        },
+        {
+          "name": "Final Climb",
+          "volume": 0.6
+        },
+        {
+          "name": "Earthquake",
+          "volume": 1
+        }
+      ],
+      "weather": [],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "layers": {
+            "Layer": {
+              "texture": "41_clouds",
+              "position": 285,
+              "scroll_multiplier": 1.2
+            }
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/42"
+      ],
+      "props": [
+        {
+          "type": "dust1",
+          "Position": {
+            "X": 113,
+            "Y": 39
+          },
+          "flipped": false,
+          "texture": "props/textures/dust1",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            5,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            3,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust3",
+          "Position": {
+            "X": 133,
+            "Y": 39
+          },
+          "flipped": false,
+          "texture": "props/textures/dust3",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            4,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            2,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust2",
+          "Position": {
+            "X": 169,
+            "Y": 175
+          },
+          "flipped": false,
+          "texture": "props/textures/dust2",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            4,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            2,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust1",
+          "Position": {
+            "X": 185,
+            "Y": 175
+          },
+          "flipped": false,
+          "texture": "props/textures/dust1",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            5,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            3,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust3",
+          "Position": {
+            "X": 340,
+            "Y": 167
+          },
+          "flipped": false,
+          "texture": "props/textures/dust3",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            4,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            2,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust3",
+          "Position": {
+            "X": 238,
+            "Y": 311
+          },
+          "flipped": true,
+          "texture": "props/textures/dust3",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            4,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            2,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust3",
+          "Position": {
+            "X": 247,
+            "Y": 311
+          },
+          "flipped": true,
+          "texture": "props/textures/dust3",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            4,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            2,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        }
+      ],
+      "location": "THE TOWER",
+      "ambience": [
+        {
+          "name": "test song ice",
+          "volume": 0
+        },
+        {
+          "name": "Final Climb",
+          "volume": 0.6
+        },
+        {
+          "name": "Earthquake",
+          "volume": 1
+        }
+      ],
+      "weather": [],
+      "scrolling": {
+        "?xml": "",
+        "ScrollingBGdata": {
+          "scroll_speed": 10,
+          "layers": {
+            "Layer": [
+              {
+                "texture": "42_clouds1",
+                "position": 310,
+                "scroll_multiplier": 0.8
+              },
+              {
+                "texture": "42_clouds2",
+                "position": 130,
+                "scroll_multiplier": 0.2
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "layers": [
+        "screens/midground/43"
+      ],
+      "props": [
+        {
+          "type": "dust1",
+          "Position": {
+            "X": 49,
+            "Y": 343
+          },
+          "flipped": false,
+          "texture": "props/textures/dust1",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            5,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            3,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust3",
+          "Position": {
+            "X": 56,
+            "Y": 343
+          },
+          "flipped": false,
+          "texture": "props/textures/dust3",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            4,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            2,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust2",
+          "Position": {
+            "X": 150,
+            "Y": 263
+          },
+          "flipped": false,
+          "texture": "props/textures/dust2",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            4,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            2,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust1",
+          "Position": {
+            "X": 258,
+            "Y": 262
+          },
+          "flipped": false,
+          "texture": "props/textures/dust1",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            5,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            3,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        },
+        {
+          "type": "dust3",
+          "Position": {
+            "X": 294,
+            "Y": 262
+          },
+          "flipped": false,
+          "texture": "props/textures/dust3",
+          "cells": {
+            "X": 15,
+            "Y": 1
+          },
+          "fps": 8,
+          "durations": [
+            4,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            2,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+          ]
+        }
+      ],
+      "location": "THE TOWER",
+      "ambience": [
+        {
+          "name": "Earthquake",
+          "volume": 0.25
+        },
+        {
+          "name": "Final Climb",
+          "volume": 0
+        },
+        {
+          "name": "Wind 1",
+          "volume": 0.4
+        }
+      ],
+      "weather": [],
+      "scrolling": null
+    }
+  ],
+  "npcs": [
+    {
+      "name": "hermit",
+      "font": "font/sf_pixolde",
+      "screen": 24,
+      "position": {
+        "X": 410,
+        "Y": 344
+      },
+      "cells": {
+        "X": 3,
+        "Y": 3
+      },
+      "bubble": {
+        "direction": "Left",
+        "anchor": {
+          "X": "Right",
+          "Y": "Down"
+        },
+        "width": 160
+      },
+      "trigger": {
+        "center_x": 0.5,
+        "center_y": 1,
+        "width": 51,
+        "height": 150
+      },
+      "delay": 0.5,
+      "speed": 0.09,
+      "talking": [
+        {
+          "sprite_index": 0,
+          "duration": 0.2
+        },
+        {
+          "sprite_index": 5,
+          "duration": 0.2
+        }
+      ],
+      "busy": [
+        {
+          "sprite_index": 6,
+          "duration": 0.4
+        },
+        {
+          "sprite_index": 7,
+          "duration": 0.4
+        }
+      ],
+      "texture": "props/textures/old_man/hermit",
+      "intro": [
+        "Hmm?!",
+        "A fellow jumper? How unusual.",
+        "I salute you for coming this far, but I am afraid this is the end of the road for us.",
+        "Just wait until you see what is ahead.",
+        "I will wait here."
+      ],
+      "looping": [],
+      "flagQuotes": [
+        {
+          "flag": "CompletedNormalGame",
+          "quotes": [
+            [
+              "Hey! Wait a minute!",
+              "That crown..!?",
+              "...No, it cannot be...",
+              "A replica, I am sure...",
+              "You have quite the audacity, posing as the Jump King like that.",
+              "Nevermind.",
+              "I should warn you, up ahead is an impenetrable pass.",
+              "Go ahead if you are curious, but I am sure we will meet again."
+            ]
+          ]
+        }
+      ],
+      "screenQuotes": [
+        {
+          "screen": 25,
+          "lines": [
+            "When I first started there was another also attempting.",
+            "Needless to say he didn't get as far."
+          ]
+        },
+        {
+          "screen": 25,
+          "lines": [
+            "You may as well give up.",
+            "The path ahead is impossible to traverse."
+          ]
+        },
+        {
+          "screen": 26,
+          "lines": [
+            "Those jumps in the storm up there?",
+            "Not humanly possible."
+          ]
+        },
+        {
+          "screen": 26,
+          "lines": [
+            "I have studied the movements of the wind.",
+            "It defies logic."
+          ]
+        },
+        {
+          "screen": 26,
+          "lines": [
+            "If we can not reach the top.",
+            "How could a lady ever do it?"
+          ]
+        },
+        {
+          "screen": 27,
+          "lines": [
+            "The thick snow prohibits calculated leaps."
+          ]
+        },
+        {
+          "screen": 27,
+          "lines": [
+            "I came upon a peddler of so-called \"magic boots\" once.",
+            "He never offered a shred of evidence of their supposed abilities.",
+            "That conman must have taken me for a fool."
+          ]
+        },
+        {
+          "screen": 28,
+          "lines": [
+            "If no one has been to the top,",
+            "then where would the legend come from?"
+          ]
+        },
+        {
+          "screen": 28,
+          "lines": [
+            "Why do you even try?",
+            "We will never reach the top."
+          ]
+        },
+        {
+          "screen": 29,
+          "lines": [
+            "People say those statues give bad luck.",
+            "Foolish superstition."
+          ]
+        },
+        {
+          "screen": 30,
+          "lines": [
+            "If she really was at the top -",
+            "would someone not have found her by now?"
+          ]
+        },
+        {
+          "screen": 30,
+          "lines": [
+            "Face it. We will never see her.",
+            "She is as real as a fairy or a ghost."
+          ]
+        },
+        {
+          "screen": 31,
+          "lines": [
+            "Who could live in such harsh conditions?",
+            "No, a lady could never live up there."
+          ]
+        },
+        {
+          "screen": 31,
+          "lines": [
+            "There is no proof that she exists."
+          ]
+        },
+        {
+          "screen": 32,
+          "lines": [
+            "Above the storm?",
+            "Do not make me laugh."
+          ]
+        },
+        {
+          "screen": 33,
+          "lines": [
+            "A chapel?",
+            "I never expected you to be a liar.",
+            "Disappointing."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "old_man",
+      "font": "font/sf_pixolde",
+      "screen": 0,
+      "position": {
+        "X": 335,
+        "Y": 328
+      },
+      "cells": {
+        "X": 3,
+        "Y": 3
+      },
+      "bubble": {
+        "direction": "Left",
+        "anchor": {
+          "X": "Right",
+          "Y": "Down"
+        },
+        "width": 160
+      },
+      "trigger": {
+        "center_x": 0.5,
+        "center_y": 0.5,
+        "width": 1000,
+        "height": 20
+      },
+      "delay": 1,
+      "speed": 0.09,
+      "talking": [
+        {
+          "sprite_index": 0,
+          "duration": 0.2
+        },
+        {
+          "sprite_index": 4,
+          "duration": 0.2
+        }
+      ],
+      "busy": [
+        {
+          "sprite_index": 5,
+          "duration": 0.6
+        },
+        {
+          "sprite_index": 6,
+          "duration": 0.4
+        },
+        {
+          "sprite_index": 7,
+          "duration": 0.6
+        },
+        {
+          "sprite_index": 8,
+          "duration": 0.4
+        }
+      ],
+      "texture": "props/textures/old_man/old_man",
+      "intro": [
+        "You have heard the legend too?",
+        "So you're gonna get that babe, right?",
+        "Go on then, get up there!",
+        "Heh, heh, heh..."
+      ],
+      "looping": [],
+      "flagQuotes": [
+        {
+          "flag": "CompletedNormalGame",
+          "quotes": [
+            [
+              "You have heard the legen-",
+              "Hmm?",
+              "What a funny yellow hat!",
+              "Can I have it?",
+              "Heh, heh, heh..."
+            ]
+          ]
+        }
+      ],
+      "screenQuotes": [
+        {
+          "screen": 2,
+          "lines": [
+            "She must really be something...",
+            "A beauty, I'm sure!",
+            "Heh, heh, heh..."
+          ]
+        },
+        {
+          "screen": 2,
+          "lines": [
+            "Why did you stop jumping?",
+            "Go on, get back up there!",
+            "Heh, heh, heh..."
+          ]
+        },
+        {
+          "screen": 2,
+          "lines": [
+            "I look up from time to time!",
+            "Soon I will get a glance!",
+            "Hee, hee, hee…"
+          ]
+        },
+        {
+          "screen": 2,
+          "lines": [
+            "Your tent is looking pretty comfortable there...",
+            "Am I right?",
+            "Heh, heh, heh..."
+          ]
+        },
+        {
+          "screen": 2,
+          "lines": [
+            "What do you eat, anyway?",
+            "I prefer the delights of this here bog!",
+            "Hoh, hoh, hoh..."
+          ]
+        },
+        {
+          "screen": 2,
+          "lines": [
+            "...her ... hmm...",
+            "...mumble ... what? ... eeh...",
+            "...what then ... eeh ...",
+            "...in the air ... hmm ...",
+            "...mumble ... mumble ... oh yes ...",
+            "...what if ... humn...",
+            "...eeh ... eat ...",
+            "...yes of course ... mumble ... eeh ...",
+            "... hmm ... so high up ...",
+            "... Where was I ... Ahh yes!"
+          ]
+        },
+        {
+          "screen": 3,
+          "lines": [
+            "I caught a fairy the other day!",
+            "You want a peek?",
+            "TOO BAD!",
+            "Heh heh heh...",
+            "Good day!"
+          ]
+        },
+        {
+          "screen": 3,
+          "lines": [
+            "I reached the babe once!",
+            "It must have been her..."
+          ]
+        },
+        {
+          "screen": 3,
+          "lines": [
+            "How do you feel?",
+            "I'm feeling good!",
+            "Hee, hee, hee..."
+          ]
+        },
+        {
+          "screen": 3,
+          "lines": [
+            "Oh, I wish that I was young again!",
+            "Then I would reach the babe in no time!",
+            "Oh yes..."
+          ]
+        },
+        {
+          "screen": 4,
+          "lines": [
+            "There is a nice and safe place just above the tree!",
+            "Heh, heh, heh..."
+          ]
+        },
+        {
+          "screen": 4,
+          "lines": [
+            "Unlike you, I learned from my mistake!",
+            "I never tried again!",
+            "Hee, hee, hee..."
+          ]
+        },
+        {
+          "screen": 4,
+          "lines": [
+            "I still hope to get a glance of her!",
+            "A man can dream!",
+            "Hee, hee, hee..."
+          ]
+        },
+        {
+          "screen": 4,
+          "lines": [
+            "I'll give it another go!",
+            "Right after this nap..."
+          ]
+        },
+        {
+          "screen": 5,
+          "lines": [
+            "Why you should continue?",
+            "Did you forget about the babe already?!",
+            "Heh, heh, heh..."
+          ]
+        },
+        {
+          "screen": 5,
+          "lines": [
+            "You should just give up!",
+            "No, wait...",
+            "I believe you will make it!",
+            "Heh, heh, heh..."
+          ]
+        },
+        {
+          "screen": 5,
+          "lines": [
+            "So I... Borrowed... this potion from a merchant,",
+            "I think it gave me special powers!",
+            "Hee, hee, hee..."
+          ]
+        },
+        {
+          "screen": 5,
+          "lines": [
+            "That helmet seems to come in handy!",
+            "Or is it your thick skull that cushions you when you fall?",
+            "Hee, hee, hee..."
+          ]
+        },
+        {
+          "screen": 5,
+          "lines": [
+            "What is the colour of her hair?",
+            "The leaves on that tree are red!",
+            "Hmm..."
+          ]
+        },
+        {
+          "screen": 5,
+          "lines": [
+            "Could you bring me some of those red leaves?",
+            "I like them more than the green ones!",
+            "Hoh, hoh, hoh..."
+          ]
+        },
+        {
+          "screen": 6,
+          "lines": [
+            "The sewers are so clean!",
+            "You could probably eat from the floor even!",
+            "Yeah, I could see myself living there!",
+            "I know, I'll go there! ... Tomorrow..."
+          ]
+        },
+        {
+          "screen": 6,
+          "lines": [
+            "Have you seen the flowers on top of the tree?",
+            "Don't you think they smell good?",
+            "Hee, hee, hee..."
+          ]
+        },
+        {
+          "screen": 6,
+          "lines": [
+            "Once I jumped so high that I almost got to the babe in one leap!",
+            "That's right!",
+            "Heh, heh, heh..."
+          ]
+        },
+        {
+          "screen": 6,
+          "lines": [
+            "You probably reached your peak anyways!",
+            "Heh... Yep!"
+          ]
+        },
+        {
+          "screen": 7,
+          "lines": [
+            "There is a huge cabin above the sewers!",
+            "Shouldn't be too hard to get through!",
+            "Hee, hee, hee..."
+          ]
+        },
+        {
+          "screen": 7,
+          "lines": [
+            "Is that mud on your face?",
+            "...or something else?",
+            "Hee, hee, hee..."
+          ]
+        },
+        {
+          "screen": 7,
+          "lines": [
+            "Have you seen her yet?",
+            "Pah! Didn't think so!",
+            "Heh, heh, heh..."
+          ]
+        },
+        {
+          "screen": 7,
+          "lines": [
+            "She probably has a great chest -",
+            "full of treasure!",
+            "Hoh, hoh, hoh..."
+          ]
+        },
+        {
+          "screen": 8,
+          "lines": [
+            "You seem to have been through a lot of crap!",
+            "Heh, heh, heh..."
+          ]
+        },
+        {
+          "screen": 9,
+          "lines": [
+            "I heard the big house is haunted...",
+            "Yeah, I saw a ghost there myself!",
+            "You better watch out!",
+            "Hoh, hoh, hoh..."
+          ]
+        },
+        {
+          "screen": 9,
+          "lines": [
+            "I'm just taking a break at the moment!",
+            "You should too!",
+            "Heh, heh, heh..."
+          ]
+        },
+        {
+          "screen": 9,
+          "lines": [
+            "I once caught a whiff of her!",
+            "It must have been her...",
+            "Hee, hee, hee..."
+          ]
+        },
+        {
+          "screen": 10,
+          "lines": [
+            "If I were you I'd avoid that old castle, too risky in there!",
+            "You should take the shortcut outside!",
+            "Heh, heh, heh..."
+          ]
+        },
+        {
+          "screen": 11,
+          "lines": [
+            "I heard someone fall at least a 100 times!",
+            "Glad it wasn't me!",
+            "Heh, heh, heh..."
+          ]
+        },
+        {
+          "screen": 12,
+          "lines": [
+            "I remember some beautiful meadows above the fort!",
+            "Ah yes, flowery fields...",
+            "Hmm...?"
+          ]
+        },
+        {
+          "screen": 12,
+          "lines": [
+            "How nice it was, to walk in those fields.",
+            "If it wasn't for my age I'd be up again in no time!",
+            "Hee, hee, hee..."
+          ]
+        },
+        {
+          "screen": 12,
+          "lines": [
+            "I bet the top is right above the flowery meadows!",
+            "The babe cannot be much farther than that!",
+            "Hoh, hoh, hoh..."
+          ]
+        },
+        {
+          "screen": 12,
+          "lines": [
+            "What are you going to do?",
+            "Cry maybe?",
+            "Heh, heh, heh..."
+          ]
+        },
+        {
+          "screen": 13,
+          "lines": [
+            "Instead of falling down,",
+            "have you thought about jumping up?",
+            "Heh, heh, heh..."
+          ]
+        },
+        {
+          "screen": 14,
+          "lines": [
+            "I haven't seen that magpie for a while now!",
+            "Pity, it would have made for a good meal...",
+            "Heh, heh, heh..."
+          ]
+        },
+        {
+          "screen": 15,
+          "lines": [
+            "You remind me of this really sour guy that passed by once!",
+            "Apparently he had “calculated” a “strategy” to get the babe!",
+            "He probably gave up too...",
+            "Er, I mean, took a break!",
+            "(phew!)"
+          ]
+        },
+        {
+          "screen": 15,
+          "lines": [
+            "His “strategy” to get the babe?",
+            "It was something foolish like...",
+            "Er...",
+            "“Not fall”",
+            "Not very smart if you ask me!"
+          ]
+        },
+        {
+          "screen": 15,
+          "lines": [
+            "I came up with a new strategy to get to the babe!",
+            "Just don't fall!",
+            "Hoh, hoh, hoh..."
+          ]
+        },
+        {
+          "screen": 18,
+          "lines": [
+            "Ring the bell on the northern tower thrice, and your deepest wish is granted!",
+            "Or was it four times?",
+            "It's all the same to you, right?",
+            "Heh, heh, heh..."
+          ]
+        },
+        {
+          "screen": 19,
+          "lines": [
+            "Have you been to the carnival yet?",
+            "So many fun attractions!",
+            "Heh, heh, heh..."
+          ]
+        },
+        {
+          "screen": 24,
+          "lines": [
+            "What's that behind you?",
+            "So you're bringing ghosts with you down here now huh?",
+            "What is your problem? Hmm?",
+            "I have my right, you know!"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "skeleton",
+      "font": "font/sf_pixolde",
+      "screen": 8,
+      "position": {
+        "X": 405,
+        "Y": 265
+      },
+      "cells": {
+        "X": 2,
+        "Y": 1
+      },
+      "bubble": {
+        "direction": "Right",
+        "anchor": {
+          "X": "Right",
+          "Y": "Up"
+        },
+        "width": 120
+      },
+      "trigger": {
+        "center_x": 0.5,
+        "center_y": 1,
+        "width": 32,
+        "height": 80
+      },
+      "delay": 0.5,
+      "speed": 0.09,
+      "talking": [
+        {
+          "sprite_index": 1,
+          "duration": 0.2
+        }
+      ],
+      "busy": [
+        {
+          "sprite_index": 0,
+          "duration": 1
+        }
+      ],
+      "texture": "props/textures/old_man/skeleton",
+      "intro": [],
+      "looping": [],
+      "flagQuotes": [],
+      "screenQuotes": [
+        {
+          "screen": 10,
+          "lines": [
+            "...i... i... i-s it her...?",
+            "...feel *wheeze* h... h-er touch...",
+            "...wh-? gone?...",
+            "...nonono... no..."
+          ]
+        },
+        {
+          "screen": 10,
+          "lines": [
+            "...",
+            "...sense her... s... s-o clear...",
+            "...each step... up high...",
+            "...on me..."
+          ]
+        },
+        {
+          "screen": 10,
+          "lines": [
+            "*sniff*",
+            "mmh... c- can it be...",
+            "...her s... s... sc-ent...",
+            "...another dream..."
+          ]
+        },
+        {
+          "screen": 10,
+          "lines": [
+            "...he... ...filthy beard...",
+            "...never u... u-nderstood...",
+            "...old... ...senile..."
+          ]
+        },
+        {
+          "screen": 10,
+          "lines": [
+            "...the l... l-ight... no...",
+            "...that l-ight...",
+            "...a... a-way..."
+          ]
+        },
+        {
+          "screen": 10,
+          "lines": [
+            "...the noise? a voice?",
+            "...i... i-s it her?",
+            "...go to m... m... m-eet her...",
+            "...s... s... s-oothe me..."
+          ]
+        },
+        {
+          "screen": 10,
+          "lines": [
+            "...eyes piercing...",
+            "...me? ...me...",
+            "...please..."
+          ]
+        },
+        {
+          "screen": 10,
+          "lines": [
+            "...long... s... s... s-o long...",
+            "...h... h-er legs",
+            "...I wish..."
+          ]
+        },
+        {
+          "screen": 10,
+          "lines": [
+            "...h... h-er chest...",
+            "...haunts my mind... no...",
+            "...can I... so pleasing..."
+          ]
+        },
+        {
+          "screen": 10,
+          "lines": [
+            "...babe... babe...",
+            "...babe of legend...",
+            "...I would...",
+            "...belong to m... m... m-e..."
+          ]
+        },
+        {
+          "screen": 10,
+          "lines": [
+            "no... no... no, nonono…",
+            "...mine... ...begone…",
+            "...forever a... a-lways…"
+          ]
+        },
+        {
+          "screen": 10,
+          "lines": [
+            "...behind her...",
+            "...s... s-trange winds...",
+            "...mmh... pungent..."
+          ]
+        },
+        {
+          "screen": 24,
+          "lines": [
+            "...told me no...",
+            "\"reason\"…",
+            "m... m-eaning... worthless...",
+            "...doubter... h... h-ater..."
+          ]
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "11_library",
+      "screen": 10,
+      "trigger": {
+        "x": 176,
+        "y": 40,
+        "width": 24,
+        "height": 40
+      },
+      "anchor": {
+        "x": 154,
+        "y": 90
+      },
+      "bubble": {
+        "direction": "Right",
+        "anchor": {
+          "X": "Left",
+          "Y": "Down"
+        },
+        "width": 160
+      },
+      "font": "font/sf_pixolde",
+      "lines": [
+        "\"Jumpers' Poem\"",
+        "Jumping and falling, my heart is turned cold",
+        "Down here naught can warm it, no not even gold",
+        "So I rise and attempt once again, fearing not",
+        "My heart resting sure that the babe remains hot"
+      ]
+    },
+    {
+      "id": "16_noticeboard",
+      "screen": 15,
+      "trigger": {
+        "x": 328,
+        "y": 247,
+        "width": 24,
+        "height": 24
+      },
+      "anchor": {
+        "x": 280,
+        "y": 280
+      },
+      "bubble": {
+        "direction": "Right",
+        "anchor": {
+          "X": "Left",
+          "Y": "Down"
+        },
+        "width": 160
+      },
+      "font": "font/sf_pixolde",
+      "lines": [
+        "\"Town-Hall Board of Notice\"",
+        "This abandoned town, which is clearly abandoned, and which no-one lives in,",
+        "is henceforth irrevocably, eternially, foreverally,",
+        "uncancellably and undeniably claimed, by right of previous owners blatant abandonement,",
+        "as the sole property of Merchant Megildus Dreeg.",
+        "In addition I, Megildus Dreeg, shall rename this new shining centre of commerce, it shall hereby be known as Bargainburg!",
+        "Should any legal inquiries or complaints arise, contact *unintelligible*, thank you for your cooperation!"
+      ]
+    },
+    {
+      "id": "22_diary",
+      "screen": 21,
+      "trigger": {
+        "x": 12,
+        "y": 305,
+        "width": 32,
+        "height": 32
+      },
+      "anchor": {
+        "x": 0,
+        "y": 328
+      },
+      "bubble": {
+        "direction": "Right",
+        "anchor": {
+          "X": "Left",
+          "Y": "Down"
+        },
+        "width": 160
+      },
+      "font": "font/sf_pixolde",
+      "lines": [
+        "Day 187",
+        "It appears my journey is at its end.",
+        "It seems it was not meant to be me after all.",
+        "For so long I believed…",
+        "But when I reached THAT place, there was nothing I could do...",
+        "Perhaps I can find someplace to stay back in Bogtown. ",
+        "I wonder if they will believe me…"
+      ]
+    },
+    {
+      "id": "7_diary",
+      "screen": 6,
+      "trigger": {
+        "x": 304,
+        "y": 272,
+        "width": 32,
+        "height": 32
+      },
+      "anchor": {
+        "x": 290,
+        "y": 316
+      },
+      "bubble": {
+        "direction": "Right",
+        "anchor": {
+          "X": "Left",
+          "Y": "Down"
+        },
+        "width": 160
+      },
+      "font": "font/sf_pixolde",
+      "lines": [
+        "\"I have had enough. My feet hurt from all the jumping, ",
+        "I have fallen too many times to count... How long has it been by now? ",
+        "I should just stay here this time, yes, why try when victory is not certain? ",
+        "All this struggle, for what? Never have I even been rewarded with as much as a glimpse! ",
+        "I could get comfortable here... Yes, maybe I will try again some other time. ",
+        "But then again, could it be the legends are true?\" "
+      ]
+    }
+  ],
+  "walls": [
+    {
+      "texture": "props/hidden_walls/textures/6_hidden_wall",
+      "position": {
+        "X": 303,
+        "Y": 95
+      },
+      "screenCoordinates": false,
+      "appearSound": "audio/illusion",
+      "disappearSound": null,
+      "playMode": "once",
+      "hitboxes": [
+        {
+          "X": 0,
+          "Y": 0,
+          "Width": 177,
+          "Height": 170
+        }
+      ],
+      "id": "wall:5:0",
+      "screen": 5
+    },
+    {
+      "texture": "props/hidden_walls/textures/7_hidden_wall1",
+      "position": {
+        "X": 303,
+        "Y": 223
+      },
+      "screenCoordinates": false,
+      "appearSound": "audio/illusion",
+      "disappearSound": null,
+      "playMode": "once",
+      "hitboxes": [
+        {
+          "X": 0,
+          "Y": 0,
+          "Width": 65,
+          "Height": 82
+        }
+      ],
+      "id": "wall:6:0",
+      "screen": 6
+    },
+    {
+      "texture": "props/hidden_walls/textures/7_hidden_wall2_2",
+      "position": {
+        "X": 288,
+        "Y": 47
+      },
+      "screenCoordinates": false,
+      "appearSound": "audio/illusion",
+      "disappearSound": null,
+      "playMode": "once",
+      "hitboxes": [
+        {
+          "X": 0,
+          "Y": 72,
+          "Width": 64,
+          "Height": 34
+        },
+        {
+          "X": 48,
+          "Y": 16,
+          "Width": 16,
+          "Height": 57
+        },
+        {
+          "X": 63,
+          "Y": 1,
+          "Width": 32,
+          "Height": 106
+        }
+      ],
+      "id": "wall:6:1",
+      "screen": 6
+    },
+    {
+      "texture": "props/hidden_walls/textures/7_hidden_wall2_1",
+      "position": {
+        "X": 382,
+        "Y": 47
+      },
+      "screenCoordinates": false,
+      "appearSound": "audio/illusion",
+      "disappearSound": null,
+      "playMode": "once",
+      "hitboxes": [
+        {
+          "X": 0,
+          "Y": 0,
+          "Width": 91,
+          "Height": 89
+        }
+      ],
+      "id": "wall:6:2",
+      "screen": 6
+    },
+    {
+      "texture": "props/hidden_walls/textures/7_hidden_wall3",
+      "position": {
+        "X": 167,
+        "Y": 0
+      },
+      "screenCoordinates": false,
+      "appearSound": "audio/illusion",
+      "disappearSound": null,
+      "playMode": "once",
+      "hitboxes": [
+        {
+          "X": 0,
+          "Y": 0,
+          "Width": 98,
+          "Height": 73
+        }
+      ],
+      "id": "wall:6:3",
+      "screen": 6
+    },
+    {
+      "texture": "props/hidden_walls/textures/8_hidden_wall1_2",
+      "position": {
+        "X": 240,
+        "Y": 303
+      },
+      "screenCoordinates": false,
+      "appearSound": "audio/illusion",
+      "disappearSound": null,
+      "playMode": "once",
+      "hitboxes": [
+        {
+          "X": 0,
+          "Y": 0,
+          "Width": 40,
+          "Height": 17
+        },
+        {
+          "X": 0,
+          "Y": 17,
+          "Width": 56,
+          "Height": 33
+        }
+      ],
+      "id": "wall:7:0",
+      "screen": 7
+    },
+    {
+      "texture": "props/hidden_walls/textures/8_hidden_wall1_1",
+      "position": {
+        "X": 152,
+        "Y": 279
+      },
+      "screenCoordinates": false,
+      "appearSound": "audio/illusion",
+      "disappearSound": null,
+      "playMode": "once",
+      "hitboxes": [
+        {
+          "X": 0,
+          "Y": 0,
+          "Width": 89,
+          "Height": 81
+        }
+      ],
+      "id": "wall:7:1",
+      "screen": 7
+    },
+    {
+      "texture": "props/hidden_walls/textures/22_hidden_wall1",
+      "position": {
+        "X": 7,
+        "Y": 287
+      },
+      "screenCoordinates": false,
+      "appearSound": "audio/illusion",
+      "disappearSound": null,
+      "playMode": "once",
+      "hitboxes": [
+        {
+          "X": 0,
+          "Y": 0,
+          "Width": 127,
+          "Height": 50
+        }
+      ],
+      "id": "wall:21:0",
+      "screen": 21
+    }
+  ],
+  "fonts": {
+    "font/sf_litter_lover2_bold": {
+      "texture": "font/sf_litter_lover2_bold.png",
+      "data": "font/sf_litter_lover2_bold.xml",
+      "lineHeight": 17,
+      "defaultCharacter": "#"
+    },
+    "font/sf_pixolde": {
+      "texture": "font/sf_pixolde.png",
+      "data": "font/sf_pixolde.xml",
+      "lineHeight": 16,
+      "defaultCharacter": "#"
+    }
+  },
+  "textures": {
+    "title_logo": {
+      "file": "title_logo.png",
+      "width": 392,
+      "height": 111
+    },
+    "king/base": {
+      "file": "king/base.png",
+      "width": 832,
+      "height": 384
+    },
+    "gui/frame": {
+      "file": "gui/frame.png",
+      "width": 48,
+      "height": 48
+    },
+    "gui/cursor": {
+      "file": "gui/cursor.png",
+      "width": 16,
+      "height": 14
+    },
+    "gui/back": {
+      "file": "gui/back.png",
+      "width": 11,
+      "height": 9
+    },
+    "gui/checkbox": {
+      "file": "gui/checkbox.png",
+      "width": 20,
+      "height": 10
+    },
+    "ending/ending_animations": {
+      "file": "ending/ending_animations.png",
+      "width": 288,
+      "height": 384
+    },
+    "ending/imagecrown": {
+      "file": "ending/imagecrown.png",
+      "width": 480,
+      "height": 360
+    },
+    "king/crown": {
+      "file": "king/crown.png",
+      "width": 832,
+      "height": 384
+    },
+    "screens/midground/1": {
+      "file": "screens/midground/1.png",
+      "width": 480,
+      "height": 360
+    },
+    "props/textures/Bonfire": {
+      "file": "props/textures/Bonfire.png",
+      "width": 96,
+      "height": 32
+    },
+    "props/textures/1_water": {
+      "file": "props/textures/1_water.png",
+      "width": 442,
+      "height": 150
+    },
+    "screens/midground/2": {
+      "file": "screens/midground/2.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/3": {
+      "file": "screens/midground/3.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/4": {
+      "file": "screens/midground/4.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/scrolling/textures/4_clouds": {
+      "file": "screens/scrolling/textures/4_clouds.png",
+      "width": 423,
+      "height": 259
+    },
+    "screens/midground/5": {
+      "file": "screens/midground/5.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/6": {
+      "file": "screens/midground/6.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/scrolling/textures/6_clouds": {
+      "file": "screens/scrolling/textures/6_clouds.png",
+      "width": 423,
+      "height": 259
+    },
+    "screens/midground/7": {
+      "file": "screens/midground/7.png",
+      "width": 480,
+      "height": 360
+    },
+    "props/textures/SewerDrop": {
+      "file": "props/textures/SewerDrop.png",
+      "width": 160,
+      "height": 48
+    },
+    "props/textures/Candle": {
+      "file": "props/textures/Candle.png",
+      "width": 28,
+      "height": 36
+    },
+    "screens/midground/8": {
+      "file": "screens/midground/8.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/9": {
+      "file": "screens/midground/9.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/masks/light_rainmask9": {
+      "file": "screens/masks/light_rainmask9.png",
+      "width": 480,
+      "height": 360
+    },
+    "particles/light_rain/light_rain0": {
+      "file": "particles/light_rain/light_rain0.png",
+      "width": 120,
+      "height": 120
+    },
+    "particles/light_rain/light_rain1": {
+      "file": "particles/light_rain/light_rain1.png",
+      "width": 120,
+      "height": 120
+    },
+    "particles/light_rain/light_rain2": {
+      "file": "particles/light_rain/light_rain2.png",
+      "width": 120,
+      "height": 120
+    },
+    "particles/light_rain/light_rain3": {
+      "file": "particles/light_rain/light_rain3.png",
+      "width": 120,
+      "height": 120
+    },
+    "screens/midground/10": {
+      "file": "screens/midground/10.png",
+      "width": 480,
+      "height": 360
+    },
+    "props/textures/DungeonTorch": {
+      "file": "props/textures/DungeonTorch.png",
+      "width": 64,
+      "height": 64
+    },
+    "props/textures/kettle": {
+      "file": "props/textures/kettle.png",
+      "width": 84,
+      "height": 24
+    },
+    "props/textures/ovenfire": {
+      "file": "props/textures/ovenfire.png",
+      "width": 96,
+      "height": 32
+    },
+    "screens/masks/light_rainmask10": {
+      "file": "screens/masks/light_rainmask10.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/11": {
+      "file": "screens/midground/11.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/masks/rainmask11": {
+      "file": "screens/masks/rainmask11.png",
+      "width": 480,
+      "height": 360
+    },
+    "particles/rain/rain0": {
+      "file": "particles/rain/rain0.png",
+      "width": 120,
+      "height": 120
+    },
+    "particles/rain/rain1": {
+      "file": "particles/rain/rain1.png",
+      "width": 120,
+      "height": 120
+    },
+    "particles/rain/rain2": {
+      "file": "particles/rain/rain2.png",
+      "width": 120,
+      "height": 120
+    },
+    "particles/rain/rain3": {
+      "file": "particles/rain/rain3.png",
+      "width": 120,
+      "height": 120
+    },
+    "screens/midground/12": {
+      "file": "screens/midground/12.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/masks/rainmask12": {
+      "file": "screens/masks/rainmask12.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/13": {
+      "file": "screens/midground/13.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/masks/rainmask13": {
+      "file": "screens/masks/rainmask13.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/14": {
+      "file": "screens/midground/14.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/scrolling/textures/14_clouds_bg": {
+      "file": "screens/scrolling/textures/14_clouds_bg.png",
+      "width": 444,
+      "height": 49
+    },
+    "screens/scrolling/textures/14_clouds_mg": {
+      "file": "screens/scrolling/textures/14_clouds_mg.png",
+      "width": 368,
+      "height": 66
+    },
+    "screens/scrolling/textures/14_clouds_fg": {
+      "file": "screens/scrolling/textures/14_clouds_fg.png",
+      "width": 435,
+      "height": 121
+    },
+    "screens/midground/15": {
+      "file": "screens/midground/15.png",
+      "width": 480,
+      "height": 360
+    },
+    "props/textures/grammofon": {
+      "file": "props/textures/grammofon.png",
+      "width": 30,
+      "height": 25
+    },
+    "screens/scrolling/textures/mist_clouds1": {
+      "file": "screens/scrolling/textures/mist_clouds1.png",
+      "width": 465,
+      "height": 181
+    },
+    "screens/scrolling/textures/mist_clouds2": {
+      "file": "screens/scrolling/textures/mist_clouds2.png",
+      "width": 429,
+      "height": 232
+    },
+    "screens/scrolling/textures/mist_clouds3": {
+      "file": "screens/scrolling/textures/mist_clouds3.png",
+      "width": 458,
+      "height": 162
+    },
+    "screens/scrolling/textures/bird_cloud": {
+      "file": "screens/scrolling/textures/bird_cloud.png",
+      "width": 256,
+      "height": 384
+    },
+    "screens/midground/16": {
+      "file": "screens/midground/16.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/17": {
+      "file": "screens/midground/17.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/18": {
+      "file": "screens/midground/18.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/19": {
+      "file": "screens/midground/19.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/20": {
+      "file": "screens/midground/20.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/scrolling/textures/clouds_vakttorn1": {
+      "file": "screens/scrolling/textures/clouds_vakttorn1.png",
+      "width": 365,
+      "height": 162
+    },
+    "screens/scrolling/textures/clouds_vakttorn2": {
+      "file": "screens/scrolling/textures/clouds_vakttorn2.png",
+      "width": 277,
+      "height": 126
+    },
+    "screens/midground/21": {
+      "file": "screens/midground/21.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/22": {
+      "file": "screens/midground/22.png",
+      "width": 480,
+      "height": 360
+    },
+    "props/textures/Flag": {
+      "file": "props/textures/Flag.png",
+      "width": 192,
+      "height": 160
+    },
+    "screens/midground/23": {
+      "file": "screens/midground/23.png",
+      "width": 480,
+      "height": 360
+    },
+    "particles/light_snow/light snow0": {
+      "file": "particles/light_snow/light snow0.png",
+      "width": 120,
+      "height": 120
+    },
+    "particles/light_snow/light snow1": {
+      "file": "particles/light_snow/light snow1.png",
+      "width": 120,
+      "height": 120
+    },
+    "particles/light_snow/light snow2": {
+      "file": "particles/light_snow/light snow2.png",
+      "width": 120,
+      "height": 120
+    },
+    "particles/light_snow/light snow3": {
+      "file": "particles/light_snow/light snow3.png",
+      "width": 120,
+      "height": 120
+    },
+    "screens/midground/24": {
+      "file": "screens/midground/24.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/25": {
+      "file": "screens/midground/25.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/scrolling/textures/clouds_vakttorn_dark2": {
+      "file": "screens/scrolling/textures/clouds_vakttorn_dark2.png",
+      "width": 277,
+      "height": 126
+    },
+    "screens/scrolling/textures/clouds_vakttorn_dark1": {
+      "file": "screens/scrolling/textures/clouds_vakttorn_dark1.png",
+      "width": 365,
+      "height": 162
+    },
+    "screens/midground/26": {
+      "file": "screens/midground/26.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/27": {
+      "file": "screens/midground/27.png",
+      "width": 480,
+      "height": 360
+    },
+    "props/textures/gargoyle": {
+      "file": "props/textures/gargoyle.png",
+      "width": 82,
+      "height": 39
+    },
+    "screens/masks/snowmask27": {
+      "file": "screens/masks/snowmask27.png",
+      "width": 1,
+      "height": 1
+    },
+    "particles/snow/snow0": {
+      "file": "particles/snow/snow0.png",
+      "width": 120,
+      "height": 120
+    },
+    "particles/snow/snow1": {
+      "file": "particles/snow/snow1.png",
+      "width": 120,
+      "height": 120
+    },
+    "particles/snow/snow2": {
+      "file": "particles/snow/snow2.png",
+      "width": 120,
+      "height": 120
+    },
+    "particles/snow/snow3": {
+      "file": "particles/snow/snow3.png",
+      "width": 120,
+      "height": 120
+    },
+    "screens/midground/28": {
+      "file": "screens/midground/28.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/masks/snowmask28": {
+      "file": "screens/masks/snowmask28.png",
+      "width": 1,
+      "height": 1
+    },
+    "screens/midground/29": {
+      "file": "screens/midground/29.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/masks/snowmask29": {
+      "file": "screens/masks/snowmask29.png",
+      "width": 1,
+      "height": 1
+    },
+    "screens/midground/30": {
+      "file": "screens/midground/30.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/masks/snowmask30": {
+      "file": "screens/masks/snowmask30.png",
+      "width": 1,
+      "height": 1
+    },
+    "screens/midground/31": {
+      "file": "screens/midground/31.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/masks/snowmask31": {
+      "file": "screens/masks/snowmask31.png",
+      "width": 1,
+      "height": 1
+    },
+    "screens/midground/32": {
+      "file": "screens/midground/32.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/33": {
+      "file": "screens/midground/33.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/34": {
+      "file": "screens/midground/34.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/35": {
+      "file": "screens/midground/35.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/36": {
+      "file": "screens/midground/36.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/37": {
+      "file": "screens/midground/37.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/38": {
+      "file": "screens/midground/38.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/39": {
+      "file": "screens/midground/39.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/midground/40": {
+      "file": "screens/midground/40.png",
+      "width": 480,
+      "height": 360
+    },
+    "props/textures/dust1": {
+      "file": "props/textures/dust1.png",
+      "width": 90,
+      "height": 62
+    },
+    "props/textures/dust3": {
+      "file": "props/textures/dust3.png",
+      "width": 75,
+      "height": 41
+    },
+    "props/textures/dust2": {
+      "file": "props/textures/dust2.png",
+      "width": 135,
+      "height": 61
+    },
+    "screens/scrolling/textures/40_clouds": {
+      "file": "screens/scrolling/textures/40_clouds.png",
+      "width": 480,
+      "height": 249
+    },
+    "screens/midground/41": {
+      "file": "screens/midground/41.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/scrolling/textures/41_clouds": {
+      "file": "screens/scrolling/textures/41_clouds.png",
+      "width": 480,
+      "height": 239
+    },
+    "screens/midground/42": {
+      "file": "screens/midground/42.png",
+      "width": 480,
+      "height": 360
+    },
+    "screens/scrolling/textures/42_clouds1": {
+      "file": "screens/scrolling/textures/42_clouds1.png",
+      "width": 468,
+      "height": 134
+    },
+    "screens/scrolling/textures/42_clouds2": {
+      "file": "screens/scrolling/textures/42_clouds2.png",
+      "width": 437,
+      "height": 73
+    },
+    "screens/midground/43": {
+      "file": "screens/midground/43.png",
+      "width": 480,
+      "height": 360
+    },
+    "props/textures/old_man/hermit": {
+      "file": "props/textures/old_man/hermit.png",
+      "width": 96,
+      "height": 96
+    },
+    "props/textures/old_man/old_man": {
+      "file": "props/textures/old_man/old_man.png",
+      "width": 96,
+      "height": 72
+    },
+    "props/textures/old_man/skeleton": {
+      "file": "props/textures/old_man/skeleton.png",
+      "width": 48,
+      "height": 24
+    },
+    "props/hidden_walls/textures/6_hidden_wall": {
+      "file": "props/hidden_walls/textures/6_hidden_wall.png",
+      "width": 177,
+      "height": 170
+    },
+    "props/hidden_walls/textures/7_hidden_wall1": {
+      "file": "props/hidden_walls/textures/7_hidden_wall1.png",
+      "width": 65,
+      "height": 82
+    },
+    "props/hidden_walls/textures/7_hidden_wall2_2": {
+      "file": "props/hidden_walls/textures/7_hidden_wall2_2.png",
+      "width": 96,
+      "height": 106
+    },
+    "props/hidden_walls/textures/7_hidden_wall2_1": {
+      "file": "props/hidden_walls/textures/7_hidden_wall2_1.png",
+      "width": 91,
+      "height": 90
+    },
+    "props/hidden_walls/textures/7_hidden_wall3": {
+      "file": "props/hidden_walls/textures/7_hidden_wall3.png",
+      "width": 98,
+      "height": 73
+    },
+    "props/hidden_walls/textures/8_hidden_wall1_2": {
+      "file": "props/hidden_walls/textures/8_hidden_wall1_2.png",
+      "width": 56,
+      "height": 50
+    },
+    "props/hidden_walls/textures/8_hidden_wall1_1": {
+      "file": "props/hidden_walls/textures/8_hidden_wall1_1.png",
+      "width": 89,
+      "height": 81
+    },
+    "props/hidden_walls/textures/22_hidden_wall1": {
+      "file": "props/hidden_walls/textures/22_hidden_wall1.png",
+      "width": 127,
+      "height": 50
+    },
+    "particles/jump_particle": {
+      "file": "particles/jump_particle.png",
+      "width": 160,
+      "height": 32
+    },
+    "particles/snow_jump_particle": {
+      "file": "particles/snow_jump_particle.png",
+      "width": 144,
+      "height": 432
+    }
+  },
+  "sounds": {
+    "audio/music/menu loop/menu_intro": {
+      "file": "audio/music/menu loop/menu_intro.ogg",
+      "duration": 46829
+    },
+    "audio/music/menu loop/menu_loop": {
+      "file": "audio/music/menu loop/menu_loop.ogg",
+      "duration": 34146
+    },
+    "audio/music/ending": {
+      "file": "audio/music/ending.ogg",
+      "duration": 172941
+    },
+    "audio/music/event_music/ending_jingle": {
+      "file": "audio/music/event_music/ending_jingle.ogg",
+      "duration": 20495
+    },
+    "audio/talking": {
+      "file": "audio/talking.ogg",
+      "duration": 89
+    },
+    "audio/plink": {
+      "file": "audio/plink.ogg",
+      "duration": 440
+    },
+    "audio/new_location": {
+      "file": "audio/new_location.ogg",
+      "duration": 6839
+    },
+    "audio/illusion": {
+      "file": "audio/illusion.ogg",
+      "duration": 3566
+    },
+    "audio/babe/babe jump": {
+      "file": "audio/babe/babe jump.ogg",
+      "duration": 433
+    },
+    "audio/babe/babe kiss": {
+      "file": "audio/babe/babe kiss.ogg",
+      "duration": 160
+    },
+    "audio/babe/babe mou": {
+      "file": "audio/babe/babe mou.ogg",
+      "duration": 879
+    },
+    "audio/babe/babe pickup": {
+      "file": "audio/babe/babe pickup.ogg",
+      "duration": 321
+    },
+    "audio/babe/babe scream": {
+      "file": "audio/babe/babe scream.ogg",
+      "duration": 750
+    },
+    "audio/babe/babe surprised2": {
+      "file": "audio/babe/babe surprised2.ogg",
+      "duration": 325
+    },
+    "audio/gui_sfx/SelectC": {
+      "file": "audio/gui_sfx/SelectC.ogg",
+      "duration": 115
+    },
+    "audio/gui_sfx/menu_confirm": {
+      "file": "audio/gui_sfx/menu_confirm.ogg",
+      "duration": 480
+    },
+    "audio/gui_sfx/menu_fail": {
+      "file": "audio/gui_sfx/menu_fail.ogg",
+      "duration": 260
+    },
+    "audio/gui_sfx/menu_open": {
+      "file": "audio/gui_sfx/menu_open.ogg",
+      "duration": 360
+    },
+    "audio/gui_sfx/selectA": {
+      "file": "audio/gui_sfx/selectA.ogg",
+      "duration": 113
+    },
+    "audio/gui_sfx/title_hit": {
+      "file": "audio/gui_sfx/title_hit.ogg",
+      "duration": 980
+    },
+    "audio/jump_king/ice/king_jump": {
+      "file": "audio/jump_king/ice/king_jump.ogg",
+      "duration": 322
+    },
+    "audio/jump_king/ice/king_land": {
+      "file": "audio/jump_king/ice/king_land.ogg",
+      "duration": 84
+    },
+    "audio/jump_king/king_bump": {
+      "file": "audio/jump_king/king_bump.ogg",
+      "duration": 264
+    },
+    "audio/jump_king/king_jump": {
+      "file": "audio/jump_king/king_jump.ogg",
+      "duration": 240
+    },
+    "audio/jump_king/king_land": {
+      "file": "audio/jump_king/king_land.ogg",
+      "duration": 173
+    },
+    "audio/jump_king/king_splat": {
+      "file": "audio/jump_king/king_splat.ogg",
+      "duration": 170
+    },
+    "audio/jump_king/snow/king_jump": {
+      "file": "audio/jump_king/snow/king_jump.ogg",
+      "duration": 967
+    },
+    "audio/jump_king/snow/king_land": {
+      "file": "audio/jump_king/snow/king_land.ogg",
+      "duration": 209
+    },
+    "audio/jump_king/snow/king_splat": {
+      "file": "audio/jump_king/snow/king_splat.ogg",
+      "duration": 967
+    },
+    "audio/background/Nature bg": {
+      "file": "audio/background/Nature bg.ogg",
+      "duration": 46714
+    },
+    "audio/background/Small fire and stream": {
+      "file": "audio/background/Small fire and stream.ogg",
+      "duration": 48000
+    },
+    "audio/background/Red tree": {
+      "file": "audio/background/Red tree.ogg",
+      "duration": 89142
+    },
+    "audio/background/Sewer": {
+      "file": "audio/background/Sewer.ogg",
+      "duration": 191464
+    },
+    "audio/background/Sewer cage rain": {
+      "file": "audio/background/Sewer cage rain.ogg",
+      "duration": 92428
+    },
+    "audio/background/Light rain": {
+      "file": "audio/background/Light rain.ogg",
+      "duration": 90526
+    },
+    "audio/background/Castlesong": {
+      "file": "audio/background/Castlesong.ogg",
+      "duration": 85937
+    },
+    "audio/background/Hard rain and fire": {
+      "file": "audio/background/Hard rain and fire.ogg",
+      "duration": 82714
+    },
+    "audio/background/Wind 1": {
+      "file": "audio/background/Wind 1.ogg",
+      "duration": 17950
+    },
+    "audio/background/City 1": {
+      "file": "audio/background/City 1.ogg",
+      "duration": 166205
+    },
+    "audio/background/Merchant loop": {
+      "file": "audio/background/Merchant loop.ogg",
+      "duration": 33391
+    },
+    "audio/background/towers 1": {
+      "file": "audio/background/towers 1.ogg",
+      "duration": 65142
+    },
+    "audio/background/windy towers 2": {
+      "file": "audio/background/windy towers 2.ogg",
+      "duration": 82821
+    },
+    "audio/background/windy snowy 1": {
+      "file": "audio/background/windy snowy 1.ogg",
+      "duration": 96535
+    },
+    "audio/background/windy snowy 2": {
+      "file": "audio/background/windy snowy 2.ogg",
+      "duration": 96535
+    },
+    "audio/background/Cathedral": {
+      "file": "audio/background/Cathedral.ogg",
+      "duration": 148928
+    },
+    "audio/background/Ice wind new": {
+      "file": "audio/background/Ice wind new.ogg",
+      "duration": 13387
+    },
+    "audio/background/synth drone": {
+      "file": "audio/background/synth drone.ogg",
+      "duration": 19274
+    },
+    "audio/background/test song ice": {
+      "file": "audio/background/test song ice.ogg",
+      "duration": 183800
+    },
+    "audio/background/Final Climb": {
+      "file": "audio/background/Final Climb.ogg",
+      "duration": 245122
+    },
+    "audio/background/Earthquake": {
+      "file": "audio/background/Earthquake.ogg",
+      "duration": 30446
+    }
+  },
+  "hashes": {
+    "title_logo.png": "ac82d227998c46cb22476e1d2066dcb9f1c6a76c5ad5765aedc32b5e1329c4f7",
+    "king/base.png": "1d951a4fa53a3db7597cfc35e5feb1310ee8283c8b51184fa3e9c2e7e3ec7a88",
+    "gui/frame.png": "10b61b54cd16d67d81f99de9c08e08608cd31b3a2c2244ae07f7c9331d906dd9",
+    "gui/cursor.png": "a1f70f70f6075ccb5be598d38ca10e57a602cd85b21f2cbe07f7d5ffeeee9efc",
+    "gui/back.png": "8cf5357cc6856608136c98b3c65ab53f94e65ae349724d74216d6a2d659aa2fc",
+    "gui/checkbox.png": "116e72cb138f72b1a8b611e4c974b3a362fb8440ba5747aa4fadee921cde2116",
+    "ending/ending_animations.png": "51464d7d6440a10b1e8bfd0b348b00cdfa54c9b90c081a1cb31e05a656b17142",
+    "ending/imagecrown.png": "e199ec0eaa16a98bc913eb4fba3a853e8cdd956270c17808b8ad48114f2d1e60",
+    "king/crown.png": "06efa22ef99cd0ce04abc3608f27520b9474ff19703420e315074f239cfebab8",
+    "screens/midground/1.png": "f36c79f3178cd74484668d1bdc5ded6a946c1b27dd3137a7b230672da3fac187",
+    "props/textures/Bonfire.png": "6823d5cfae6f7e8416fc4a3f9925962f921fafce0164a7226da5cf03ae61eb57",
+    "props/textures/1_water.png": "5a7f183f9ffaab7d435ad647c36279a79ebdd5bc77a14e5b667636f722ffb00b",
+    "screens/midground/2.png": "422a917b59c4dfad2acecca47310abc54ca601f8f62ac748ac9fb81538b43742",
+    "screens/midground/3.png": "29511c8dce0aca53ee014c23c79a9af05f7e6da8a5088e58bed4a267e965ee49",
+    "screens/midground/4.png": "f6b214d2a210a237276fdf604d43a3c148df32e778029e471950228d8dc312d5",
+    "screens/scrolling/textures/4_clouds.png": "d2d0f21a1678e029c75e13a9e2ff40d580c830f9afe7fb7057e30b20f5cd45e6",
+    "screens/midground/5.png": "d57e4684485c33b7762bb516ef968f11c5874ed14d26331c34ce6f12c50dfb20",
+    "screens/midground/6.png": "dfae95f1f75c68ae1e745ab15feb37e6c4412c326dc09d589e9532d8d8ead151",
+    "screens/scrolling/textures/6_clouds.png": "ca4c5cdbb8c9cb67c6aa806a9d1ff7a3337f6acc5920180a53d5da9a993e6b46",
+    "screens/midground/7.png": "9afe6966e20e100d0e263e02419755d1b42145bfeab52a9011704d0acfda7af2",
+    "props/textures/SewerDrop.png": "35da5381eb28ed0065f9e72f2a0130d59d3112536a68d6593e119cbba3181c2f",
+    "props/textures/Candle.png": "25cd682aec1c080a5a44caa56fec4ddbd1d354d69485755abaac4d00707ec7fd",
+    "screens/midground/8.png": "e2e1fe920a7a914a61bb85dede9fa9bf36e9b928318a15ba532301716dad7574",
+    "screens/midground/9.png": "7525cb5b8de72af056bf49098abeb151f6746f22a01cdd3d536a579b48008b5c",
+    "screens/masks/light_rainmask9.png": "8d1bc2b6b6d15cd7d9c00066efc3c0d63d8a4fdef093e8f9986e3c8e04fea685",
+    "particles/light_rain/light_rain0.png": "edad2545f9d2d571542a8c3dea8cc36524778b4afa1e649601dc1de2d41e67fc",
+    "particles/light_rain/light_rain1.png": "96103a524571920728179cde6668185bfabc3a5cd054ebbb9d773fb812e6ddd7",
+    "particles/light_rain/light_rain2.png": "6203e30730ae45154ec30c455cb859189a1d9178c81db8c0bf106ae613b62ceb",
+    "particles/light_rain/light_rain3.png": "601d4e1ce314c00f77e8e43b077c7822ca2beeb7fd8f0d194aac8c3b0678e301",
+    "screens/midground/10.png": "f195c2799d534772b7e900bcd3950355edfe239ac8588145e37adb96d2ba401a",
+    "props/textures/DungeonTorch.png": "d5766dbb285f230e9f30e745ff0aa6086dac29a4284f878d42d27b3afbef13f6",
+    "props/textures/kettle.png": "24723cea08e8b67c04a5180dada7769f639c98298d9481d79e7512950cbacf78",
+    "props/textures/ovenfire.png": "b859191cd7564118e64a5efa74146d9200d35c4378c8855051136c42288d54bf",
+    "screens/masks/light_rainmask10.png": "a9e075a1f259de1b7759915064e05275cca71f3e3db19b8c021812b9e61f8d25",
+    "screens/midground/11.png": "5d9b03c296792a0bd902feefc4cc1ba81b17145d85906dab1f99e29b902f93c1",
+    "screens/masks/rainmask11.png": "5cf648d72eb86a1c2fd6bc2bb4a1e86de3895d0b0a01142f506fc97240172f81",
+    "particles/rain/rain0.png": "6402446e16103a25d3f9302948f83afcaaa0cbc7bcbe95e43e3361ce7d04f06c",
+    "particles/rain/rain1.png": "adbbfd4a3e91ae1057a5515f3905386c3c4bb5c3e305aaf01f7a39c6c097e925",
+    "particles/rain/rain2.png": "4a1e77d3f10220d1338f49e88aa69f5696269d1207f398d8ad8a145c6d4f69d1",
+    "particles/rain/rain3.png": "e38d55b8276bd197c9d934c30c3e2be1c2ce7db3bcbd3a60bc6466691ed98dcb",
+    "screens/midground/12.png": "7b5efbf8de82780bfbecc5e72eae88ee0e184abc615cd6150fb417762142defa",
+    "screens/masks/rainmask12.png": "35fd7fba0e78b874a495928b6ba13c73942540b269cee4cca84bfc0014025d23",
+    "screens/midground/13.png": "8de83e1ba6d377e6ebb895ab32c6fd74d979596898c036c4f02dec5eb1cf1eed",
+    "screens/masks/rainmask13.png": "a120e13101c84b44728c222a34d2238eeaa7beb2afdf643fc0fa12b872decff9",
+    "screens/midground/14.png": "3b411b0b87996187d8d557a61e848ad6be89218987ec9b5f78348031c920eb3f",
+    "screens/scrolling/textures/14_clouds_bg.png": "0f845932f11c726c4c1cf8a9d0888aacfff9139ff39203e31c4b2d279d546db1",
+    "screens/scrolling/textures/14_clouds_mg.png": "990ecb2373bef9d3a698624b595cc1d4a22cfc64f6bfee47712b73c019f50e5d",
+    "screens/scrolling/textures/14_clouds_fg.png": "3220af7f0a1668143159201d09bf53c8821dbf8e4209bb12c097378fc47a3772",
+    "screens/midground/15.png": "9795b698a1f2befba7f64f4b78e4aef030ffeb45dc5501ae7e26224b8d014ec0",
+    "props/textures/grammofon.png": "26d4f99277109d38198517e125b3e97dbdcd859724ddfe32d1fc12b0c86df124",
+    "screens/scrolling/textures/mist_clouds1.png": "ac05bb0ba70fcf89152222e111dc2838fc9efe9fa77891af927541f35b9d92a5",
+    "screens/scrolling/textures/mist_clouds2.png": "a48032128a1693da0bc27e294930711450912ada599fb66d8e6d96ed80724f56",
+    "screens/scrolling/textures/mist_clouds3.png": "cf3ff3c020b3b85110a2494072e6da8f89bd7cec71946aaef0de9df6f44becfb",
+    "screens/scrolling/textures/bird_cloud.png": "5d93243db39023ea5fd4f6515a32cc09a48d5e822d4b7a3f2e88b145403f7a01",
+    "screens/midground/16.png": "b31879a37dd6cf6d0030d27a58ba4d7b9aa85e6d492bc3d00c785d6886376075",
+    "screens/midground/17.png": "b0df27549d1051286228c30ca025e933b59d7a6277c3f55895e74b605967a2a0",
+    "screens/midground/18.png": "c9508a8b0ddb3d06ff97174a6c0ee6641f09ffa50711cf37a04a100699f79cd7",
+    "screens/midground/19.png": "1ac238a887e6b0ddde8fcf9d8a80120cc5e8a015ac1d0ddfd5d7e12413d1cd14",
+    "screens/midground/20.png": "776edf11686106149c85025a404ce1c3952baa7e78845720898b7def8e321cbd",
+    "screens/scrolling/textures/clouds_vakttorn1.png": "5d900d68a70760edee168589b837417bf66b745d6d4e8b2d31f7b0b8f9a8d584",
+    "screens/scrolling/textures/clouds_vakttorn2.png": "bcbeb3888984add46c283f2b5dad9ef359cb30882dbdb7d328945fe75f717952",
+    "screens/midground/21.png": "16fe2566fffbde4b2ae48f07d8dfc15a46f8bb9d2c801c4cb062b27637c33fa2",
+    "screens/midground/22.png": "09e27624347e027effd28b13c5fcd1aed92140c1b3b477b5563f5ecf1b6cc713",
+    "props/textures/Flag.png": "95adff1cff3478ed288e7dcde91f3195ad624a5f9430ffc8beaae11629fd8445",
+    "screens/midground/23.png": "a7839c92dfbfa84d0d26cf2bf00a1305941f44fba9437617406e1eb0487f4edb",
+    "particles/light_snow/light snow0.png": "1c36b912614b5841a776c0f4b72e1dbe529720d0dcd89c493c8ccc16c834e9ab",
+    "particles/light_snow/light snow1.png": "c9df8851542be603be08f7895eb02d1908268c3b2185e4cf96d5622e5794e7dd",
+    "particles/light_snow/light snow2.png": "443ecaef91b7376666f96f24e265bf728c4d9aa777b9726db5b336c2d213b682",
+    "particles/light_snow/light snow3.png": "5c7c7d05f746b5557ba374cfa12ab51bbb1e4fea12b24ab7123cd15837c39fb6",
+    "screens/midground/24.png": "960250bb18be8f073af6436a8f70acbf53b83ead93e41078f917e090426b7057",
+    "screens/midground/25.png": "e5235b6ecc3f484ce41cd1b129ad57f6d04d5c2df4d51289e05499518d866c18",
+    "screens/scrolling/textures/clouds_vakttorn_dark2.png": "a044bdbc4b6eb1d3bf89e9f9be209dfedcd6ddae7f7f8ebb5dae5e40b61a6c3d",
+    "screens/scrolling/textures/clouds_vakttorn_dark1.png": "8c22c45c37d30ac742bb6a71c14fd3a20280de6a0f8901c3cef3fc25c7e2fff1",
+    "screens/midground/26.png": "dfc06962eaddb8d5d523c42b6c238c29c788d3c36aa7d15395ce5d076c875e80",
+    "screens/midground/27.png": "b9e19af07ed7523a6755c4362e2149ab09997134c077849360f14068ce6772fd",
+    "props/textures/gargoyle.png": "7575e3fd3fdc74bdb766fe0b79b378b1100761af3d289b68c348ea934ce7d32a",
+    "screens/masks/snowmask27.png": "24e2178c13c5f0ce5eaf1ab2d2f7adc063b5c8ced387953e75f5ff7b5d5ecdd6",
+    "particles/snow/snow0.png": "8cc394ae4de6c87889febc53164d08fa2a852c5603111edf450d49bdbf436ae3",
+    "particles/snow/snow1.png": "4f5671696b15d4ec25a84141e6df7d3d21e21f0b916e8a6c6e51b57d084bcdac",
+    "particles/snow/snow2.png": "f52fcfef6cdc31834a6ea7dd4b70058a2605d0da3833c525850ab6d73710f098",
+    "particles/snow/snow3.png": "ff12e9791cf5022a429413efda56fdc901e269776a21ce9cc962f92481e2e31f",
+    "screens/midground/28.png": "c3ef835e67cb87ea7fbc29b55c8a59fa813b27d87614ef581f2a7b12974487f9",
+    "screens/masks/snowmask28.png": "24e2178c13c5f0ce5eaf1ab2d2f7adc063b5c8ced387953e75f5ff7b5d5ecdd6",
+    "screens/midground/29.png": "4576bc016fc15c0cda6189dc862dca969c69ecf0d086c224abc377c4b7c4dad5",
+    "screens/masks/snowmask29.png": "24e2178c13c5f0ce5eaf1ab2d2f7adc063b5c8ced387953e75f5ff7b5d5ecdd6",
+    "screens/midground/30.png": "cdb90cfc9868d12bf38ba58fb113c72c1ead87fe733c7781b73c2df1f4a7e0f7",
+    "screens/masks/snowmask30.png": "24e2178c13c5f0ce5eaf1ab2d2f7adc063b5c8ced387953e75f5ff7b5d5ecdd6",
+    "screens/midground/31.png": "301e0726af533672839631d263e24b78cb115428f79f4bed7ee28ce26fc193e2",
+    "screens/masks/snowmask31.png": "24e2178c13c5f0ce5eaf1ab2d2f7adc063b5c8ced387953e75f5ff7b5d5ecdd6",
+    "screens/midground/32.png": "a5d01d19535490149fd4a8ff394dca179564ecc13a4f1c7177e299a37f8a52ab",
+    "screens/midground/33.png": "b557db9ecac07ed9afa0e609a339316858125898bcfebfa8e276a1dc197e128e",
+    "screens/midground/34.png": "81aa7532a49f2545679fe4290bc6c76654fe094af1fd67e7b478dc410c5236db",
+    "screens/midground/35.png": "a5d6cde225c3736ae707ccda88071c278bf614fc13f62ef37ad63d1e20fc83ed",
+    "screens/midground/36.png": "51c5b241b4b28324269ac22306ed988c928cc896b544d60f71aa07a70899c23c",
+    "screens/midground/37.png": "504a616b8b6a1b3e1842e2936781152458260144cc51cf4a33c21afd32a17c43",
+    "screens/midground/38.png": "a1fab4d7e58df8370a7563c649ecd9b02c99a72f04b7a66d740d31bf22c0f4dd",
+    "screens/midground/39.png": "c05213acbe1c343d309a2a060fd326f54802906469ad6cb2866529901d02bffe",
+    "screens/midground/40.png": "68b4742653e690078b08ca9ddf55a3755c06127e1aa6506b76f38f50223ef634",
+    "props/textures/dust1.png": "33b9e86debfd8ae24bda397693b27a686fa0352ba321de32b4f6dee3e8258da0",
+    "props/textures/dust3.png": "c8ed4054b0d11f8870474d4ad195cc5a2738ecc3ae36309dbb2a3a5ad8e73604",
+    "props/textures/dust2.png": "938391df52776a13b4c49a5d794d5e21262ea3416375a9346018327f36df3d76",
+    "screens/scrolling/textures/40_clouds.png": "2cfe0d1007e1335f6338db5ce248e1cb5476b4b60aaf09cc4b8f0839e1f6d7d9",
+    "screens/midground/41.png": "e7efc4c10074881b9fc6cee6dfcb980898f3ff54f50d42b178c2fd9a32d51e97",
+    "screens/scrolling/textures/41_clouds.png": "bedda446829e59a98ff4bfd16b41543b24222d7096e05dd8d4de88acdb7c86e8",
+    "screens/midground/42.png": "bcfd2042f765e10de673ecf81397019bf9f599d3a00b784cb84983431cec03b1",
+    "screens/scrolling/textures/42_clouds1.png": "a7cadbdfe4aab1018de085e6648556b9acfa5e2fecd00a3434ffe17d8a2db9a7",
+    "screens/scrolling/textures/42_clouds2.png": "4e2c1863e70b8beebdb4cff880fd5a58cd348de460b4af62ac29102ff4a947a7",
+    "screens/midground/43.png": "9a6d5e936db754e1b072a66a2e0dbe5dc56b2bb61f15f399fd6ce7a6477ad611",
+    "props/textures/old_man/hermit.png": "10e2c58526dbe4a1f51a715db49dcb4feef4c390bf4142cbbd0622755040c7f5",
+    "props/textures/old_man/old_man.png": "957626af7dedb08a570d10d67ccdebb132e6f4f85523d739119d84ce1a72cc69",
+    "props/textures/old_man/skeleton.png": "02de1aa13b545800ba1a81c87ec884b9c5814d331ce4a6db7f8ca0e93150e4f8",
+    "props/hidden_walls/textures/6_hidden_wall.png": "acbe4d4c949184f4859fe86b5549ba8d1ad63bddb10a91c2401d979f423afac5",
+    "props/hidden_walls/textures/7_hidden_wall1.png": "78097bd54a9356b3cb2465e6f3b326cd44c3d30ddd05afbd6094f2a198642816",
+    "props/hidden_walls/textures/7_hidden_wall2_2.png": "50be818ce898fe0a9d59ae12ddf65fff920960636ccf6a15f8db9205d320f3f4",
+    "props/hidden_walls/textures/7_hidden_wall2_1.png": "2f9ba4c4ce5a9fcd7be8cb61803d6e5338da7285e68b57cd50bb4bc180c3a755",
+    "props/hidden_walls/textures/7_hidden_wall3.png": "20513dfca5ca159df2a2987239139fa26b8a777ccf6759b7c0f994331a68231c",
+    "props/hidden_walls/textures/8_hidden_wall1_2.png": "712c18b059df8d852cead2a2f566e8ab823c80cdcac76fc2b5fa15340bed2da6",
+    "props/hidden_walls/textures/8_hidden_wall1_1.png": "c5acb09bd40976d781f50d124b832909c1eedb431a801d814edd0e47798d9b77",
+    "props/hidden_walls/textures/22_hidden_wall1.png": "80b6d2c839331b0062a796940d5ac3b24fe2d9a2fd154a173d001ff7b720ada1",
+    "particles/jump_particle.png": "033030af811ea57f5f68ef6509de03be0193d3f6ead2a7ef1cfae9a9f683c5e0",
+    "particles/snow_jump_particle.png": "45674b51742719b1c18dc0b1092f797a01ee832d339f76da222018170d84e37e",
+    "audio/music/menu loop/menu_intro.ogg": "e72d99f53da376a13d5aeff5b38e135d0f2f96a6cdb7352ef843d2b568f8051f",
+    "audio/music/menu loop/menu_loop.ogg": "1eb05e458db7acf20b8ec64b1ad376ffdaf5a0eb11844b6833c4d2f0f4221193",
+    "audio/music/ending.ogg": "91054eb38a4acca3f0b6679d0219993219c7c1bfe03dbb0ca1dfc27e1cb74a55",
+    "audio/music/event_music/ending_jingle.ogg": "e0d977fdb010759bc68b914316a727e48aa3660c4ba081ccc4301567052a4a9f",
+    "audio/talking.ogg": "758db4489e8fb8f064b3b4712868210458e3efc202c28860a722a5359f0dee72",
+    "audio/plink.ogg": "4a5b1ad43f4a2fea1b9d55fd3305e7a00290427ed01adb3a0ea77b21b6e22c40",
+    "audio/new_location.ogg": "1be858bb3c96a167e5744fb9bbbcd64ac349330ba5f2823e40fe70c7e24e3d33",
+    "audio/illusion.ogg": "9e8918c85799f0301164fd5a35f45bdf6dd933160db758d93c27513a78377e45",
+    "audio/babe/babe jump.ogg": "39fcf7fe1d3a34ec86f721c50081d307b30add14fa6a623d4bd69f1013903261",
+    "audio/babe/babe kiss.ogg": "a1a88a21e55879d6d752cc66e6e55ce8ac19a16236d0908ea2fdf76a4094d4d7",
+    "audio/babe/babe mou.ogg": "b27717a2675c38910d90f0274d86a0f3f390243ca634bc52c79dcb5f460dd514",
+    "audio/babe/babe pickup.ogg": "85b3d4cbc25d02c7ff5c74e6641fc25a14d32edf66daa4aea757266d5ce0d189",
+    "audio/babe/babe scream.ogg": "6aee08d692ff3cffcf79262f461d65b818e101220df64f0be37140f94265a977",
+    "audio/babe/babe surprised2.ogg": "3255d25ee60873a5a718cc19503beb20905770f862ff7b430d8f006e0f26b3c9",
+    "audio/gui_sfx/SelectC.ogg": "c2535264fb1f4cb9ee3bfeec8418f416c7aae57cdcb3c0c062cc41ba451adfe3",
+    "audio/gui_sfx/menu_confirm.ogg": "77283d3b6f2559c9d13379d6e8c04b1ec0c156b324092330ab02aaa4e917d4f4",
+    "audio/gui_sfx/menu_fail.ogg": "dc010afb74ac8c8ee7c3a91ced9c67c6f85dc6f224ff4c284039c3ce82012902",
+    "audio/gui_sfx/menu_open.ogg": "e1ecb25e3e2833b6e23e94316692c8c9e9470af391ead51ef2d259f63e3ed1ea",
+    "audio/gui_sfx/selectA.ogg": "04c5f3c33c49d0c1a14493edfccbab59dafb3e3d936a823bb3b47e05d2095c91",
+    "audio/gui_sfx/title_hit.ogg": "3411d88c44e2963a1acb08ef197ca2eb07c069349d72b2dc3f57ad3a84bc3e51",
+    "audio/jump_king/ice/king_jump.ogg": "5a6b71e2308a3b3f84f566f958bad46f634a81b503263a7a17d224a33f302d99",
+    "audio/jump_king/ice/king_land.ogg": "d5958824daf0e8a5f4fb4fa93bbfd792102e928868069839d9a5b602f54b5b97",
+    "audio/jump_king/king_bump.ogg": "3744bb26fbc1b30699a40a4dbbd66ab361a1338300af6c54801afebc9e57361b",
+    "audio/jump_king/king_jump.ogg": "266c5a8292281b0ea4a244473e814b5d8ca4b44db6c7d79e41d24b6a4c9bf849",
+    "audio/jump_king/king_land.ogg": "a62baaafb0d12bd5ec62849ce33326832052449d62bb821589c62dcb607a5465",
+    "audio/jump_king/king_splat.ogg": "c1b86d773ddba752b5cbee8dfec3a7f89fe038dd91acf3af34ae3cbae2ba70e2",
+    "audio/jump_king/snow/king_jump.ogg": "6ae9f111cbeeccc9689cd7e40f703c8ad998566d133c6484e5e18bad6d9d6ad3",
+    "audio/jump_king/snow/king_land.ogg": "98b371592e3d728c67804f6e1b9bb0a150a75dde6ad846db3d64ae150c03f5aa",
+    "audio/jump_king/snow/king_splat.ogg": "62e3cc0a574706d1a34219832a211f932d9e9c70757d0053697b488027cc5828",
+    "audio/background/Nature bg.ogg": "84e0e57f63b5a97b83596588303689f5862b70b016c86e3c972840f85239f5d1",
+    "audio/background/Small fire and stream.ogg": "482ac5487e154e9ca41b9ce48380215c06416a5a369e868407f3c6bd7ef66aca",
+    "audio/background/Red tree.ogg": "b5184a01ea789aaec2c1e6ec0dfcceb968c99fb62ce3590794659853bd2ee3cb",
+    "audio/background/Sewer.ogg": "25a7b6df06277232474c77042d831619011c1ac2696c3361f1c9ce0b76f21aa0",
+    "audio/background/Sewer cage rain.ogg": "11825687b6ab8f85d436dbbf29a3bf50c1d39cd5572dc492e9c70087a0a752ad",
+    "audio/background/Light rain.ogg": "249d4269e1f07f88b165ff8414956587ff6b7536c0cdfb4b099c0770a69ecceb",
+    "audio/background/Castlesong.ogg": "d9626ec54382865cab2a66084b9e13013622b04557451bda44b9757e5f748675",
+    "audio/background/Hard rain and fire.ogg": "1eac46b5dab90e48ec6a6c5daf6b8bed75ad96f0effef26dead1c138599f3ca7",
+    "audio/background/Wind 1.ogg": "97c96d080afefdff192bc2a1795912e0d8b284eadc522b302c5653bacd20662c",
+    "audio/background/City 1.ogg": "4f67cebcb562439809b628871a37093be36043af8aae76e52c66fe1509e12a74",
+    "audio/background/Merchant loop.ogg": "3acbda0031097a45218ad263cd61bdf0105765407900fe51122e9963a812406e",
+    "audio/background/towers 1.ogg": "9927458b8b1bb10e5bfa0a917ccd3b68b9b2b53019b91711667f6831bd8a962f",
+    "audio/background/windy towers 2.ogg": "ebf6d5117376c519535b09cca522a5e1975ce5ae81bf475695662b868b2389bd",
+    "audio/background/windy snowy 1.ogg": "154907ed4f3c834c41bbd0dbf9a823de08d336ea5dadfbc7da95ccc5c6d0e321",
+    "audio/background/windy snowy 2.ogg": "3b3b3e94ec93c18b62186c84fbdc8d057c35b48845898c3f91b6714f75a1fe84",
+    "audio/background/Cathedral.ogg": "cb56d8c4188fea12598f776ed925543165d1d173dbc8488e3355f32006442068",
+    "audio/background/Ice wind new.ogg": "82c3020fc6e3e7ac5cf138e40b47da1e05b58f964a845813bf01da8957555023",
+    "audio/background/synth drone.ogg": "7fc21bb95add4dbba4252855cc059029bf5ce048b92dd2bd5ecc02aaffa148cb",
+    "audio/background/test song ice.ogg": "8c6bbee13813c41199c26bb64d1b4e85cfd1364f7f0fad1097d6fa22789f0e0f",
+    "audio/background/Final Climb.ogg": "4eb80711c82a21b759712c5a175fbdf52b633b4ce62c381265ca5a15dcd35ecb",
+    "audio/background/Earthquake.ogg": "388c6daacf619f2f20ab0d4ce99ed09217404f8dd0443cf728365d86cdfe5fae",
+    "font/sf_litter_lover2_bold.png": "ab16f363f156949ee402f19cdf2bd548a8a5d30040cdd0ff9b0ccc30a5557c4a",
+    "font/sf_litter_lover2_bold.xml": "393e4f8bf42d7dc0d53afcd25a2c23199760a97cf9e154bf90adabe7e1580a0e",
+    "font/sf_pixolde.png": "0c261f9373973b20e81e7e574167df0fa67ed8b6928191748e4fd2dfa954f420",
+    "font/sf_pixolde.xml": "3deb7e3475efb1b8ab8c0779504e3806d70c2894504eeb9abc1376afa737631d",
+    "font/ttf_litter_lover2_bold.ttf": "aa0c7321bd35f5ff95a0e8e65a764c1c27d6ef6ef87f19450cd8f7cea991c355"
+  },
+  "crown": "king/crown"
+}

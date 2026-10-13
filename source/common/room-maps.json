@@ -1,0 +1,102 @@
+[
+  {
+    "level": 1,
+    "name": "Redcrown Woods",
+    "finish": {
+      "screen": 5,
+      "minCenterX": 0,
+      "requiresGrounded": true,
+      "minProgress": 2056
+    }
+  },
+  {
+    "level": 2,
+    "name": "Colossal Drain",
+    "finish": {
+      "screen": 9,
+      "minCenterX": 0,
+      "requiresGrounded": true,
+      "minProgress": 3480
+    }
+  },
+  {
+    "level": 3,
+    "name": "False Kings Keep",
+    "finish": {
+      "screen": 13,
+      "minCenterX": 0,
+      "requiresGrounded": true,
+      "minProgress": 4912
+    }
+  },
+  {
+    "level": 4,
+    "name": "Bargainburg",
+    "finish": {
+      "screen": 18,
+      "minCenterX": 0,
+      "requiresGrounded": true,
+      "minProgress": 6752
+    }
+  },
+  {
+    "level": 5,
+    "name": "Great Frontier",
+    "finish": {
+      "screen": 24,
+      "minCenterX": 0,
+      "requiresGrounded": true,
+      "minProgress": 8912
+    }
+  },
+  {
+    "level": 6,
+    "name": "Windswept Bluff",
+    "finish": {
+      "screen": 25,
+      "minCenterX": 0,
+      "requiresGrounded": true,
+      "minProgress": 9232
+    }
+  },
+  {
+    "level": 7,
+    "name": "Stormwall Pass",
+    "finish": {
+      "screen": 31,
+      "minCenterX": 0,
+      "requiresGrounded": true,
+      "minProgress": 11392
+    }
+  },
+  {
+    "level": 8,
+    "name": "Chapel Perilous",
+    "finish": {
+      "screen": 35,
+      "minCenterX": 0,
+      "requiresGrounded": true,
+      "minProgress": 12816
+    }
+  },
+  {
+    "level": 9,
+    "name": "Blue Ruin",
+    "finish": {
+      "screen": 38,
+      "minCenterX": 0,
+      "requiresGrounded": true,
+      "minProgress": 13912
+    }
+  },
+  {
+    "level": 10,
+    "name": "Main Babe",
+    "finish": {
+      "screen": 42,
+      "minCenterX": 336,
+      "requiresGrounded": true,
+      "minProgress": 0
+    }
+  }
+]

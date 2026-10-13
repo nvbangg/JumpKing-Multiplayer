@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="850" viewBox="0 0 1000 850" role="img" aria-labelledby="title desc">
+  <title id="title">Luồng giao tiếp Room</title>
+  <desc id="desc">Luồng rút gọn: xác thực HTTP, mở WebSocket, tạo hoặc vào Room, Host Start, gửi input và nhận snapshot, ghi kết quả trước xác nhận SAVED. Các phản hồi đi tới client có quyền nhận; sơ đồ không liệt kê mọi client hoặc thông báo.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="none" stroke="#334155" stroke-width="1.5"/></marker>
+    <style>text{font-family:Arial,sans-serif;fill:#172033;text-anchor:middle;font-size:15px}.heading{font-size:22px;font-weight:bold}.small{font-size:13px;fill:#475569}.line{fill:none;stroke:#334155;stroke-width:1.5;marker-end:url(#arrow)}.reply{stroke-dasharray:6 4}.life{stroke:#94a3b8;stroke-dasharray:5 5}</style>
+  </defs>
+  <rect width="1000" height="850" fill="#fff"/>
+  <text x="500" y="35" class="heading">Room — Communication Sequence</text>
+  <text x="500" y="60" class="small">Simplified flow; broadcasts reach the authorized room members</text>
+  <g fill="#eff6ff" stroke="#64748b"><rect x="45" y="82" width="190" height="48" rx="8"/><rect x="410" y="82" width="190" height="48" rx="8"/><rect x="785" y="82" width="170" height="48" rx="8"/></g>
+  <text x="140" y="112">Browser clients</text><text x="505" y="112">Spring Boot server</text><text x="870" y="112">MySQL</text>
+  <path d="M140 130V805M505 130V805M870 130V805" class="life"/>
+  <path d="M140 175H505" class="line"/><text x="322" y="165">HTTP: identity / CSRF</text>
+  <path d="M505 215H140" class="line reply"/><text x="322" y="205">Session cookies / identity / CSRF token</text>
+  <path d="M140 260H505" class="line"/><text x="322" y="250">WebSocket handshake: /ws/game</text>
+  <path d="M140 305H505" class="line"/><text x="322" y="295">CREATE_ROOM or JOIN_ROOM</text>
+  <path d="M505 350H140" class="line reply"/><text x="322" y="340">ROOM_STATE</text>
+  <path d="M140 395H505" class="line"/><text x="322" y="385">Host: START_GAME</text>
+  <path d="M505 440H140" class="line reply"/><text x="322" y="430">GAME_STARTED + countdown</text>
+  <rect x="65" y="460" width="510" height="125" fill="#f8fafc" stroke="#cbd5e1" rx="5"/>
+  <text x="320" y="482" class="small">During play — input only; server owns physics / clock / score</text>
+  <path d="M140 515H505" class="line"/><text x="322" y="505">PLAYER_INPUT: context / sequence / keys</text>
+  <path d="M505 560H140" class="line reply"/><text x="322" y="550">GAME_SNAPSHOT: processed input / state</text>
+  <path d="M505 625H140" class="line reply"/><text x="322" y="615">GAME_FINISHED: results / save status</text>
+  <path d="M505 665H870" class="line"/><text x="687" y="655">Worker: transactional result write</text>
+  <path d="M870 705H505" class="line reply"/><text x="687" y="695">Commit succeeds</text>
+  <path d="M505 750H140" class="line reply"/><text x="322" y="740">SAVE_STATUS: SAVED</text>
+  <path d="M140 795H505" class="line"/><text x="322" y="785">LEAVE_ROOM / close connection</text>
+  <text x="500" y="832" class="small">Contract, validation, reconnect and failure paths: docs/protocol.md</text>
+</svg>

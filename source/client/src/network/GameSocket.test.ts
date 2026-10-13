@@ -1,0 +1,272 @@
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { NETWORK } from "./config";
+import { GameSocket } from "./GameSocket";
+
+class Socket {
+	static OPEN = 1;
+	static instances: Socket[] = [];
+	readyState = 0;
+	sent: string[] = [];
+	url: string;
+	closeCode?: number;
+	failSend = false;
+	onopen?: () => void;
+	onclose?: () => void;
+	onerror?: () => void;
+	onmessage?: (event: { data: unknown }) => void;
+	constructor(url: string) {
+		this.url = String(url);
+		Socket.instances.push(this);
+	}
+	open() {
+		this.readyState = 1;
+		this.onopen?.();
+	}
+	send(message: string) {
+		if (this.failSend) throw new Error("Closed during send");
+		this.sent.push(message);
+	}
+	close(code?: number) {
+		this.closeCode = code;
+		this.readyState = 3;
+		this.onclose?.();
+	}
+	receive(message: unknown) {
+		this.onmessage?.({
+			data: typeof message === "string" ? message : JSON.stringify(message),
+		});
+	}
+}
+beforeEach(() => {
+	vi.useFakeTimers();
+	Socket.instances = [];
+	vi.stubGlobal("WebSocket", Socket);
+	vi.stubGlobal("location", new URL("http://127.0.0.1:5173"));
+	vi.stubEnv("VITE_BACKEND_ORIGIN", "");
+});
+afterEach(() => {
+	vi.clearAllTimers();
+	vi.useRealTimers();
+	vi.unstubAllGlobals();
+	vi.unstubAllEnvs();
+});
+const open = async (game: GameSocket) => {
+	const ready = game.connect();
+	const socket = Socket.instances.at(-1)!;
+	socket.open();
+	await ready;
+	return socket;
+};
+test("WebSocket follows the browser origin and uses WSS for an explicitly configured HTTPS backend", async () => {
+	vi.stubGlobal("location", new URL("http://10.147.17.5:8080"));
+	const game = new GameSocket(vi.fn(), vi.fn());
+	expect((await open(game)).url).toBe("ws://10.147.17.5:8080/ws/game");
+	game.close();
+	vi.stubEnv("VITE_BACKEND_ORIGIN", "https://api.example.test");
+	expect((await open(game)).url).toBe("wss://api.example.test/ws/game");
+	game.close();
+});
+test("packets from a previous room or play cannot replace current chat, state or save status", async () => {
+	const received = vi.fn(),
+		game = new GameSocket(received, vi.fn()),
+		socket = await open(game);
+	const send = (type: string, payload: Record<string, unknown>) =>
+		socket.receive({ v: 1, type, payload });
+	send("ROOM_JOINED", {
+		roomId: "ABCDEF",
+		playerId: "self",
+		playId: "first",
+		generation: 1,
+	});
+	const message = {
+		id: "message",
+		playerId: "self",
+		nickname: "Player",
+		text: "<b>hello</b>",
+		sentAt: "2026-01-01T00:00:00.000Z",
+		colorSlot: 0,
+	};
+	send("CHAT_MESSAGE", { roomId: "ABCDEF", messages: [message] });
+	expect(game.chatHistory).toHaveLength(1);
+	send("ROOM_JOINED", {
+		roomId: "GHJKLM",
+		playerId: "new-self",
+		playId: "second",
+		generation: 2,
+	});
+	received.mockClear();
+	send("CHAT_MESSAGE", { roomId: "ABCDEF", messages: [message] });
+	send("ROOM_STATE", { roomId: "ABCDEF" });
+	send("ROOM_LEFT", { roomId: "ABCDEF" });
+	send("SAVE_STATUS", { playId: "first", saveStatus: "SAVED" });
+	send("GAME_FINISHED", { playId: "first" });
+	expect(received).not.toHaveBeenCalled();
+	expect(game.chatHistory).toEqual([]);
+	send("CHAT_MESSAGE", { roomId: "GHJKLM", messages: [message] });
+	expect(game.chatHistory).toEqual([message]);
+	game.close();
+});
+
+test("parallel connects share one handshake and stale sockets cannot affect the new connection", async () => {
+	const message = vi.fn(),
+		disconnect = vi.fn(),
+		game = new GameSocket(message, disconnect);
+	const first = game.connect(),
+		second = game.connect();
+	expect(first).toBe(second);
+	expect(Socket.instances).toHaveLength(1);
+	const old = Socket.instances[0]!;
+	old.open();
+	await first;
+	expect(old.url).toBe("ws://127.0.0.1:5173/ws/game");
+	game.close();
+	const next = await open(game);
+	old.onerror?.();
+	old.receive({ v: 1, type: "ROOM_JOINED", payload: { playerId: "old" } });
+	expect(message).not.toHaveBeenCalled();
+	expect(disconnect).not.toHaveBeenCalled();
+	expect(game.selfId).toBeNull();
+	const pending = game.command("GET_ROOM_STATE");
+	const request = JSON.parse(next.sent[0]!);
+	next.receive({
+		v: 1,
+		type: "ROOM_STATE",
+		requestId: request.requestId,
+		payload: {},
+	});
+	await expect(pending).resolves.toMatchObject({ type: "ROOM_STATE" });
+	game.close();
+});
+
+test("malformed chat cannot enter the typed history or reach subscribers", async () => {
+	const valid = {
+		id: "m",
+		playerId: "peer",
+		nickname: "Peer",
+		text: "Hello",
+		sentAt: "2026-01-01T00:00:00Z",
+		colorSlot: 1,
+	};
+	for (const messages of [
+		null,
+		{},
+		[null],
+		[{ ...valid, text: 42 }],
+		[{ ...valid, colorSlot: "1" }],
+	]) {
+		const received = vi.fn(),
+			disconnected = vi.fn(),
+			game = new GameSocket(received, disconnected),
+			socket = await open(game);
+		socket.receive({
+			v: 1,
+			type: "ROOM_JOINED",
+			payload: { roomId: "ABCDEF", playerId: "self" },
+		});
+		received.mockClear();
+		socket.receive({
+			v: 1,
+			type: "CHAT_MESSAGE",
+			payload: { roomId: "ABCDEF", messages },
+		});
+		expect(socket.closeCode).toBe(1002);
+		expect(disconnected).toHaveBeenCalledOnce();
+		expect(game.chatHistory).toEqual([]);
+		expect(received).not.toHaveBeenCalled();
+	}
+});
+test("closing during handshake rejects immediately and does not start a stale heartbeat", async () => {
+	const game = new GameSocket(vi.fn(), vi.fn()),
+		ready = game.connect();
+	const rejected = expect(ready).rejects.toMatchObject({
+		code: "CONNECTION_FAILED",
+	});
+	const old = Socket.instances[0]!;
+	game.close();
+	await rejected;
+	old.open();
+	vi.advanceTimersByTime(NETWORK.heartbeatMs * 2);
+	expect(old.sent).toEqual([]);
+});
+test("reconnecting before the old close event rejects old pending commands", async () => {
+	const game = new GameSocket(vi.fn(), vi.fn()),
+		old = await open(game),
+		pending = game.command("GET_ROOM_STATE");
+	const rejected = expect(pending).rejects.toMatchObject({
+		code: "CONNECTION_FAILED",
+	});
+	old.readyState = 3;
+	const next = game.connect();
+	Socket.instances.at(-1)!.open();
+	await next;
+	await rejected;
+	old.onclose?.();
+	const command = game.command("GET_ROOM_STATE"),
+		socket = Socket.instances.at(-1)!,
+		request = JSON.parse(socket.sent[0]!);
+	socket.receive({
+		v: 1,
+		type: "ROOM_STATE",
+		requestId: request.requestId,
+		payload: {},
+	});
+	await expect(command).resolves.toMatchObject({ type: "ROOM_STATE" });
+	game.close();
+});
+test("invalid envelopes close the socket and reject pending commands", async () => {
+	for (const packet of [
+		null,
+		[],
+		{ v: 1, type: "PONG", payload: [] },
+		{ v: 1, type: "PONG", payload: {}, extra: true },
+		{ v: 1, type: "PONG", payload: {}, requestId: 7 },
+	]) {
+		const disconnect = vi.fn(),
+			game = new GameSocket(vi.fn(), disconnect),
+			socket = await open(game),
+			pending = game.command("GET_ROOM_STATE");
+		const rejected = expect(pending).rejects.toMatchObject({
+			code: "CONNECTION_FAILED",
+		});
+		socket.receive(packet);
+		await rejected;
+		expect(socket.closeCode).toBe(1002);
+		expect(disconnect).toHaveBeenCalledOnce();
+	}
+});
+test("heartbeat confirms nonce and a silent connection expires without leaking commands", async () => {
+	const disconnected = vi.fn(),
+		game = new GameSocket(vi.fn(), disconnected),
+		socket = await open(game);
+	await vi.advanceTimersByTimeAsync(NETWORK.heartbeatMs);
+	const ping = JSON.parse(socket.sent[0]!);
+	socket.receive({
+		v: 1,
+		type: "PONG",
+		requestId: ping.requestId,
+		payload: { nonce: ping.payload.nonce },
+	});
+	await Promise.resolve();
+	expect(disconnected).not.toHaveBeenCalled();
+	await vi.advanceTimersByTimeAsync(NETWORK.heartbeatMs + NETWORK.timeoutMs);
+	expect(disconnected).toHaveBeenCalledOnce();
+	expect(socket.readyState).toBe(3);
+});
+test("failed sends release pending slots and timeout does not replay mutations", async () => {
+	const game = new GameSocket(vi.fn(), vi.fn()),
+		socket = await open(game);
+	socket.failSend = true;
+	for (let index = 0; index < NETWORK.maxPending + 1; index++)
+		await expect(game.command("START_GAME")).rejects.toMatchObject({
+			code: "INVALID_MESSAGE",
+		});
+	socket.failSend = false;
+	const pending = game.command("START_GAME"),
+		rejected = expect(pending).rejects.toMatchObject({
+			code: "COMMAND_TIMEOUT",
+		});
+	await vi.advanceTimersByTimeAsync(NETWORK.timeoutMs);
+	await rejected;
+	expect(socket.sent).toHaveLength(1);
+	game.close();
+});

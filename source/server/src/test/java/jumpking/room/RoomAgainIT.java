@@ -1,0 +1,178 @@
+package jumpking.room;
+
+import static org.assertj.core.api.Assertions.*;
+
+import java.util.*;
+import jumpking.JumpKingApplication;
+import jumpking.support.GameClient;
+import jumpking.support.TestDatabase;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+
+@SpringBootTest(
+    classes = {JumpKingApplication.class, RoomRaceIT.TimeConfiguration.class},
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = {
+      "app.allowed-origins=http://allowed.test,http://again.test",
+      "app.checkpoint-interval-ms=25"
+    })
+class RoomAgainIT {
+  @DynamicPropertySource
+  static void database(DynamicPropertyRegistry properties) {
+    var db = TestDatabase.get().dataSource;
+    properties.add("spring.datasource.url", db::getUrl);
+    properties.add("spring.datasource.username", db::getUsername);
+    properties.add("spring.datasource.password", db::getPassword);
+  }
+
+  @Autowired RoomRaceIT.TestTime time;
+  @LocalServerPort int port;
+
+  private String started(GameClient host) throws Exception {
+    host.ok("START_GAME", Map.of());
+    String id =
+        host.await(message -> message.path("type").asText().equals("GAME_STARTED"))
+            .path("payload")
+            .path("playId")
+            .asText();
+    time.advance(3000);
+    host.await(
+        message ->
+            message.path("type").asText().equals("GAME_SNAPSHOT")
+                && message.path("payload").path("playId").asText().equals(id));
+    return id;
+  }
+
+  private void ended(GameClient host) throws Exception {
+    String id = host.ok("END_MATCH", Map.of()).path("playId").asText();
+    host.await(
+        message ->
+            message.path("type").asText().equals("ROOM_STATE")
+                && message.path("payload").path("result").path("playId").asText().equals(id)
+                && message
+                    .path("payload")
+                    .path("result")
+                    .path("saveStatus")
+                    .asText()
+                    .equals("SAVED"));
+  }
+
+  @Test
+  void confirmationsPreserveCodeAndSettingsButOnlyConfirmedPlayersEnterTheNewRoster()
+      throws Exception {
+    try (var a = new GameClient(port);
+        var b = new GameClient(port);
+        var c = new GameClient(port);
+        var d = new GameClient(port)) {
+      for (var player : List.of(a, b, c, d)) {
+        player.register();
+        player.connect();
+      }
+      String room =
+          a.ok(
+                  "CREATE_ROOM",
+                  Map.of("settings", Map.of("mode", "TIME_LIMIT", "timeLimitMinutes", 8)))
+              .path("roomId")
+              .asText();
+      b.ok("JOIN_ROOM", Map.of("roomId", room));
+      c.ok("JOIN_ROOM", Map.of("roomId", room));
+      String first = started(a);
+      ended(a);
+      assertThat(
+              d.command("JOIN_ROOM", Map.of("roomId", room)).path("payload").path("code").asText())
+          .isEqualTo("ROOM_NOT_JOINABLE");
+      var waiting = b.ok("PLAY_AGAIN", Map.of("matchId", first));
+      assertThat(waiting.path("state").asText()).isEqualTo("WAITING");
+      assertThat(waiting.path("roomId").asText()).isEqualTo(room);
+      assertThat(waiting.path("settings").path("timeLimitMinutes").asInt()).isEqualTo(8);
+      assertThat(a.command("START_GAME", Map.of()).path("payload").path("code").asText())
+          .isEqualTo("NOT_ENOUGH_PLAYERS");
+      assertThat(
+              b.command("PLAY_AGAIN", Map.of("matchId", "wrong-match"))
+                  .path("payload")
+                  .path("code")
+                  .asText())
+          .isEqualTo("STALE_PLAY");
+      d.ok("JOIN_ROOM", Map.of("roomId", room));
+      a.ok("PLAY_AGAIN", Map.of("matchId", first));
+      b.ok("PLAY_AGAIN", Map.of("matchId", first));
+      String second = started(a);
+      assertThat(second).isNotEqualTo(first);
+      c.await(message -> message.path("type").asText().equals("ROOM_LEFT"));
+      assertThat(a.ok("GET_ROOM_STATE", Map.of()).path("members").size()).isEqualTo(3);
+      ended(a);
+      assertThat(a.request("/history", "GET", null).path("items").size()).isEqualTo(2);
+      assertThat(c.request("/history", "GET", null).path("items").size()).isEqualTo(1);
+      assertThat(d.request("/history", "GET", null).path("items").size()).isEqualTo(1);
+      assertThat(
+              TestDatabase.get()
+                  .jdbc
+                  .queryForObject(
+                      "SELECT COUNT(*) FROM play_runs WHERE match_id=?", Integer.class, second))
+          .isEqualTo(3);
+      for (var player : List.of(a, b, d)) player.ok("LEAVE_ROOM", Map.of());
+    }
+  }
+
+  @Test
+  void retryingAFailedFinalSaveKeepsTheSameMatchBeforeAllowingConfirmation() throws Exception {
+    var jdbc = TestDatabase.get().jdbc;
+    String trigger = "again_" + UUID.randomUUID().toString().replace("-", "");
+    try (var a = new GameClient(port);
+        var b = new GameClient(port)) {
+      a.register();
+      b.register();
+      a.connect();
+      b.connect();
+      String room = a.ok("CREATE_ROOM", Map.of()).path("roomId").asText();
+      b.ok("JOIN_ROOM", Map.of("roomId", room));
+      String play = started(a);
+      jdbc.execute(
+          "CREATE TRIGGER "
+              + trigger
+              + " BEFORE UPDATE ON matches FOR EACH ROW BEGIN IF NEW.id='"
+              + play
+              + "' AND NEW.ended_at IS NOT NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='injected final save failure'; END IF; END");
+      a.ok("END_MATCH", Map.of());
+      a.await(
+          message ->
+              message.path("type").asText().equals("ROOM_STATE")
+                  && message
+                      .path("payload")
+                      .path("result")
+                      .path("saveStatus")
+                      .asText()
+                      .equals("FAILED"));
+      jdbc.execute("DROP TRIGGER " + trigger);
+      assertThat(a.ok("PLAY_AGAIN", Map.of("matchId", play)).path("state").asText())
+          .isEqualTo("FINISHED");
+      a.await(
+          message ->
+              message.path("type").asText().equals("ROOM_STATE")
+                  && message
+                      .path("payload")
+                      .path("result")
+                      .path("saveStatus")
+                      .asText()
+                      .equals("SAVED"));
+      var confirmed = a.ok("PLAY_AGAIN", Map.of("matchId", play));
+      assertThat(confirmed.path("state").asText()).isEqualTo("WAITING");
+      assertThat(confirmed.path("currentPlay").path("id").asText()).isEqualTo(play);
+      assertThat(
+              jdbc.queryForObject(
+                  "SELECT COUNT(*) FROM play_runs WHERE match_id=?", Integer.class, play))
+          .isEqualTo(2);
+      assertThat(
+              jdbc.queryForObject("SELECT end_reason FROM matches WHERE id=?", String.class, play))
+          .isEqualTo("HOST_ENDED");
+      a.ok("LEAVE_ROOM", Map.of());
+      b.ok("LEAVE_ROOM", Map.of());
+    } finally {
+      jdbc.execute("DROP TRIGGER IF EXISTS " + trigger);
+    }
+  }
+}

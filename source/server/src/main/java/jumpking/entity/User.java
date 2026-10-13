@@ -1,0 +1,86 @@
+package jumpking.entity;
+
+import jakarta.persistence.*;
+import java.time.Instant;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+@Entity
+@Table(name = "users")
+public class User {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "id")
+  private Long id;
+
+  @Column(name = "type", length = 16)
+  private String type;
+
+  @Column(name = "username", length = 32)
+  private String username;
+
+  @Column(name = "password_hash", length = 255)
+  private String passwordHash;
+
+  @Column(name = "crown_unlocked", nullable = false, columnDefinition = "boolean")
+  private boolean crownUnlocked;
+
+  @JdbcTypeCode(SqlTypes.TIMESTAMP)
+  @Column(name = "created_at", columnDefinition = "datetime(3)")
+  private Instant createdAt;
+
+  protected User() {}
+
+  public static User account(String username, String passwordHash, Instant created) {
+    var user = new User();
+    user.type = "ACCOUNT";
+    user.username = username;
+    user.passwordHash = passwordHash;
+    user.createdAt = created;
+    return user;
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String value) {
+    type = value;
+  }
+
+  public String getUsername() {
+    return username;
+  }
+
+  public void setUsername(String value) {
+    username = value;
+  }
+
+  public String getPasswordHash() {
+    return passwordHash;
+  }
+
+  public void setPasswordHash(String value) {
+    passwordHash = value;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public boolean isCrownUnlocked() {
+    return crownUnlocked;
+  }
+
+  public void setCrownUnlocked(boolean value) {
+    crownUnlocked = value;
+  }
+
+  public void setCreatedAt(Instant value) {
+    createdAt = value;
+  }
+}

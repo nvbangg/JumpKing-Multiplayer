@@ -1,0 +1,905 @@
+{
+  "tuning": {
+    "npcBusyTicks": 1800,
+    "speechHoldTicks": 132,
+    "readableWaitTicks": 30,
+    "readableCharacterTicks": 3,
+    "wallFadeTicks": 12,
+    "maxCounter": 1000000
+  },
+  "npcs": [
+    {
+      "id": "hermit",
+      "screen": 24,
+      "trigger": {
+        "x": 384,
+        "y": 194,
+        "width": 51,
+        "height": 150
+      },
+      "delayTicks": 30,
+      "characterSeconds": 0.09,
+      "introLengths": [
+        5,
+        29,
+        85,
+        38,
+        17
+      ],
+      "loopLengths": [],
+      "progressQuotes": [
+        {
+          "screen": 25,
+          "lineLengths": [
+            55,
+            37
+          ]
+        },
+        {
+          "screen": 25,
+          "lineLengths": [
+            24,
+            41
+          ]
+        },
+        {
+          "screen": 26,
+          "lineLengths": [
+            34,
+            21
+          ]
+        },
+        {
+          "screen": 26,
+          "lineLengths": [
+            41,
+            16
+          ]
+        },
+        {
+          "screen": 26,
+          "lineLengths": [
+            28,
+            28
+          ]
+        },
+        {
+          "screen": 27,
+          "lineLengths": [
+            42
+          ]
+        },
+        {
+          "screen": 27,
+          "lineLengths": [
+            54,
+            65,
+            42
+          ]
+        },
+        {
+          "screen": 28,
+          "lineLengths": [
+            30,
+            38
+          ]
+        },
+        {
+          "screen": 28,
+          "lineLengths": [
+            20,
+            28
+          ]
+        },
+        {
+          "screen": 29,
+          "lineLengths": [
+            39,
+            21
+          ]
+        },
+        {
+          "screen": 30,
+          "lineLengths": [
+            30,
+            40
+          ]
+        },
+        {
+          "screen": 30,
+          "lineLengths": [
+            31,
+            37
+          ]
+        },
+        {
+          "screen": 31,
+          "lineLengths": [
+            40,
+            37
+          ]
+        },
+        {
+          "screen": 31,
+          "lineLengths": [
+            34
+          ]
+        },
+        {
+          "screen": 32,
+          "lineLengths": [
+            16,
+            21
+          ]
+        },
+        {
+          "screen": 33,
+          "lineLengths": [
+            9,
+            34,
+            14
+          ]
+        }
+      ],
+      "flagQuotes": [
+        {
+          "flag": "CompletedNormalGame",
+          "sequences": [
+            [
+              19,
+              14,
+              22,
+              23,
+              63,
+              10,
+              52,
+              62
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "old_man",
+      "screen": 0,
+      "trigger": {
+        "x": -165,
+        "y": 318,
+        "width": 1000,
+        "height": 20
+      },
+      "delayTicks": 60,
+      "characterSeconds": 0.09,
+      "introLengths": [
+        30,
+        37,
+        25,
+        16
+      ],
+      "loopLengths": [],
+      "progressQuotes": [
+        {
+          "screen": 2,
+          "lineLengths": [
+            31,
+            19,
+            16
+          ]
+        },
+        {
+          "screen": 2,
+          "lineLengths": [
+            25,
+            25,
+            16
+          ]
+        },
+        {
+          "screen": 2,
+          "lineLengths": [
+            28,
+            25,
+            14
+          ]
+        },
+        {
+          "screen": 2,
+          "lineLengths": [
+            48,
+            11,
+            16
+          ]
+        },
+        {
+          "screen": 2,
+          "lineLengths": [
+            24,
+            39,
+            16
+          ]
+        },
+        {
+          "screen": 2,
+          "lineLengths": [
+            17,
+            30,
+            24,
+            25,
+            35,
+            22,
+            18,
+            39,
+            26,
+            28
+          ]
+        },
+        {
+          "screen": 3,
+          "lineLengths": [
+            31,
+            16,
+            8,
+            14,
+            9
+          ]
+        },
+        {
+          "screen": 3,
+          "lineLengths": [
+            24,
+            24
+          ]
+        },
+        {
+          "screen": 3,
+          "lineLengths": [
+            16,
+            17,
+            16
+          ]
+        },
+        {
+          "screen": 3,
+          "lineLengths": [
+            34,
+            39,
+            9
+          ]
+        },
+        {
+          "screen": 4,
+          "lineLengths": [
+            51,
+            16
+          ]
+        },
+        {
+          "screen": 4,
+          "lineLengths": [
+            38,
+            20,
+            16
+          ]
+        },
+        {
+          "screen": 4,
+          "lineLengths": [
+            36,
+            16,
+            16
+          ]
+        },
+        {
+          "screen": 4,
+          "lineLengths": [
+            24,
+            23
+          ]
+        },
+        {
+          "screen": 5,
+          "lineLengths": [
+            24,
+            39,
+            16
+          ]
+        },
+        {
+          "screen": 5,
+          "lineLengths": [
+            24,
+            11,
+            27,
+            16
+          ]
+        },
+        {
+          "screen": 5,
+          "lineLengths": [
+            48,
+            34,
+            16
+          ]
+        },
+        {
+          "screen": 5,
+          "lineLengths": [
+            35,
+            58,
+            16
+          ]
+        },
+        {
+          "screen": 5,
+          "lineLengths": [
+            31,
+            32,
+            6
+          ]
+        },
+        {
+          "screen": 5,
+          "lineLengths": [
+            44,
+            37,
+            16
+          ]
+        },
+        {
+          "screen": 6,
+          "lineLengths": [
+            24,
+            43,
+            38,
+            38
+          ]
+        },
+        {
+          "screen": 6,
+          "lineLengths": [
+            45,
+            32,
+            16
+          ]
+        },
+        {
+          "screen": 6,
+          "lineLengths": [
+            64,
+            13,
+            16
+          ]
+        },
+        {
+          "screen": 6,
+          "lineLengths": [
+            39,
+            11
+          ]
+        },
+        {
+          "screen": 7,
+          "lineLengths": [
+            39,
+            37,
+            16
+          ]
+        },
+        {
+          "screen": 7,
+          "lineLengths": [
+            25,
+            21,
+            16
+          ]
+        },
+        {
+          "screen": 7,
+          "lineLengths": [
+            22,
+            21,
+            16
+          ]
+        },
+        {
+          "screen": 7,
+          "lineLengths": [
+            32,
+            17,
+            16
+          ]
+        },
+        {
+          "screen": 8,
+          "lineLengths": [
+            44,
+            16
+          ]
+        },
+        {
+          "screen": 9,
+          "lineLengths": [
+            35,
+            33,
+            21,
+            16
+          ]
+        },
+        {
+          "screen": 9,
+          "lineLengths": [
+            38,
+            15,
+            16
+          ]
+        },
+        {
+          "screen": 9,
+          "lineLengths": [
+            29,
+            24,
+            16
+          ]
+        },
+        {
+          "screen": 10,
+          "lineLengths": [
+            60,
+            37,
+            16
+          ]
+        },
+        {
+          "screen": 11,
+          "lineLengths": [
+            42,
+            18,
+            16
+          ]
+        },
+        {
+          "screen": 12,
+          "lineLengths": [
+            49,
+            25,
+            7
+          ]
+        },
+        {
+          "screen": 12,
+          "lineLengths": [
+            41,
+            51,
+            16
+          ]
+        },
+        {
+          "screen": 12,
+          "lineLengths": [
+            49,
+            42,
+            16
+          ]
+        },
+        {
+          "screen": 12,
+          "lineLengths": [
+            25,
+            10,
+            16
+          ]
+        },
+        {
+          "screen": 13,
+          "lineLengths": [
+            24,
+            34,
+            16
+          ]
+        },
+        {
+          "screen": 14,
+          "lineLengths": [
+            43,
+            43,
+            16
+          ]
+        },
+        {
+          "screen": 15,
+          "lineLengths": [
+            58,
+            60,
+            26,
+            25,
+            7
+          ]
+        },
+        {
+          "screen": 15,
+          "lineLengths": [
+            31,
+            32,
+            5,
+            10,
+            29
+          ]
+        },
+        {
+          "screen": 15,
+          "lineLengths": [
+            49,
+            16,
+            16
+          ]
+        },
+        {
+          "screen": 18,
+          "lineLengths": [
+            77,
+            21,
+            32,
+            16
+          ]
+        },
+        {
+          "screen": 19,
+          "lineLengths": [
+            34,
+            24,
+            16
+          ]
+        },
+        {
+          "screen": 24,
+          "lineLengths": [
+            23,
+            53,
+            26,
+            26
+          ]
+        }
+      ],
+      "flagQuotes": [
+        {
+          "flag": "CompletedNormalGame",
+          "sequences": [
+            [
+              25,
+              4,
+              24,
+              14,
+              16
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "skeleton",
+      "screen": 8,
+      "trigger": {
+        "x": 389,
+        "y": 185,
+        "width": 32,
+        "height": 80
+      },
+      "delayTicks": 30,
+      "characterSeconds": 0.09,
+      "introLengths": [],
+      "loopLengths": [],
+      "progressQuotes": [
+        {
+          "screen": 10,
+          "lineLengths": [
+            27,
+            35,
+            16,
+            18
+          ]
+        },
+        {
+          "screen": 10,
+          "lineLengths": [
+            3,
+            33,
+            26,
+            11
+          ]
+        },
+        {
+          "screen": 10,
+          "lineLengths": [
+            7,
+            22,
+            26,
+            19
+          ]
+        },
+        {
+          "screen": 10,
+          "lineLengths": [
+            27,
+            28,
+            22
+          ]
+        },
+        {
+          "screen": 10,
+          "lineLengths": [
+            27,
+            17,
+            16
+          ]
+        },
+        {
+          "screen": 10,
+          "lineLengths": [
+            22,
+            19,
+            31,
+            26
+          ]
+        },
+        {
+          "screen": 10,
+          "lineLengths": [
+            19,
+            15,
+            12
+          ]
+        },
+        {
+          "screen": 10,
+          "lineLengths": [
+            32,
+            17,
+            12
+          ]
+        },
+        {
+          "screen": 10,
+          "lineLengths": [
+            21,
+            26,
+            26
+          ]
+        },
+        {
+          "screen": 10,
+          "lineLengths": [
+            18,
+            20,
+            13,
+            29
+          ]
+        },
+        {
+          "screen": 10,
+          "lineLengths": [
+            23,
+            21,
+            24
+          ]
+        },
+        {
+          "screen": 10,
+          "lineLengths": [
+            16,
+            25,
+            20
+          ]
+        },
+        {
+          "screen": 24,
+          "lineLengths": [
+            16,
+            9,
+            29,
+            28
+          ]
+        }
+      ],
+      "flagQuotes": []
+    }
+  ],
+  "readables": [
+    {
+      "id": "11_library",
+      "screen": 10,
+      "trigger": {
+        "x": 176,
+        "y": 40,
+        "width": 24,
+        "height": 40
+      },
+      "lineLengths": [
+        15,
+        44,
+        46,
+        45,
+        47
+      ]
+    },
+    {
+      "id": "16_noticeboard",
+      "screen": 15,
+      "trigger": {
+        "x": 328,
+        "y": 247,
+        "width": 24,
+        "height": 24
+      },
+      "lineLengths": [
+        27,
+        75,
+        51,
+        87,
+        48,
+        121,
+        105
+      ]
+    },
+    {
+      "id": "22_diary",
+      "screen": 21,
+      "trigger": {
+        "x": 12,
+        "y": 305,
+        "width": 32,
+        "height": 32
+      },
+      "lineLengths": [
+        7,
+        36,
+        45,
+        23,
+        62,
+        54,
+        33
+      ]
+    },
+    {
+      "id": "7_diary",
+      "screen": 6,
+      "trigger": {
+        "x": 304,
+        "y": 272,
+        "width": 32,
+        "height": 32
+      },
+      "lineLengths": [
+        55,
+        70,
+        77,
+        88,
+        77,
+        51
+      ]
+    }
+  ],
+  "walls": [
+    {
+      "id": "wall:5:0",
+      "screen": 5,
+      "hitboxes": [
+        {
+          "x": 303,
+          "y": -1705,
+          "width": 177,
+          "height": 170
+        }
+      ],
+      "everyTime": false
+    },
+    {
+      "id": "wall:6:0",
+      "screen": 6,
+      "hitboxes": [
+        {
+          "x": 303,
+          "y": -1937,
+          "width": 65,
+          "height": 82
+        }
+      ],
+      "everyTime": false
+    },
+    {
+      "id": "wall:6:1",
+      "screen": 6,
+      "hitboxes": [
+        {
+          "x": 288,
+          "y": -2041,
+          "width": 64,
+          "height": 34
+        },
+        {
+          "x": 336,
+          "y": -2097,
+          "width": 16,
+          "height": 57
+        },
+        {
+          "x": 351,
+          "y": -2112,
+          "width": 32,
+          "height": 106
+        }
+      ],
+      "everyTime": false
+    },
+    {
+      "id": "wall:6:2",
+      "screen": 6,
+      "hitboxes": [
+        {
+          "x": 382,
+          "y": -2113,
+          "width": 91,
+          "height": 89
+        }
+      ],
+      "everyTime": false
+    },
+    {
+      "id": "wall:6:3",
+      "screen": 6,
+      "hitboxes": [
+        {
+          "x": 167,
+          "y": -2160,
+          "width": 98,
+          "height": 73
+        }
+      ],
+      "everyTime": false
+    },
+    {
+      "id": "wall:7:0",
+      "screen": 7,
+      "hitboxes": [
+        {
+          "x": 240,
+          "y": -2217,
+          "width": 40,
+          "height": 17
+        },
+        {
+          "x": 240,
+          "y": -2200,
+          "width": 56,
+          "height": 33
+        }
+      ],
+      "everyTime": false
+    },
+    {
+      "id": "wall:7:1",
+      "screen": 7,
+      "hitboxes": [
+        {
+          "x": 152,
+          "y": -2241,
+          "width": 89,
+          "height": 81
+        }
+      ],
+      "everyTime": false
+    },
+    {
+      "id": "wall:21:0",
+      "screen": 21,
+      "hitboxes": [
+        {
+          "x": 7,
+          "y": -7273,
+          "width": 127,
+          "height": 50
+        }
+      ],
+      "everyTime": false
+    }
+  ]
+}
