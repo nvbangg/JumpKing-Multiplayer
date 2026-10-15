@@ -47,6 +47,7 @@ export class TowerScene extends Phaser.Scene {
 	private weatherWind = 0;
 	private screen = -1;
 	private ready = false;
+	private loadFailed = false;
 	private adventureVisuals?: AdventureVisuals;
 	private conversations?: ConversationVisuals;
 	private ending?: MainBabeEnding;
@@ -66,11 +67,13 @@ export class TowerScene extends Phaser.Scene {
 			this.load.image(key, assetUrl(texture.file));
 		for (const [key, font] of Object.entries(this.manifest.fonts))
 			this.load.bitmapFont(key, assetUrl(font.texture), assetUrl(font.data));
-		this.load.on("loaderror", (file: Phaser.Loader.File) =>
-			this.onError("Could not load " + file.key),
-		);
+		this.load.on("loaderror", (file: Phaser.Loader.File) => {
+			this.loadFailed = true;
+			this.onError("Could not load " + file.key);
+		});
 	}
 	create(): void {
+		if (this.loadFailed) return;
 		for (const key of ["king/base", this.manifest.crown]) {
 			const texture = this.textures.get(key);
 			PLAYER_FRAMES.forEach((name, i) => {

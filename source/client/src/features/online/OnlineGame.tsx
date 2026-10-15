@@ -581,7 +581,7 @@ export function OnlineGame({
 					</MenuPanel>
 				</section>
 			)}
-			{error && !menu && (
+			{ready && error && !menu && (
 				<p className="save-error" role="alert">
 					{error}
 				</p>
