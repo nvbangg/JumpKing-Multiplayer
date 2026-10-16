@@ -2,12 +2,15 @@ package jumpking.room;
 
 import static org.assertj.core.api.Assertions.*;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import jumpking.JumpKingApplication;
 import jumpking.game.*;
+import jumpking.network.SerialExecutor;
 import jumpking.service.CommunityRuns;
 import jumpking.support.GameClient;
 import jumpking.support.TestDatabase;
@@ -19,6 +22,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @SpringBootTest(
     classes = {JumpKingApplication.class, CommunityLifecycleIT.TimeConfiguration.class},
@@ -57,6 +61,7 @@ class CommunityLifecycleIT {
 
   @Autowired TestTime time;
   @Autowired Memberships memberships;
+  @Autowired CommunityTower server;
   @Autowired CommunityRuns records;
   @Autowired SharedData shared;
   @Autowired ObjectMapper json;
@@ -69,6 +74,100 @@ class CommunityLifecycleIT {
         message ->
             message.path("type").asText().equals("GAME_SNAPSHOT")
                 && message.path("payload").path("serverTick").asLong() > before);
+  }
+
+  private JsonNode tickAt(
+      GameClient client, double x, double y, boolean grounded, int splat, boolean phasingFall)
+      throws Exception {
+    var membership = memberships.find(client.owner);
+    Object tower =
+        ((Map<?, ?>) ReflectionTestUtils.getField(server, "towers")).get(membership.roomId());
+    var result = new CompletableFuture<Long>();
+    ((SerialExecutor) ReflectionTestUtils.getField(tower, "actor"))
+        .execute(
+            () -> {
+              try {
+                Object player =
+                    ((Map<?, ?>) ReflectionTestUtils.getField(tower, "players"))
+                        .get(membership.playerId());
+                var game = (GameSimulation) ReflectionTestUtils.getField(player, "game");
+                var snapshot = game.snapshot();
+                var pose = snapshot.physics();
+                pose.x = x;
+                pose.y = y;
+                pose.vx = 0;
+                pose.vy = shared.tuning().gravity;
+                pose.grounded = grounded;
+                pose.splat = splat;
+                pose.phasingFall = phasingFall;
+                game.restore(snapshot);
+                ReflectionTestUtils.invokeMethod(tower, "tick", time.nanos());
+                ReflectionTestUtils.invokeMethod(server, "snapshots", tower);
+                result.complete((Long) ReflectionTestUtils.getField(tower, "serverTick"));
+              } catch (Throwable error) {
+                result.completeExceptionally(error);
+              }
+            });
+    long tick = result.get(8, TimeUnit.SECONDS);
+    return client
+        .await(
+            message ->
+                message.path("type").asText().equals("GAME_SNAPSHOT")
+                    && message.path("payload").path("serverTick").asLong() == tick)
+        .path("payload");
+  }
+
+  private void assertCurrentProgress(GameClient client, JsonNode snapshot, double expected) {
+    assertThat(snapshot.path("self").path("metrics").path("currentProgress").asDouble())
+        .isEqualTo(expected);
+    String id = memberships.find(client.owner).playerId();
+    for (var player : snapshot.path("players"))
+      if (player.path("playerId").asText().equals(id)) {
+        assertThat(player.path("currentProgress").asDouble()).isEqualTo(expected);
+        return;
+      }
+    fail("Player standing is missing");
+  }
+
+  @Test
+  void currentProgressChangesOnlyOnValidLandingWhilePeakKeepsAirborneHeight() throws Exception {
+    try (var client = new GameClient(port)) {
+      client.register();
+      client.connect();
+      var joined = client.ok("JOIN_COMMUNITY", Map.of());
+      client.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
+      assertCurrentProgress(client, tickAt(client, 77, 158, true, 0, false), 144);
+      var airborne = tickAt(client, 200, 50, false, 0, false);
+      assertCurrentProgress(client, airborne, 144);
+      assertThat(
+              airborne.path("self").path("simulation").path("physics").path("grounded").asBoolean())
+          .isFalse();
+      double maximum = airborne.path("self").path("metrics").path("maxProgress").asDouble();
+      assertThat(maximum).isGreaterThan(144);
+      var splatted = tickAt(client, 231, 302, true, 3, false);
+      assertCurrentProgress(client, splatted, 144);
+      assertThat(splatted.path("self").path("simulation").path("physics").path("splat").asInt())
+          .isPositive();
+      var phasing = tickAt(client, 231, 328, true, 0, true);
+      assertCurrentProgress(client, phasing, 144);
+      assertThat(
+              phasing
+                  .path("self")
+                  .path("simulation")
+                  .path("physics")
+                  .path("phasingFall")
+                  .asBoolean())
+          .isTrue();
+      var lowerLanding = tickAt(client, 231, 302, true, 0, false);
+      assertCurrentProgress(client, lowerLanding, 0);
+      assertThat(lowerLanding.path("self").path("metrics").path("maxProgress").asDouble())
+          .isEqualTo(maximum);
+      client.ok("LEAVE_ROOM", Map.of());
+      var current = client.request("/community/current", "GET", null).path("run");
+      assertThat(current.path("id").asText()).isEqualTo(joined.path("playId").asText());
+      assertThat(current.path("currentProgress").asDouble()).isZero();
+      assertThat(current.path("maxProgress").asDouble()).isEqualTo(maximum);
+    }
   }
 
   @Test
@@ -313,18 +412,11 @@ class CommunityLifecycleIT {
       assertThat(game.physics().snapshot().grounded).isFalse();
       records.save(
           new CommunityRuns.Write(
-              initial.id(),
-              client.owner,
-              2,
-              "ACTIVE",
-              game.snapshot(),
-              game.physics().progress(),
-              maximum,
-              peak,
-              null));
+              initial.id(), client.owner, 2, "ACTIVE", game.snapshot(), 0, maximum, peak, null));
       client.connect();
       client.ok("JOIN_COMMUNITY", Map.of());
       client.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
+      assertCurrentProgress(client, client.snapshot(), 0);
       var paused = client.ok("SET_COMMUNITY_PAUSED", Map.of("paused", true));
       assertThat(paused.path("pausePending").asBoolean()).isTrue();
       assertThat(paused.path("paused").asBoolean()).isFalse();

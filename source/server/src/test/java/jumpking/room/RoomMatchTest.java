@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.List;
 import jumpking.config.NetworkSettings;
 import jumpking.game.*;
+import jumpking.network.GameEnvelope;
 import jumpking.support.MainBabeRoute;
 import org.junit.jupiter.api.Test;
 
@@ -36,6 +37,147 @@ class RoomMatchTest {
         shared,
         limits,
         false);
+  }
+
+  private void place(RoomMatch.Player player, int x, int y, double vy, boolean grounded) {
+    var state = player.game.physics().snapshot();
+    state.x = x;
+    state.y = y;
+    state.vx = 0;
+    state.vy = vy;
+    state.grounded = grounded;
+    state.splat = 0;
+    state.phasingFall = false;
+    player.game.physics().restore(state);
+  }
+
+  @Test
+  void currentProgressOnlyChangesOnValidLandingsWhilePeakTracksAirborneHeight() {
+    var match = match();
+    var start = Instant.parse("2026-01-01T00:00:00Z");
+    var player = match.players.get("first");
+    assertThat(player.currentProgress).isZero();
+    match.start(start);
+    place(player, 77, 158, shared.tuning().gravity, true);
+    match.tick(1_000_000_000L, start);
+    assertThat(player.currentProgress).isEqualTo(144);
+    assertThat(player.maximum).isEqualTo(144);
+    assertThat(player.peak).isEqualTo(1);
+
+    place(player, 231, 110, -5, false);
+    match.tick(1_000_000_000L, start);
+    assertThat(player.game.physics().progress()).isEqualTo(197);
+    assertThat(player.currentProgress).isEqualTo(144);
+    assertThat(player.maximum).isEqualTo(197);
+    assertThat(player.peak).isEqualTo(2);
+
+    place(player, 231, 220, 2, false);
+    match.tick(1_000_000_000L, start);
+    assertThat(player.game.physics().progress()).isEqualTo(80);
+    assertThat(player.currentProgress).isEqualTo(144);
+    assertThat(player.maximum).isEqualTo(197);
+    assertThat(player.peak).isEqualTo(2);
+
+    place(player, 231, 302, shared.tuning().gravity, true);
+    match.tick(1_000_000_000L, start);
+    assertThat(player.currentProgress).isZero();
+    assertThat(player.maximum).isEqualTo(197);
+    assertThat(player.peak).isEqualTo(2);
+  }
+
+  @Test
+  void splatAndPhasingFallKeepTheLastLandingUntilSplatRecovery() {
+    var match = match();
+    var start = Instant.parse("2026-01-01T00:00:00Z");
+    var player = match.players.get("first");
+    match.start(start);
+    place(player, 77, 158, shared.tuning().gravity, true);
+    var state = player.game.physics().snapshot();
+    state.splat = 2;
+    player.game.physics().restore(state);
+    match.tick(1_000_000_000L, start);
+    assertThat(player.game.physics().snapshot().splat).isEqualTo(1);
+    assertThat(player.currentProgress).isZero();
+    assertThat(player.maximum).isEqualTo(144);
+
+    player.input.offer(
+        new GameEnvelope(
+            "PLAYER_INPUT",
+            null,
+            json.createObjectNode()
+                .put("playId", match.id)
+                .put("generation", player.spec.generation())
+                .put("seq", 1)
+                .put("left", false)
+                .put("right", false)
+                .put("jump", true)),
+        1_000_000_000L,
+        false);
+    match.tick(1_000_000_000L, start);
+    assertThat(player.game.physics().snapshot().splat).isZero();
+    assertThat(player.currentProgress).isEqualTo(144);
+    assertThat(player.peak).isEqualTo(1);
+
+    place(player, 200, 50, 0, true);
+    state = player.game.physics().snapshot();
+    state.phasingFall = true;
+    player.game.physics().restore(state);
+    match.tick(1_000_000_000L, start);
+    assertThat(player.game.physics().snapshot().phasingFall).isTrue();
+    assertThat(player.currentProgress).isEqualTo(144);
+    assertThat(player.maximum).isGreaterThan(250);
+    assertThat(player.peak).isEqualTo(3);
+  }
+
+  @Test
+  void standingsWritesAndResultsUseTheFrozenLandingProgressForDnf() {
+    var match = match();
+    var start = Instant.parse("2026-01-01T00:00:00Z");
+    var player = match.players.get("first");
+    match.start(start);
+    place(player, 77, 158, shared.tuning().gravity, true);
+    match.tick(1_000_000_000L, start);
+    place(player, 231, 110, -5, false);
+    match.tick(1_000_000_000L, start);
+    match.abandon("first", start.plusSeconds(1));
+    match.tick(2_000_000_000L, start.plusSeconds(1));
+    assertThat(player.game.physics().snapshot().ticks).isEqualTo(2);
+    assertThat(player.currentProgress).isEqualTo(144);
+    assertThat(match.standings(java.util.Set.of("first", "second")))
+        .extracting(jumpking.dto.PlayerStanding::currentProgress)
+        .containsExactly(144.0, 0.0);
+    match.finish("HOST_ENDED", start.plusSeconds(2));
+    assertThat(player.rank).isEqualTo(1);
+    var write = match.write(1).runs().getFirst();
+    assertThat(write.status()).isEqualTo("DNF");
+    assertThat(write.progress()).isEqualTo(144);
+    assertThat(write.maximum()).isEqualTo(197);
+    assertThat(write.peak()).isEqualTo(2);
+    var result = json.valueToTree(match.results()).path("results").get(0);
+    assertThat(result.path("currentProgress").asDouble()).isEqualTo(144);
+    assertThat(result.path("maxProgress").asDouble()).isEqualTo(197);
+  }
+
+  @Test
+  void hardcoreSplatRespawnsCurrentProgressWithoutResettingPeakOrCounters() {
+    var match = match(new RoomSettings("HARDCORE", null, RoomSettings.FULL_MAP_LEVEL));
+    var start = Instant.parse("2026-01-01T00:00:00Z");
+    var player = match.players.get("first");
+    match.start(start);
+    place(player, 77, 158, shared.tuning().gravity, true);
+    match.tick(1_000_000_000L, start);
+    place(player, 231, 110, -5, false);
+    match.tick(1_000_000_000L, start);
+    place(player, 231, 300, shared.tuning().maxFall, false);
+    var events = match.tick(1_000_000_000L, start);
+    assertThat(events.getFirst().effects().movement()).contains("SPLAT");
+    assertThat(player.currentProgress).isZero();
+    assertThat(player.maximum).isEqualTo(197);
+    assertThat(player.peak).isEqualTo(2);
+    var state = player.game.physics().snapshot();
+    assertThat(state.y).isEqualTo(302);
+    assertThat(state.ticks).isEqualTo(3);
+    assertThat(state.falls).isEqualTo(1);
   }
 
   @Test

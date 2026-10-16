@@ -114,7 +114,7 @@ Finish đầu tiên kết thúc trận; xử lý hết players của tick đó t
 
 Người Finish đứng đầu theo finish time. Người còn lại so current progress giảm dần, thêm peak giảm dần riêng Time Limit, rồi thời gian trận tăng dần. Vì dùng cùng clock, các khóa bằng nhau đồng hạng; ID chỉ ổn định hiển thị. Chưa ai Finish thì không có winner.
 
-Progress = max(0, originFeetY−feetY); peak là progress cao nhất từng đạt. Không làm tròn trước so sánh. Hardcore reset current về spawn, giữ peak và số lần rơi; không reset clock.
+Progress = max(0, originFeetY−feetY); peak là progress cao nhất từng đạt. `currentProgress` chỉ cập nhật theo progress khi `grounded && splat == 0 && !phasingFall`, các trạng thái khác giữ giá trị lần tiếp đất hợp lệ gần nhất; `maxProgress` vẫn tính theo progress tức thời. Không làm tròn trước so sánh. Hardcore reset current về spawn, giữ peak và số lần rơi; không reset clock.
 
 ### Độ dài Room
 

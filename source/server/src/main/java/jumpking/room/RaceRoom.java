@@ -905,7 +905,7 @@ public class RaceRoom implements GameCommandHandler, AutoCloseable {
               .put("paused", !room.state.equals("PLAYING"));
       own.set("simulation", json.valueToTree(self.game.snapshot()));
       own.putObject("metrics")
-          .put("currentProgress", self.game.physics().progress())
+          .put("currentProgress", self.currentProgress)
           .put("maxProgress", self.maximum);
       var peers = snapshot.putArray("peers");
       int screen = own.path("simulation").path("physics").path("screen").asInt();

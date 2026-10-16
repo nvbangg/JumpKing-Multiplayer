@@ -107,7 +107,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
         pausedAt,
         lastPhysical = time.nanos(),
         lastSave = time.nanos();
-    double maximum;
+    double currentProgress, maximum;
     boolean loading = true,
         paused,
         pausePending,
@@ -255,6 +255,8 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
                 Map.of("roomId", id, "playId", player.stored.id(), "events", cues));
           }
           var pose = player.game.physics().snapshot();
+          boolean isLanded = pose.grounded && pose.splat == 0 && !pose.phasingFall;
+          if (isLanded) player.currentProgress = progress;
           for (String effect : events.movement())
             effects.add(
                 json.createObjectNode()
@@ -495,6 +497,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
                             player.game = game;
                             player.stored = stored;
                             player.revision = player.savedRevision = stored.revision();
+                            player.currentProgress = stored.progress();
                             player.maximum = stored.maximum();
                             player.peakTicks = stored.peak();
                             player.loading = false;
@@ -614,7 +617,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
             revision,
             player.finished ? "FINISHED" : "ACTIVE",
             snapshot,
-            player.game.physics().progress(),
+            player.currentProgress,
             player.maximum,
             player.peakTicks,
             player.finished ? player.finishedAt : null);
@@ -847,7 +850,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
     var result = new LinkedHashMap<String, Object>();
     result.put("id", player.stored.id());
     result.put("status", player.finished ? "FINISHED" : "ACTIVE");
-    result.put("currentProgress", player.game.physics().progress());
+    result.put("currentProgress", player.currentProgress);
     result.put("maxProgress", player.maximum);
     result.put("elapsedTimeMs", ms(state.ticks));
     result.put("peakReachedTimeMs", ms(player.peakTicks));
@@ -884,7 +887,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
                         player.id,
                         player.identity.username(),
                         player.finished ? "FINISHED" : "ACTIVE",
-                        player.game.physics().progress(),
+                        player.currentProgress,
                         player.maximum,
                         player.finished ? player.game.physics().snapshot().ticks : null))
             .toList();

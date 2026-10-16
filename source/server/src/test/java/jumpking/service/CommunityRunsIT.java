@@ -79,6 +79,35 @@ class CommunityRunsIT {
   }
 
   @Test
+  void continueRestoresSavedCurrentProgressInsteadOfAirborneHeightAndNewRunResetsIt() {
+    long owner = account();
+    var game = game();
+    var initial = records.open(owner, false, null, game.snapshot());
+    assertThat(initial.progress()).isZero();
+    for (int tick = 0; tick < 40; tick++) game.tick(new PlayerInput(false, false, true));
+    assertThat(game.physics().snapshot().grounded).isFalse();
+    double maximum = game.physics().progress();
+    assertThat(maximum).isGreaterThan(12.5);
+    records.save(
+        new CommunityRuns.Write(
+            initial.id(),
+            owner,
+            2,
+            "ACTIVE",
+            game.snapshot(),
+            12.5,
+            maximum,
+            game.physics().snapshot().ticks,
+            null));
+    var continued = records.open(owner, false, null, game().snapshot());
+    assertThat(continued.progress()).isEqualTo(12.5);
+    assertThat(continued.maximum()).isEqualTo(maximum);
+    assertThat(continued.snapshot().physics().grounded).isFalse();
+    var next = records.open(owner, true, initial.id(), game().snapshot());
+    assertThat(next.progress()).isZero();
+  }
+
+  @Test
   void concurrentContinueCreatesExactlyOneActiveRunAndRejectsUnknownOwner() throws Exception {
     long owner = account();
     var spawn = game().snapshot();

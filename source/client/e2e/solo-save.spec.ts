@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import type { PlayerState } from "../src/game/simulation/types";
 import { soloJumps } from "./support/solo";
 
 test("Solo saves, continues and archives replaced runs without losing totals", async ({
@@ -194,6 +195,93 @@ test("pending sync survives reopen and late acknowledgements preserve newer revi
 	});
 	expect(result.revision).toBeGreaterThan(result.synced);
 	expect(result.finalSynced).toBe(result.revision);
+});
+
+test("Solo keeps the last valid landed progress through flight and Continue", async ({
+	page,
+}) => {
+	await page.goto("/");
+	const result = await page.evaluate(async () => {
+		const storagePath = "/src/features/solo/storage.ts",
+			simulationPath = "/src/game/simulation/GameSimulation.ts";
+		const { SoloWriter } = await import(storagePath);
+		const { GameSimulation: Simulation } = await import(simulationPath);
+		const map = await (await fetch("/shared/maps/main-babe.json")).json(),
+			simulation = new Simulation(map),
+			initial = simulation.snapshot();
+		const writer = await SoloWriter.open("landed-progress", "new", initial);
+		const observations: Record<string, number> = {};
+		let ticks = 0;
+		const observe = (
+			name: string,
+			progress: number,
+			flags: Partial<PlayerState> = {},
+		) => {
+			const snapshot = structuredClone(initial);
+			Object.assign(snapshot.physics, {
+				y: initial.physics.y - progress,
+				ticks: ++ticks,
+				...flags,
+			});
+			snapshot.world.lastTick = ticks;
+			writer.observe(snapshot, map.progressOriginY, false);
+			observations[name] = writer.run.currentProgress;
+		};
+		observe("firstLanding", 80);
+		observe("rising", 150, { grounded: false, vy: -3.5, jumps: 1 });
+		observe("apex", 180, { grounded: false, vy: 0, jumps: 1 });
+		observe("falling", 120, { grounded: false, vy: 3.5, jumps: 1 });
+		observe("splat", 20, { splat: 1, falls: 1 });
+		observe("phasingFall", 40, { phasingFall: true });
+		observe("higherLanding", 100);
+		observe("lowerLanding", 30);
+		observe("belowOrigin", -10);
+		observe("lastLanding", 60);
+		observe("savedAirborne", 190, { grounded: false, vy: -2, jumps: 2 });
+		const saved = await writer.save();
+		await writer.close();
+		const continued = await SoloWriter.open(
+			"landed-progress",
+			"continue",
+			initial,
+		);
+		const restored = continued.run;
+		simulation.restore(restored.snapshot);
+		continued.observe(simulation.snapshot(), map.progressOriginY, false);
+		const continuedProgress = continued.run.currentProgress;
+		await continued.close();
+		return {
+			observations,
+			continuedProgress,
+			sameRun: saved.id === restored.id,
+			sameSnapshot:
+				JSON.stringify(saved.snapshot) === JSON.stringify(restored.snapshot),
+			grounded: restored.snapshot.physics.grounded,
+			maxProgress: restored.maxProgress,
+			peakReachedTicks: restored.peakReachedTicks,
+		};
+	});
+	expect(result).toEqual({
+		observations: {
+			firstLanding: 80,
+			rising: 80,
+			apex: 80,
+			falling: 80,
+			splat: 80,
+			phasingFall: 80,
+			higherLanding: 100,
+			lowerLanding: 30,
+			belowOrigin: 0,
+			lastLanding: 60,
+			savedAirborne: 60,
+		},
+		continuedProgress: 60,
+		sameRun: true,
+		sameSnapshot: true,
+		grounded: false,
+		maxProgress: 190,
+		peakReachedTicks: 11,
+	});
 });
 
 test("blur cancels charging and the AFK deadline pauses without a release jump", async ({

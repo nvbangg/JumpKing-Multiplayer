@@ -183,6 +183,7 @@ class RoomRankingIT {
                 pose.ticks = 100;
                 ((ObjectNode) snapshot.world()).put("lastTick", 100);
                 player.game.restore(snapshot);
+                player.currentProgress = player.game.physics().progress();
                 player.maximum = new int[] {900, 1000, 950}[index++];
                 player.peak = 100;
               }

@@ -363,6 +363,8 @@ export class SoloWriter {
 			0,
 			progressOriginY - state.y - PHYSICS.bodyHeight,
 		);
+		const isLanded = state.grounded && state.splat === 0 && !state.phasingFall;
+		if (isLanded) this.observed.currentProgress = progress;
 		if (progress > this.observed.maxProgress) {
 			this.observed.maxProgress = progress;
 			this.observed.peakReachedTicks = state.ticks;
@@ -371,7 +373,6 @@ export class SoloWriter {
 			playTicks: state.ticks,
 			jumps: state.jumps,
 			falls: state.falls,
-			currentProgress: progress,
 			snapshot: structuredClone(snapshot),
 		});
 		if (finished)

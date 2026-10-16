@@ -18,7 +18,7 @@ final class RoomMatch {
     final GameSimulation game;
     final InputFrames input;
     String status = "ACTIVE";
-    double maximum;
+    double currentProgress, maximum;
     long peak;
     Long finish;
     Integer rank;
@@ -96,6 +96,9 @@ final class RoomMatch {
       var effect = player.game.tick(input.input(), settings.mode().equals("HARDCORE"));
       events.add(new Events(player, effect));
       double progress = player.game.physics().progress();
+      var state = player.game.physics().snapshot();
+      boolean isLanded = state.grounded && state.splat == 0 && !state.phasingFall;
+      if (isLanded) player.currentProgress = progress;
       if (progress > player.maximum) {
         player.maximum = progress;
         player.peak = player.game.physics().snapshot().ticks;
@@ -140,7 +143,7 @@ final class RoomMatch {
                         player.spec.playerId,
                         player.spec.nickname,
                         player.status,
-                        player.game.physics().progress(),
+                        player.currentProgress,
                         player.maximum,
                         player.finish))
             .toList();
@@ -165,7 +168,7 @@ final class RoomMatch {
                       pose.ticks,
                       pose.jumps,
                       pose.falls,
-                      player.game.physics().progress(),
+                      player.currentProgress,
                       player.maximum,
                       player.peak,
                       player.finish,
@@ -202,7 +205,7 @@ final class RoomMatch {
                   row.put("nickname", player.spec.nickname);
                   row.put("status", player.status);
                   row.put("rank", player.rank);
-                  row.put("currentProgress", player.game.physics().progress());
+                  row.put("currentProgress", player.currentProgress);
                   row.put("maxProgress", player.maximum);
                   row.put("isWinner", player.winner);
                   row.put("finishTimeMs", player.finish == null ? null : ms(player.finish));
@@ -234,7 +237,7 @@ final class RoomMatch {
                         player.spec.playerId,
                         player.spec.nickname,
                         player.status,
-                        player.game.physics().progress(),
+                        player.currentProgress,
                         player.maximum,
                         player.finish))
             .toList();

@@ -17,6 +17,7 @@ public class CommunityRuns {
       long owner,
       long revision,
       GameSimulation.Snapshot snapshot,
+      double progress,
       double maximum,
       long peak,
       Instant startedAt) {}
@@ -93,6 +94,7 @@ public class CommunityRuns {
                       owner,
                       active.getRevision(),
                       decode(active.getSnapshot()),
+                      active.getCurrentProgress(),
                       active.getMaxProgress(),
                       active.getPeakReachedTicks(),
                       active.getStartedAt());
@@ -121,7 +123,7 @@ public class CommunityRuns {
           run.setStartedAt(now);
           run.setUpdatedAt(now);
           runs.saveAndFlush(run);
-          return new Stored(id, owner, 1, spawn, 0, 0, run.getStartedAt());
+          return new Stored(id, owner, 1, spawn, 0, 0, 0, run.getStartedAt());
         });
   }
 
