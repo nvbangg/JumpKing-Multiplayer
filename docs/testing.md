@@ -20,7 +20,7 @@ Frontend dùng Biome mặc định cho format, lint và imports; `npm run check`
 
 Backend dùng Spotless với google-java-format mặc định, cấu hình trong `source/server/pom.xml`. `verify` kiểm tra format, compile và unit tests; không sửa source. Chạy `.\mvnw.cmd spotless:apply` trong `source/server/` để format, hoặc `spotless:check` để chỉ kiểm tra format. Spotless không thay thế compiler hoặc tests.
 
-`.gitattributes` thống nhất text LF; `.bat`/`.cmd` dùng CRLF khi checkout, ảnh/âm thanh/font giữ binary. Phiên bản tools được pin để các máy cho cùng kết quả. Sau khi fix, review diff và chạy checks theo phần bị ảnh hưởng; không dùng tự sửa unsafe hoặc nới rules để bỏ qua lỗi.
+`.gitattributes` thống nhất text LF, gồm XML font; `.bat`/`.cmd` dùng CRLF khi checkout, ảnh/âm thanh/font TTF giữ binary. Hash assets trong manifest tính theo bytes sau chuẩn hóa, khớp file được Git lưu. Phiên bản tools được pin để các máy cho cùng kết quả. Sau khi fix, review diff và chạy checks theo phần bị ảnh hưởng; không dùng tự sửa unsafe hoặc nới rules để bỏ qua lỗi.
 
 ## Lệnh kiểm thử
 
