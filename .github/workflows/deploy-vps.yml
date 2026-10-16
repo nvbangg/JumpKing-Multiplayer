@@ -1,0 +1,96 @@
+name: Build and deploy VPS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/deploy-vps.yml"
+      - "source/client/**"
+      - "source/common/**"
+      - "source/server/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build frontend and backend
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: source/client/package-lock.json
+
+      - name: Build frontend
+        working-directory: source/client
+        run: |
+          npm ci
+          npm run build
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Build backend
+        working-directory: source/server
+        run: |
+          chmod +x ./mvnw
+          ./mvnw -B -Pweb clean verify
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jumpking-server
+          path: source/server/target/jumpking-server.jar
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy to VPS
+    needs: build
+    runs-on: ubuntu-22.04
+    environment: production
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: jumpking-server
+          path: release
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+
+      - name: Deploy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_SSH_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          scp -i ~/.ssh/id_ed25519 \
+            -P "${VPS_PORT:-22}" \
+            release/jumpking-server.jar \
+            "$VPS_USER@$VPS_HOST:/opt/jumpking/current.jar"
+
+          ssh -i ~/.ssh/id_ed25519 \
+            -p "${VPS_PORT:-22}" \
+            "$VPS_USER@$VPS_HOST" \
+            "sudo /usr/bin/systemctl restart jumpking.service"

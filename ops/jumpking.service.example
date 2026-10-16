@@ -1,0 +1,18 @@
+[Unit]
+Description=JumpKing Multiplayer
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=jumpking
+Group=jumpking
+WorkingDirectory=/opt/jumpking
+Environment=SPRING_PROFILES_ACTIVE=prod
+ExecStart=java -jar /opt/jumpking/current.jar
+Restart=on-failure
+RestartSec=5
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
