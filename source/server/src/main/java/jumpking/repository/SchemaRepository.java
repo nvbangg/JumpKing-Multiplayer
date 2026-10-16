@@ -21,7 +21,6 @@ public class SchemaRepository {
                 "SELECT constraint_name FROM information_schema.table_constraints WHERE constraint_schema=DATABASE() AND constraint_type='CHECK' AND enforced='YES'")
             .containsAll(
                 Set.of(
-                    "ck_users_identity",
                     "ck_matches_mode",
                     "ck_matches_map_level",
                     "ck_matches_ticks",
@@ -37,7 +36,8 @@ public class SchemaRepository {
     require(
         names(
                 "SELECT index_name FROM information_schema.statistics WHERE table_schema=DATABASE() AND non_unique=0")
-            .containsAll(Set.of("uq_users_username", "uq_active_community_user")),
+            .containsAll(
+                Set.of("uq_users_username", "uq_active_community_user", "uq_runs_match_user")),
         "Required unique indexes missing");
     require(
         names(
@@ -60,7 +60,7 @@ public class SchemaRepository {
             .containsAll(
                 Set.of(
                     "ix_runs_owner_history:user_id,ended_at,id",
-                    "ix_runs_match:match_id",
+                    "uq_runs_match_user:match_id,user_id",
                     "ix_runs_leaderboard:kind,status")),
         "Records indexes differ");
   }

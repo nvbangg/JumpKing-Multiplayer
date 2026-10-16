@@ -194,21 +194,16 @@ export class Adventure {
 	prepareRestore(value: unknown): () => void {
 		if (!value || typeof value !== "object")
 			throw new Error("Invalid adventure snapshot");
-		const version = (value as { codecVersion?: unknown }).codecVersion;
 		const saved = value as AdventureState;
 		const count = (n: unknown) =>
 			Number.isSafeInteger(n) &&
 			(n as number) >= 0 &&
 			(n as number) <= T.maxCounter;
 		if (
-			(version !== 1 && version !== 2) ||
+			saved.codecVersion !== 2 ||
 			!Array.isArray(saved.flags) ||
 			new Set(saved.flags).size !== saved.flags.length ||
-			saved.flags.some(
-				(flag) =>
-					flag !== "CompletedNormalGame" &&
-					!(version === 1 && flag === "CHASE_BIRD_PAST_SNOWSTORM"),
-			)
+			saved.flags.some((flag) => flag !== "CompletedNormalGame")
 		)
 			throw new Error("Invalid adventure snapshot");
 		for (const definition of data.npcs) {
@@ -248,10 +243,9 @@ export class Adventure {
 			)
 				throw new Error("Invalid readable snapshot");
 		}
-		// Save v1 giữ tiến độ hội thoại; các trường vật phẩm đã bỏ không đi vào snapshot mới.
 		const restored: AdventureState = structuredClone({
 			codecVersion: 2,
-			flags: saved.flags.filter((flag) => flag === "CompletedNormalGame"),
+			flags: saved.flags,
 			dialogue: saved.dialogue,
 			readables: saved.readables,
 		});

@@ -74,30 +74,13 @@ test("restores dialogue atomically and rejects malformed counters and flags", ()
 	expect(() => adventure.restore(invalid)).toThrow();
 	expect(adventure.snapshot()).toEqual(saved);
 });
-test("old save retains dialogue and completion while dropping removed item state", () => {
-	const adventure = new Adventure(map),
-		saved = adventure.snapshot();
-	saved.dialogue.old_man!.wait = 10;
-	adventure.restore({
-		...saved,
-		codecVersion: 1,
-		flags: ["CompletedNormalGame", "CHASE_BIRD_PAST_SNOWSTORM"],
-		inventory: { Cap: 1 },
-		equipped: ["Cap"],
-		collected: [],
-		birds: {},
-		merchants: {},
-	});
-	expect(adventure.snapshot()).toEqual({
-		...saved,
-		flags: ["CompletedNormalGame"],
-	});
-	expect(Object.keys(adventure.snapshot()).sort()).toEqual([
-		"codecVersion",
-		"dialogue",
-		"flags",
-		"readables",
-	]);
+test("unsupported adventure codec is rejected without changing state", () => {
+	const adventure = new Adventure(map);
+	const saved = adventure.snapshot();
+	expect(() => adventure.restore({ ...saved, codecVersion: 99 })).toThrow(
+		"Invalid adventure snapshot",
+	);
+	expect(adventure.snapshot()).toEqual(saved);
 });
 
 test("game restore validates every component before applying and copies caller-owned data", () => {

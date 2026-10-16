@@ -48,7 +48,7 @@ class SchemaIT {
   private long account() {
     String token = UUID.randomUUID().toString();
     jdbc.update(
-        "INSERT INTO users(type,username,password_hash,created_at) VALUES ('ACCOUNT',?,?,UTC_TIMESTAMP(3))",
+        "INSERT INTO users(username,password_hash,created_at) VALUES (?,?,UTC_TIMESTAMP(3))",
         token.substring(0, 24),
         "hash");
     return jdbc.queryForObject(
@@ -303,6 +303,25 @@ class SchemaIT {
   }
 
   @Test
+  void eachAccountHasAtMostOneRunPerRoomMatch() {
+    long owner = account(), peer = account();
+    String match = UUID.randomUUID().toString();
+    jdbc.update(
+        "INSERT INTO matches(id,room_code,mode,started_at) VALUES (?,'ABCDEF','RACE',UTC_TIMESTAMP(3))",
+        match);
+    String insert =
+        "INSERT INTO play_runs(id,user_id,kind,match_id,nickname,status,started_at,updated_at) VALUES (?,?,'ROOM',?,'Player','ACTIVE',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))";
+    jdbc.update(insert, UUID.randomUUID().toString(), owner, match);
+    assertThatThrownBy(() -> jdbc.update(insert, UUID.randomUUID().toString(), owner, match))
+        .isInstanceOf(org.springframework.dao.DuplicateKeyException.class);
+    jdbc.update(insert, UUID.randomUUID().toString(), peer, match);
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM play_runs WHERE match_id=?", Integer.class, match))
+        .isEqualTo(2);
+  }
+
+  @Test
   void oneActiveCommunityAndRollback() {
     long owner = account();
     community(owner);
@@ -327,10 +346,7 @@ class SchemaIT {
 
   @Test
   void rejectsInvalidIdentityAndNullTimeLimit() {
-    assertThatThrownBy(
-            () ->
-                jdbc.update(
-                    "INSERT INTO users(type,created_at) VALUES ('ACCOUNT',UTC_TIMESTAMP(3))"))
+    assertThatThrownBy(() -> jdbc.update("INSERT INTO users(created_at) VALUES (UTC_TIMESTAMP(3))"))
         .isInstanceOf(org.springframework.dao.DataAccessException.class);
     assertThatThrownBy(
             () ->

@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface UserRepository extends JpaRepository<User, Long> {
-  Optional<User> findByTypeAndUsername(String type, String username);
+  Optional<User> findByUsername(String username);
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select u from User u where u.id = :id")

@@ -62,7 +62,7 @@ public class SecurityConfiguration {
   UserDetailsService userDetailsService(UserRepository users) {
     return username ->
         users
-            .findByTypeAndUsername("ACCOUNT", username)
+            .findByUsername(username)
             .map(
                 user ->
                     User.withUsername(user.getUsername())

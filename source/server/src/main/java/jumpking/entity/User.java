@@ -13,13 +13,10 @@ public class User {
   @Column(name = "id")
   private Long id;
 
-  @Column(name = "type", length = 16)
-  private String type;
-
-  @Column(name = "username", length = 32)
+  @Column(name = "username", length = 32, nullable = false)
   private String username;
 
-  @Column(name = "password_hash", length = 255)
+  @Column(name = "password_hash", length = 255, nullable = false)
   private String passwordHash;
 
   @Column(name = "crown_unlocked", nullable = false, columnDefinition = "boolean")
@@ -33,7 +30,6 @@ public class User {
 
   public static User account(String username, String passwordHash, Instant created) {
     var user = new User();
-    user.type = "ACCOUNT";
     user.username = username;
     user.passwordHash = passwordHash;
     user.createdAt = created;
@@ -42,14 +38,6 @@ public class User {
 
   public Long getId() {
     return id;
-  }
-
-  public String getType() {
-    return type;
-  }
-
-  public void setType(String value) {
-    type = value;
   }
 
   public String getUsername() {

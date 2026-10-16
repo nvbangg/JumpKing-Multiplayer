@@ -19,9 +19,8 @@ erDiagram
 
     users {
         BIGINT id PK
-        VARCHAR(16) type "ACCOUNT; GUEST chỉ dữ liệu lịch sử"
-        VARCHAR(32) username UK "nullable"
-        VARCHAR(255) password_hash "nullable"
+        VARCHAR(32) username UK
+        VARCHAR(255) password_hash
         BOOLEAN crown_unlocked
         DATETIME(3) created_at
     }
@@ -88,7 +87,7 @@ Ticks theo [architecture](architecture.md#xử-lý-đồng-thời); API đổi t
 
 Chỉ ACTIVE có ended_at=NULL; trạng thái khác có ended_at≥started_at. Chỉ FINISHED có finish_ticks khác NULL. Solo/Community không dùng UNFINISHED/DNF; Room không dùng ABANDONED. snapshot là JSON object chỉ khi kind=COMMUNITY và status=ACTIVE; còn lại NULL. match_id/nickname chỉ có ở ROOM; rank NULL đến khi finalize, sau đó trong [1,10]. Ngoài ROOM, rank=NULL và is_winner=false. Winner chỉ khi FINISHED, rank=1.
 
-Indexes: unique username/active_community_user_id; play_runs(user_id,ended_at,id), play_runs(match_id), play_runs(kind,status) cho Profile/History/detail/leaderboard. Không unique(match_id,user_id) để bảo toàn các lượt lịch sử đã thuộc cùng owner.
+Indexes: unique username/active_community_user_id; play_runs(user_id,ended_at,id), unique play_runs(match_id,user_id), play_runs(kind,status) cho Profile/History/detail/leaderboard. Mỗi Account có một lượt trong một trận Room.
 
 ```sql
 active_community_user_id BIGINT GENERATED ALWAYS AS
@@ -101,7 +100,7 @@ Cột generated tự tính, chỉ lượt Community ACTIVE có user_id; các lư
 
 ## Identity và ownership
 
-Account đăng ký bằng username/password; server lưu password hash, không lưu email hoặc cấp Guest identity online. Solo Guest chỉ có profile local, không import khi đăng ký/đăng nhập. Mọi thao tác online lấy owner từ session. Tên player lấy từ username, kết quả Room giữ snapshot tên lúc Join. Thay đổi mật khẩu cần mật khẩu hiện tại và thu hồi các phiên sau commit theo [protocol](protocol.md#identity-và-security).
+Account đăng ký bằng username/password; server lưu password hash; users chỉ chứa Account. Solo Guest chỉ có profile local, không import khi đăng ký/đăng nhập. Mọi thao tác online lấy owner từ session. Tên player lấy từ username, kết quả Room giữ snapshot tên lúc Join. Thay đổi mật khẩu cần mật khẩu hiện tại và thu hồi các phiên sau commit theo [protocol](protocol.md#identity-và-security).
 
 ## Ghi lượt và đồng bộ Solo
 
@@ -140,10 +139,10 @@ Restart chốt match còn mở ABORTED, lượt ROOM ACTIVE thành DNF. Dùng me
 | History Solo/Community | play_runs đã kết thúc; mỗi lượt một mục của owner |
 | History Room | matches và play_runs ROOM; mỗi match đã finalize một mục của owner |
 | Profile Stats | SUM(play_ticks/jumps/falls), số lượt FINISHED và MIN(finish_ticks) full map từ play_runs của identity |
-| Số trận/thắng Room | COUNT DISTINCT match_id, riêng thắng lọc is_winner=true |
+| Số trận/thắng Room | COUNT lượt ROOM, riêng thắng lọc is_winner=true |
 | Leaderboard | Chỉ play_runs COMMUNITY; một best run mỗi Account theo [gameplay](gameplay.md#community-tower) |
 
-Account History gộp Solo/Community theo run ID và Room theo match ID, mới nhất trước theo ended_at rồi kind/id. Chỉ owner đọc được lượt cá nhân; owner của ít nhất một lượt đọc được match. Summary Room chọn lượt tốt nhất của owner, detail giữ đủ các lượt. Contract theo [protocol](protocol.md#http).
+Account History gộp Solo/Community theo run ID và Room theo match ID, mới nhất trước theo ended_at rồi kind/id. Chỉ owner đọc được lượt cá nhân; Account tham gia được đọc chi tiết trận. Summary Room lấy lượt của Account, detail hiển thị roster của trận. Contract theo [protocol](protocol.md#http).
 
 Solo Guest dùng summaries local, không gửi MySQL. Solo Account chưa sync giữ summary local ở trạng thái chờ; khi server đã lưu, thay bằng cùng kind/ID, không tạo mục thứ hai. Lượt Community ACTIVE và Room chưa finalize chưa vào History.
 

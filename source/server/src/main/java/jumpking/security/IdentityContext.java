@@ -20,10 +20,7 @@ public class IdentityContext {
     var auth = SecurityContextHolder.getContext().getAuthentication();
     if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken)
       return null;
-    return users
-        .findByTypeAndUsername("ACCOUNT", auth.getName())
-        .map(IdentityContext::accountView)
-        .orElse(null);
+    return users.findByUsername(auth.getName()).map(IdentityContext::accountView).orElse(null);
   }
 
   public static Account accountView(User user) {

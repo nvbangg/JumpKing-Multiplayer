@@ -62,11 +62,12 @@ public final class TestDatabase {
     }
   }
 
-  public long historicalGuest() {
+  public long account() {
     String name =
         "fixture_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 20);
     jdbc.update(
-        "INSERT INTO users(type,username,created_at) VALUES ('GUEST',?,UTC_TIMESTAMP(3))", name);
+        "INSERT INTO users(username,password_hash,created_at) VALUES (?,'unused-test-hash',UTC_TIMESTAMP(3))",
+        name);
     return jdbc.queryForObject("SELECT id FROM users WHERE username=?", Long.class, name);
   }
 

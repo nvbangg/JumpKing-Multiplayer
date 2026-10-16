@@ -129,7 +129,7 @@ class AdventureTest {
   }
 
   @Test
-  void restoresDialogueAtomicallyAndMigratesLegacyItemState() {
+  void restoresDialogueAtomicallyAndRejectsUnsupportedCodec() {
     var adventure = adventure();
     adventure.complete();
     var saved = adventure.snapshot();
@@ -144,15 +144,10 @@ class AdventureTest {
     assertThatThrownBy(() -> adventure.restore(invalidFlags))
         .isInstanceOf(IllegalArgumentException.class);
     assertThat(adventure.snapshot()).isEqualTo(saved);
-    var legacy = saved.deepCopy();
-    legacy.put("codecVersion", 1);
-    legacy.withArray("flags").add("CHASE_BIRD_PAST_SNOWSTORM");
-    legacy.putObject("inventory").put("Cap", 1);
-    legacy.putArray("equipped").add("Cap");
-    legacy.putArray("collected");
-    legacy.putObject("birds");
-    legacy.putObject("merchants");
-    adventure.restore(legacy);
+    var unsupported = saved.deepCopy();
+    unsupported.put("codecVersion", 99);
+    assertThatThrownBy(() -> adventure.restore(unsupported))
+        .isInstanceOf(IllegalArgumentException.class);
     assertThat(adventure.snapshot()).isEqualTo(saved);
   }
 

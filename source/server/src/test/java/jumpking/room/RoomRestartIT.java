@@ -102,7 +102,7 @@ class RoomRestartIT {
       var started = java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
       var runs = new java.util.ArrayList<jumpking.service.RoomRuns.Run>();
       for (int index = 0; index < 2; index++) {
-        long owner = TestDatabase.get().historicalGuest();
+        long owner = TestDatabase.get().account();
         runs.add(
             new jumpking.service.RoomRuns.Run(
                 java.util.UUID.randomUUID().toString(),

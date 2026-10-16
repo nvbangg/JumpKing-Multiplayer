@@ -1,9 +1,6 @@
 import map from "../../../../common/maps/main-babe.json";
 import { Adventure } from "../../game/simulation/Adventure";
-import {
-	GameSimulation,
-	type GameSnapshot,
-} from "../../game/simulation/GameSimulation";
+import type { GameSnapshot } from "../../game/simulation/GameSimulation";
 import { PHYSICS } from "../../game/simulation/tuning";
 import { uuid } from "../../network/ids";
 
@@ -107,44 +104,13 @@ export async function openStore(): Promise<IDBDatabase> {
 	return new Promise<IDBDatabase>((resolve, reject) => {
 		const open = indexedDB.open(STORE.name, STORE.version);
 		let blocked = false;
-		open.onupgradeneeded = (event) => {
+		open.onupgradeneeded = () => {
 			const db = open.result;
-			if (event.oldVersion === 0) {
-				db.createObjectStore("profiles", { keyPath: "key" });
-				db.createObjectStore("runs", { keyPath: "id" }).createIndex(
-					"profile",
-					"profile",
-				);
-			} else if (event.oldVersion === 1) {
-				const cursor = open.transaction!.objectStore("runs").openCursor();
-				cursor.onsuccess = () => {
-					const row = cursor.result;
-					if (!row) return;
-					const value = row.value;
-					if (value.snapshot) {
-						const game = new GameSimulation(map).snapshot();
-						game.physics = value.snapshot;
-						game.world.lastTick = value.snapshot.ticks;
-						row.update({ ...value, snapshot: game });
-					}
-					row.continue();
-				};
-			}
-			if (event.oldVersion > 0 && event.oldVersion < 3) {
-				const profiles = open.transaction!.objectStore("profiles").openCursor();
-				profiles.onsuccess = () => {
-					const row = profiles.result;
-					if (!row) return;
-					const { wardrobe, equipped: _equipped, ...profile } = row.value;
-					row.update({
-						...profile,
-						crownUnlocked:
-							profile.crownUnlocked === true ||
-							(Array.isArray(wardrobe) && wardrobe.includes("Crown")),
-					});
-					row.continue();
-				};
-			}
+			db.createObjectStore("profiles", { keyPath: "key" });
+			db.createObjectStore("runs", { keyPath: "id" }).createIndex(
+				"profile",
+				"profile",
+			);
 		};
 		open.onerror = () =>
 			reject(open.error || new Error("Browser storage is unavailable"));

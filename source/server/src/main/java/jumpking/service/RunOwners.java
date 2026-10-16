@@ -9,21 +9,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @Component
 public class RunOwners {
-  public record Owner(long id, String type) {}
-
   private final UserRepository users;
   private final TransactionTemplate transactions;
 
   public RunOwners(UserRepository users, TransactionTemplate transactions) {
     this.users = users;
     this.transactions = transactions;
-  }
-
-  public Owner read(long id) {
-    return users
-        .findById(id)
-        .map(u -> new Owner(u.getId(), u.getType()))
-        .orElseThrow(() -> new ApiException(404, "NOT_FOUND", "Account not found"));
   }
 
   public <T> T write(long id, Function<Long, T> writer) {

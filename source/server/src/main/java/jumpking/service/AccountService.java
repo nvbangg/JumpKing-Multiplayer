@@ -69,7 +69,7 @@ public class AccountService {
     }
     var account =
         users
-            .findByTypeAndUsername("ACCOUNT", form.username())
+            .findByUsername(form.username())
             .map(IdentityContext::accountView)
             .orElseThrow(AccountService::invalidCredentials);
     return memberships.changingIdentity(
@@ -91,8 +91,7 @@ public class AccountService {
     transactions.executeWithoutResult(
         status -> {
           var user = users.lockById(owner).orElseThrow(AccountService::invalidCredentials);
-          if (!"ACCOUNT".equals(user.getType())
-              || !passwords.matches(form.currentPassword(), user.getPasswordHash()))
+          if (!passwords.matches(form.currentPassword(), user.getPasswordHash()))
             throw invalidCredentials();
           user.setPasswordHash(hash);
         });

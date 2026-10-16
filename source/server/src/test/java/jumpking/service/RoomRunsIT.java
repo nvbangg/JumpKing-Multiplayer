@@ -28,7 +28,7 @@ class RoomRunsIT {
       String match = UUID.randomUUID().toString();
       try {
         for (int i = 0; i < 2; i++) {
-          owners.add(TestDatabase.get().historicalGuest());
+          owners.add(TestDatabase.get().account());
         }
         Instant started = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS),
             ended = started.plusSeconds(10);
@@ -127,21 +127,21 @@ class RoomRunsIT {
     String trigger = "room_rollback_" + UUID.randomUUID().toString().replace("-", "");
     try {
       for (int index = 0; index < 2; index++) {
-        users.add(TestDatabase.get().historicalGuest());
+        users.add(TestDatabase.get().account());
       }
       String name = "writer_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
       jdbc.update(
-          "INSERT INTO users(type,username,password_hash,created_at) VALUES ('ACCOUNT',?,'test-hash',UTC_TIMESTAMP(3))",
+          "INSERT INTO users(username,password_hash,created_at) VALUES (?,'test-hash',UTC_TIMESTAMP(3))",
           name);
       users.add(jdbc.queryForObject("SELECT id FROM users WHERE username=?", Long.class, name));
       Instant started = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS),
           ended = started.plusSeconds(2);
       var first =
           new RoomRuns.Run(
-              a, users.get(0), "Guest A", "ACTIVE", 0, 0, 0, 0, 0, 0, null, null, false, null);
+              a, users.get(0), "Player A", "ACTIVE", 0, 0, 0, 0, 0, 0, null, null, false, null);
       var second =
           new RoomRuns.Run(
-              b, users.get(1), "Guest B", "ACTIVE", 0, 0, 0, 0, 0, 0, null, null, false, null);
+              b, users.get(1), "Player B", "ACTIVE", 0, 0, 0, 0, 0, 0, null, null, false, null);
       var start =
           new RoomRuns.Write(
               match, "ABCDEF", "RACE", null, 10, 1, started, null, 0, null, List.of(first, second));
@@ -163,7 +163,7 @@ class RoomRunsIT {
                   new RoomRuns.Run(
                       a,
                       users.get(0),
-                      "Guest A",
+                      "Player A",
                       "ACTIVE",
                       60,
                       1,
@@ -178,7 +178,7 @@ class RoomRunsIT {
                   new RoomRuns.Run(
                       b,
                       users.get(1),
-                      "Guest B",
+                      "Player B",
                       "ACTIVE",
                       60,
                       1,
@@ -208,7 +208,7 @@ class RoomRunsIT {
                   new RoomRuns.Run(
                       a,
                       users.get(0),
-                      "Guest A",
+                      "Player A",
                       "FINISHED",
                       61,
                       2,
@@ -223,7 +223,7 @@ class RoomRunsIT {
                   new RoomRuns.Run(
                       b,
                       users.get(1),
-                      "Guest B",
+                      "Player B",
                       "UNFINISHED",
                       61,
                       1,

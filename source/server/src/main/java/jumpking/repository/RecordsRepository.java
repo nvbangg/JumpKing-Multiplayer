@@ -24,21 +24,17 @@ public class RecordsRepository {
     tickRate = shared.tuning().tickRate;
   }
 
-  // Sau Merge, một owner có thể có nhiều lượt cùng match: History chỉ chọn một dòng đại diện.
   private static final String HISTORY =
       """
-        WITH owned_rooms AS (
-          SELECT p.status,p.play_ticks,p.jumps,p.falls,p.current_progress,p.max_progress,p.finish_ticks,p.`rank`,p.is_winner,
-            m.id,m.started_at,m.ended_at,m.mode,m.map_level,m.room_code,m.duration_ticks,
-            ROW_NUMBER() OVER (PARTITION BY m.id ORDER BY p.`rank`,p.id) AS choice
-          FROM play_runs p JOIN matches m ON m.id=p.match_id WHERE p.user_id=:owner AND p.kind='ROOM' AND m.ended_at IS NOT NULL
-        ), history AS (
+        WITH history AS (
           SELECT id,kind,status,started_at,ended_at,play_ticks,jumps,falls,current_progress,max_progress,finish_ticks,
             NULL AS mode,NULL AS map_level,NULL AS room_code,NULL AS duration_ticks,NULL AS `rank`,FALSE AS is_winner
           FROM play_runs WHERE user_id=:owner AND kind IN ('SOLO','COMMUNITY') AND status<>'ACTIVE'
           UNION ALL
-          SELECT id,'ROOM',status,started_at,ended_at,play_ticks,jumps,falls,current_progress,max_progress,finish_ticks,
-            mode,map_level,room_code,duration_ticks,`rank`,is_winner FROM owned_rooms WHERE choice=1
+          SELECT m.id,'ROOM',p.status,m.started_at,m.ended_at,p.play_ticks,p.jumps,p.falls,p.current_progress,p.max_progress,p.finish_ticks,
+            m.mode,m.map_level,m.room_code,m.duration_ticks,p.`rank`,p.is_winner
+          FROM play_runs p JOIN matches m ON m.id=p.match_id
+          WHERE p.user_id=:owner AND p.kind='ROOM' AND m.ended_at IS NOT NULL
         ) SELECT * FROM history
         """;
 
@@ -50,8 +46,8 @@ public class RecordsRepository {
                     """
             SELECT COALESCE(SUM(play_ticks),0) AS ticks,COALESCE(SUM(jumps),0) AS jumps,COALESCE(SUM(falls),0) AS falls,
               COALESCE(SUM(status='FINISHED'),0) AS finishes,MIN(CASE WHEN kind<>'ROOM' OR m.map_level=10 THEN finish_ticks END) AS best,
-              COUNT(DISTINCT CASE WHEN kind='ROOM' THEN match_id END) AS matches,
-              COUNT(DISTINCT CASE WHEN kind='ROOM' AND is_winner=TRUE THEN match_id END) AS wins
+              COUNT(CASE WHEN kind='ROOM' THEN match_id END) AS matches,
+              COUNT(CASE WHEN kind='ROOM' AND is_winner=TRUE THEN match_id END) AS wins
             FROM play_runs p LEFT JOIN matches m ON m.id=p.match_id WHERE p.user_id=:owner
             """,
                     Tuple.class)
@@ -134,7 +130,7 @@ public class RecordsRepository {
                   CASE WHEN r.status='FINISHED' THEN r.finish_ticks END,
                   CASE WHEN r.status<>'FINISHED' THEN r.max_progress END DESC,
                   CASE WHEN r.status<>'FINISHED' THEN r.peak_reached_ticks END,r.id) AS best
-              FROM play_runs r JOIN users u ON u.id=r.user_id WHERE r.kind='COMMUNITY' AND u.type='ACCOUNT'
+              FROM play_runs r JOIN users u ON u.id=r.user_id WHERE r.kind='COMMUNITY'
             ), ranked AS (
               SELECT id,username,status,current_progress,max_progress,play_ticks,peak_reached_ticks,finish_ticks,
                 RANK() OVER (ORDER BY (status='FINISHED') DESC,CASE WHEN status='FINISHED' THEN finish_ticks END,

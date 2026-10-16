@@ -10,7 +10,7 @@ HTTP JSON `/api`, raw WebSocket `/ws/game`, contract version 1. Solo chỉ dùng
 
 Account dùng Spring Security server-side session, không JWT. Solo Guest chỉ có profile trình duyệt; không có Guest API/cookie online. Cookies HttpOnly, SameSite=Lax, Path=/, host-only; Secure theo [deployment](deployment.md#cấu-hình).
 
-HTTP dùng credentials:include và CSRF trước mutation. Login/Register đổi session ID/CSRF; Logout hoặc đổi mật khẩu hủy session. Đổi mật khẩu yêu cầu Account, currentPassword/newPassword, validate/hash như Register; chỉ trả thành công sau commit và thu hồi các phiên/socket của Account. Không có reset qua email.
+HTTP dùng credentials:include và CSRF trước mutation. Login/Register đổi session ID/CSRF; Logout hoặc đổi mật khẩu hủy session. Đổi mật khẩu yêu cầu Account, currentPassword/newPassword, validate/hash như Register; chỉ trả thành công sau commit và thu hồi các phiên/socket của Account. Chưa có khôi phục mật khẩu.
 
 CORS nhận origins cụ thể, preflight trước authentication. WS yêu cầu Account và Origin trong allowlist; không tin tên/owner do client gửi. Login Account khác khi còn membership bị từ chối; đăng nhập lại đúng Account để reconnect vẫn cần token cũ. Session idle 30 phút, absolute 24 giờ; HTTP/WS cùng kiểm tra, heartbeat không gia hạn idle. Hết session xử lý như disconnect, không xóa dữ liệu đã lưu.
 

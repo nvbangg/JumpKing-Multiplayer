@@ -28,7 +28,7 @@ class LeaderboardIT {
       for (int index = 0; index < 4; index++) {
         String name = "ranking_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
         jdbc.update(
-            "INSERT INTO users(type,username,password_hash,created_at) VALUES ('ACCOUNT',?,'unused-test-hash',UTC_TIMESTAMP(3))",
+            "INSERT INTO users(username,password_hash,created_at) VALUES (?,'unused-test-hash',UTC_TIMESTAMP(3))",
             name);
         owners.add(jdbc.queryForObject("SELECT id FROM users WHERE username=?", Long.class, name));
       }

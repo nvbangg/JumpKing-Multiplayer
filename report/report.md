@@ -32,7 +32,7 @@ Prediction cho client áp dụng input ngay; reconciliation khôi phục trạng
 | Tính đúng | Không vượt quyền Host/owner, không đổi map giữa trận, không nhân đôi kết quả khi retry |
 | Phạm vi vận hành | Một backend instance; Room trong RAM, Community có checkpoint bền vững |
 
-Solo mô phỏng và autosave ở trình duyệt. Solo Account chỉ đồng bộ metrics, vì vậy không được dùng làm thành tích Community. Community yêu cầu Account, giữ lượt cá nhân khi chuyển sảnh và tính leaderboard từ dữ liệu server. Room nhận Guest hoặc Account; Host chọn Public/Private, mode và độ dài map trước khi Start với ít nhất hai người.
+Solo mô phỏng và autosave ở trình duyệt. Solo Account chỉ đồng bộ metrics, vì vậy không được dùng làm thành tích Community. Community yêu cầu Account, lưu checkpoint theo Account và tính leaderboard từ dữ liệu server. Room yêu cầu Account; Host chọn Public/Private, mode và độ dài map trước khi Start từ một người.
 
 ## 4. Kiến trúc hệ thống
 
@@ -46,7 +46,7 @@ React quản lý các màn hình; Phaser chỉ hiển thị và phát presentati
 
 ![Hình 2. Luồng rút gọn từ xác thực đến kết quả Room đã lưu.](../statics/protocol.svg)
 
-Client lấy CSRF trước mutation HTTP, tạo Guest hoặc đăng nhập bằng session cookie rồi mở `/ws/game`. Handshake kiểm tra identity và Origin. Mỗi command có requestId để ghép response; input dùng playId/generation/seq. Ví dụ message version 1:
+Client lấy CSRF trước mutation HTTP, đăng nhập bằng session cookie rồi mở `/ws/game`. Handshake kiểm tra identity và Origin. Mỗi command có requestId để ghép response; input dùng playId/generation/seq. Ví dụ message version 1:
 
 ```json
 {"v":1,"type":"PLAYER_INPUT","payload":{
@@ -72,7 +72,7 @@ Client giữ tối đa 180 input chờ ACK. Khi nhận snapshot, client khôi ph
 
 MySQL có ba bảng: users giữ identity/crown; play_runs giữ từng lượt và checkpoint Community; matches giữ thông tin chung của trận Room. Lượt Room tham chiếu match. History và Stats dùng projection, không tải snapshot hoặc Entity vào API. Transaction đi qua Service theo mô hình Spring Data JPA [4].
 
-Revision và payload kiểm tra retry: cùng revision/cùng nội dung được chấp nhận, cùng revision/khác nội dung bị conflict. New Run/Merge/writer khóa owner và lượt theo thứ tự; finalize match và roster cùng transaction. Worker ghi ngoài tick; chỉ phát SAVED sau commit, lỗi có retry giới hạn và trạng thái FAILED.
+Revision và payload kiểm tra retry: cùng revision/cùng nội dung được chấp nhận, cùng revision/khác nội dung bị conflict. New Run/writer khóa owner và lượt theo thứ tự; finalize match và roster cùng transaction. Worker ghi ngoài tick; chỉ phát SAVED sau commit, lỗi có retry giới hạn và trạng thái FAILED.
 
 | Sự cố | Cách xử lý và bằng chứng kiểm thử |
 | --- | --- |
@@ -150,8 +150,8 @@ Compute tick nhỏ hơn ngân sách 16,67 ms trong workload này, nhưng end-to-
 | --- | --- |
 | Đồng bộ responsive nhưng authoritative | Sequence/generation/ACK, prediction/reconciliation và interpolation; baseline định lượng ở mục 9; server từ chối position/clock giả |
 | Tích hợp hai simulation độc lập | JSON map/tuning chung, float32 cùng điểm, fixtures độc lập và replay 43 screen/10 mốc Finish; không dùng Phaser physics làm luật server |
-| Lưu nhất quán ngoài vòng tick | Revision, khóa/transaction, worker và finalize idempotent; integration kiểm tra duplicate/conflict, rollback, late writer, Merge và restart |
-| Game mạng có lifecycle đầy đủ | Public/Private, Host Start/Pause/End, reconnect, chat và ranking RAM; Chrome nhiều identities cùng MySQL thật |
+| Lưu nhất quán ngoài vòng tick | Revision, khóa/transaction, worker và finalize idempotent; integration kiểm tra duplicate/conflict, rollback, late writer và restart |
+| Game mạng có lifecycle đầy đủ | Public/Private, Host Start/End, reconnect, chat và ranking RAM; Chrome nhiều identities cùng MySQL thật |
 
 Các đóng góp là thiết kế và kiểm chứng trong phạm vi dự án học phần. Prediction, WebSocket và JPA là kỹ thuật có sẵn, không được tuyên bố là sáng tạo thuật toán của nhóm. Chưa có baseline writer đồng bộ nên không kết luận số phần trăm tăng throughput nhờ worker. Test correctness và số đo tải chỉ hỗ trợ các kết luận đúng phạm vi đã nêu.
 
@@ -159,9 +159,9 @@ Các đóng góp là thiết kế và kiểm chứng trong phạm vi dự án h�
 
 Mẫu tải 5 giây, loopback, một JVM gồm server/driver, chưa có khoảng tin cậy hoặc soak test. Chưa nghiệm thu bản mới bằng điện thoại thật, hai thiết bị LAN/ZeroTier hoặc mạng ngoài VPS; các browser identities và touch emulation không thay thế các kiểm tra này. Các quota cấu hình không phải năng lực phục vụ đã đo. Room nằm trong RAM nên restart không tiếp tục được trận; checkpoint Community có thể mất phần tiến độ chưa commit.
 
-Solo chạy local và metrics tự khai báo, chỉ dùng Stats/History; Community leaderboard không lấy số liệu Solo. Guest crown là quyền ngoại hình tự khai báo, không chứng minh kỹ năng. Kết quả quét dependency không bảo đảm loại hết lỗ hổng: npm audit không có cảnh báo; hai advisory Spring MVC liên quan SSE fragments/XsltView được ghi nhận nhưng ứng dụng không dùng các chức năng đó [7][8].
+Solo chạy local và metrics tự khai báo, chỉ dùng Stats/History; Community leaderboard không lấy số liệu Solo. Crown từ Solo Account là quyền ngoại hình do client khai báo, không chứng minh kỹ năng. Kết quả quét dependency không bảo đảm loại hết lỗ hổng: npm audit không có cảnh báo; hai advisory Spring MVC liên quan SSE fragments/XsltView được ghi nhận nhưng ứng dụng không dùng các chức năng đó [7][8].
 
-Nội dung Main Babe chuyển thể từ Jump King 1.04 của Nexile; chưa có giấy phép phân phối lại được cung cấp, không coi assets là nguồn mở [1]. Attribution hiện có ghi tại `source/client/public/assets/ATTRIBUTION.md`. Kế hoạch sau nghiệm thu gồm thay assets bằng nguồn có quyền sử dụng, deploy online, email verification/password reset và items/player collision nếu được chọn. Chưa xác nhận Compilatio hoặc nộp bài.
+Nội dung Main Babe chuyển thể từ Jump King 1.04 của Nexile; chưa có giấy phép phân phối lại được cung cấp, không coi assets là nguồn mở [1]. Attribution hiện có ghi tại `source/client/public/assets/ATTRIBUTION.md`. Kế hoạch sau nghiệm thu gồm thay assets bằng nguồn có quyền sử dụng, deploy online và items/player collision nếu được chọn. Chưa xác nhận Compilatio hoặc nộp bài.
 
 ## 12. Kết luận
 

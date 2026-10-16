@@ -37,7 +37,7 @@ class CommunityRunsIT {
   long account() {
     String name = "checkpoint_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
     jdbc.update(
-        "INSERT INTO users(type,username,password_hash,created_at) VALUES ('ACCOUNT',?,'unused-test-hash',UTC_TIMESTAMP(3))",
+        "INSERT INTO users(username,password_hash,created_at) VALUES (?,'unused-test-hash',UTC_TIMESTAMP(3))",
         name);
     return jdbc.queryForObject("SELECT id FROM users WHERE username=?", Long.class, name);
   }
@@ -79,7 +79,7 @@ class CommunityRunsIT {
   }
 
   @Test
-  void concurrentContinueCreatesExactlyOneActiveRunAndGuestIsRejected() throws Exception {
+  void concurrentContinueCreatesExactlyOneActiveRunAndRejectsUnknownOwner() throws Exception {
     long owner = account();
     var spawn = game().snapshot();
     try (var pool = Executors.newFixedThreadPool(2)) {
@@ -94,8 +94,7 @@ class CommunityRunsIT {
                 Integer.class,
                 owner))
         .isEqualTo(1);
-    long guest = TestDatabase.get().historicalGuest();
-    assertThatThrownBy(() -> records.open(guest, false, null, spawn))
+    assertThatThrownBy(() -> records.open(Long.MAX_VALUE, false, null, spawn))
         .isInstanceOf(ApiException.class);
   }
 

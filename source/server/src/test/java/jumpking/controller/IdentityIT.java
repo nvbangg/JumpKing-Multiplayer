@@ -349,7 +349,7 @@ class IdentityIT {
       var shared = new jumpking.game.SharedData(json);
       assertThat(tree(map)).isEqualTo(shared.map());
       assertThat(tree(config).path("features").path("flyEnabled").asBoolean()).isFalse();
-      assertThat(config.body()).doesNotContain("password", "guest_token", "allowed-origins");
+      assertThat(config.body()).doesNotContain("password", "allowed-origins");
     }
   }
 
@@ -485,7 +485,6 @@ class IdentityIT {
       assertThat(response.statusCode()).isEqualTo(200);
       assertThat(tree(response).path("authenticated").asBoolean()).isTrue();
       assertThat(tree(response).path("account").path("id").isTextual()).isTrue();
-      assertThat(tree(response).path("account").has("email")).isFalse();
       String id = client.cookie("JSESSIONID");
       assertThat(id).isNotEqualTo(previous);
       assertThat(sessions.find(previous)).isNull();
@@ -525,7 +524,6 @@ class IdentityIT {
               registration("invalid name", "password123"),
               registration(name, "short"),
               registration(name, "é".repeat(37)),
-              "{\"email\":true,\"username\":\"player\",\"password\":\"password123\"}",
               registration(name, "password123").replace("}", ",\"admin\":true}"))) {
         assertThat(client.send("/auth/register", "POST", body).statusCode())
             .as(body)

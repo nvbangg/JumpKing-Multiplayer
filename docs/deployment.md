@@ -86,9 +86,9 @@ CREATE USER 'jumpking_app'@'127.0.0.1' IDENTIFIED BY 'CHANGE_ME';
 GRANT SELECT, INSERT, UPDATE, DELETE ON jumpking.* TO 'jumpking_app'@'127.0.0.1';
 ```
 
-4. Điền datasource; backend chỉ kiểm tra schema, không tự reset/update và không chạy bằng root.
+4. Điền datasource; backend dùng `spring.jpa.hibernate.ddl-auto=validate`, `spring.jpa.open-in-view=false`, không tự reset/update và không chạy bằng root.
 
-mysql CLI: từ root project mở mysql client rồi chạy `SOURCE source/database/schema.sql;`. Workbench: File → Open SQL Script → schema.sql → Execute. Chỉ chạy khi cài mới hoặc chủ động reset, không chạy mỗi lần khởi động. Reset database không xóa user MySQL đã tạo; không cần tạo lại user nếu thông tin và quyền vẫn đúng. Muốn giữ dữ liệu khi thay schema phải chuẩn bị SQL nâng cấp riêng trước khi thực hiện.
+mysql CLI: từ root project mở mysql client rồi chạy `SOURCE source/database/schema.sql;`. Workbench: File → Open SQL Script → schema.sql → Execute. Chỉ chạy khi cài mới hoặc chủ động reset, không chạy mỗi lần khởi động. Reset database không xóa user MySQL đã tạo; không cần tạo lại user nếu thông tin và quyền vẫn đúng.
 
 Backup bằng mysqldump/Workbench vào `.local/backups/`, dùng prompt nhập password hoặc cấu hình riêng. Thử restore vào instance cô lập, kiểm tra dữ liệu trước thay database thật; không commit dump. [MySQL CREATE USER](https://dev.mysql.com/doc/refman/8.4/en/create-user.html)
 
@@ -155,29 +155,3 @@ Build JAR có frontend theo phần trên; đặt MySQL trong mạng riêng của
 HTTPS/WSS có thể kết thúc trực tiếp tại Spring Boot bằng server.ssl.* và keystore riêng được ignore, hoặc qua reverse proxy đã cấu hình đúng. Không mặc định trust forwarded headers khi không có proxy; không mở MySQL ra Internet. Chứng chỉ/keystore/password không đưa lên Git. DNS chỉ trỏ địa chỉ, không tự cấp HTTPS. Sau cập nhật phải build và restart JAR; push Git không tự deploy nếu chưa có pipeline.
 
 Kiểm tra từ mạng ngoài: đăng ký/đăng nhập, WS, Room hai Account, Community save/Continue và reconnect. Cấu hình TLS/service cụ thể phụ thuộc VPS, không dùng thông số máy cá nhân trong source.
-
-## Persistence JPA
-
-Backend dùng Spring Data JPA/Hibernate với `spring.jpa.hibernate.ddl-auto=validate` và `spring.jpa.open-in-view=false`; không tự tạo/update/reset database khi start. Khởi tạo lại theo phần [MySQL](#mysql). Credentials giữ ở file riêng như bảng cấu hình; không đưa database vào Git.
-
-## Nâng cấp identity từ schema có email
-
-Dừng backend cũ trước khi nâng cấp; không chạy schema.sql reset nếu muốn giữ dữ liệu. Với schema có email/Guest token/Merge pointer, sao lưu riêng, kiểm tra đúng tên constraints rồi chạy một lần bằng tài khoản quản trị. Các lượt của Guest đã Merge phải thuộc Account đích trước khi bỏ pointer:
-
-```sql
-USE jumpking;
--- Kết quả phải bằng 0; nếu khác 0, dừng để kiểm tra ownership.
-SELECT COUNT(*) FROM play_runs p JOIN users u ON u.id=p.user_id
-WHERE u.merged_into_user_id IS NOT NULL;
-
-ALTER TABLE users DROP CHECK ck_users_identity;
-ALTER TABLE users DROP FOREIGN KEY fk_users_merged_into;
-ALTER TABLE users DROP INDEX uq_users_email, DROP INDEX uq_users_guest_token,
-  DROP COLUMN email, DROP COLUMN guest_token_hash, DROP COLUMN merged_into_user_id;
-ALTER TABLE users ADD CONSTRAINT ck_users_identity CHECK
-  (type IN ('ACCOUNT','GUEST') AND
-   (type <> 'ACCOUNT' OR (username IS NOT NULL AND password_hash IS NOT NULL)));
-ALTER TABLE play_runs MODIFY nickname VARCHAR(32) NULL;
-```
-
-ID, username, password hash, crown và các lượt/trận giữ nguyên. Rows GUEST chỉ còn dữ liệu lịch sử, không đăng nhập hoặc tham gia online; không chuyển dữ liệu sang Account. Chạy bản backend mới sau khi nâng cấp; không áp dụng lại đoạn SQL nếu các cột đã được bỏ.

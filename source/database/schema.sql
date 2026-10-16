@@ -5,14 +5,12 @@ USE jumpking;
 
 CREATE TABLE users (
     id BIGINT NOT NULL AUTO_INCREMENT,
-    type VARCHAR(16) NOT NULL,
-    username VARCHAR(32) NULL,
-    password_hash VARCHAR(255) NULL,
+    username VARCHAR(32) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
     crown_unlocked BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME(3) NOT NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_users_username (username),
-    CONSTRAINT ck_users_identity CHECK (type IN ('ACCOUNT','GUEST') AND (type <> 'ACCOUNT' OR (username IS NOT NULL AND password_hash IS NOT NULL)))
+    UNIQUE KEY uq_users_username (username)
 ) ENGINE=InnoDB;
 
 CREATE TABLE matches (
@@ -35,7 +33,7 @@ CREATE TABLE matches (
     CONSTRAINT ck_matches_end CHECK (
         (ended_at IS NULL AND end_reason IS NULL)
         OR (ended_at IS NOT NULL AND ended_at >= started_at AND end_reason IS NOT NULL
-            AND end_reason IN ('FINISH', 'TIME_LIMIT', 'HOST_ENDED', 'PAUSE_TIMEOUT', 'ALL_DISCONNECTED', 'ABORTED'))
+            AND end_reason IN ('FINISH', 'TIME_LIMIT', 'HOST_ENDED', 'ALL_DISCONNECTED', 'ABORTED'))
     )
 ) ENGINE=InnoDB;
 
@@ -65,7 +63,7 @@ CREATE TABLE play_runs (
     PRIMARY KEY (id),
     UNIQUE KEY uq_active_community_user (active_community_user_id),
     KEY ix_runs_owner_history (user_id, ended_at, id),
-    KEY ix_runs_match (match_id),
+    UNIQUE KEY uq_runs_match_user (match_id, user_id),
     KEY ix_runs_leaderboard (kind, status),
     CONSTRAINT fk_runs_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
     CONSTRAINT fk_runs_match FOREIGN KEY (match_id) REFERENCES matches (id) ON DELETE RESTRICT,

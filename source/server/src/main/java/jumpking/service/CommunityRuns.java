@@ -84,8 +84,6 @@ public class CommunityRuns {
     return owners.write(
         account,
         owner -> {
-          if (!owners.read(owner).type().equals("ACCOUNT"))
-            throw new ApiException(403, "ACCOUNT_REQUIRED", "Sign in to play Community Tower");
           var active = runs.lockActiveCommunity(owner).orElse(null);
           var old =
               active == null

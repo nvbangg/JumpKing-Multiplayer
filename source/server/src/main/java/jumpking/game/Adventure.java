@@ -245,18 +245,16 @@ public final class Adventure {
 
   public void restore(JsonNode saved) {
     require(saved != null && saved.isObject());
-    int version = saved.path("codecVersion").asInt();
     require(
         saved.path("codecVersion").isIntegralNumber()
-            && (version == 1 || version == 2)
+            && saved.path("codecVersion").asInt() == 2
             && saved.path("flags").isArray());
     var seen = new HashSet<String>();
     for (JsonNode flag : saved.path("flags"))
       require(
           flag.isTextual()
               && seen.add(flag.asText())
-              && (flag.asText().equals("CompletedNormalGame")
-                  || (version == 1 && flag.asText().equals("CHASE_BIRD_PAST_SNOWSTORM"))));
+              && flag.asText().equals("CompletedNormalGame"));
     for (JsonNode npc : data.path("npcs")) {
       String id = npc.path("id").asText();
       var s = saved.path("dialogue").path(id);
@@ -288,7 +286,6 @@ public final class Adventure {
               && s.path("line").asInt() < readable.path("lineLengths").size()
               && s.path("done").isBoolean());
     }
-    // Save v1 giữ tiến độ hội thoại; bỏ các trường vật phẩm khỏi snapshot mới.
     var next = JSON.objectNode().put("codecVersion", 2);
     var flags = next.putArray("flags");
     if (seen.contains("CompletedNormalGame")) flags.add("CompletedNormalGame");
