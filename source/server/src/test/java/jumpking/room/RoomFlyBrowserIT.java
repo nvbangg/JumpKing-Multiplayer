@@ -29,7 +29,7 @@ class RoomFlyBrowserIT {
   @LocalServerPort int port;
 
   @Test
-  void fourRoomModesUseServerEnabledOptionsAndDoubleSpace() throws Exception {
+  void fourRoomModesUseServerEnabledDoubleSpaceAndHeldJump() throws Exception {
     BrowserHarness.run(
         port, VITE_PORT, "room-fly", "e2e/room-fly-online.spec.ts", Map.of("E2E_ROOM_FLY", "true"));
   }

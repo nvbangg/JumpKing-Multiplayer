@@ -1,16 +1,23 @@
+import { useEffect, useState } from "react";
 import type { Options } from "./options";
 
 export function OptionsButtons({
 	options,
-	flyAllowed,
 	onChange,
 	onError,
 }: {
 	options: Options;
-	flyAllowed: boolean;
 	onChange: (key: keyof Options) => void;
 	onError: (message: string) => void;
 }) {
+	const [fullscreen, setFullscreen] = useState(
+		() => !!document.fullscreenElement,
+	);
+	useEffect(() => {
+		const changed = () => setFullscreen(!!document.fullscreenElement);
+		document.addEventListener("fullscreenchange", changed);
+		return () => document.removeEventListener("fullscreenchange", changed);
+	}, []);
 	return (
 		<>
 			<button
@@ -23,6 +30,8 @@ export function OptionsButtons({
 			</button>
 			<button
 				type="button"
+				role="switch"
+				aria-checked={fullscreen}
 				disabled={
 					typeof document !== "undefined" && !document.fullscreenEnabled
 				}
@@ -35,18 +44,8 @@ export function OptionsButtons({
 					);
 				}}
 			>
-				Fullscreen
+				Fullscreen: {fullscreen ? "On" : "Off"}
 			</button>
-			{flyAllowed && (
-				<button
-					type="button"
-					role="switch"
-					aria-checked={options.fly}
-					onClick={() => onChange("fly")}
-				>
-					Fly Mode: {options.fly ? "On" : "Off"}
-				</button>
-			)}
 		</>
 	);
 }

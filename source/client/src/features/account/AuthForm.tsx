@@ -24,11 +24,11 @@ export function AuthForm({
 					const password = String(data.get("password") || "");
 					if (
 						register &&
-						([...password].length < 10 ||
+						([...password].length < 6 ||
 							new TextEncoder().encode(password).length > 72)
 					) {
 						setError(
-							"Password must have at least 10 characters and no more than 72 UTF-8 bytes",
+							"Password must have at least 6 characters and no more than 72 UTF-8 bytes",
 						);
 						return;
 					}

@@ -26,7 +26,7 @@ test("Account lobby, permanent chat, settings draft and Host transfer", async ({
 		const id = await createRoom(a);
 		await expect(
 			a.getByRole("button", { name: "Start", exact: true }),
-		).toBeDisabled();
+		).toBeEnabled();
 		await joinRoom(b, id);
 		await expect(a.locator(".players")).toContainText(peer);
 		await expect(b.locator(".players")).toContainText(host);
@@ -53,7 +53,7 @@ test("Account lobby, permanent chat, settings draft and Host transfer", async ({
 		await expect(b.getByLabel("Mode", { exact: true })).toBeEnabled();
 		await expect(
 			b.getByRole("button", { name: "Start", exact: true }),
-		).toBeDisabled();
+		).toBeEnabled();
 		await expect(b.locator(".room-code code")).toHaveText(id);
 		await b.getByRole("button", { name: "Leave", exact: true }).click();
 		expect((await (await a.request.get("/api/history")).json()).items).toEqual(
@@ -147,7 +147,7 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			await a.getByRole("button", { name: "Play Again", exact: true }).click();
 			await expect(
 				a.getByRole("button", { name: "Start", exact: true }),
-			).toBeDisabled();
+			).toBeEnabled();
 			await expect(
 				b.getByRole("heading", { name: "Results", exact: true }),
 			).toBeVisible();
@@ -180,5 +180,84 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			await leaveOnline(b);
 			await ca.close();
 			await cb.close();
+		}
+	});
+
+for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
+	test(`one-player Room ${mode}: Start, Players, End, Play Again and History`, async ({
+		page,
+	}, info) => {
+		test.setTimeout(60000);
+		const observed = observeOnline(page);
+		try {
+			await registerOnline(page, "alone");
+			await page.getByRole("button", { name: "Room", exact: true }).click();
+			const idInput = page.getByPlaceholder("Enter Room ID", { exact: true });
+			await expect(idInput).toBeVisible();
+			const join = page.getByRole("button", { name: "Join", exact: true });
+			const inputBox = (await idInput.boundingBox())!,
+				joinBox = (await join.boundingBox())!;
+			expect(
+				Math.abs(
+					inputBox.y + inputBox.height / 2 - joinBox.y - joinBox.height / 2,
+				),
+			).toBeLessThan(2);
+			await page
+				.getByRole("button", { name: "Create Room", exact: true })
+				.click();
+			const code = await page.locator(".room-code code").innerText();
+			await page.getByLabel("Mode", { exact: true }).selectOption(mode);
+			await startRoom(page, page);
+			await expect(
+				page.getByRole("heading", { name: "Players", exact: true }),
+			).toBeVisible();
+			await expect(
+				page.getByRole("list", { name: "Current players" }).locator("li"),
+			).toHaveCount(1);
+			const id = observed.snapshot!.playId;
+			await page.setViewportSize({ width: 390, height: 844 });
+			await page.screenshot({ path: info.outputPath("players-mobile.png") });
+			await page.getByRole("button", { name: "Menu", exact: true }).click();
+			expect(
+				await page.locator(".controls-help").evaluate(
+					(help) =>
+						!!(
+							Array.from(document.querySelectorAll(".game-overlay button"))
+								.find((button) => button.textContent === "Leave Room")!
+								.compareDocumentPosition(help) &
+							Node.DOCUMENT_POSITION_FOLLOWING
+						),
+				),
+			).toBe(true);
+			await page
+				.getByRole("button", { name: "End Match", exact: true })
+				.click();
+			await expect(
+				page.getByText("Results saved", { exact: true }),
+			).toBeVisible();
+			await expect(page.getByRole("table").locator("tbody tr")).toHaveCount(1);
+			const history = (await (await page.request.get("/api/history")).json())
+				.items;
+			expect(history).toHaveLength(1);
+			expect(history[0].room.mode).toBe(mode);
+			await page
+				.getByRole("button", { name: "Play Again", exact: true })
+				.click();
+			await expect(page.locator(".room-code code")).toHaveText(code);
+			await startRoom(page, page);
+			await expect.poll(() => observed.snapshot?.playId).not.toBe(id);
+			await page.getByRole("button", { name: "Menu", exact: true }).click();
+			await page
+				.getByRole("button", { name: "End Match", exact: true })
+				.click();
+			await expect(
+				page.getByText("Results saved", { exact: true }),
+			).toBeVisible();
+			await page.getByRole("button", { name: "Leave", exact: true }).click();
+			expect(
+				(await (await page.request.get("/api/history")).json()).items,
+			).toHaveLength(2);
+		} finally {
+			await leaveOnline(page);
 		}
 	});

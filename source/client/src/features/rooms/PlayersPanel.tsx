@@ -9,8 +9,11 @@ export function PlayersPanel({
 	selfId: string | null;
 }) {
 	return (
-		<details className="in-game-panel" aria-label="Players ranking">
-			<summary>Players</summary>
+		<section
+			className="in-game-panel players-panel"
+			aria-label="Players ranking"
+		>
+			<h2>Players</h2>
 			<ol aria-label="Current players">
 				{players.map((player) => (
 					<li
@@ -24,6 +27,6 @@ export function PlayersPanel({
 					</li>
 				))}
 			</ol>
-		</details>
+		</section>
 	);
 }

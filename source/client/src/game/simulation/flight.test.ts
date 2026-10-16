@@ -33,6 +33,23 @@ test("fly is denied by default and cancel does not toggle enabled flight", () =>
 	expect(sim.snapshot().freeFlight).toBe(true);
 });
 
+test("holding Jump ascends in flight without charging or counting jumps", () => {
+	const sim = new Simulation(world, true);
+	sim.setFlight(true);
+	for (let i = 0; i < 20; i++) sim.tick({ ...idle, jump: true });
+	expect(sim.snapshot()).toMatchObject({
+		y: 232,
+		vy: -3.5,
+		charge: 0,
+		jumps: 0,
+		freeFlight: true,
+	});
+	sim.tick(idle);
+	expect(sim.snapshot().vy).toBe(0);
+	sim.tick({ ...idle, jump: true, up: true, down: true });
+	expect(sim.snapshot().vy).toBe(0);
+});
+
 test("disabling fly inside solid falls vertically until the entire body is clear", () => {
 	const sim = new Simulation(world, true);
 	sim.restore({ ...sim.snapshot(), y: 150, grounded: false, freeFlight: true });

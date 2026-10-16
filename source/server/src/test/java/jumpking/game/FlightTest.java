@@ -50,6 +50,21 @@ class FlightTest {
   }
 
   @Test
+  void heldJumpAscendsWithoutChargingOrCountingJumps() {
+    var sim = new Simulation(world, physics, true, false);
+    sim.setFlight(true);
+    for (int i = 0; i < 20; i++) sim.tick(new PlayerInput(false, false, true));
+    assertThat(sim.snapshot().y).isEqualTo(232);
+    assertThat(sim.snapshot().vy).isEqualTo(-3.5);
+    assertThat(sim.snapshot().charge).isZero();
+    assertThat(sim.snapshot().jumps).isZero();
+    sim.tick(PlayerInput.NEUTRAL);
+    assertThat(sim.snapshot().vy).isZero();
+    sim.tick(new PlayerInput(false, false, true, true, true, true));
+    assertThat(sim.snapshot().vy).isZero();
+  }
+
+  @Test
   void phasingFallsVerticallyAndRestoresNormalCollision() {
     var sim = new Simulation(world, physics, true, false);
     var saved = sim.snapshot();

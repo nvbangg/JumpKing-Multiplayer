@@ -127,7 +127,7 @@ Room bắt đầu gameplay tạo match và lượt ROOM của roster trong một
 
 Writer lưu duration_ticks/metrics định kỳ theo deployment và flush khi kết thúc; không lưu snapshot Room. Leave/hết hạn reconnect chốt DNF; finalize chốt người còn lại UNFINISHED/FINISHED. play_ticks≤duration_ticks; xếp hạng dùng clock chung theo gameplay.
 
-Finalize ghi match và metrics/rank/winner trong một transaction, tăng revision/updated_at; giữ metrics/ended_at đã chốt của DNF. Match đang chơi có ended_at/end_reason cùng NULL, kết thúc cùng khác NULL và ended_at≥started_at. Service kiểm tra roster 2–10, đúng match/kind, rank≤số người và comparator. Retry giữ UUID: cùng kết quả no-op, khác kết quả đã chốt báo lỗi.
+Finalize ghi match và metrics/rank/winner trong một transaction, tăng revision/updated_at; giữ metrics/ended_at đã chốt của DNF. Match đang chơi có ended_at/end_reason cùng NULL, kết thúc cùng khác NULL và ended_at≥started_at. Service kiểm tra roster 1–10, đúng match/kind, rank≤số người và comparator. Retry giữ UUID: cùng kết quả no-op, khác kết quả đã chốt báo lỗi.
 
 Room hết thành viên vẫn giữ kết quả chưa ghi trong quota phòng; retry cùng payload, chỉ giải phóng sau commit. Shutdown flush có giới hạn thời gian; không báo SAVED khi ghi lỗi.
 

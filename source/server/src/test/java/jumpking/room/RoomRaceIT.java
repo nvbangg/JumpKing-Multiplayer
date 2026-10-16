@@ -292,7 +292,7 @@ class RoomRaceIT {
   }
 
   @Test
-  void minimumPlayersPermissionsAndCountdownCancellationDoNotCreateHistory() throws Exception {
+  void permissionsAndCountdownCancellationDoNotCreateHistory() throws Exception {
     try (var a = new GameClient(port);
         var b = new GameClient(port);
         var extra = new GameClient(port)) {
@@ -301,8 +301,6 @@ class RoomRaceIT {
         client.connect();
       }
       String id = a.ok("CREATE_ROOM", Map.of()).path("roomId").asText();
-      assertThat(a.command("START_GAME", Map.of()).path("payload").path("code").asText())
-          .isEqualTo("NOT_ENOUGH_PLAYERS");
       b.ok("JOIN_ROOM", Map.of("roomId", id));
       assertThat(b.command("START_GAME", Map.of()).path("payload").path("code").asText())
           .isEqualTo("FORBIDDEN");

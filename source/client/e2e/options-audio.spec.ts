@@ -20,11 +20,19 @@ test("Options keep sound, show controls and the game timer is always visible", a
 	);
 	await page.getByRole("switch", { name: "Sound: On", exact: true }).click();
 	if (await page.evaluate(() => document.fullscreenEnabled)) {
-		await page.getByRole("button", { name: "Fullscreen", exact: true }).click();
+		await page
+			.getByRole("switch", { name: "Fullscreen: Off", exact: true })
+			.click();
 		await expect
 			.poll(() => page.evaluate(() => document.fullscreenElement !== null))
 			.toBe(true);
-		await page.getByRole("button", { name: "Fullscreen", exact: true }).click();
+		await expect(
+			page.getByRole("switch", { name: "Fullscreen: On", exact: true }),
+		).toBeChecked();
+		await page.evaluate(() => document.exitFullscreen());
+		await expect(
+			page.getByRole("switch", { name: "Fullscreen: Off", exact: true }),
+		).not.toBeChecked();
 	}
 	await page.getByRole("button", { name: "Back", exact: true }).click();
 	await page
@@ -33,6 +41,18 @@ test("Options keep sound, show controls and the game timer is always visible", a
 	await expect(page.getByLabel("Play time", { exact: true })).toBeVisible();
 	await expect(page.getByText(/^Jumps:/)).toHaveCount(0);
 	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	expect(
+		await page
+			.locator(".controls-help")
+			.evaluate(
+				(help) =>
+					!!(
+						document
+							.querySelector(".game-overlay button:last-of-type")!
+							.compareDocumentPosition(help) & Node.DOCUMENT_POSITION_FOLLOWING
+					),
+			),
+	).toBe(true);
 	const paused = await page
 		.getByLabel("Play time", { exact: true })
 		.textContent();

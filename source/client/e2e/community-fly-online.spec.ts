@@ -5,7 +5,7 @@ test.skip(
 	process.env.E2E_FLY_ONLINE !== "true",
 	"Requires the local-profile backend/MySQL flight harness",
 );
-test("server-enabled Options, double Space and movement save and Continue online flight", async ({
+test("server-enabled flight, double Space and movement save and Continue online flight", async ({
 	page,
 }) => {
 	await page.addInitScript(() =>
@@ -41,11 +41,6 @@ test("server-enabled Options, double Space and movement save and Continue online
 		page.getByRole("button", { name: "Menu", exact: true }),
 	).toBeVisible({ timeout: 15_000 });
 	await page.getByRole("button", { name: "Menu", exact: true }).click();
-	await page.getByRole("button", { name: "Options", exact: true }).click();
-	await page
-		.getByRole("switch", { name: "Fly Mode: Off", exact: true })
-		.click();
-	await page.getByRole("button", { name: "Back", exact: true }).click();
 	await page.getByRole("button", { name: "Resume", exact: true }).click();
 	await page.keyboard.press("Space");
 	await page.waitForTimeout(80);
@@ -55,9 +50,11 @@ test("server-enabled Options, double Space and movement save and Continue online
 		.toBe(true);
 	const initialY = snapshots.at(-1)!.self.simulation.physics.y,
 		run = snapshots.at(-1)!.playId;
-	await page.keyboard.down("ArrowUp");
+	await page.waitForTimeout(400);
+	await page.keyboard.down("Space");
 	await page.waitForTimeout(250);
-	await page.keyboard.up("ArrowUp");
+	await page.keyboard.up("Space");
+	await page.waitForTimeout(400);
 	await expect
 		.poll(() => snapshots.at(-1)?.self.simulation.physics.y)
 		.toBeLessThan(initialY - 40);
@@ -96,10 +93,10 @@ test("server-enabled Options, double Space and movement save and Continue online
 		.poll(() => snapshots.at(-1)?.self.simulation.physics.freeFlight)
 		.toBe(true);
 	await page.getByRole("button", { name: "Menu", exact: true }).click();
-	await page.getByRole("button", { name: "Options", exact: true }).click();
-	await page.getByRole("switch", { name: "Fly Mode: On", exact: true }).click();
-	await page.getByRole("button", { name: "Back", exact: true }).click();
 	await page.getByRole("button", { name: "Resume", exact: true }).click();
+	await page.keyboard.press("Space");
+	await page.waitForTimeout(80);
+	await page.keyboard.press("Space");
 	await expect
 		.poll(() => snapshots.at(-1)?.self.simulation.physics.freeFlight)
 		.toBe(false);

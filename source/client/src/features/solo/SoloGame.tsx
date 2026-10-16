@@ -103,10 +103,6 @@ export function SoloGame({
 		const next = { ...options, [key]: !options[key] };
 		setOptions(next);
 		audio.current?.setEnabled(next.sound);
-		if (key === "fly") {
-			flight.current?.setEnabled(next.fly);
-			void flush().catch(() => {});
-		}
 		try {
 			saveOptions(next);
 			setOptionError("");
@@ -254,7 +250,6 @@ export function SoloGame({
 				() => session.simulation.snapshot().freeFlight,
 				(enabled) => session.simulation.setFlight(enabled),
 			);
-			flight.current.setEnabled(readOptions().fly);
 			audio.current.setScreen(session.simulation.snapshot().screen);
 			if (pauseRequested.current) {
 				session.pause();
@@ -451,7 +446,6 @@ export function SoloGame({
 					>
 						{menu === "pause" && (
 							<>
-								<ControlsHelp />
 								<button
 									type="button"
 									disabled={leaving}
@@ -495,12 +489,12 @@ export function SoloGame({
 											? "Saving…"
 											: "Save failed"}
 								</small>
+								<ControlsHelp />
 							</>
 						)}
 						{menu === "options" && (
 							<OptionsButtons
 								options={options}
-								flyAllowed={__SOLO_FLY_ENABLED__}
 								onChange={updateOptions}
 								onError={setOptionError}
 							/>

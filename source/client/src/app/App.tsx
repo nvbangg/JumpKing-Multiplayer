@@ -120,7 +120,6 @@ export function App() {
 	const resultRef = useRef<MatchResult | null>(null);
 	const viewedEnding = useRef<string | null>(null);
 	const [options, setOptions] = useState(readOptions);
-	const [flyAllowed, setFlyAllowed] = useState(__SOLO_FLY_ENABLED__);
 	const [error, setError] = useState("");
 	const [pending, setPending] = useState(false);
 	const [recordsRevision, setRecordsRevision] = useState(0);
@@ -228,12 +227,6 @@ export function App() {
 				if (typeof value.authenticated !== "boolean") return;
 				if (!disposed && identityRevision.current === expectedIdentityRevision)
 					setIdentity(value);
-			})
-			.catch(() => {});
-		void api<{ features: { flyEnabled: boolean } }>("/game-config")
-			.then((config) => {
-				if (!disposed)
-					setFlyAllowed(__SOLO_FLY_ENABLED__ || config.features.flyEnabled);
 			})
 			.catch(() => {});
 		return () => {
@@ -532,7 +525,7 @@ export function App() {
 										detail: "Game Details",
 										options: "Options",
 
-										"public-rooms": "Join Public",
+										"public-rooms": "Join Public Room",
 										lobby:
 											room?.kind === "COMMUNITY" ? "Community Tower" : "Lobby",
 										results: "Results",
@@ -608,13 +601,13 @@ export function App() {
 					)}
 					{screen === "account" && identity.account && (
 						<>
-							<button type="button" onClick={() => setScreen("password")}>
-								Change Password
-							</button>
 							<dl className="account-info">
 								<dt>Username</dt>
 								<dd>{identity.account.username}</dd>
 							</dl>
+							<button type="button" onClick={() => setScreen("password")}>
+								Change Password
+							</button>
 							<button
 								type="button"
 								disabled={pending}
@@ -744,7 +737,6 @@ export function App() {
 						<>
 							<OptionsButtons
 								options={options}
-								flyAllowed={flyAllowed}
 								onChange={updateOptions}
 								onError={setError}
 							/>
@@ -772,8 +764,14 @@ export function App() {
 									>
 										Create Room
 									</button>
+									<button
+										type="button"
+										onClick={() => setScreen("public-rooms")}
+									>
+										Join Public Room
+									</button>
 									<form
-										className="menu-form"
+										className="room-join-form"
 										onSubmit={(event) => {
 											event.preventDefault();
 											const roomId = String(
@@ -784,32 +782,26 @@ export function App() {
 											command("JOIN_ROOM", { roomId });
 										}}
 									>
-										<label>
-											Room ID
-											<input
-												name="roomId"
-												required
-												minLength={6}
-												maxLength={6}
-												autoComplete="off"
-												autoCapitalize="characters"
-												pattern="[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}"
-												onInput={(event) => {
-													event.currentTarget.value =
-														event.currentTarget.value.toUpperCase();
-												}}
-											/>
-										</label>
+										<input
+											name="roomId"
+											aria-label="Room ID"
+											placeholder="Enter Room ID"
+											required
+											minLength={6}
+											maxLength={6}
+											autoComplete="off"
+											autoCapitalize="characters"
+											pattern="[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}"
+											onInput={(event) => {
+												event.currentTarget.value =
+													event.currentTarget.value.toUpperCase();
+											}}
+										/>
+
 										<button type="submit" disabled={pending}>
 											Join
 										</button>
 									</form>
-									<button
-										type="button"
-										onClick={() => setScreen("public-rooms")}
-									>
-										Join Public
-									</button>
 								</>
 							)}
 						</>

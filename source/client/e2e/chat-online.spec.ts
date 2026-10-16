@@ -60,14 +60,12 @@ test("chat shortcuts, passive ten-second messages and touch work without launchi
 		});
 		await a.locator("canvas").click();
 		const jumps = snapshots.at(-1)!.self.simulation.physics.jumps;
-		const players = a.locator("summary").filter({ hasText: /^Players$/ });
-		await players.focus();
-		await a.keyboard.press("Enter");
+		await expect(
+			a.getByRole("heading", { name: "Players", exact: true }),
+		).toBeVisible();
 		await expect(
 			a.getByRole("list", { name: "Current players" }).locator("li"),
 		).toHaveCount(2);
-		await a.keyboard.press("Space");
-		expect(snapshots.at(-1)!.self.simulation.physics.jumps).toBe(jumps);
 		await a.locator("canvas").click();
 		await expect(a.locator("canvas")).toBeFocused();
 		await a.keyboard.down("Space");
@@ -112,7 +110,6 @@ test("chat shortcuts, passive ten-second messages and touch work without launchi
 				{ intervals: [20] },
 			)
 			.toBe(2);
-		await players.click();
 		await expect(
 			a.getByRole("list", { name: "Current players" }).locator("li").first(),
 		).toContainText("1. " + hostName);

@@ -62,6 +62,27 @@ class RoomAgainIT {
   }
 
   @Test
+  void oneConnectedHostCanStartSaveAndPlayAgainAlone() throws Exception {
+    try (var host = new GameClient(port)) {
+      host.register();
+      host.connect();
+      String room = host.ok("CREATE_ROOM", Map.of()).path("roomId").asText();
+      String first = started(host);
+      ended(host);
+      var history = host.request("/history", "GET", null).path("items");
+      assertThat(history.size()).isEqualTo(1);
+      assertThat(host.request("/history/ROOM/" + first, "GET", null).path("participants").size())
+          .isEqualTo(1);
+      host.ok("PLAY_AGAIN", Map.of("matchId", first));
+      assertThat(host.ok("GET_ROOM_STATE", Map.of()).path("roomId").asText()).isEqualTo(room);
+      assertThat(started(host)).isNotEqualTo(first);
+      ended(host);
+      assertThat(host.request("/history", "GET", null).path("items").size()).isEqualTo(2);
+      host.ok("LEAVE_ROOM", Map.of());
+    }
+  }
+
+  @Test
   void confirmationsPreserveCodeAndSettingsButOnlyConfirmedPlayersEnterTheNewRoster()
       throws Exception {
     try (var a = new GameClient(port);

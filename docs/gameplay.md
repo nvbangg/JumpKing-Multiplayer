@@ -68,11 +68,11 @@ Pause dừng simulation/clock ngay. Lỗi hoặc thiếu storage phải báo kh�
 
 ## Fly Mode
 
-Tính năng thử nghiệm cho Solo, Community và cả bốn mode Room, được mở bằng `FLY_ENABLED` theo [deployment](deployment.md#fly-mode-local). Khi được phép và đã bật Fly Mode, nhấn Space hai lần trong 300 ms để bắt đầu/tắt bay. Chỉ đếm lần nhấn mới sau khi thả, không tính key repeat; cảm ứng dùng nhấn đúp Jump. Tốc độ bay và khoảng nhấn đúp tập trung trong shared tuning.
+Tính năng thử nghiệm cho Solo, Community và cả bốn mode Room, được mở bằng `FLY_ENABLED` theo [deployment](deployment.md#fly-mode-local). Khi cấu hình cho phép, không cần bật thêm trong Options; nhấn Space hai lần trong 300 ms để bắt đầu/tắt bay. Chỉ đếm lần nhấn mới sau khi thả, không tính key repeat; cảm ứng dùng nhấn đúp Jump. Tốc độ bay và khoảng nhấn đúp tập trung trong shared tuning.
 
-Khi bay, WASD hoặc các mũi tên di chuyển bốn hướng; cảm ứng thêm lên/xuống. Bay xuyên địa hình, không gravity/charge/splat, giữ biên world. Đổi trạng thái bay xóa charge/velocity; không tạo cú nhảy ngoài ý muốn và phải thả Jump trước khi charge tiếp. Khi chưa bay, lần nhấn Space đầu vẫn điều khiển nhảy bình thường, không chờ nhận diện nhấn đúp.
+Khi bay, WASD hoặc các mũi tên di chuyển bốn hướng; giữ Space cũng bay lên; cảm ứng thêm lên/xuống. Bay xuyên địa hình, không gravity/charge/splat, giữ biên world. Đổi trạng thái bay xóa charge/velocity; không tạo cú nhảy ngoài ý muốn và phải thả Jump trước khi charge tiếp. Khi chưa bay, lần nhấn Space đầu vẫn điều khiển nhảy bình thường, không chờ nhận diện nhấn đúp.
 
-Tắt bay hoặc tắt công tắc khi đang trong solid: tự rơi thẳng xuống, tạm bỏ collision đến khi toàn bộ body ra ngoài khối rồi khôi phục physics bình thường. Trong lúc thoát khối không nhận movement/charge; nếu tới đáy world vẫn chưa thoát thì đưa về spawn để tránh kẹt. Restore save khi tính năng đã tắt cũng áp dụng cách thoát khối này.
+Tắt bay khi đang trong solid: tự rơi thẳng xuống, tạm bỏ collision đến khi toàn bộ body ra ngoài khối rồi khôi phục physics bình thường. Trong lúc thoát khối không nhận movement/charge; nếu tới đáy world vẫn chưa thoát thì đưa về spawn để tránh kẹt. Restore save khi tính năng đã tắt cũng áp dụng cách thoát khối này.
 
 Bay vẫn tính save/Stats/History/xếp hạng/leaderboard bình thường. Community/Room do server mô phỏng; không có mã cheat hoặc lệnh chat.
 
@@ -91,7 +91,7 @@ Leaderboard xét thành tích tốt nhất của mỗi Account từ các lượt
 
 ## Room và xếp hạng
 
-Room tối đa 10 người; trận đầu Start cần ít nhất hai người connected, không cần Ready. ID sáu ký tự từ `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`; Join by ID chỉ dành cho Room. Người tạo là Host; khi cần chuyển quyền, chọn người connected có joinOrder nhỏ nhất.
+Room tối đa 10 người; trận đầu Start cần ít nhất một người connected, không cần Ready. ID sáu ký tự từ `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`; Join by ID chỉ dành cho Room. Người tạo là Host; khi cần chuyển quyền, chọn người connected có joinOrder nhỏ nhất.
 
 ```text
 WAITING -- Host Start --> COUNTDOWN -- 3 giây --> PLAYING -- finalize --> FINISHED
@@ -130,7 +130,7 @@ Host disconnect/Leave chuyển quyền ngay, giữ nguyên tiến độ trận. 
 
 Community giữ lượt theo Account dù slot hết hạn; sảnh mới cũng Continue được. Room chỉ khôi phục từ RAM khi phòng còn tồn tại; restart theo [architecture](architecture.md#lỗi-và-khả-năng-mở-rộng). Room giải tán sau khi đã vào gameplay phải finalize một lần; hủy trước gameplay không ghi kết quả.
 
-Sau Results, mỗi người chọn Play Again để xác nhận ván mới. Người chọn đầu tiên đưa phòng về WAITING; người còn lại vẫn phải xác nhận, người Join mới được tính đã xác nhận. Giữ room code/settings/thành viên và History cũ. Host Start khi bản thân và ít nhất một người khác đã xác nhận, đang connected; chỉ nhóm này vào roster, các thành viên khác trở về menu. Start tạo match/lượt mới và reset state/clock; xóa xác nhận cũ khi trận kết thúc.
+Sau Results, mỗi người chọn Play Again để xác nhận ván mới. Người chọn đầu tiên đưa phòng về WAITING; người còn lại vẫn phải xác nhận, người Join mới được tính đã xác nhận. Giữ room code/settings/thành viên và History cũ. Host Start khi bản thân đã xác nhận và đang connected; chỉ nhóm này vào roster, các thành viên khác trở về menu. Start tạo match/lượt mới và reset state/clock; xóa xác nhận cũ khi trận kết thúc.
 
 ## Nội dung game
 
@@ -160,4 +160,4 @@ Assets có manifest; `source/client/public/assets/ATTRIBUTION.md` ghi nguồn v�
 
 Lobby luôn hiện chat và ô nhập. Trong trận, Enter mở/focus chat hoặc gửi khi đang nhập; Esc đóng và trả input. Không bắt phím từ form khác. Tin mới hiện 10 giây, không lấy focus; chat mở thủ công giữ đến khi đóng. Có nút cảm ứng, chat không đi vào database.
 
-Players là thứ hạng hiện tại trong cùng phòng: Room theo comparator mode, Community theo độ cao hiện tại và đồng hạng khi bằng nhau. Server tính từ state RAM. Leaderboard là thành tích Community đã commit, có thể xem khi chơi; tải khi mở hoặc nhấn Refresh. Hai bảng có thể thu gọn. Community chỉ bắt đầu lượt mới từ menu sau Save & Exit.
+Players là thứ hạng hiện tại trong cùng phòng: Room theo comparator mode, Community theo độ cao hiện tại và đồng hạng khi bằng nhau. Server tính từ state RAM. Leaderboard là thành tích Community đã commit, có thể xem khi chơi; tải khi mở hoặc nhấn Refresh. Players luôn hiển thị gọn; chỉ Leaderboard có thể thu gọn. Community chỉ bắt đầu lượt mới từ menu sau Save & Exit.

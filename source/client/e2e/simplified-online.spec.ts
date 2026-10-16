@@ -16,9 +16,7 @@ async function register(page: Page, suffix: string) {
 		.click();
 	await expect(page.getByLabel("Email", { exact: true })).toHaveCount(0);
 	await page.getByLabel("Username", { exact: true }).fill(username);
-	await page
-		.getByLabel("Password", { exact: true })
-		.fill("Browser password 123");
+	await page.getByLabel("Password", { exact: true }).fill("123456");
 	await page
 		.getByRole("button", { name: "Create Account", exact: true })
 		.click();
@@ -37,26 +35,32 @@ test("username account, change password and online authentication", async ({
 	await page.getByRole("button", { name: "Back", exact: true }).click();
 	const username = await register(page, "auth");
 	await page.getByRole("button", { name: username, exact: true }).click();
+	expect(
+		await page
+			.locator(".account-info")
+			.evaluate(
+				(info) =>
+					!!(
+						info.compareDocumentPosition(
+							Array.from(document.querySelectorAll("button")).find(
+								(button) => button.textContent === "Change Password",
+							)!,
+						) & Node.DOCUMENT_POSITION_FOLLOWING
+					),
+			),
+	).toBe(true);
 	await page
 		.getByRole("button", { name: "Change Password", exact: true })
 		.click();
-	await page
-		.getByLabel("Current Password", { exact: true })
-		.fill("Browser password 123");
-	await page
-		.getByLabel("New Password", { exact: true })
-		.fill("Updated password 456");
-	await page
-		.getByLabel("Confirm New Password", { exact: true })
-		.fill("Updated password 456");
+	await page.getByLabel("Current Password", { exact: true }).fill("123456");
+	await page.getByLabel("New Password", { exact: true }).fill("654321");
+	await page.getByLabel("Confirm New Password", { exact: true }).fill("654321");
 	await page
 		.getByRole("button", { name: "Change Password", exact: true })
 		.click();
 	await expect(page.getByLabel("Username", { exact: true })).toBeVisible();
 	await page.getByLabel("Username", { exact: true }).fill(username);
-	await page
-		.getByLabel("Password", { exact: true })
-		.fill("Updated password 456");
+	await page.getByLabel("Password", { exact: true }).fill("654321");
 	await page.getByRole("button", { name: "Sign In", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: username, exact: true }),
@@ -92,7 +96,9 @@ test("Room menu, public lobby chat, server countdown and end/leave", async ({
 		const room = (await a.locator(".room-code code").textContent())!;
 		await a.getByLabel("Visibility", { exact: true }).selectOption("PUBLIC");
 		await b.getByRole("button", { name: "Room", exact: true }).click();
-		await b.getByRole("button", { name: "Join Public", exact: true }).click();
+		await b
+			.getByRole("button", { name: "Join Public Room", exact: true })
+			.click();
 		await b.getByRole("button", { name: new RegExp(room) }).click();
 		await expect(a.getByText(peer, { exact: true })).toBeVisible();
 		await a.getByLabel("Message", { exact: true }).fill("hello from lobby");

@@ -495,7 +495,7 @@ button {
 	position: absolute;
 	top: 62px;
 	right: 12px;
-	width: min(280px, calc(100vw - 24px));
+	width: min(210px, 44vw);
 	z-index: 2;
 	font-size: 0.75rem;
 }
@@ -529,4 +529,32 @@ button {
 }
 .in-game-panel li strong {
 	white-space: nowrap;
+}
+
+.room-join-form {
+	display: flex;
+	gap: 8px;
+}
+.room-join-form input {
+	min-width: 0;
+	width: 100%;
+}
+.room-join-form button {
+	flex: 0 0 auto;
+}
+.players-panel {
+	padding: 6px;
+	font-size: 0.65rem;
+}
+.players-panel h2 {
+	margin: 0;
+	font-size: inherit;
+}
+.players-panel ol {
+	margin-top: 4px;
+	max-height: 24dvh;
+}
+.players-panel li {
+	padding: 3px 0;
+	gap: 6px;
 }

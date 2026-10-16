@@ -135,7 +135,7 @@ test("failed texture never acknowledges readiness and Leave permits a fresh star
 		).toBeVisible();
 		await expect(
 			b.getByRole("button", { name: "Start", exact: true }),
-		).toBeDisabled();
+		).toBeEnabled();
 		expect((await (await a.request.get("/api/history")).json()).items).toEqual(
 			[],
 		);

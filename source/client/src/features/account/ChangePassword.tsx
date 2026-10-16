@@ -51,7 +51,7 @@ export function ChangePassword({ onChanged }: { onChanged: () => void }) {
 					type="password"
 					autoComplete="new-password"
 					required
-					minLength={10}
+					minLength={6}
 				/>
 			</label>
 			<label>

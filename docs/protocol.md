@@ -43,7 +43,7 @@ Các path có prefix `/api`. Auth/private responses dùng Cache-Control:no-store
 | GET /history/{kind}/{id} | Owner → History detail; kind=SOLO/COMMUNITY/ROOM, id là run ID hoặc match ID |
 | GET /profile/me | Account → {username,total} |
 
-HTTP JSON body tối đa 16 KiB. Register: username 3–32 letters/numbers/_/-, password ≥10 Unicode code points và ≤72 UTF-8 bytes. Tên online lấy từ username đã xác thực, không nhận nickname từ client; playerId phân biệt người chơi.
+HTTP JSON body tối đa 16 KiB. Register: username 3–32 letters/numbers/_/-, password ≥6 Unicode code points và ≤72 UTF-8 bytes. Tên online lấy từ username đã xác thực, không nhận nickname từ client; playerId phân biệt người chơi.
 
 GameMap={width,screenHeight,tileSize,progressOriginY,spawn,finish,screens}; spawn={x,y}, finish={screen,minCenterX,requiresGrounded,minProgress?}, screen={tiles:string[],wind:boolean}. minProgress mặc định 0; Room thay finish theo mapLevel trong shared, không thay geometry.
 
@@ -125,7 +125,7 @@ JOIN_COMMUNITY newRun=true yêu cầu expectedRunId là ID ACTIVE hoặc null; g
 
 Community/Room không nhận position/velocity/score/clock hoặc checkpoint từ client. Input chỉ xử lý khi đang chơi; paused/countdown/finished cancel, không enqueue movement. Chat chỉ là text.
 
-Client nhận diện nhấn đúp khi Fly Mode được bật và gửi freeFlight là trạng thái bay mong muốn, không phải lệnh toggle mỗi frame. Server chỉ chấp nhận freeFlight=true khi features.flyEnabled=true; nếu không trả INVALID_INPUT. up/down chỉ điều khiển khi bay; CANCEL_INPUT/timeout xóa movement/charge, không đảo trạng thái bay. Physics, thoát solid và kết quả vẫn do server xử lý theo gameplay.
+Client nhận diện nhấn đúp khi cấu hình cho phép Fly Mode và gửi freeFlight là trạng thái bay mong muốn, không phải lệnh toggle mỗi frame. Server chỉ chấp nhận freeFlight=true khi features.flyEnabled=true; nếu không trả INVALID_INPUT. up/down điều khiển bay, giữ jump cũng bay lên; CANCEL_INPUT/timeout xóa movement/charge, không đảo trạng thái bay. Physics, thoát solid và kết quả vẫn do server xử lý theo gameplay.
 
 ## Server → client
 

@@ -303,7 +303,7 @@ public class RoomRuns {
         || value.revision < 1
         || value.duration < 0
         || value.startedAt == null
-        || value.runs.size() < 2
+        || value.runs.isEmpty()
         || value.runs.size() > capacity
         || (value.endedAt == null) != (value.reason == null)
         || value.endedAt != null && value.endedAt.isBefore(value.startedAt)) throw conflict();

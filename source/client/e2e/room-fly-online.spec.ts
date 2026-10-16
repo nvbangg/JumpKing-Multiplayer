@@ -58,9 +58,6 @@ test("short Room finish shows Results and History without ending or full-map rew
 				.isVisible())
 		)
 			await a.getByRole("button", { name: "Menu", exact: true }).click();
-		await a.getByRole("button", { name: "Options", exact: true }).click();
-		await a.getByRole("switch", { name: "Fly Mode: Off", exact: true }).click();
-		await a.getByRole("button", { name: "Back", exact: true }).click();
 		await a.getByRole("button", { name: "Resume", exact: true }).click();
 		await a.keyboard.press("Space");
 		await a.waitForTimeout(80);
@@ -75,14 +72,15 @@ test("short Room finish shows Results and History without ending or full-map rew
 			})
 			.toBeLessThan(70);
 		await a.keyboard.up("ArrowLeft");
-		await a.keyboard.down("ArrowUp");
+		await a.keyboard.down("Space");
 		await expect
 			.poll(() => snapshots.at(-1)?.self.simulation.physics.y, {
 				timeout: 15_000,
 				intervals: [30],
 			})
 			.toBeLessThan(-1790);
-		await a.keyboard.up("ArrowUp");
+		await a.keyboard.up("Space");
+		await a.waitForTimeout(400);
 		await a.keyboard.press("Space");
 		await a.waitForTimeout(80);
 		await a.keyboard.press("Space");
@@ -171,11 +169,6 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"])
 					.isVisible())
 			)
 				await a.getByRole("button", { name: "Menu", exact: true }).click();
-			await a.getByRole("button", { name: "Options", exact: true }).click();
-			await a
-				.getByRole("switch", { name: "Fly Mode: Off", exact: true })
-				.click();
-			await a.getByRole("button", { name: "Back", exact: true }).click();
 			await a.getByRole("button", { name: "Resume", exact: true }).click();
 			await a.keyboard.press("Space");
 			await a.waitForTimeout(80);
@@ -184,9 +177,11 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"])
 				.poll(() => snapshots.at(-1)?.self.simulation.physics.freeFlight)
 				.toBe(true);
 			const y = snapshots.at(-1)!.self.simulation.physics.y;
-			await a.keyboard.down("ArrowUp");
+			await a.waitForTimeout(400);
+			await a.keyboard.down("Space");
 			await a.waitForTimeout(200);
-			await a.keyboard.up("ArrowUp");
+			await a.keyboard.up("Space");
+			await a.waitForTimeout(400);
 			await expect
 				.poll(() => snapshots.at(-1)?.self.simulation.physics.y)
 				.toBeLessThan(y - 20);

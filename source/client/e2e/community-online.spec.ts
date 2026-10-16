@@ -141,10 +141,9 @@ test("two Accounts share server simulation, see each other jump, leave and Conti
 		await expect
 			.poll(() => observedB.snapshots.at(-1)?.players?.length)
 			.toBe(2);
-		await b
-			.locator("summary")
-			.filter({ hasText: /^Players$/ })
-			.click();
+		await expect(
+			b.getByRole("heading", { name: "Players", exact: true }),
+		).toBeVisible();
 		await expect(
 			b.getByRole("list", { name: "Current players" }).locator("li"),
 		).toHaveCount(2);

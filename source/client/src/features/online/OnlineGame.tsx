@@ -43,10 +43,7 @@ export function OnlineGame({
 		[menu, setMenu] = useState<"pause" | "options" | null>(null);
 	const flight = useRef<FlightToggle | null>(null);
 	const [flying, setFlying] = useState(false);
-	const [options, setOptions] = useState(readOptions),
-		[flyAllowed, setFlyAllowed] = useState(false);
-	const optionsRef = useRef(options);
-	optionsRef.current = options;
+	const [options, setOptions] = useState(readOptions);
 	const [error, setError] = useState(""),
 		[pending, setPending] = useState(false),
 		[elapsed, setElapsed] = useState(0),
@@ -240,7 +237,6 @@ export function OnlineGame({
 			]);
 			if (disposed) return;
 			cueManifest = manifest;
-			setFlyAllowed(config.features.flyEnabled);
 			audio.current = new AudioBus(manifest, readOptions().sound, setError);
 			const session = new OnlineRuntime(
 				parseMap(mapData),
@@ -253,8 +249,6 @@ export function OnlineGame({
 					setFlying(state.freeFlight);
 					setPlayers(snapshot.players || []);
 					audio.current?.setScreen(state.screen);
-					if (!optionsRef.current.fly && state.freeFlight)
-						session.setFlight(false);
 					if (snapshot.self.paused && !session.menu) {
 						session.menu = true;
 						controls.cancel();
@@ -284,7 +278,6 @@ export function OnlineGame({
 					setFlying(enabled);
 				},
 			);
-			flight.current.setEnabled(readOptions().fly);
 			if (socket.lastFinish) session.finish(socket.lastFinish);
 			if (socket.lastSnapshot) session.receive(socket.lastSnapshot);
 			game = renderer.createGame(
@@ -381,7 +374,6 @@ export function OnlineGame({
 		const next = { ...options, [key]: !options[key] };
 		setOptions(next);
 		audio.current?.setEnabled(next.sound);
-		if (key === "fly") flight.current?.setEnabled(next.fly);
 		try {
 			saveOptions(next);
 		} catch {
@@ -506,7 +498,6 @@ export function OnlineGame({
 					>
 						{menu === "pause" ? (
 							<>
-								<ControlsHelp />
 								{disconnected ? (
 									<>
 										<button
@@ -568,11 +559,11 @@ export function OnlineGame({
 												: "Saving…"}
 									</small>
 								)}
+								<ControlsHelp />
 							</>
 						) : (
 							<OptionsButtons
 								options={options}
-								flyAllowed={flyAllowed}
 								onChange={updateOptions}
 								onError={setError}
 							/>

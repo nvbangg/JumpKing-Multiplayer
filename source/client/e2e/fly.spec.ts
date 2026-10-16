@@ -8,7 +8,7 @@ const savedPhysics = (page: Page) =>
 			{ currentSolo } = await import(path);
 		return (await currentSolo("guest"))?.snapshot?.physics;
 	});
-test("Fly Options follows the environment gate and double Space toggles real Solo flight", async ({
+test("Flight follows the environment gate and double Space toggles real Solo flight", async ({
 	page,
 }) => {
 	await page.addInitScript(() =>
@@ -19,12 +19,7 @@ test("Fly Options follows the environment gate and double Space toggles real Sol
 	);
 	await page.goto("/");
 	await page.getByRole("button", { name: "Options", exact: true }).click();
-	if (enabled)
-		await page
-			.getByRole("switch", { name: "Fly Mode: Off", exact: true })
-			.click();
-	else
-		await expect(page.getByRole("switch", { name: /Fly Mode/ })).toBeHidden();
+	await expect(page.getByRole("switch", { name: /Fly Mode/ })).toHaveCount(0);
 	await page.getByRole("button", { name: "Back", exact: true }).click();
 	await page
 		.getByRole("button", { name: "New Solo Game", exact: true })
@@ -38,9 +33,10 @@ test("Fly Options follows the environment gate and double Space toggles real Sol
 		await page.keyboard.down("KeyD");
 		await page.waitForTimeout(200);
 		await page.keyboard.up("KeyD");
-		await page.keyboard.down("KeyW");
+		await page.waitForTimeout(400);
+		await page.keyboard.down("Space");
 		await page.waitForTimeout(200);
-		await page.keyboard.up("KeyW");
+		await page.keyboard.up("Space");
 	}
 	await page.getByRole("button", { name: "Menu", exact: true }).click();
 	await expect(page.getByText("Saved", { exact: true })).toBeVisible();

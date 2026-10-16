@@ -40,7 +40,9 @@ test("Public rooms can be discovered and joined while Private rooms remain acces
 		}
 		await a.getByLabel("Map", { exact: true }).selectOption("3");
 		await b.getByRole("button", { name: "Room", exact: true }).click();
-		await b.getByRole("button", { name: "Join Public", exact: true }).click();
+		await b
+			.getByRole("button", { name: "Join Public Room", exact: true })
+			.click();
 		await expect(b.getByRole("button", { name: new RegExp(id) })).toBeVisible();
 		await a.getByLabel("Visibility", { exact: true }).selectOption("PRIVATE");
 		await expect(a.getByLabel("Visibility", { exact: true })).toHaveValue(

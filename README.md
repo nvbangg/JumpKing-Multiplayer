@@ -6,7 +6,7 @@ Website game Jump King với một map Main Babe đầy đủ, hỗ trợ chơi 
 | --- | --- |
 | Solo | Luyện tập offline, autosave/Continue; Account đồng bộ thống kê khi có mạng, không lên leaderboard |
 | Community Tower | Account được tự xếp sảnh, lưu tiến độ trên server và tính leaderboard |
-| Room | Account tạo Public/Private, Join Public hoặc bằng ID, tối thiểu 2 người và Host Start; Race, Hardcore, Time Limit hoặc No Walk; Results và History |
+| Room | Account tạo Public/Private, Join Public hoặc bằng ID, từ 1 người và Host Start; Race, Hardcore, Time Limit hoặc No Walk; Results và History |
 
 Frontend dùng React + TypeScript/Phaser; backend Spring Boot/Java quyết định trạng thái và kết quả online. Spring Data JPA/Hibernate truy cập MySQL để lưu identity, lượt chơi và trận Room. Thống kê tổng và History gồm Solo, Community và Room; Solo Guest chỉ lưu trên trình duyệt; Room/Community yêu cầu Account. Đăng ký/đăng nhập bằng username và password, có đổi mật khẩu bằng mật khẩu hiện tại; chưa có khôi phục mật khẩu. Luật chơi trong [gameplay](docs/gameplay.md).
 
@@ -69,7 +69,7 @@ Mở **http://127.0.0.1:5173**. Backend dùng **8080**, MySQL **3306**. Linux/ma
 
 - **Solo:** bắt đầu lượt mới hoặc tiếp tục save trên thiết bị; không cần đăng nhập/backend sau khi frontend đã tải.
 - **Community Tower:** đăng ký/đăng nhập, chọn Community Tower; tiến độ tự lưu và được tính leaderboard.
-- **Room:** đăng nhập hai Account ở hai browser profiles, một người Create Room; người còn lại Join by ID hoặc tìm phòng Public bằng Join Public; Host chọn mode, map 1–10 và Start khi đủ hai người.
+- **Room:** đăng nhập hai Account ở hai browser profiles, một người Create Room; người còn lại Join by ID hoặc tìm phòng Public bằng Join Public; Host chọn mode, map 1–10 và Start (một người cũng chơi được).
 
 ## Chơi qua LAN/ZeroTier
 
