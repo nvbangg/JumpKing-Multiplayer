@@ -100,7 +100,7 @@ Giới hạn mặc định tập trung tại cấu hình network của backend, 
 
 | Type | Payload / hành vi |
 | --- | --- |
-| HEARTBEAT | {nonce} → PONG |
+| HEARTBEAT | {nonce} → PONG; đo RTT, jitter, stall detection và giám sát liveness |
 | JOIN_COMMUNITY | {newRun?:boolean,expectedRunId?}; mặc định tiếp tục/tạo lượt, newRun=true thay lượt sau xác nhận |
 | CREATE_ROOM | {settings?} → tạo sảnh chờ và làm Host |
 | JOIN_ROOM | {roomId} → vào đúng Room theo ID |
@@ -164,7 +164,7 @@ Chat giữ trong RAM của từng sảnh, mất khi sảnh đóng/restart. Effec
 
 Client gửi full input frame mỗi tick, kể cả không đổi phím. Server xử lý tối đa một frame/player/tick FIFO; thiếu frame dùng input cuối và không tăng ACK. Hết input timeout xóa queue/cancel charge. Nếu vẫn nhận input mới nhưng frame cũ chờ quá input timeout (mặc định 500 ms), đóng socket với code 1013, hủy charge và dùng luồng reconnect để resync; không ACK frame bị hủy hoặc biến mất input thành release-jump.
 
-ACK và state lấy cùng tick. Client restore snapshot mới hơn, bỏ frames đã ACK rồi replay frames còn lại. Peers dùng bộ đệm theo serverTick, mặc định trễ hiển thị 100 ms để hấp thụ jitter; hiệu chỉnh clock từ từ, không extrapolate, không nội suy xuyên screen/respawn. Các giá trị tập trung tại network/config.ts. Replay không phát lại âm thanh, hội thoại hoặc ending. Pause yêu cầu cancel/xóa queued input; pausePending không nhận movement mới. Resume Community trả full state và generation mới. Room không có Pause; menu chỉ hủy input cá nhân. Server vẫn xử lý heartbeat/chat/reconnect/Leave và deadlines. Đổi playId/generation phải xóa prediction buffers; heartbeat không tăng active clock.
+ACK và state lấy cùng tick. Client restore snapshot mới hơn, bỏ frames đã ACK rồi replay frames còn lại. Peers dùng bộ đệm theo serverTick, mặc định trễ hiển thị 100 ms để hấp thụ jitter; hiệu chỉnh clock từ từ, không extrapolate, không nội suy xuyên screen/respawn. Các giá trị tập trung tại network/config.ts. Replay không phát lại âm thanh, hội thoại hoặc ending. Pause yêu cầu cancel/xóa queued input; pausePending không nhận movement mới. Resume Community trả full state và generation mới. Room không có Pause; menu chỉ hủy input cá nhân. Server vẫn xử lý heartbeat/chat/reconnect/Leave và deadlines. Đổi playId/generation phải xóa prediction buffers; heartbeat không tăng active clock. Vòng lặp heartbeat của client đo RTT (Round Trip Time), tính rolling average và jitter (|RTT_hiện_tại - RTT_trước|), đồng thời đếm số lần phản hồi vượt stall threshold (500 ms) do retransmission của tầng truyền tải để phân loại chất lượng kết nối và hiển thị HUD.
 
 Control timeout: GET_ROOM_STATE/reconnect, không tự gửi lại Start/New Run/End. Duplicate requestId trả kết quả cũ; New Run kiểm tra thêm expectedRunId. Bỏ message socket/context cũ; đóng connection phải kết thúc pending promises.
 

@@ -1,6 +1,6 @@
 import { ApiError, backendOrigin } from "./api";
 import { NETWORK } from "./config";
-import type { ChatMessage } from "./contracts";
+import type { ChatMessage, NetworkQuality } from "./contracts";
 import { uuid } from "./ids";
 import { clearReconnect, loadReconnect, saveReconnect } from "./reconnect";
 
@@ -145,6 +145,66 @@ export class GameSocket {
 	private listeners = new Set<
 		(type: string, payload: Record<string, unknown>) => void
 	>();
+	private qualityListeners = new Set<(quality: NetworkQuality) => void>();
+	private pingHistory: number[] = [];
+	private lastPingMs = 0;
+	private stallsCount = 0;
+	private currentQuality: NetworkQuality = {
+		pingMs: 0,
+		avgPingMs: 0,
+		jitterMs: 0,
+		stalls: 0,
+		status: "good",
+	};
+
+	getNetworkQuality(): NetworkQuality {
+		return this.currentQuality;
+	}
+
+	subscribeQuality(listener: (quality: NetworkQuality) => void): () => void {
+		this.qualityListeners.add(listener);
+		listener(this.currentQuality);
+		return () => {
+			this.qualityListeners.delete(listener);
+		};
+	}
+
+	recordPing(rtt: number): void {
+		const jitter = this.lastPingMs > 0 ? Math.abs(rtt - this.lastPingMs) : 0;
+		this.lastPingMs = rtt;
+		this.pingHistory.push(rtt);
+		if (this.pingHistory.length > 10) this.pingHistory.shift();
+
+		const sum = this.pingHistory.reduce((a, b) => a + b, 0);
+		const avg = Math.round(sum / this.pingHistory.length);
+
+		if (rtt >= NETWORK.stallThresholdMs) {
+			this.stallsCount++;
+		}
+
+		let status: "good" | "fair" | "poor" = "good";
+		if (rtt > 150 || this.stallsCount > 2) {
+			status = "poor";
+		} else if (rtt > 60 || jitter > 30) {
+			status = "fair";
+		}
+
+		this.currentQuality = {
+			pingMs: rtt,
+			avgPingMs: avg,
+			jitterMs: jitter,
+			stalls: this.stallsCount,
+			status,
+		};
+
+		for (const listener of this.qualityListeners) {
+			listener(this.currentQuality);
+		}
+		for (const listener of this.listeners) {
+			listener("NETWORK_QUALITY", { ...this.currentQuality });
+		}
+	}
+
 	private profile: string | null = null;
 	private restoring: Promise<void> | null = null;
 	async restore(profile: string): Promise<void> {
@@ -264,10 +324,15 @@ export class GameSocket {
 				if (this.socket !== socket || socket.readyState !== WebSocket.OPEN)
 					return;
 				const nonce = uuid();
+				const start = performance.now();
 				void this.command("HEARTBEAT", { nonce })
 					.then((reply) => {
-						if (reply.type !== "PONG" || reply.payload.nonce !== nonce)
+						if (reply.type !== "PONG" || reply.payload.nonce !== nonce) {
 							this.disconnect(socket, "Invalid heartbeat", 1002);
+							return;
+						}
+						const rtt = Math.max(0, Math.round(performance.now() - start));
+						this.recordPing(rtt);
 					})
 					.catch(() =>
 						this.disconnect(socket, "The game server is not responding"),

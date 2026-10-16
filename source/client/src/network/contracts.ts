@@ -1,6 +1,13 @@
 export interface GameConfig {
 	features: { flyEnabled: boolean };
 }
+export interface NetworkQuality {
+	pingMs: number;
+	avgPingMs: number;
+	jitterMs: number;
+	stalls: number;
+	status: "good" | "fair" | "poor";
+}
 export interface Account {
 	id: string;
 	username: string;

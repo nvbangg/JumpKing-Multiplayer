@@ -558,3 +558,35 @@ button {
 	padding: 3px 0;
 	gap: 6px;
 }
+
+.network-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 8px;
+	font-size: 13px;
+	font-family: monospace;
+	background: #08090ce6;
+	border: 1px solid #4a4436;
+	border-radius: 3px;
+	color: #ede7d3;
+	user-select: none;
+}
+.network-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	display: inline-block;
+}
+.network-good .network-dot {
+	background-color: #4ade80;
+	box-shadow: 0 0 6px #4ade80aa;
+}
+.network-fair .network-dot {
+	background-color: #facc15;
+	box-shadow: 0 0 6px #facc15aa;
+}
+.network-poor .network-dot {
+	background-color: #ef4444;
+	box-shadow: 0 0 6px #ef4444aa;
+}

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import rules from "../../../../common/rules.json";
 import { ControlsHelp } from "../../components/ControlsHelp";
 import { MenuPanel } from "../../components/MenuPanel";
+import { NetworkStatusBadge } from "../../components/NetworkStatusBadge";
 import { loadManifest } from "../../game/content/assets";
 import { FlightToggle } from "../../game/input/FlightToggle";
 import { InputController } from "../../game/input/InputController";
@@ -13,7 +14,11 @@ import { AudioBus } from "../../game/presentation/AudioBus";
 import { PRESENTATION } from "../../game/presentation/config";
 import { parseMap } from "../../game/simulation/map";
 import { api } from "../../network/api";
-import type { GameConfig, PlayerStanding } from "../../network/contracts";
+import type {
+	GameConfig,
+	NetworkQuality,
+	PlayerStanding,
+} from "../../network/contracts";
 import type { GameSocket, RoomState } from "../../network/GameSocket";
 import { InGameLeaderboard } from "../community/InGameLeaderboard";
 import { duration } from "../records/format";
@@ -51,6 +56,18 @@ export function OnlineGame({
 	const [remaining, setRemaining] = useState<number | null>(null);
 	const [players, setPlayers] = useState<PlayerStanding[]>([]);
 	const [disconnected, setDisconnected] = useState(false);
+	const [networkQuality, setNetworkQuality] = useState<NetworkQuality>(() =>
+		socket.getNetworkQuality(),
+	);
+
+	useEffect(() => {
+		if (import.meta.env.DEV) {
+			(
+				window as unknown as { simulatePing?: (ms: number) => void }
+			).simulatePing = (ms: number) => socket.recordPing(ms);
+		}
+		return socket.subscribeQuality(setNetworkQuality);
+	}, [socket]);
 	const [ending, setEnding] = useState<"playing" | "picture" | null>(null),
 		[pictureReady, setPictureReady] = useState(false);
 	const endingActive = useRef(false),
@@ -429,6 +446,7 @@ export function OnlineGame({
 						</output>
 					)}
 					<span>
+						<NetworkStatusBadge quality={networkQuality} />
 						<button
 							type="button"
 							aria-keyshortcuts="Enter"

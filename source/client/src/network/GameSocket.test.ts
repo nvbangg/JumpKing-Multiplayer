@@ -270,3 +270,40 @@ test("failed sends release pending slots and timeout does not replay mutations",
 	expect(socket.sent).toHaveLength(1);
 	game.close();
 });
+test("network quality tracks ping, average, jitter, stalls, and notifies subscribers", async () => {
+	const game = new GameSocket(vi.fn(), vi.fn());
+	const qualities: unknown[] = [];
+	const unsubscribe = game.subscribeQuality((q) => qualities.push(q));
+
+	expect(qualities).toHaveLength(1);
+	expect(game.getNetworkQuality().pingMs).toBe(0);
+
+	game.recordPing(40);
+	expect(game.getNetworkQuality()).toMatchObject({
+		pingMs: 40,
+		avgPingMs: 40,
+		jitterMs: 0,
+		stalls: 0,
+		status: "good",
+	});
+
+	game.recordPing(50);
+	expect(game.getNetworkQuality()).toMatchObject({
+		pingMs: 50,
+		avgPingMs: 45,
+		jitterMs: 10,
+		stalls: 0,
+		status: "good",
+	});
+
+	game.recordPing(550);
+	expect(game.getNetworkQuality()).toMatchObject({
+		pingMs: 550,
+		stalls: 1,
+		status: "poor",
+	});
+
+	unsubscribe();
+	game.recordPing(30);
+	expect(qualities).toHaveLength(4);
+});
