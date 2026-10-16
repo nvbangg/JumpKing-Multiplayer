@@ -10,6 +10,7 @@ import { ConversationVisuals } from "../presentation/ConversationVisuals";
 import { PLAYER_FRAMES, PRESENTATION as V } from "../presentation/config";
 import { ENDING_FRAMES, endingFrameName } from "../presentation/endingFrames";
 import { MainBabeEnding } from "../presentation/MainBabeEnding";
+import { displayName } from "../presentation/names";
 import { playerFrame } from "../presentation/playerFrame";
 import type {
 	GameRuntime,
@@ -22,6 +23,7 @@ import { PHYSICS } from "../simulation/tuning";
 interface Avatar {
 	sprite: Phaser.GameObjects.Sprite;
 	name: Phaser.GameObjects.Text;
+	marker: Phaser.GameObjects.Text;
 	crown: Phaser.GameObjects.Sprite;
 }
 export class TowerScene extends Phaser.Scene {
@@ -149,7 +151,7 @@ export class TowerScene extends Phaser.Scene {
 			} else sprite.setFrame(String(Math.floor(seconds * data.fps) % count));
 		}
 	}
-	private avatar(player: RenderPlayer, self: boolean): void {
+	private avatar(player: RenderPlayer, self: boolean, markSelf: boolean): void {
 		let avatar = this.avatars.get(player.id);
 		if (!avatar) {
 			avatar = {
@@ -161,6 +163,17 @@ export class TowerScene extends Phaser.Scene {
 					.text(0, 0, "", {
 						fontFamily: "monospace",
 						fontSize: V.nameFontSize,
+						color: "#ffffff",
+						stroke: "#000000",
+						strokeThickness: 3,
+					})
+					.setOrigin(0.5, 1)
+					.setDepth(V.nameDepth),
+				// Dấu hiệu nhận diện nhân vật của mình; không dùng màu để phân biệt.
+				marker: this.add
+					.text(0, 0, "YOU", {
+						fontFamily: "monospace",
+						fontSize: V.nameFontSize - 1,
 						color: "#ffffff",
 						stroke: "#000000",
 						strokeThickness: 3,
@@ -187,7 +200,7 @@ export class TowerScene extends Phaser.Scene {
 			.setDepth(self ? V.selfDepth : V.peerDepth)
 			.setTint(Phaser.Display.Color.HexStringToColor(player.color).color)
 			.setVisible(visible);
-		avatar.name.setText(player.nickname);
+		avatar.name.setText(displayName(player.nickname));
 		avatar.name
 			.setPosition(
 				Phaser.Math.Clamp(
@@ -198,6 +211,12 @@ export class TowerScene extends Phaser.Scene {
 				s.y - V.nameGap,
 			)
 			.setVisible(visible);
+		avatar.marker
+			.setPosition(
+				avatar.name.x,
+				avatar.name.y - avatar.name.height - V.nameGap,
+			)
+			.setVisible(visible && markSelf);
 		avatar.crown
 			.setPosition(avatar.sprite.x, avatar.sprite.y)
 			.setFrame(avatar.sprite.frame.name)
@@ -218,11 +237,13 @@ export class TowerScene extends Phaser.Scene {
 			if (!present.has(id)) {
 				avatar.sprite.destroy();
 				avatar.name.destroy();
+				avatar.marker.destroy();
 				avatar.crown.destroy();
 				this.avatars.delete(id);
 			}
-		for (const peer of frame.peers) this.avatar(peer, false);
-		this.avatar(frame.self, true);
+		for (const peer of frame.peers) this.avatar(peer, false, false);
+		// Marker YOU chỉ hiện khi có peer để Solo một mình đỡ nhiễu.
+		this.avatar(frame.self, true, frame.peers.length > 0);
 		this.adventureVisuals?.render(frame);
 		this.conversations?.render(frame, this.npcSprites);
 		if (frame.ending && !this.ending) {
@@ -230,6 +251,7 @@ export class TowerScene extends Phaser.Scene {
 			for (const avatar of this.avatars.values()) {
 				avatar.sprite.setVisible(false);
 				avatar.name.setVisible(false);
+				avatar.marker.setVisible(false);
 				avatar.crown.setVisible(false);
 			}
 			this.babe?.setVisible(false);

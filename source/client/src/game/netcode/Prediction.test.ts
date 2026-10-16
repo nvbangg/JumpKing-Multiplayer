@@ -428,3 +428,34 @@ test("runtime ignores stale snapshots and clears sequence/prediction on generati
 	} as unknown as Record<string, unknown>);
 	expect(runtime.latest!.serverTick).toBe(2);
 });
+test("input overflow đóng socket và báo lỗi để menu cho quit ra sảnh", () => {
+	const socket = new GameSocket(
+		() => {},
+		() => {},
+	);
+	socket.selfId = "self";
+	socket.playContext = { playId: "run", generation: 1 };
+	socket.input = vi.fn();
+	const failed = vi.fn();
+	const server = new GameSimulation(map),
+		runtime = new OnlineRuntime(
+			map,
+			socket,
+			room,
+			() => right,
+			() => {},
+			false,
+			failed,
+		);
+	runtime.receive(snapshot(server, 1, 0) as unknown as Record<string, unknown>);
+	for (let index = 0; index < 300; index++) {
+		runtime.advance(17);
+		if (failed.mock.calls.length > 0) break;
+	}
+	expect(failed).toHaveBeenCalledTimes(1);
+	expect(String(failed.mock.calls[0]?.[0])).toMatch(/acknowledgements/);
+	expect(runtime.menu).toBe(true);
+	// Socket đã đóng nên UI phải chuyển sang nhánh disconnected để quit offline.
+	expect(socket.selfId).toBeNull();
+	expect(socket.playContext).toBeNull();
+});

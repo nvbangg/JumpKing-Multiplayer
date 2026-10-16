@@ -4,7 +4,8 @@ export const PRESENTATION = Object.freeze({
 	spriteSize: 48,
 	spriteStartX: 224,
 	spriteColumns: 4,
-	peerOpacity: 0.7,
+	// Peer giữ độ đục đầy đủ để sáng đồng nhất với nhân vật của mình; phân biệt bằng màu và depth.
+	peerOpacity: 1,
 	maxFrameMs: 250,
 	hudIntervalMs: 100,
 	afkPollMs: 1000,
