@@ -10,6 +10,8 @@ import { AudioBus } from "../../game/presentation/AudioBus";
 import { PRESENTATION } from "../../game/presentation/config";
 import { parseMap } from "../../game/simulation/map";
 import type { PlayerState } from "../../game/simulation/types";
+import { api } from "../../network/api";
+import type { GameConfig } from "../../network/contracts";
 import { duration, ticksToMs } from "../records/format";
 import { OptionsButtons } from "../settings/OptionsPanel";
 import { type Options, readOptions, saveOptions } from "../settings/options";
@@ -158,10 +160,13 @@ export function SoloGame({
 		window.addEventListener("pagehide", pageHide);
 		window.addEventListener("pageshow", pageShow);
 		void (async () => {
-			const [renderer, manifest, response] = await Promise.all([
+			const [renderer, manifest, response, flyAllowed] = await Promise.all([
 				import("../../game/presentation/createGame"),
 				loadManifest(controller.signal),
 				fetch("/shared/maps/main-babe.json", { signal: controller.signal }),
+				api<GameConfig>("/game-config")
+					.then((config) => config.features.flyEnabled === true)
+					.catch(() => false),
 			]);
 			if (!response.ok) throw new Error("Game map is unavailable");
 			const map = parseMap(await response.json());
@@ -175,6 +180,7 @@ export function SoloGame({
 			let savedScreen = 0;
 			const session = new SoloRuntime(
 				map,
+				flyAllowed,
 				() => controls.read(),
 				(frame) => {
 					audio.current?.setScreen(frame.screen);
@@ -246,7 +252,7 @@ export function SoloGame({
 			writer.current = storage;
 			runtime.current = session;
 			flight.current = new FlightToggle(
-				__SOLO_FLY_ENABLED__,
+				flyAllowed,
 				() => session.simulation.snapshot().freeFlight,
 				(enabled) => session.simulation.setFlight(enabled),
 			);

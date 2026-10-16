@@ -28,6 +28,7 @@ export class SoloRuntime implements GameRuntime {
 	private ending?: EndingSignal;
 	constructor(
 		map: GameMap,
+		flyAllowed: boolean,
 		private readInput: () => PlayerInput,
 		private onTick: (state: PlayerState) => void,
 		readonly nickname = "Player",
@@ -40,7 +41,7 @@ export class SoloRuntime implements GameRuntime {
 			world: WorldEvent[],
 		) => void = () => {},
 	) {
-		this.game = new GameSimulation(map, __SOLO_FLY_ENABLED__);
+		this.game = new GameSimulation(map, flyAllowed);
 		this.simulation = this.game.physics;
 	}
 	advance(deltaMs: number): void {

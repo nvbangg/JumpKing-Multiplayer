@@ -5,3 +5,4 @@ server.address=127.0.0.1
 server.port=8080
 app.allowed-origins=http://127.0.0.1:5173,http://127.0.0.1:8080
 server.servlet.session.cookie.secure=false
+app.fly-enabled=${FLY_ENABLED:false}

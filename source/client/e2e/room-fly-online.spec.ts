@@ -4,6 +4,7 @@ import {
 	createRoom,
 	joinRoom,
 	leaveOnline,
+	observeOnline,
 	registerOnline,
 	startRoom,
 } from "./support/online";
@@ -143,6 +144,7 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"])
 				b = await second.newPage(),
 				snapshots: OnlineSnapshot[] = [],
 				errors: unknown[] = [];
+			const peer = observeOnline(b);
 			for (const page of [a, b])
 				page.on("pageerror", (error) => errors.push(error.message));
 			a.on("websocket", (socket) =>
@@ -191,7 +193,32 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"])
 			await expect
 				.poll(() => snapshots.at(-1)?.self.simulation.physics.freeFlight)
 				.toBe(false);
-			await a.getByRole("button", { name: "Menu", exact: true }).click();
+			if (mode === "RACE") {
+				await b.bringToFront();
+				if (
+					await b
+						.getByRole("button", { name: "Resume", exact: true })
+						.isVisible()
+				)
+					await b.getByRole("button", { name: "Resume", exact: true }).click();
+				await b.locator("canvas").click();
+				await b.keyboard.press("Space");
+				await b.waitForTimeout(80);
+				await b.keyboard.press("Space");
+				await expect
+					.poll(() => peer.snapshot?.self.simulation.physics.freeFlight)
+					.toBe(true);
+				expect(snapshots.at(-1)!.self.simulation.physics.freeFlight).toBe(
+					false,
+				);
+				await a.bringToFront();
+			}
+			if (
+				!(await a
+					.getByRole("button", { name: "End Match", exact: true })
+					.isVisible())
+			)
+				await a.getByRole("button", { name: "Menu", exact: true }).click();
 			await a.getByRole("button", { name: "End Match", exact: true }).click();
 			await expect(
 				a.getByRole("button", { name: "Play Again", exact: true }),

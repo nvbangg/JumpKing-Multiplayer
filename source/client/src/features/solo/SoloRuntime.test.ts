@@ -7,6 +7,7 @@ import { SoloRuntime } from "./SoloRuntime";
 test("fixed ticks accumulate small frames and pause/resume discards elapsed wall time", () => {
 	const session = new SoloRuntime(
 		map,
+		false,
 		() => NEUTRAL_INPUT,
 		() => {},
 	);
@@ -25,6 +26,7 @@ test("fixed ticks accumulate small frames and pause/resume discards elapsed wall
 test("restoring at Finish grants the reward before autosave and exposes one ending signal", () => {
 	const session = new SoloRuntime(
 		map,
+		false,
 		() => NEUTRAL_INPUT,
 		() => {},
 	);
@@ -38,4 +40,28 @@ test("restoring at Finish grants the reward before autosave and exposes one endi
 	session.advance(1000);
 	expect(session.frame().ending).toBe(signal);
 	expect(session.simulation.snapshot().ticks).toBe(16957);
+});
+
+test("Solo uses the server flight permission without player options", () => {
+	const locked = new SoloRuntime(
+		map,
+		false,
+		() => NEUTRAL_INPUT,
+		() => {},
+	);
+	expect(() => locked.simulation.setFlight(true)).toThrow("disabled");
+	const allowed = new SoloRuntime(
+		map,
+		true,
+		() => ({ ...NEUTRAL_INPUT, jump: true }),
+		() => {},
+	);
+	allowed.simulation.setFlight(true);
+	const y = allowed.simulation.snapshot().y;
+	allowed.advance(1000 / 60);
+	expect(allowed.simulation.snapshot()).toMatchObject({
+		freeFlight: true,
+		jumps: 0,
+	});
+	expect(allowed.simulation.snapshot().y).toBeLessThan(y);
 });

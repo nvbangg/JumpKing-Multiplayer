@@ -37,7 +37,6 @@ Dùng password thật chỉ trong file riêng/process ENV. Cấu hình frontend:
 ```dotenv
 BACKEND_URL=http://127.0.0.1:8080
 VITE_BACKEND_ORIGIN=
-FLY_ENABLED=false
 ```
 
 BACKEND_URL chỉ dùng cho proxy Vite. VITE_BACKEND_ORIGIN trống nếu cùng origin, nếu tách thì điền origin backend không có path. Adapter nối /api và /ws/game, đổi http/https thành ws/wss. VITE_* công khai, cố định khi build; không chứa secrets. [Vite env](https://vite.dev/guide/env-and-mode)
@@ -67,13 +66,11 @@ Root .gitignore chứa quy tắc chung; mỗi module ignore config riêng, depen
 
 `source/server/config/` chỉ đưa các mẫu `.properties.example` lên Git. File thực tế phải có quyền đọc giới hạn cho người chạy ứng dụng. Tài khoản MySQL chỉ có quyền DML trong database của game; không dùng root.
 
-## Fly Mode local
+## Fly Mode
 
-Solo: đặt `FLY_ENABLED=true` trong `source/client/.env.local`, restart `npm run dev`. Vite config đọc bằng loadEnv; chỉ dev server cho bay, mọi build đều tắt. [Vite conditional config](https://vite.dev/config/#conditional-config)
+Đặt `$env:FLY_ENABLED='true'` trong terminal backend trước khi chạy Maven/JAR, hoặc đặt `app.fly-enabled=true` trong file `source/server/config/application-<profile>.properties` đang dùng. Spring Boot không đọc `source/client/.env.local`. Đổi cờ cần restart backend và vào lại màn chơi; không cần build lại frontend hoặc bật Options.
 
-Community/Room: đặt `$env:FLY_ENABLED='true'` trong terminal backend rồi chạy Maven/JAR profile local; đổi cờ cần restart. Backend đọc process ENV qua property ở trên, không đọc source/client/.env.local. UI nhận `features.flyEnabled` từ game-config; quyền áp dụng mọi player kể cả LAN/ZeroTier.
-
-Mặc định false; profile prod luôn ép false dù ENV=true. Khi deploy vẫn đặt false. Cờ công khai; điều khiển và xử lý save/thành tích theo [gameplay](gameplay.md#fly-mode).
+Mặc định false. Cờ áp dụng cho mọi người trong Solo, Community và Room, ở localhost, LAN hoặc Internet, kể cả profile prod. Client đọc quyền qua `/api/game-config`. Solo vẫn chơi/lưu offline khi backend không truy cập được, nhưng không mở quyền bay. Điều khiển và save/thành tích theo [gameplay](gameplay.md#fly-mode).
 
 ## MySQL
 
@@ -150,7 +147,7 @@ Máy người chơi kiểm tra `Test-NetConnection 10.147.17.5 -Port 8080`; `Tcp
 
 ## VPS một domain
 
-Build JAR có frontend theo phần trên; đặt MySQL trong mạng riêng của backend. Copy mẫu application-prod.properties, điền datasource và origins theo domain thực tế, bật cookie Secure và giữ Fly tắt. Chạy với --spring.profiles.active=prod.
+Build JAR có frontend theo phần trên; đặt MySQL trong mạng riêng của backend. Copy mẫu application-prod.properties, điền datasource và origins theo domain thực tế, bật cookie Secure. Chạy với --spring.profiles.active=prod.
 
 HTTPS/WSS có thể kết thúc trực tiếp tại Spring Boot bằng server.ssl.* và keystore riêng được ignore, hoặc qua reverse proxy đã cấu hình đúng. Không mặc định trust forwarded headers khi không có proxy; không mở MySQL ra Internet. Chứng chỉ/keystore/password không đưa lên Git. DNS chỉ trỏ địa chỉ, không tự cấp HTTPS. Sau cập nhật phải build và restart JAR; push Git không tự deploy nếu chưa có pipeline.
 

@@ -3,7 +3,7 @@ import type { OnlineSnapshot } from "../src/game/netcode/OnlineRuntime";
 
 test.skip(
 	process.env.E2E_FLY_ONLINE !== "true",
-	"Requires the local-profile backend/MySQL flight harness",
+	"Requires the backend/MySQL flight harness with Fly enabled",
 );
 test("server-enabled flight, double Space and movement save and Continue online flight", async ({
 	page,

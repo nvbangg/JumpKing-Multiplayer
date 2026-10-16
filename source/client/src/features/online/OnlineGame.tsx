@@ -13,7 +13,7 @@ import { AudioBus } from "../../game/presentation/AudioBus";
 import { PRESENTATION } from "../../game/presentation/config";
 import { parseMap } from "../../game/simulation/map";
 import { api } from "../../network/api";
-import type { PlayerStanding } from "../../network/contracts";
+import type { GameConfig, PlayerStanding } from "../../network/contracts";
 import type { GameSocket, RoomState } from "../../network/GameSocket";
 import { InGameLeaderboard } from "../community/InGameLeaderboard";
 import { duration } from "../records/format";
@@ -233,7 +233,7 @@ export function OnlineGame({
 				import("../../game/presentation/createGame"),
 				loadManifest(controller.signal),
 				api<unknown>("/map"),
-				api<{ features: { flyEnabled: boolean } }>("/game-config"),
+				api<GameConfig>("/game-config"),
 			]);
 			if (disposed) return;
 			cueManifest = manifest;

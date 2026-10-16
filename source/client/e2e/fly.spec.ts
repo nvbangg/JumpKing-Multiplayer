@@ -8,14 +8,11 @@ const savedPhysics = (page: Page) =>
 			{ currentSolo } = await import(path);
 		return (await currentSolo("guest"))?.snapshot?.physics;
 	});
-test("Flight follows the environment gate and double Space toggles real Solo flight", async ({
+test("Flight follows the server permission and double Space toggles real Solo flight", async ({
 	page,
 }) => {
 	await page.addInitScript(() =>
-		localStorage.setItem(
-			"jumpking.options",
-			JSON.stringify({ sound: false, fly: !enabled }),
-		),
+		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false })),
 	);
 	await page.goto("/");
 	await page.getByRole("button", { name: "Options", exact: true }).click();
@@ -71,10 +68,7 @@ test("disabling flight inside floor exits solid or safely returns to spawn witho
 		return;
 	}
 	await page.evaluate(async () => {
-		localStorage.setItem(
-			"jumpking.options",
-			JSON.stringify({ sound: false, fly: true }),
-		);
+		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false }));
 		const simulation = "/src/game/simulation/GameSimulation.ts",
 			storage = "/src/features/solo/storage.ts";
 		const { GameSimulation } = await import(simulation),
@@ -120,10 +114,7 @@ test("touch double Jump respects the gate and simultaneous Jump fingers are one 
 }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.addInitScript(() =>
-		localStorage.setItem(
-			"jumpking.options",
-			JSON.stringify({ sound: false, fly: true }),
-		),
+		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false })),
 	);
 	await page.goto("/play");
 	const jump = page.getByRole("button", { name: "Jump", exact: true });

@@ -48,13 +48,7 @@ Linux/macOS dùng `sh mvnw`; cài Chromium cho E2E bằng `npx playwright instal
 
 E2E (end-to-end) dùng Playwright thao tác trình duyệt qua UI → HTTP/WS → backend/MySQL để kiểm tra cả luồng. Chạy riêng vì cần ứng dụng đang chạy và trình duyệt, khác unit tests kiểm tra từng hàm/module.
 
-Vite do Playwright khởi tạo lấy cờ Fly từ `E2E_FLY_ENABLED`, mặc định false, độc lập với `.env.local`. Fly dev: chạy trong terminal riêng tại `source/client/`; cổng test riêng tránh dùng nhầm server đang chạy. Các E2E mặc định kiểm tra tính năng bị khóa.
-
-```powershell
-$env:E2E_FLY_ENABLED = 'true'
-$env:E2E_PORT = '5174'
-npm run test:e2e -- e2e/fly.spec.ts
-```
+Fly E2E đọc quyền từ backend thật, không nhúng cờ vào Vite/build. `CommunityFlyIT` chạy Solo và Community khi server bật Fly; `RoomFlyBrowserIT` kiểm tra cả bốn mode Room. Quyền bay chỉ phụ thuộc cờ server, không phụ thuộc profile; backend từ chối bay khi cờ tắt. Solo không có backend vẫn chơi/lưu bình thường. `E2E_FLY_ENABLED` chỉ đặt kỳ vọng của `fly.spec.ts`, không bật Fly trong ứng dụng.
 
 Integration dùng [Testcontainers MySQL](https://java.testcontainers.org/modules/databases/mysql/), Docker và MySQL theo [deployment](deployment.md#runtime-và-workflow). E2E dùng instance cô lập; không reset database cá nhân. Setup test chỉ nạp phần CREATE TABLE của schema.sql vào database test mới/rỗng, không chạy phần DROP/CREATE database hoặc USE. Runner chỉ cleanup resources/fixtures do nó tạo, kể cả khi test lỗi.
 
@@ -83,7 +77,7 @@ Với `-Web` và `E2E_BROWSER_PATH`, `SchemaIT` còn chạy Chrome trực tiếp
 | Physics | Đi bộ, charge ngắn/full/auto, buffer/air grace, wall/ceiling/corner/slope, ice/snow/wind, splat/cancel; full state đúng expected mỗi tick |
 | Map/camera | Toàn tuyến Main Babe từ spawn tới Finish bằng input hợp lệ; tile/biên/chuyển screen đúng, không stuck, không lọt solid |
 | Solo | Offline save/Continue/New Game, profile Guest/Account, UUID/revision; sync hai thiết bị đúng owner, retry/reload hàng chờ; không upload snapshot hoặc ảnh hưởng leaderboard |
-| Fly Mode | Gate mặc định/dev/build/prod cho mọi kiểu chơi; nhấn đúp/repeat/cancel không launch thừa; giữ Space bay lên, keyboard/touch, biên world, thoát solid/đáy world/restore; save và thành tích đúng [gameplay](gameplay.md#fly-mode) |
+| Fly Mode | Một cờ server cho mọi người/kiểu chơi/profile, không Options; nhấn đúp/repeat/cancel không launch thừa; giữ Space bay lên, keyboard/touch, biên world, thoát solid/đáy world/restore; save và thành tích đúng [gameplay](gameplay.md#fly-mode) |
 | Nội dung/ending | Main Babe đủ NPC/readables/môi trường/audio; không Inventory/items/merchant/quest nhận đồ; ending/Skip đúng người, không credit hoặc phát trùng; build đúng scope |
 | Adventure boundary | Hai simulation cùng luật/ID, frontend tra cứu đúng nội dung; Java/snapshot không chứa presentation; hội thoại/crown không nhân đôi qua restore/replay/input giả |
 | Community | Account bắt buộc; tự ghép/tạo sảnh, không Join bằng ID; lookup không lộ members/token; một lượt/Account, giữ state/time và không nhân đôi membership |

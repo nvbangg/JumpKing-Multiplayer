@@ -1,3 +1,6 @@
+export interface GameConfig {
+	features: { flyEnabled: boolean };
+}
 export interface Account {
 	id: string;
 	username: string;

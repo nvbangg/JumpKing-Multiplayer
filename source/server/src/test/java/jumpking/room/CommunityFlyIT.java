@@ -17,11 +17,7 @@ import org.springframework.test.context.DynamicPropertySource;
 @SpringBootTest(
     classes = JumpKingApplication.class,
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = {
-      "app.allowed-origins=http://allowed.test",
-      "spring.profiles.active=local",
-      "app.fly-enabled=true"
-    })
+    properties = {"app.allowed-origins=http://allowed.test", "app.fly-enabled=true"})
 class CommunityFlyIT {
   private static final int VITE_PORT = jumpking.support.BrowserHarness.freePort();
 
@@ -42,13 +38,13 @@ class CommunityFlyIT {
   @org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(
       named = "E2E_BROWSER_PATH",
       matches = ".+")
-  void browserUsesServerPermissionForTheOnlineFlightControls() throws Exception {
+  void browserUsesOneServerPermissionForSoloAndCommunityFlight() throws Exception {
     jumpking.support.BrowserHarness.run(
         port,
         VITE_PORT,
         "fly-online",
-        "e2e/community-fly-online.spec.ts",
-        Map.of("E2E_FLY_ONLINE", "true"));
+        "e2e/(community-fly-online|fly).spec.ts",
+        Map.of("E2E_FLY_ONLINE", "true", "E2E_FLY_ENABLED", "true"));
   }
 
   @Test

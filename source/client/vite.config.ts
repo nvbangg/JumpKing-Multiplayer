@@ -12,7 +12,7 @@ const sharedFiles = [
 ];
 const sharedRoot = new URL("../common/", import.meta.url);
 
-export default defineConfig(({ command, mode, isPreview }) => {
+export default defineConfig(({ mode }) => {
 	const env = { ...loadEnv(mode, process.cwd(), ""), ...process.env };
 	const target = env.BACKEND_URL || "http://127.0.0.1:8080";
 	const url = new URL(target);
@@ -62,11 +62,6 @@ export default defineConfig(({ command, mode, isPreview }) => {
 				},
 			},
 		],
-		define: {
-			__SOLO_FLY_ENABLED__: JSON.stringify(
-				command === "serve" && !isPreview && env.FLY_ENABLED === "true",
-			),
-		},
 		server: {
 			host: true,
 			port: 5173,

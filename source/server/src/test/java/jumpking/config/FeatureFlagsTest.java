@@ -7,24 +7,21 @@ import org.springframework.mock.env.MockEnvironment;
 
 class FeatureFlagsTest {
   @Test
-  void flyRequiresLocalAndExplicitFlag() {
-    var env = new MockEnvironment().withProperty("FLY_ENABLED", "true");
-    assertThat(new FeatureFlags(env).flyEnabled()).isFalse();
-    env.setActiveProfiles("local");
+  void oneServerFlagControlsFlyInEveryProfile() {
+    var env = new MockEnvironment().withProperty("app.fly-enabled", "true");
     assertThat(new FeatureFlags(env).flyEnabled()).isTrue();
-    env.setProperty("app.fly-enabled", "false");
-    assertThat(new FeatureFlags(env).flyEnabled()).isFalse();
-    env.setProperty("app.fly-enabled", "true");
-    env.setActiveProfiles("local", "prod");
-    assertThat(new FeatureFlags(env).flyEnabled()).isFalse();
-    env.setActiveProfiles("prod");
-    assertThat(new FeatureFlags(env).flyEnabled()).isFalse();
+    for (String profile : new String[] {"local", "prod"}) {
+      env.setActiveProfiles(profile);
+      env.setProperty("app.fly-enabled", "true");
+      assertThat(new FeatureFlags(env).flyEnabled()).isTrue();
+      env.setProperty("app.fly-enabled", "false");
+      assertThat(new FeatureFlags(env).flyEnabled()).isFalse();
+    }
   }
 
   @Test
-  void localDefaultIsOff() {
+  void defaultIsOff() {
     var env = new MockEnvironment();
-    env.setActiveProfiles("local");
     assertThat(new FeatureFlags(env).flyEnabled()).isFalse();
   }
 }
