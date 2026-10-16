@@ -3,6 +3,7 @@ import checkpoints from "../../common/fixtures/main-babe-checkpoints.json" with 
 	type: "json",
 };
 import rules from "../../common/rules.json" with { type: "json" };
+import type { GameRuntime } from "../src/game/presentation/types";
 
 test("renderer draws all 43 screens and keeps self above translucent peers", async ({
 	page,
@@ -16,8 +17,13 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 	await page.goto("/");
 	const output = await page.evaluate(
 		async ({ states, colors }) => {
-			const modulePath = "/src/game/presentation/createGame.ts";
-			const { createGame } = await import(modulePath);
+			const modulePath = "/src/game/presentation/createGame.ts",
+				markerPath = "/src/game/presentation/finishMarker.ts",
+				roomMapsPath = "/src/game/simulation/roomMaps.ts";
+			const { createGame } = await import(modulePath),
+				{ finishMarker } = await import(markerPath),
+				{ ROOM_MAPS, roomMap } = await import(roomMapsPath);
+			const map = await (await fetch("/shared/maps/main-babe.json")).json();
 			const manifest = await (await fetch("/assets/manifest.json")).json();
 			const parent = document.createElement("div");
 			parent.style.cssText =
@@ -32,6 +38,7 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 				ready = resolve;
 			});
 			const runtime = {
+				finishMarker: undefined as GameRuntime["finishMarker"],
 				advance() {},
 				frame: () => {
 					frameReads++;
@@ -69,7 +76,17 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 				);
 			const screens: number[] = [];
 			try {
+				const scene = game.scene.getScene("Tower");
+				if (scene.children.getByName("room-finish"))
+					failures.push("Finish marker outside Room");
+				runtime.finishMarker = finishMarker(roomMap(map, 1));
 				for (let screen = 0; screen < 43; screen++) {
+					const goal = ROOM_MAPS.find(
+						(item: { finish: { screen: number } }) =>
+							item.finish.screen === screen,
+					);
+					if (goal)
+						runtime.finishMarker = finishMarker(roomMap(map, goal.level));
 					state = states.find((candidate) => candidate.screen === screen) || {
 						...states[0]!,
 						screen,
@@ -83,6 +100,20 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 					if (frameReads !== readsBefore + 1)
 						failures.push("Repeated frame snapshot " + screen);
 					await frames();
+					const marker = scene.children.getByName("room-finish");
+					if (!!marker !== !!goal) failures.push("Finish screen " + screen);
+					if (marker) {
+						const bounds = marker.getBounds(),
+							camera = scene.cameras.main;
+						if (
+							marker.text !== "FINISH" ||
+							bounds.left < 0 ||
+							bounds.right > 480 ||
+							bounds.top < camera.scrollY ||
+							bounds.bottom > camera.scrollY + 360
+						)
+							failures.push("Finish label clipped " + screen);
+					}
 					const sprites = scene.children.list.filter(
 						(child: {
 							type: string;
@@ -143,7 +174,8 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 					if (scene.cameras.main.scrollY !== -screen * 360)
 						failures.push("Camera " + screen);
 					const labels = scene.children.list.filter(
-						(child: { type: string }) => child.type === "Text",
+						(child: { type: string; name: string }) =>
+							child.type === "Text" && child.name !== "room-finish",
 					);
 					if (
 						labels.length !== 2 ||

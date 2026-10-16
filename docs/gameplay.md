@@ -120,6 +120,8 @@ Progress = max(0, originFeetY−feetY); peak là progress cao nhất từng đ�
 
 Có 10 mốc Finish tăng dần từ chân tháp; map 10 là Main Babe đầy đủ. `source/common/room-maps.json` xác định screen, progress tối thiểu và yêu cầu grounded trên nền của từng vùng; dùng nguyên geometry/spawn. Map 10 giữ đích gốc. Host chọn trước Start, settings giữ khi Play Again. Map 1–9 chỉ Results, map 10 giữ ending. History lưu map của trận; Best Finish Time chỉ tính full map. Kiểm chứng các mốc bằng replay input hợp lệ từ spawn chuẩn ở cả hai simulation.
 
+Room hiện cờ ca-rô và chữ FINISH tại một platform đủ điều kiện ở màn đích của map đã chọn. Dấu chỉ dẫn không đổi collision hoặc luật Finish; đang bay qua đích chưa tính hoàn thành.
+
 ## Leave và reconnect online
 
 Đóng tab hoặc mất kết nối hủy input; server giữ slot 5 phút từ lúc phát hiện disconnect. Reconnect cần đúng identity/token, không tự bật lại điều khiển. Với Community, hạn disconnect thay hạn Pause; reconnect khi còn paused bắt đầu lại hạn Pause. Các mốc AFK/Pause/reconnect tập trung trong shared rules.

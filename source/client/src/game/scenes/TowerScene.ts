@@ -376,5 +376,44 @@ export class TowerScene extends Phaser.Scene {
 				.setDepth(9);
 			this.visuals.push(this.babe);
 		}
+		const finish = this.runtime.finishMarker;
+		if (finish?.screen === index) {
+			const size = V.finishFlagSize,
+				x = finish.x + finish.width / 2,
+				y = finish.y - V.finishPoleHeight,
+				flag = this.add.graphics().setDepth(V.finishDepth);
+			flag.lineStyle(2, V.finishColor);
+			flag.lineBetween(
+				finish.x,
+				finish.y - 1,
+				finish.x + finish.width,
+				finish.y - 1,
+			);
+			flag.lineBetween(x, y, x, finish.y);
+			for (let row = 0; row < 2; row++)
+				for (let column = 0; column < 3; column++)
+					flag
+						.fillStyle((row + column) % 2 ? 0x111111 : 0xffffff)
+						.fillRect(x + column * size, y + row * size, size, size);
+			const label = this.add
+				.text(x, y - size, "FINISH", {
+					fontFamily: "monospace",
+					fontSize: V.finishFontSize,
+					fontStyle: "bold",
+					color: "#ffffff",
+					stroke: "#000000",
+					strokeThickness: 3,
+				})
+				.setOrigin(0.5, 1)
+				.setDepth(V.finishDepth)
+				.setTint(V.finishColor)
+				.setName("room-finish");
+			label.x = Phaser.Math.Clamp(
+				label.x,
+				label.width / 2,
+				V.width - label.width / 2,
+			);
+			this.visuals.push(flag, label);
+		}
 	}
 }

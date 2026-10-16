@@ -45,6 +45,12 @@ export interface WorldFrame {
 	ending?: EndingSignal;
 }
 export interface GameRuntime {
+	readonly finishMarker?: {
+		screen: number;
+		x: number;
+		y: number;
+		width: number;
+	};
 	advance(deltaMs: number): void;
 	frame(): WorldFrame;
 }

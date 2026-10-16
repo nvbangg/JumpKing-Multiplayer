@@ -30,6 +30,11 @@ export const PRESENTATION = Object.freeze({
 	selfDepth: 10,
 	peerDepth: 8,
 	nameDepth: 30,
+	finishDepth: 24,
+	finishColor: 0xffdc73,
+	finishFlagSize: 6,
+	finishPoleHeight: 28,
+	finishFontSize: 12,
 	dialogueFrameDepth: 32,
 	dialogueTextDepth: 33,
 });

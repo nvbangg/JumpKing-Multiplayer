@@ -81,6 +81,7 @@ test("short Room finish shows Results and History without ending or full-map rew
 			})
 			.toBeLessThan(-1790);
 		await a.keyboard.up("Space");
+		await a.screenshot({ path: info.outputPath("room-map-1-finish.png") });
 		await a.waitForTimeout(400);
 		await a.keyboard.press("Space");
 		await a.waitForTimeout(80);
