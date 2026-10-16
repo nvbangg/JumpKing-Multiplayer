@@ -69,7 +69,7 @@ async function appearance(page: Page) {
 	});
 }
 
-test("player colors match across browsers with consistent full opacity", async ({
+test("player colors match across browsers while only the local player has full opacity", async ({
 	browser,
 }, info) => {
 	const contexts = await Promise.all([
@@ -131,7 +131,7 @@ test("player colors match across browsers with consistent full opacity", async (
 					{
 						nickname: otherName,
 						color: peerColor,
-						alpha: 1,
+						alpha: 0.7,
 						tint: Number.parseInt(peerColor.slice(1), 16),
 						visible: true,
 					},

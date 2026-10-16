@@ -258,13 +258,9 @@ export function OnlineGame({
 				},
 				config.features.flyEnabled,
 				(message) => {
-					// Prediction overflow đã đóng socket nên Resume/Leave qua server không dùng được.
-					// Đánh dấu disconnected để menu hiện Reconnect + Back to Menu (thoát ra sảnh offline).
 					setError(message);
-					setDisconnected(true);
 					setMenu("pause");
 					controls.cancel();
-					audio.current?.pause(true);
 				},
 			);
 			runtime.current = session;

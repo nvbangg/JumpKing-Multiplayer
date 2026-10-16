@@ -5,7 +5,7 @@ import checkpoints from "../../common/fixtures/main-babe-checkpoints.json" with 
 import rules from "../../common/rules.json" with { type: "json" };
 import type { GameRuntime } from "../src/game/presentation/types";
 
-test("renderer draws all 43 screens and keeps self above peers with consistent opacity", async ({
+test("renderer draws all 43 screens and keeps self above translucent peers", async ({
 	page,
 }) => {
 	const errors: string[] = [];
@@ -126,7 +126,8 @@ test("renderer draws all 43 screens and keeps self above peers with consistent o
 					);
 					if (
 						sprites.length !== 2 ||
-						sprites.some((sprite: { alpha: number }) => sprite.alpha !== 1)
+						!sprites.some((sprite: { alpha: number }) => sprite.alpha === 1) ||
+						!sprites.some((sprite: { alpha: number }) => sprite.alpha === 0.7)
 					)
 						failures.push("Avatar opacity " + screen);
 					const self = sprites.find(
@@ -141,7 +142,7 @@ test("renderer draws all 43 screens and keeps self above peers with consistent o
 					)
 						failures.push("Local player appearance " + screen);
 					if (
-						peer.alpha !== 1 ||
+						peer.alpha !== 0.7 ||
 						peer.tintTopLeft !==
 							Number.parseInt(
 								colors[(ownColor + 1) % colors.length]!.slice(1),
@@ -162,7 +163,7 @@ test("renderer draws all 43 screens and keeps self above peers with consistent o
 						) ||
 						!crowns.some(
 							(crown: { alpha: number; depth: number }) =>
-								crown.alpha === 1 && crown.depth < self.depth,
+								crown.alpha === 0.7 && crown.depth < self.depth,
 						) ||
 						crowns.some(
 							(crown: { visible: boolean }) =>
@@ -172,34 +173,18 @@ test("renderer draws all 43 screens and keeps self above peers with consistent o
 						failures.push("Crown " + screen);
 					if (scene.cameras.main.scrollY !== -screen * 360)
 						failures.push("Camera " + screen);
-					const texts = scene.children.list.filter(
+					const labels = scene.children.list.filter(
 						(child: { type: string; name: string }) =>
 							child.type === "Text" && child.name !== "room-finish",
-					) as {
-						text: string;
-						visible: boolean;
-						alpha: number;
-						x: number;
-						y: number;
-					}[];
-					const names = texts.filter((label) => label.text !== "YOU");
-					// Mỗi avatar giữ một marker nhưng chỉ marker của mình hiện.
-					const markers = texts.filter(
-						(label) => label.text === "YOU" && label.visible,
 					);
-					const selfName = texts.find((label) => label.text === "You");
-					const selfY = selfName ? selfName.y : Number.POSITIVE_INFINITY;
 					if (
-						names.length !== 2 ||
-						names.some((label) => label.alpha !== 1 || !label.visible)
+						labels.length !== 2 ||
+						labels.some(
+							(label: { alpha: number; visible: boolean }) =>
+								label.alpha !== 1 || !label.visible,
+						)
 					)
 						failures.push("Names " + screen);
-					if (
-						markers.length !== 1 ||
-						!selfName ||
-						markers.some((marker) => marker.alpha !== 1 || marker.y >= selfY)
-					)
-						failures.push("Self marker " + screen);
 					screens.push(screen);
 				}
 				return { screens, failures };
