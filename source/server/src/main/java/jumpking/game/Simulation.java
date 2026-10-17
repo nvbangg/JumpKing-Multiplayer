@@ -8,6 +8,7 @@ public final class Simulation {
   private final Physics p;
   private final boolean flyAllowed;
   private final boolean noWalk;
+  private final FinishPlatform finishPlatform;
   private PlayerState state;
   private static final double SQRT_HALF = Math.sqrt(0.5);
 
@@ -28,6 +29,7 @@ public final class Simulation {
     this.p = physics;
     this.flyAllowed = flyAllowed;
     this.noWalk = noWalk;
+    finishPlatform = FinishPlatform.find(map);
     state = initialState();
   }
 
@@ -118,7 +120,14 @@ public final class Simulation {
     return state.screen == map.finish().screen()
         && state.grounded
         && state.x + p.bodyWidth / 2.0 >= map.finish().minCenterX()
-        && progress() >= map.finish().minProgress();
+        && (map.finish().maxCenterX() == null
+            || state.x + p.bodyWidth / 2.0 <= map.finish().maxCenterX())
+        && progress() >= map.finish().minProgress()
+        && (map.finish().minProgress() == 0
+            || (finishPlatform != null
+                && state.y + p.bodyHeight == finishPlatform.y()
+                && state.x + p.bodyWidth > finishPlatform.x()
+                && state.x < finishPlatform.x() + finishPlatform.width()));
   }
 
   private int screenAt(double y) {
@@ -276,8 +285,8 @@ public final class Simulation {
     if (input.freeFlight() != null && input.freeFlight() != s.freeFlight)
       setFlight(input.freeFlight());
     if (s.freeFlight) {
-      s.vx = ((input.right() ? 1 : 0) - (input.left() ? 1 : 0)) * p.flySpeed;
-      s.vy = ((input.down() ? 1 : 0) - (input.up() || input.jump() ? 1 : 0)) * p.flySpeed;
+      s.vx = ((input.right() ? 1 : 0) - (input.left() ? 1 : 0)) * p.flyHorizontalSpeed;
+      s.vy = ((input.down() ? 1 : 0) - (input.up() || input.jump() ? 1 : 0)) * p.flyVerticalSpeed;
       s.x = clamp(f(s.x + s.vx), 0, map.width() - p.bodyWidth);
       s.y =
           clamp(

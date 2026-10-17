@@ -42,8 +42,8 @@ class FlightTest {
     var sim = new Simulation(world, physics, true, false);
     sim.setFlight(true);
     sim.tick(new PlayerInput(true, false, false, true, false, true));
-    assertThat(sim.snapshot().x).isEqualTo(227.5);
-    assertThat(sim.snapshot().y).isEqualTo(298.5);
+    assertThat(sim.snapshot().x).isEqualTo(226);
+    assertThat(sim.snapshot().y).isEqualTo(287);
     sim.cancelInput();
     sim.tick(PlayerInput.NEUTRAL);
     assertThat(sim.snapshot().freeFlight).isTrue();
@@ -53,9 +53,9 @@ class FlightTest {
   void heldJumpAscendsWithoutChargingOrCountingJumps() {
     var sim = new Simulation(world, physics, true, false);
     sim.setFlight(true);
-    for (int i = 0; i < 20; i++) sim.tick(new PlayerInput(false, false, true));
-    assertThat(sim.snapshot().y).isEqualTo(232);
-    assertThat(sim.snapshot().vy).isEqualTo(-3.5);
+    for (int i = 0; i < 10; i++) sim.tick(new PlayerInput(false, false, true));
+    assertThat(sim.snapshot().y).isEqualTo(152);
+    assertThat(sim.snapshot().vy).isEqualTo(-15);
     assertThat(sim.snapshot().charge).isZero();
     assertThat(sim.snapshot().jumps).isZero();
     sim.tick(PlayerInput.NEUTRAL);

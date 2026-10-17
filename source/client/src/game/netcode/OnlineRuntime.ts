@@ -3,7 +3,6 @@ import { NETWORK } from "../../network/config";
 import type { PlayerStanding } from "../../network/contracts";
 import type { GameSocket, RoomState } from "../../network/GameSocket";
 import { PRESENTATION } from "../presentation/config";
-import { finishMarker } from "../presentation/finishMarker";
 import type {
 	EndingSignal,
 	GameRuntime,
@@ -11,6 +10,7 @@ import type {
 	RenderPose,
 	WorldFrame,
 } from "../presentation/types";
+import { findFinishPlatform } from "../simulation/finishPlatform";
 import {
 	GameSimulation,
 	type GameSnapshot,
@@ -71,7 +71,9 @@ export class OnlineRuntime implements GameRuntime {
 			room.settings?.mode === "NO_WALK",
 		);
 		if (room.kind === "ROOM")
-			this.finishMarker = finishMarker(this.game.physics.map);
+			this.finishMarker =
+				this.game.physics.finishPlatform ??
+				findFinishPlatform(this.game.physics.map);
 		this.prediction = new Prediction(
 			this.game,
 			NETWORK.maxInputFrames,

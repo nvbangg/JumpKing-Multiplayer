@@ -9,7 +9,7 @@ import jumpking.support.GameClient;
 import jumpking.support.MainBabeRoute;
 import org.springframework.test.util.ReflectionTestUtils;
 
-/** State cuối tuyến native chỉ được chuẩn bị trong test, không có endpoint cheat. */
+/** State trước Finish Room chỉ được chuẩn bị trong test, không có endpoint cheat. */
 public final class RoomBrowserFixture implements AutoCloseable {
   private final GameClient first, second;
   private final Memberships memberships;

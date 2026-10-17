@@ -1,3 +1,4 @@
+import { type FinishPlatform, findFinishPlatform } from "./finishPlatform";
 import { PHYSICS as P } from "./tuning";
 import type {
 	GameMap,
@@ -20,11 +21,14 @@ interface Contact {
 
 export class Simulation {
 	private state: PlayerState;
+	readonly finishPlatform: FinishPlatform | undefined;
 	constructor(
 		readonly map: GameMap,
 		readonly flyAllowed = false,
 		readonly noWalk = false,
 	) {
+		this.finishPlatform =
+			(map.finish.minProgress ?? 0) > 0 ? findFinishPlatform(map) : undefined;
 		this.state = this.initialState();
 	}
 
@@ -159,7 +163,14 @@ export class Simulation {
 			this.state.screen === this.map.finish.screen &&
 			this.state.grounded &&
 			this.state.x + P.bodyWidth / 2 >= this.map.finish.minCenterX &&
-			this.progress >= (this.map.finish.minProgress ?? 0)
+			this.state.x + P.bodyWidth / 2 <=
+				(this.map.finish.maxCenterX ?? Infinity) &&
+			this.progress >= (this.map.finish.minProgress ?? 0) &&
+			(!(this.map.finish.minProgress ?? 0) ||
+				(!!this.finishPlatform &&
+					this.state.y + P.bodyHeight === this.finishPlatform.y &&
+					this.state.x + P.bodyWidth > this.finishPlatform.x &&
+					this.state.x < this.finishPlatform.x + this.finishPlatform.width))
 		);
 	}
 
@@ -340,9 +351,10 @@ export class Simulation {
 		if (input.freeFlight !== undefined && input.freeFlight !== s.freeFlight)
 			this.setFlight(input.freeFlight);
 		if (s.freeFlight) {
-			s.vx = (Number(input.right) - Number(input.left)) * P.flySpeed;
+			s.vx = (Number(input.right) - Number(input.left)) * P.flyHorizontalSpeed;
 			s.vy =
-				(Number(!!input.down) - Number(!!input.up || input.jump)) * P.flySpeed;
+				(Number(!!input.down) - Number(!!input.up || input.jump)) *
+				P.flyVerticalSpeed;
 			s.x = clamp(f(s.x + s.vx), 0, this.map.width - P.bodyWidth);
 			s.y = clamp(
 				f(s.y + s.vy),

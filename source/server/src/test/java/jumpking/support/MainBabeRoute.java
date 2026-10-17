@@ -11,6 +11,9 @@ public final class MainBabeRoute {
 
   public static GameSimulation.Snapshot beforeFinish(SharedData shared, ObjectMapper json)
       throws Exception {
+    var checkpoints =
+        json.readTree(Path.of("../common/fixtures/main-babe-checkpoints.json").toFile());
+    long target = checkpoints.get(checkpoints.size() - 1).path("ticks").asLong() - 1;
     var game =
         new GameSimulation(
             json.treeToValue(shared.map(), GameMap.class),
@@ -21,9 +24,6 @@ public final class MainBabeRoute {
             shared.adventure(),
             false,
             false);
-    var checkpoints =
-        json.readTree(Path.of("../common/fixtures/main-babe-checkpoints.json").toFile());
-    long target = checkpoints.get(checkpoints.size() - 1).path("ticks").asLong() - 1;
     java.util.function.Consumer<PlayerInput> step =
         input -> {
           if (game.physics().snapshot().ticks < target) game.tick(input);

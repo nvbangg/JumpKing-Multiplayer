@@ -22,8 +22,8 @@ test("fly is denied by default and cancel does not toggle enabled flight", () =>
 	sim.setFlight(true);
 	sim.tick({ ...idle, left: true, up: true });
 	expect(sim.snapshot()).toMatchObject({
-		x: 227.5,
-		y: 298.5,
+		x: 226,
+		y: 287,
 		ticks: 1,
 		jumps: 0,
 		falls: 0,
@@ -36,10 +36,10 @@ test("fly is denied by default and cancel does not toggle enabled flight", () =>
 test("holding Jump ascends in flight without charging or counting jumps", () => {
 	const sim = new Simulation(world, true);
 	sim.setFlight(true);
-	for (let i = 0; i < 20; i++) sim.tick({ ...idle, jump: true });
+	for (let i = 0; i < 10; i++) sim.tick({ ...idle, jump: true });
 	expect(sim.snapshot()).toMatchObject({
-		y: 232,
-		vy: -3.5,
+		y: 152,
+		vy: -15,
 		charge: 0,
 		jumps: 0,
 		freeFlight: true,

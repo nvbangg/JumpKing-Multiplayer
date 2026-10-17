@@ -25,7 +25,8 @@ public final class Physics {
       windFrequency,
       windAcceleration,
       cameraMinimumRiseSpeed,
-      flySpeed;
+      flyHorizontalSpeed,
+      flyVerticalSpeed;
 
   public Physics(Map<String, Number> values) {
     bodyWidth = integer(values, "bodyWidth");
@@ -48,7 +49,8 @@ public final class Physics {
     windFrequency = number(values, "windFrequency");
     windAcceleration = number(values, "windAcceleration");
     cameraMinimumRiseSpeed = number(values, "cameraMinimumRiseSpeed");
-    flySpeed = number(values, "flySpeed");
+    flyHorizontalSpeed = number(values, "flyHorizontalSpeed");
+    flyVerticalSpeed = number(values, "flyVerticalSpeed");
     gravity = (float) (number(values, "gravityNumerator") / number(values, "gravityDenominator"));
     jumpVelocity = -(float) (number(values, "jumpGravityMultiplier") * gravity);
   }

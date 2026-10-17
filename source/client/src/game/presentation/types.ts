@@ -1,4 +1,5 @@
 import type { AdventureState } from "../simulation/Adventure";
+import type { FinishPlatform } from "../simulation/finishPlatform";
 import type { WorldState } from "../simulation/GameSimulation";
 import type { PlayerState } from "../simulation/types";
 
@@ -45,12 +46,7 @@ export interface WorldFrame {
 	ending?: EndingSignal;
 }
 export interface GameRuntime {
-	readonly finishMarker?: {
-		screen: number;
-		x: number;
-		y: number;
-		width: number;
-	};
+	readonly finishMarker?: FinishPlatform;
 	advance(deltaMs: number): void;
 	frame(): WorldFrame;
 }

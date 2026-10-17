@@ -41,6 +41,10 @@ public class SharedData {
           || !goal.finish().requiresGrounded()
           || !Double.isFinite(goal.finish().minProgress())
           || goal.finish().minProgress() < 0
+          || goal.finish().maxCenterX() != null
+              && (!Double.isFinite(goal.finish().maxCenterX())
+                  || goal.finish().maxCenterX() < goal.finish().minCenterX()
+                  || goal.finish().maxCenterX() > map.path("width").asInt())
           || index > 0 && goal.finish().screen() <= roomMaps.get(index - 1).finish().screen())
         throw new IOException("Invalid Room finish boundary");
     }

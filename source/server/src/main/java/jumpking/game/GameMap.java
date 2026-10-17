@@ -13,7 +13,11 @@ public record GameMap(
   public record Spawn(double x, double y) {}
 
   public record Finish(
-      int screen, double minCenterX, boolean requiresGrounded, double minProgress) {}
+      int screen,
+      double minCenterX,
+      boolean requiresGrounded,
+      double minProgress,
+      Double maxCenterX) {}
 
   public record Screen(List<String> tiles, boolean wind) {
     public Screen {

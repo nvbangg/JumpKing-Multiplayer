@@ -7,6 +7,7 @@ export interface GameMap {
 	finish: {
 		screen: number;
 		minCenterX: number;
+		maxCenterX?: number;
 		requiresGrounded: boolean;
 		minProgress?: number;
 	};

@@ -18,10 +18,10 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 	const output = await page.evaluate(
 		async ({ states, colors }) => {
 			const modulePath = "/src/game/presentation/createGame.ts",
-				markerPath = "/src/game/presentation/finishMarker.ts",
+				markerPath = "/src/game/simulation/finishPlatform.ts",
 				roomMapsPath = "/src/game/simulation/roomMaps.ts";
 			const { createGame } = await import(modulePath),
-				{ finishMarker } = await import(markerPath),
+				{ findFinishPlatform } = await import(markerPath),
 				{ ROOM_MAPS, roomMap } = await import(roomMapsPath);
 			const map = await (await fetch("/shared/maps/main-babe.json")).json();
 			const manifest = await (await fetch("/assets/manifest.json")).json();
@@ -79,14 +79,14 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 				const scene = game.scene.getScene("Tower");
 				if (scene.children.getByName("room-finish"))
 					failures.push("Finish marker outside Room");
-				runtime.finishMarker = finishMarker(roomMap(map, 1));
+				runtime.finishMarker = findFinishPlatform(roomMap(map, 1));
 				for (let screen = 0; screen < 43; screen++) {
 					const goal = ROOM_MAPS.find(
 						(item: { finish: { screen: number } }) =>
 							item.finish.screen === screen,
 					);
 					if (goal)
-						runtime.finishMarker = finishMarker(roomMap(map, goal.level));
+						runtime.finishMarker = findFinishPlatform(roomMap(map, goal.level));
 					state = states.find((candidate) => candidate.screen === screen) || {
 						...states[0]!,
 						screen,

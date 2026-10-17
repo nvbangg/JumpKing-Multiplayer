@@ -68,7 +68,7 @@ Pause dừng simulation/clock ngay. Lỗi hoặc thiếu storage phải báo kh�
 
 ## Fly Mode
 
-Tính năng thử nghiệm cho Solo, Community và cả bốn mode Room, được mở bằng `FLY_ENABLED` theo [deployment](deployment.md#fly-mode). Khi server bật cờ, mọi người được dùng ngay ở mọi môi trường, không có thiết lập riêng theo Account hoặc Options; nhấn Space hai lần trong 300 ms để bắt đầu/tắt bay. Chỉ đếm lần nhấn mới sau khi thả, không tính key repeat; cảm ứng dùng nhấn đúp Jump. Tốc độ bay và khoảng nhấn đúp tập trung trong shared tuning.
+Tính năng thử nghiệm cho Solo, Community và cả bốn mode Room, được mở bằng `FLY_ENABLED` theo [deployment](deployment.md#fly-mode). Khi server bật cờ, mọi người được dùng ngay ở mọi môi trường, không có thiết lập riêng theo Account hoặc Options; nhấn Space hai lần trong 300 ms để bắt đầu/tắt bay. Chỉ đếm lần nhấn mới sau khi thả, không tính key repeat; cảm ứng dùng nhấn đúp Jump. Tốc độ ngang/dọc và khoảng nhấn đúp tập trung trong shared tuning.
 
 Khi bay, WASD hoặc các mũi tên di chuyển bốn hướng; giữ Space cũng bay lên; cảm ứng thêm lên/xuống. Bay xuyên địa hình, không gravity/charge/splat, giữ biên world. Đổi trạng thái bay xóa charge/velocity; không tạo cú nhảy ngoài ý muốn và phải thả Jump trước khi charge tiếp. Khi chưa bay, lần nhấn Space đầu vẫn điều khiển nhảy bình thường, không chờ nhận diện nhấn đúp.
 
@@ -118,7 +118,7 @@ Progress = max(0, originFeetY−feetY); peak là progress cao nhất từng đ�
 
 ### Độ dài Room
 
-Có 10 mốc Finish tăng dần từ chân tháp; map 10 là Main Babe đầy đủ. `source/common/room-maps.json` xác định screen, progress tối thiểu và yêu cầu grounded trên nền của từng vùng; dùng nguyên geometry/spawn. Map 10 giữ đích gốc. Host chọn trước Start, settings giữ khi Play Again. Map 1–9 chỉ Results, map 10 giữ ending. History lưu map của trận; Best Finish Time chỉ tính full map. Kiểm chứng các mốc bằng replay input hợp lệ từ spawn chuẩn ở cả hai simulation.
+Có 10 mốc Finish tăng dần từ chân tháp; map 10 là Main Babe đầy đủ. `source/common/room-maps.json` xác định đích trong đúng vùng của từng map; dùng nguyên geometry/spawn. Map 1–9 yêu cầu đáp đúng mặt nền đã đánh dấu, xác định bởi screen, minCenterX và minProgress; maxCenterX giới hạn đoạn nền khi cần. Không tính nền khác dù cao hơn. Map 10 giữ đích gốc. Host chọn trước Start, settings giữ khi Play Again. Map 1–9 chỉ Results, map 10 giữ ending. History lưu map của trận; Best Finish Time chỉ tính full map. Kiểm chứng các mốc bằng replay input hợp lệ từ spawn chuẩn ở cả hai simulation.
 
 Room hiện cờ ca-rô và chữ FINISH tại một platform đủ điều kiện ở màn đích của map đã chọn. Dấu chỉ dẫn không đổi collision hoặc luật Finish; đang bay qua đích chưa tính hoàn thành.
 

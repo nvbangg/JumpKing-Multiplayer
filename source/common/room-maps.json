@@ -1,62 +1,62 @@
 [
   {
     "level": 1,
-    "name": "Redcrown Woods",
+    "name": "Green Woods",
     "finish": {
-      "screen": 5,
-      "minCenterX": 0,
+      "screen": 3,
+      "minCenterX": 136,
       "requiresGrounded": true,
-      "minProgress": 2056
+      "minProgress": 1088
     }
   },
   {
     "level": 2,
-    "name": "Colossal Drain",
+    "name": "Red Tree",
     "finish": {
-      "screen": 9,
-      "minCenterX": 0,
+      "screen": 5,
+      "minCenterX": 152,
       "requiresGrounded": true,
-      "minProgress": 3480
+      "minProgress": 1800
     }
   },
   {
     "level": 3,
+    "name": "Colossal Drain",
+    "finish": {
+      "screen": 9,
+      "minCenterX": 8,
+      "requiresGrounded": true,
+      "minProgress": 3384
+    }
+  },
+  {
+    "level": 4,
     "name": "False Kings Keep",
     "finish": {
       "screen": 13,
-      "minCenterX": 0,
+      "minCenterX": 216,
       "requiresGrounded": true,
       "minProgress": 4912
     }
   },
   {
-    "level": 4,
+    "level": 5,
     "name": "Bargainburg",
     "finish": {
       "screen": 18,
-      "minCenterX": 0,
+      "minCenterX": 128,
       "requiresGrounded": true,
       "minProgress": 6752
     }
   },
   {
-    "level": 5,
+    "level": 6,
     "name": "Great Frontier",
     "finish": {
       "screen": 24,
-      "minCenterX": 0,
+      "minCenterX": 96,
       "requiresGrounded": true,
       "minProgress": 8912
-    }
-  },
-  {
-    "level": 6,
-    "name": "Windswept Bluff",
-    "finish": {
-      "screen": 25,
-      "minCenterX": 0,
-      "requiresGrounded": true,
-      "minProgress": 9232
     }
   },
   {
@@ -64,9 +64,10 @@
     "name": "Stormwall Pass",
     "finish": {
       "screen": 31,
-      "minCenterX": 0,
+      "minCenterX": 24,
       "requiresGrounded": true,
-      "minProgress": 11392
+      "minProgress": 11392,
+      "maxCenterX": 72
     }
   },
   {
@@ -74,9 +75,9 @@
     "name": "Chapel Perilous",
     "finish": {
       "screen": 35,
-      "minCenterX": 0,
+      "minCenterX": 288,
       "requiresGrounded": true,
-      "minProgress": 12816
+      "minProgress": 12584
     }
   },
   {
@@ -84,7 +85,7 @@
     "name": "Blue Ruin",
     "finish": {
       "screen": 38,
-      "minCenterX": 0,
+      "minCenterX": 248,
       "requiresGrounded": true,
       "minProgress": 13912
     }
