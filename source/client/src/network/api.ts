@@ -30,7 +30,6 @@ export async function api<T>(
 	path: string,
 	method = "GET",
 	body?: unknown,
-	accountId?: string,
 ): Promise<T> {
 	if (!path.startsWith("/") || path.startsWith("//"))
 		throw new Error("Invalid API path");
@@ -58,7 +57,6 @@ export async function api<T>(
 			headers: {
 				Accept: "application/json",
 				...(body !== undefined ? { "Content-Type": "application/json" } : {}),
-				...(accountId ? { "X-Account-ID": accountId } : {}),
 				...(method !== "GET" && csrf ? { [csrf.headerName]: csrf.token } : {}),
 			},
 			body: body === undefined ? undefined : JSON.stringify(body),

@@ -11,9 +11,7 @@ test("API follows the browser origin on LAN and ZeroTier without a configured ba
 	vi.stubEnv("VITE_BACKEND_ORIGIN", "");
 	const fetcher = vi
 		.fn()
-		.mockResolvedValue(
-			Response.json({ authenticated: false, guest: false, account: null }),
-		);
+		.mockResolvedValue(Response.json({ authenticated: false, account: null }));
 	vi.stubGlobal("fetch", fetcher);
 	await api("/auth/me");
 	expect(fetcher).toHaveBeenCalledWith(
@@ -39,20 +37,23 @@ test("CSRF denial clears the cached token so retry fetches a new session token",
 			Response.json({ token: "second", headerName: "X-CSRF-TOKEN" }),
 		)
 		.mockResolvedValueOnce(
-			Response.json({ authenticated: false, guest: true, account: null }),
+			Response.json({
+				authenticated: true,
+				account: { id: "1", username: "Player", crownUnlocked: false },
+			}),
 		);
 	vi.stubGlobal("fetch", fetcher);
-	await expect(api("/auth/guest", "POST")).rejects.toMatchObject({
+	await expect(api("/auth/login", "POST")).rejects.toMatchObject({
 		code: "CSRF",
 	});
-	await expect(api("/auth/guest", "POST")).resolves.toMatchObject({
-		guest: true,
+	await expect(api("/auth/login", "POST")).resolves.toMatchObject({
+		authenticated: true,
 	});
 	expect(fetcher.mock.calls.map((call) => call[0])).toEqual([
 		"http://127.0.0.1:5173/api/auth/csrf",
-		"http://127.0.0.1:5173/api/auth/guest",
+		"http://127.0.0.1:5173/api/auth/login",
 		"http://127.0.0.1:5173/api/auth/csrf",
-		"http://127.0.0.1:5173/api/auth/guest",
+		"http://127.0.0.1:5173/api/auth/login",
 	]);
 	expect(fetcher.mock.calls[3]![1]).toMatchObject({
 		credentials: "include",

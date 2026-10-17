@@ -2,13 +2,13 @@
 
 ## Phạm vi
 
-HTTP JSON `/api`, raw WebSocket `/ws/game`, contract version 1. Solo chỉ dùng HTTP sync; Community/Room nhận map từ server; tuning dùng common trong cùng bản phát hành. Luật/lifecycle theo [gameplay](gameplay.md), ownership/persistence theo [data](data.md).
+HTTP JSON `/api`, raw WebSocket `/ws/game`, contract version 1. Community/Room nhận map từ server; tuning dùng common trong cùng bản phát hành. Luật/lifecycle theo [gameplay](gameplay.md), ownership/persistence theo [data](data.md).
 
 ![Luồng giao tiếp Room](../statics/protocol.svg)
 
 ## Identity và security
 
-Account dùng Spring Security server-side session, không JWT. Solo Guest chỉ có profile trình duyệt; không có Guest API/cookie online. Cookies HttpOnly, SameSite=Lax, Path=/, host-only; Secure theo [deployment](deployment.md#cấu-hình).
+Account dùng Spring Security server-side session, không JWT. Cookies HttpOnly, SameSite=Lax, Path=/, host-only; Secure theo [deployment](deployment.md#cấu-hình).
 
 HTTP dùng credentials:include và CSRF trước mutation. Login/Register đổi session ID/CSRF; Logout hoặc đổi mật khẩu hủy session. Đổi mật khẩu yêu cầu Account, currentPassword/newPassword, validate/hash như Register; chỉ trả thành công sau commit và thu hồi các phiên/socket của Account. Chưa có khôi phục mật khẩu.
 
@@ -27,7 +27,7 @@ Các path có prefix `/api`. Auth/private responses dùng Cache-Control:no-store
 | Method/path | Request → response |
 | --- | --- |
 | GET /auth/csrf | → {token,headerName} |
-| GET /auth/me | → {authenticated,crownUnlocked,account:null hoặc {id,username,crownUnlocked}}; id là chuỗi ID của chính Account |
+| GET /auth/me | → {authenticated,account:null hoặc {id,username,crownUnlocked}}; id là chuỗi ID của chính Account |
 | POST /auth/register | {username,password} → me |
 | POST /auth/login | {username,password} → me |
 | POST /auth/password | Account + CSRF; {currentPassword,newPassword} → {ok:true}; thu hồi các phiên sau commit |
@@ -38,9 +38,8 @@ Các path có prefix `/api`. Auth/private responses dùng Cache-Control:no-store
 | GET /rooms | Public → {rooms:[{roomId,mode,mapLevel,playerCount,capacity}]}; chỉ Public/WAITING còn chỗ, không tokens |
 | GET /community/current | Account → {run:null hoặc RunSummary của lượt ACTIVE,updatedAt,saveStatus}; không trả snapshot nội bộ |
 | GET /leaderboard?limit=100 | Public → {entries:[LeaderboardEntry]} |
-| PUT /solo/runs/{id} | Account → nhận SoloMetrics, trả {revision,syncStatus:SAVED}; bỏ bản cũ theo data |
 | GET /history?page=0&size=20 | Account → {items,page,size,hasNext}; History đã kết thúc theo data |
-| GET /history/{kind}/{id} | Owner → History detail; kind=SOLO/COMMUNITY/ROOM, id là run ID hoặc match ID |
+| GET /history/{kind}/{id} | Owner → History detail; kind=COMMUNITY/ROOM, id là run ID hoặc match ID |
 | GET /profile/me | Account → {username,total} |
 
 HTTP JSON body tối đa 16 KiB. Register: username 3–32 letters/numbers/_/-, password ≥6 Unicode code points và ≤72 UTF-8 bytes. Tên online lấy từ username đã xác thực, không nhận nickname từ client; playerId phân biệt người chơi.
@@ -51,17 +50,9 @@ game-config trả tuning/rules từ shared; appearances=[{colorSlot,color}] ánh
 
 RunSummary={id,status,currentProgress,maxProgress,elapsedTimeMs,peakReachedTimeMs,finishTimeMs}; LeaderboardEntry thêm {rank,username}.
 
-History summary={id,kind,startedAt,endedAt,status,playTimeMs,jumps,falls,currentProgress,maxProgress,finishTimeMs,room}; room=null cho Solo/Community, Room có {mode,mapLevel,roomCode,durationMs,rank,isWinner}. Detail Room thêm {timeLimitMinutes,endReason,participants}; detail Solo/Community dùng summary. Participant={runId,nickname,status,rank,isWinner,currentProgress,maxProgress,finishTimeMs,playTimeMs,jumps,falls}. Ownership và thứ tự theo [data](data.md#history-và-leaderboard).
+History summary={id,kind,startedAt,endedAt,status,playTimeMs,jumps,falls,currentProgress,maxProgress,finishTimeMs,room}; room=null cho Community, Room có {mode,mapLevel,roomCode,durationMs,rank,isWinner}. Detail Room thêm {timeLimitMinutes,endReason,participants}; detail Community dùng summary. Participant={runId,nickname,status,rank,isWinner,currentProgress,maxProgress,finishTimeMs,playTimeMs,jumps,falls}. Ownership và thứ tự theo [data](data.md#history-và-leaderboard).
 
-Statistics={totalPlayTimeMs,totalJumps,totalFalls,finishes,matchesPlayed,wins,bestFinishTimeMs}; matchesPlayed/wins chỉ đếm Room, bestFinishTimeMs=null nếu chưa Finish. Không nhận bộ lọc kind/mode. Guest Solo local được client tổng hợp theo data, không upload qua API.
-
-SoloMetrics={revision,status,playTicks,jumps,falls,currentProgress,maxProgress,peakReachedTicks,finishTicks,startedAt,endedAt}.
-
-- id là UUID; revision nguyên dương, ticks/counters nguyên không âm trong biên số an toàn và kiểu cột SQL, progress hữu hạn. status: ACTIVE/FINISHED/ABANDONED; invariant theo [data](data.md#ghi-lượt-và-đồng-bộ-solo).
-- Chỉ nhận các fields trên; server gán owner từ session và kind=SOLO. Timestamps lượt do client khai báo, updated_at do server đặt. UUID thuộc owner/kind khác trả 404; revision xung đột trả CONFLICT.
-- ACK trả revision request đã xử lý hoặc bỏ vì cũ; không xác nhận revision local mới hơn. Timestamps dùng độ chính xác mili giây của schema.
-- Client gửi X-Account-ID để kiểm tra phiên chưa đổi Account giữa các tab; header khác Account trong session trả CONFLICT, không dùng header để cấp quyền hay chọn owner.
-- Sync khi có mạng mỗi 5 giây, khi Pause/New Game/Save & Exit; tối đa 60 requests/phút/Account. Gộp hàng chờ theo lượt; retry giữ UUID/revision/nội dung.
+Statistics={totalPlayTimeMs,totalJumps,totalFalls,finishes,matchesPlayed,wins,bestFinishTimeMs}; matchesPlayed/wins chỉ đếm Room, bestFinishTimeMs=null nếu chưa Finish. Không nhận bộ lọc kind/mode.
 
 Page 0–100000, size/limit 1–100; timestamps ISO-8601 UTC. Chỉ trả Account ID của chính phiên, không lộ credentials/token. Detail sai owner trả 404 như không tồn tại.
 
@@ -101,7 +92,7 @@ Giới hạn mặc định tập trung tại cấu hình network của backend, 
 | Type | Payload / hành vi |
 | --- | --- |
 | HEARTBEAT | {nonce} → PONG; đo RTT, jitter, stall detection và giám sát liveness |
-| JOIN_COMMUNITY | {newRun?:boolean,expectedRunId?}; mặc định tiếp tục/tạo lượt, newRun=true thay lượt sau xác nhận |
+| JOIN_COMMUNITY | {newRun:boolean,expectedRunId:string hoặc null}; false chỉ Continue đúng ID, true tạo/thay lượt sau xác nhận |
 | CREATE_ROOM | {settings?} → tạo sảnh chờ và làm Host |
 | JOIN_ROOM | {roomId} → vào đúng Room theo ID |
 | LEAVE_ROOM | {} → Community flush checkpoint; Room Leave/DNF |
@@ -120,7 +111,7 @@ Settings Room mặc định RACE/null/mapLevel=10, visibility mặc định PRIV
 
 JOIN_ROOM chỉ nhận Room đang WAITING; Community chỉ vào bằng JOIN_COMMUNITY tự xếp sảnh. RECONNECT vẫn kiểm tra ID nội bộ, owner/player/token của membership cũ; không dùng ID để vượt roster.
 
-JOIN_COMMUNITY newRun=true yêu cầu expectedRunId là ID ACTIVE hoặc null; giữ chỗ trước khi thay save theo transaction trong data. Thiếu chỗ/DB lỗi giữ lượt cũ; người chơi cần Save & Exit trước khi bắt đầu lượt mới.
+JOIN_COMMUNITY luôn yêu cầu cả hai fields: Continue (newRun=false) phải gửi ID lượt ACTIVE; New Game (true) gửi ID ACTIVE hoặc null nếu chưa có. ID/trạng thái không còn đúng trả CONFLICT, không tự tạo hoặc thay lượt. Server giữ chỗ trước khi thay save theo transaction trong data. Thiếu chỗ/DB lỗi giữ lượt cũ; người chơi cần Save & Exit trước khi bắt đầu lượt mới.
 
 
 Community/Room không nhận position/velocity/score/clock hoặc checkpoint từ client. Input chỉ xử lý khi đang chơi; paused/countdown/finished cancel, không enqueue movement. Chat chỉ là text.
@@ -172,4 +163,4 @@ Nhóm error codes: INVALID_MESSAGE/INVALID_INPUT/INVALID_SETTINGS, AUTH_REQUIRED
 
 ## Mở rộng dữ liệu hiển thị
 
-Account/profile có `crownUnlocked`; public render state chỉ mang trạng thái vương miện, không nhận quyền mở từ input online. Solo Finish có thể mở crown qua sync metrics nhưng không lên leaderboard. GAME_SNAPSHOT bổ sung Players ranking từ server RAM, giữ đồng hạng; Room theo mode, Community theo độ cao hiện tại. Không truy vấn DB theo tick để tạo bảng này. Leaderboard HTTP tải khi mở hoặc nhấn Refresh; bảng Players vẫn cập nhật qua snapshot.
+Account/profile có `crownUnlocked`; public render state chỉ mang trạng thái vương miện, không nhận quyền mở từ input online. GAME_SNAPSHOT bổ sung Players ranking từ server RAM, giữ đồng hạng; Room theo mode, Community theo độ cao hiện tại. Không truy vấn DB theo tick để tạo bảng này. Leaderboard HTTP tải khi mở hoặc nhấn Refresh; bảng Players vẫn cập nhật qua snapshot.

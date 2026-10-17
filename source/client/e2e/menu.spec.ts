@@ -5,7 +5,7 @@ test("home keeps the required menu and separate account forms", async ({
 }, info) => {
 	await page.goto("/");
 	await expect(
-		page.getByRole("button", { name: "Continue Solo", exact: true }),
+		page.getByRole("button", { name: "Continue", exact: true }),
 	).toBeHidden();
 	await expect(
 		page.getByRole("button", { name: "Leaderboard", exact: true }),
@@ -19,21 +19,22 @@ test("home keeps the required menu and separate account forms", async ({
 		.click();
 	await expect(page.getByLabel("Username", { exact: true })).toBeVisible();
 	await page.getByRole("button", { name: "Back", exact: true }).click();
-	await page
-		.getByRole("button", { name: "Community Tower", exact: true })
-		.click();
 	await expect(
-		page.getByRole("button", { name: "Leaderboard", exact: true }),
+		page.getByRole("button", { name: "Community Tower", exact: true }),
+	).toHaveCount(0);
+	await expect(page.getByLabel("Total statistics")).toBeHidden();
+	await page.getByRole("button", { name: "New Game", exact: true }).click();
+	await expect(
+		page.getByRole("heading", { name: "Sign In", exact: true }),
 	).toBeVisible();
 	await page.getByRole("button", { name: "Back", exact: true }).click();
-	await expect(page.getByLabel("Total statistics")).toBeVisible();
 	await page.screenshot({
 		path: info.outputPath("menu-desktop.png"),
 		fullPage: true,
 	});
 	await page.setViewportSize({ width: 390, height: 844 });
 	await expect(
-		page.getByRole("button", { name: "New Solo Game", exact: true }),
+		page.getByRole("button", { name: "New Game", exact: true }),
 	).toBeVisible();
 	const horizontal = await page.evaluate(
 		() => document.documentElement.scrollWidth > innerWidth,
@@ -51,7 +52,7 @@ test("keyboard navigation restores focus and offline actions report real errors"
 	await page.route("**/api/**", (route) => route.abort("connectionrefused"));
 	await page.goto("/");
 	await expect(
-		page.getByRole("button", { name: "New Solo Game", exact: true }),
+		page.getByRole("button", { name: "New Game", exact: true }),
 	).toBeFocused();
 	await page.keyboard.press("ArrowDown");
 	await expect(

@@ -1,14 +1,13 @@
 # JumpKing Multiplayer
 
-Website game Jump King với một map Main Babe đầy đủ, hỗ trợ chơi đơn và nhiều người qua mạng. Thuộc Chủ đề 2 – Phát triển game mạng: đồng bộ trạng thái nhiều client, xử lý kết nối đồng thời và lưu tiến độ/kết quả nhất quán.
+Website game Jump King với một map Main Babe đầy đủ, chơi qua mạng trong Community Tower hoặc Room. Thuộc Chủ đề 2 – Phát triển game mạng: đồng bộ trạng thái nhiều client, xử lý kết nối đồng thời và lưu tiến độ/kết quả nhất quán.
 
 | Kiểu chơi | Mục đích |
 | --- | --- |
-| Solo | Luyện tập offline, autosave/Continue; Account đồng bộ thống kê khi có mạng, không lên leaderboard |
 | Community Tower | Account được tự xếp sảnh, lưu tiến độ trên server và tính leaderboard |
 | Room | Account tạo Public/Private, Join Public hoặc bằng ID, từ 1 người và Host Start; Race, Hardcore, Time Limit hoặc No Walk; Results và History |
 
-Frontend dùng React + TypeScript/Phaser; backend Spring Boot/Java quyết định trạng thái và kết quả online. Spring Data JPA/Hibernate truy cập MySQL để lưu identity, lượt chơi và trận Room. Thống kê tổng và History gồm Solo, Community và Room; Solo Guest chỉ lưu trên trình duyệt; Room/Community yêu cầu Account. Đăng ký/đăng nhập bằng username và password, có đổi mật khẩu bằng mật khẩu hiện tại; chưa có khôi phục mật khẩu. Luật chơi trong [gameplay](docs/gameplay.md).
+Frontend dùng React + TypeScript/Phaser; backend Spring Boot/Java quyết định trạng thái và kết quả online. Spring Data JPA/Hibernate truy cập MySQL để lưu identity, lượt chơi và trận Room. Thống kê tổng và History gồm Community và Room; chơi game yêu cầu Account. Đăng ký/đăng nhập bằng username và password, có đổi mật khẩu bằng mật khẩu hiện tại; chưa có khôi phục mật khẩu. Luật chơi trong [gameplay](docs/gameplay.md).
 
 ## Kiến trúc
 
@@ -67,8 +66,7 @@ Mở **http://127.0.0.1:5173**. Backend dùng **8080**, MySQL **3306**. Linux/ma
 
 ## Demo nhanh
 
-- **Solo:** bắt đầu lượt mới hoặc tiếp tục save trên thiết bị; không cần đăng nhập/backend sau khi frontend đã tải.
-- **Community Tower:** đăng ký/đăng nhập, chọn Community Tower; tiến độ tự lưu và được tính leaderboard.
+- **Community Tower:** đăng ký/đăng nhập, chọn New Game hoặc Continue ngay tại trang chủ; tiến độ tự lưu và được tính leaderboard trong trận.
 - **Room:** đăng nhập hai Account ở hai browser profiles, một người Create Room; người còn lại Join by ID hoặc tìm phòng Public bằng Join Public; Host chọn mode, map 1–10 và Start (một người cũng chơi được).
 
 ## Chơi qua LAN/ZeroTier
@@ -104,4 +102,4 @@ Chạy cùng JAR và MySQL nội bộ; cấu hình domain, HTTPS/WSS, origins v�
 
 Lệnh kiểm thử, tiêu chí nghiệm thu và thực nghiệm theo [testing](docs/testing.md).
 
-Giới hạn: Solo metrics do client khai báo; Room gameplay ở RAM, restart không phục hồi trận. Framework và nguồn nội dung theo [architecture](docs/architecture.md), [học phần](docs/final-project/Instruction.md) và [attribution](source/client/public/assets/ATTRIBUTION.md).
+Giới hạn: Room gameplay ở RAM, restart không phục hồi trận. Framework và nguồn nội dung theo [architecture](docs/architecture.md), [học phần](docs/final-project/Instruction.md) và [attribution](source/client/public/assets/ATTRIBUTION.md).

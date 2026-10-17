@@ -4,7 +4,7 @@
 
 ## Tóm tắt
 
-Game nhảy chính xác cần phản hồi điều khiển nhanh nhưng kết quả online phải do server xác nhận. JumpKing Multiplayer giải quyết hai yêu cầu này bằng Spring Boot/Java mô phỏng authoritative ở 60 Hz, client TypeScript prediction/reconciliation và snapshot WebSocket 20 Hz. Dữ liệu map, tuning và fixtures dùng chung; hai implementation được kiểm chứng độc lập với phần hiển thị Phaser. JPA/MySQL lưu tiến độ và kết quả ngoài vòng tick, có revision, khóa và retry để tránh ghi đè hoặc cộng trùng. Hệ thống gồm Solo, Community Tower và Room tối đa 10 người. Hồi quy đạt 77 client unit, 54 Java unit, 77 MySQL integration và 62 Chrome scenarios qua các harness. Thực nghiệm tải riêng giữ khoảng 20 snapshots/giây/client ở Room 10 người; RTT p95 trên loopback là 2,31 ms. Với trễ mô hình 100 ms mỗi chiều, prediction giảm thời gian nhìn thấy cú nhảy từ 566,7 xuống 350 ms, cùng thời gian charge. Các kết quả chứng minh tính khả thi trong môi trường đo, chưa xác định sức chứa VPS hoặc chất lượng mạng Internet.
+Game nhảy chính xác cần phản hồi điều khiển nhanh nhưng kết quả online phải do server xác nhận. JumpKing Multiplayer giải quyết hai yêu cầu này bằng Spring Boot/Java mô phỏng authoritative ở 60 Hz, client TypeScript prediction/reconciliation và snapshot WebSocket 20 Hz. Dữ liệu map, tuning và fixtures dùng chung; hai implementation được kiểm chứng độc lập với phần hiển thị Phaser. JPA/MySQL lưu tiến độ và kết quả ngoài vòng tick, có revision, khóa và retry để tránh ghi đè hoặc cộng trùng. Hệ thống gồm Community Tower và Room tối đa 10 người. Hồi quy đạt 77 client unit, 54 Java unit, 77 MySQL integration và 62 Chrome scenarios qua các harness. Thực nghiệm tải riêng giữ khoảng 20 snapshots/giây/client ở Room 10 người; RTT p95 trên loopback là 2,31 ms. Với trễ mô hình 100 ms mỗi chiều, prediction giảm thời gian nhìn thấy cú nhảy từ 566,7 xuống 350 ms, cùng thời gian charge. Các kết quả chứng minh tính khả thi trong môi trường đo, chưa xác định sức chứa VPS hoặc chất lượng mạng Internet.
 
 **Từ khóa:** server-authoritative; WebSocket; client-side prediction; concurrency; checkpoint; transaction.
 
@@ -12,7 +12,7 @@ Game nhảy chính xác cần phản hồi điều khiển nhanh nhưng kết qu
 
 Jump King là game leo bằng những cú nhảy tích lực, trong đó sai hướng hoặc va chạm có thể làm mất nhiều độ cao [1]. Khi đưa trải nghiệm này lên web nhiều người, client cần phản hồi ngay trong khi server phải chống nhận vị trí, thời gian hoặc kết quả do người chơi tự khai báo. Mạng chậm, reconnect và database lỗi còn có thể gây nhảy ngoài ý muốn, mất checkpoint hoặc ghi kết quả nhiều lần.
 
-Mục tiêu của dự án là xây dựng một hệ thống mạng có trạng thái, phục vụ nhiều identities, tách simulation khỏi transport/database và đo được tác động của cơ chế đồng bộ. Phạm vi gồm Main Babe 43 screen, Solo local, Community lưu tiến độ, Room cùng xuất phát, chat, History và leaderboard Community. Đây là đóng góp tích hợp và kiểm chứng hệ thống; không đề xuất một thuật toán prediction mới.
+Mục tiêu của dự án là xây dựng một hệ thống mạng có trạng thái, phục vụ nhiều identities, tách simulation khỏi transport/database và đo được tác động của cơ chế đồng bộ. Phạm vi gồm Main Babe 43 screen, Community lưu tiến độ, Room cùng xuất phát, chat, History và leaderboard Community. Đây là đóng góp tích hợp và kiểm chứng hệ thống; không đề xuất một thuật toán prediction mới.
 
 ## 2. Cơ sở và phương pháp liên quan
 
@@ -32,7 +32,7 @@ Prediction cho client áp dụng input ngay; reconciliation khôi phục trạng
 | Tính đúng | Không vượt quyền Host/owner, không đổi map giữa trận, không nhân đôi kết quả khi retry |
 | Phạm vi vận hành | Một backend instance; Room trong RAM, Community có checkpoint bền vững |
 
-Solo mô phỏng và autosave ở trình duyệt. Solo Account chỉ đồng bộ metrics, vì vậy không được dùng làm thành tích Community. Community yêu cầu Account, lưu checkpoint theo Account và tính leaderboard từ dữ liệu server. Room yêu cầu Account; Host chọn Public/Private, mode và độ dài map trước khi Start từ một người.
+Community yêu cầu Account, lưu checkpoint theo Account và tính leaderboard từ dữ liệu server. Room yêu cầu Account; Host chọn Public/Private, mode và độ dài map trước khi Start từ một người.
 
 ## 4. Kiến trúc hệ thống
 
@@ -159,7 +159,7 @@ Các đóng góp là thiết kế và kiểm chứng trong phạm vi dự án h�
 
 Mẫu tải 5 giây, loopback, một JVM gồm server/driver, chưa có khoảng tin cậy hoặc soak test. Chưa nghiệm thu bản mới bằng điện thoại thật, hai thiết bị LAN/ZeroTier hoặc mạng ngoài VPS; các browser identities và touch emulation không thay thế các kiểm tra này. Các quota cấu hình không phải năng lực phục vụ đã đo. Room nằm trong RAM nên restart không tiếp tục được trận; checkpoint Community có thể mất phần tiến độ chưa commit.
 
-Solo chạy local và metrics tự khai báo, chỉ dùng Stats/History; Community leaderboard không lấy số liệu Solo. Crown từ Solo Account là quyền ngoại hình do client khai báo, không chứng minh kỹ năng. Kết quả quét dependency không bảo đảm loại hết lỗ hổng: npm audit không có cảnh báo; hai advisory Spring MVC liên quan SSE fragments/XsltView được ghi nhận nhưng ứng dụng không dùng các chức năng đó [7][8].
+Kết quả quét dependency không bảo đảm loại hết lỗ hổng: npm audit không có cảnh báo; hai advisory Spring MVC liên quan SSE fragments/XsltView được ghi nhận nhưng ứng dụng không dùng các chức năng đó [7][8].
 
 Nội dung Main Babe chuyển thể từ Jump King 1.04 của Nexile; chưa có giấy phép phân phối lại được cung cấp, không coi assets là nguồn mở [1]. Attribution hiện có ghi tại `source/client/public/assets/ATTRIBUTION.md`. Kế hoạch sau nghiệm thu gồm thay assets bằng nguồn có quyền sử dụng, deploy online và items/player collision nếu được chọn. Chưa xác nhận Compilatio hoặc nộp bài.
 

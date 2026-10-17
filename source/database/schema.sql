@@ -68,7 +68,7 @@ CREATE TABLE play_runs (
     CONSTRAINT fk_runs_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
     CONSTRAINT fk_runs_match FOREIGN KEY (match_id) REFERENCES matches (id) ON DELETE RESTRICT,
     CONSTRAINT ck_runs_kind CHECK (
-        (kind IN ('SOLO', 'COMMUNITY') AND match_id IS NULL AND nickname IS NULL
+        (kind = 'COMMUNITY' AND match_id IS NULL AND nickname IS NULL
             AND `rank` IS NULL AND is_winner = FALSE AND status IN ('ACTIVE', 'FINISHED', 'ABANDONED'))
         OR (kind = 'ROOM' AND match_id IS NOT NULL AND nickname IS NOT NULL
             AND status IN ('ACTIVE', 'FINISHED', 'UNFINISHED', 'DNF'))

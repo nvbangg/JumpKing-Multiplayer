@@ -40,6 +40,6 @@ public class IdentityContext {
 
   public Me me() {
     var account = account();
-    return new Me(account != null, account, account != null && account.crownUnlocked());
+    return new Me(account != null, account);
   }
 }

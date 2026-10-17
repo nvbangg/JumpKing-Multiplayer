@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../../network/api";
 import type { HistoryItem } from "../../network/contracts";
-import { type SoloRun, soloRuns } from "../solo/storage";
-import { duration, soloHistory } from "./format";
+import { duration } from "./format";
 
 interface HistoryPage {
 	items: HistoryItem[];
@@ -10,75 +9,26 @@ interface HistoryPage {
 	hasNext: boolean;
 }
 export function HistoryList({
-	profile,
-	authenticated,
-	hasIdentity,
-	revision,
 	onSelect,
 }: {
-	profile: string;
-	authenticated: boolean;
-	hasIdentity: boolean;
-	revision: number;
-	onSelect: (item: HistoryItem, local: boolean) => void;
+	onSelect: (item: HistoryItem) => void;
 }) {
-	const [local, setLocal] = useState<HistoryItem[]>([]),
-		[remote, setRemote] = useState<HistoryItem[]>([]);
-	const [pendingIds, setPendingIds] = useState(new Set<string>());
+	const [items, setItems] = useState<HistoryItem[]>([]);
 	const [page, setPage] = useState(0),
 		[hasNext, setHasNext] = useState(false),
 		[loading, setLoading] = useState(true),
 		[error, setError] = useState("");
 	const generation = useRef(0);
 	const pageSize = 20;
-	// biome-ignore lint/correctness/useExhaustiveDependencies: Revision báo server/local history đã đổi và cần tải lại.
 	useEffect(() => {
 		let disposed = false;
-		generation.current++;
-		setLoading(true);
-		setError("");
-		setPage(0);
-		setRemote([]);
-		setHasNext(false);
-		void (async () => {
-			let runs: SoloRun[] = [];
-			try {
-				runs = await soloRuns(profile);
-			} catch (cause) {
-				if (!disposed)
-					setError(
-						cause instanceof Error
-							? cause.message
-							: "Browser storage is unavailable",
-					);
-			}
-			if (disposed) return;
-			const unsynced = new Set(
-				runs
-					.filter((run) => run.revision > run.syncedRevision)
-					.map((run) => run.id),
-			);
-			setPendingIds(authenticated ? unsynced : new Set());
-			setLocal(
-				soloHistory(runs).filter(
-					(item) => !authenticated || unsynced.has(item.id),
-				),
-			);
-			if (hasIdentity) {
-				try {
-					const result = await api<HistoryPage>(
-						"/history?page=0&size=" + pageSize,
-					);
-					if (!disposed) {
-						setRemote(result.items);
-						setHasNext(result.hasNext);
-					}
-				} catch (cause) {
-					if (!disposed) setLocal(soloHistory(runs));
-					throw cause;
+		void api<HistoryPage>("/history?page=0&size=" + pageSize)
+			.then((result) => {
+				if (!disposed) {
+					setItems(result.items);
+					setHasNext(result.hasNext);
 				}
-			}
-		})()
+			})
 			.catch((cause) => {
 				if (!disposed)
 					setError(
@@ -94,7 +44,7 @@ export function HistoryList({
 			disposed = true;
 			generation.current++;
 		};
-	}, [profile, authenticated, hasIdentity, revision]);
+	}, []);
 	const loadMore = async () => {
 		if (loading) return;
 		setLoading(true);
@@ -105,7 +55,7 @@ export function HistoryList({
 				"/history?page=" + (page + 1) + "&size=" + pageSize,
 			);
 			if (generation.current !== requestGeneration) return;
-			setRemote((rows) => [...rows, ...result.items]);
+			setItems((rows) => [...rows, ...result.items]);
 			setPage(result.page);
 			setHasNext(result.hasNext);
 		} catch (cause) {
@@ -119,31 +69,13 @@ export function HistoryList({
 			if (generation.current === requestGeneration) setLoading(false);
 		}
 	};
-	const merged = new Map(
-		local.map((item) => [item.kind + ":" + item.id, item]),
-	);
-	for (const item of remote) merged.set(item.kind + ":" + item.id, item);
-	const items = [...merged.values()].sort(
-		(a, b) =>
-			b.endedAt.localeCompare(a.endedAt) ||
-			a.kind.localeCompare(b.kind) ||
-			b.id.localeCompare(a.id),
-	);
 	return (
 		<section className="history-list" aria-label="Game history">
 			{items.map((item) => (
 				<button
 					type="button"
 					key={item.kind + ":" + item.id}
-					onClick={() =>
-						onSelect(
-							item,
-							item.kind === "SOLO" &&
-								!remote.some(
-									(row) => row.kind === item.kind && row.id === item.id,
-								),
-						)
-					}
+					onClick={() => onSelect(item)}
 				>
 					<span className="kind-label">
 						{item.kind}
@@ -151,9 +83,6 @@ export function HistoryList({
 					</span>
 					<span>
 						{new Date(item.endedAt).toLocaleDateString()} · {item.status}
-						{pendingIds.has(item.id) && item.kind === "SOLO"
-							? " · Pending sync"
-							: ""}
 					</span>
 					<span>{duration(item.finishTimeMs ?? item.playTimeMs)}</span>
 				</button>

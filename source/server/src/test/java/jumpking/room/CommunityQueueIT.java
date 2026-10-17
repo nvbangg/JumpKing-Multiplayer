@@ -45,7 +45,7 @@ class CommunityQueueIT {
       b.register();
       a.connect();
       b.connect();
-      String roomId = a.ok("JOIN_COMMUNITY", Map.of()).path("roomId").asText();
+      String roomId = a.ok("JOIN_COMMUNITY", a.communityRequest()).path("roomId").asText();
       a.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
       Object room = ((Map<?, ?>) ReflectionTestUtils.getField(server, "towers")).get(roomId);
       ((ScheduledFuture<?>) ReflectionTestUtils.getField(room, "timer")).cancel(false);
@@ -67,7 +67,7 @@ class CommunityQueueIT {
       } catch (RejectedExecutionException full) {
         /* Đã lấp đúng hạn queue của cấu hình test. */
       }
-      var rejected = b.command("JOIN_COMMUNITY", Map.of());
+      var rejected = b.command("JOIN_COMMUNITY", b.communityRequest());
       assertThat(rejected.path("payload").path("code").asText()).isEqualTo("RATE_LIMITED");
       assertThat(memberships.find(b.owner)).isNull();
       release.countDown();
@@ -83,7 +83,7 @@ class CommunityQueueIT {
         }
       }
       drained.get(3, TimeUnit.SECONDS);
-      b.ok("JOIN_COMMUNITY", Map.of());
+      b.ok("JOIN_COMMUNITY", b.communityRequest());
       var joined =
           b.await(message -> message.path("type").asText().equals("ROOM_JOINED")).path("payload");
       assertThat(b.ok("GET_ROOM_STATE", Map.of()).path("members").size()).isEqualTo(2);

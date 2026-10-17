@@ -4,7 +4,7 @@
 
 JDK 25, Node.js 24, MySQL Server 8.4; build dùng Maven Wrapper/npm lockfile. Workbench quản trị MySQL; Docker phục vụ [integration tests](testing.md).
 
-Solo chỉ cần frontend; Community/Room và Solo sync cần backend/MySQL.
+Community và Room đều cần frontend, backend và MySQL.
 
 | Thành phần | Development | Local/LAN/ZeroTier |
 | --- | --- | --- |
@@ -53,7 +53,6 @@ IP/port trong file mẫu là mặc định local, không phải địa chỉ b�
 | SERVER_SERVLET_SESSION_TIMEOUT | server.servlet.session.timeout; idle theo [protocol](protocol.md#identity-và-security) |
 | APP_SESSION_ABSOLUTE_TIMEOUT | app.session-absolute-timeout; hạn tối đa theo protocol |
 | APP_AUTH_RATE_PER_MINUTE / APP_HTTP_BODY_LIMIT | app.auth-rate-per-minute=20; app.http-body-limit=16384 bytes |
-| APP_SOLO_SYNC_RATE_PER_MINUTE | app.solo-sync-rate-per-minute=60; giới hạn theo Account |
 | APP_CHECKPOINT_INTERVAL_MS | app.checkpoint-interval-ms=1000; chu kỳ checkpoint Community và metrics Room |
 | APP_PERSISTENCE_RETRY_COUNT | app.persistence-retry-count=3; tối đa 3 lần thử lại sau lần ghi đầu |
 | APP_PERSISTENCE_RETRY_DELAY_MS | app.persistence-retry-delay-ms=1000; khoảng chờ giữa các lần thử |
@@ -70,7 +69,7 @@ Root .gitignore chứa quy tắc chung; mỗi module ignore config riêng, depen
 
 Đặt `$env:FLY_ENABLED='true'` trong terminal backend trước khi chạy Maven/JAR, hoặc đặt `app.fly-enabled=true` trong file `source/server/config/application-<profile>.properties` đang dùng. Spring Boot không đọc `source/client/.env.local`. Đổi cờ cần restart backend và vào lại màn chơi; không cần build lại frontend hoặc bật Options.
 
-Mặc định false. Cờ áp dụng cho mọi người trong Solo, Community và Room, ở localhost, LAN hoặc Internet, kể cả profile prod. Client đọc quyền qua `/api/game-config`. Solo vẫn chơi/lưu offline khi backend không truy cập được, nhưng không mở quyền bay. Điều khiển và save/thành tích theo [gameplay](gameplay.md#fly-mode).
+Mặc định false. Cờ áp dụng cho mọi người trong Community và Room, ở localhost, LAN hoặc Internet, kể cả profile prod. Client đọc quyền qua `/api/game-config`. Điều khiển và save/thành tích theo [gameplay](gameplay.md#fly-mode).
 
 ## MySQL
 
@@ -116,7 +115,7 @@ Build frontend bằng `npm run build`. Từ backend chạy `.\mvnw.cmd -Pweb cle
 java -jar target/jumpking-server.jar --spring.profiles.active=local
 ```
 
-Mở http://127.0.0.1:8080. Backend độc lập bỏ profile web; frontend độc lập dùng static host để chơi Solo, không mở dist/index.html bằng file://.
+Mở http://127.0.0.1:8080. Backend độc lập bỏ profile web; frontend độc lập dùng static host và kết nối backend, không mở dist/index.html bằng file://.
 
 ## LAN và ZeroTier
 
@@ -142,8 +141,6 @@ Máy người chơi kiểm tra `Test-NetConnection 10.147.17.5 -Port 8080`; `Tcp
 | Đăng nhập xong lại mất phiên | Dùng nhất quán một hostname/IP; HTTP Local/ZeroTier dùng profile local với cookie Secure=false, HTTPS dùng prod/Secure=true |
 | Backend không start | MySQL, schema, grants và datasource |
 | Community báo chưa lưu | Kết nối DB và save status; không khôi phục thủ công save cũ |
-| Solo không lưu | Quyền/quota browser storage |
-| Solo chưa đồng bộ Stats | Backend, mạng/phiên Account đúng owner và hàng chờ local; save vẫn ở thiết bị |
 
 ## VPS một domain
 

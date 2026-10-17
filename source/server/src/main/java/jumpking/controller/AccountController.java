@@ -58,7 +58,7 @@ public class AccountController {
     if (identity.account() != null)
       throw new ApiException(409, "CONFLICT", "Sign out before creating another account");
     var account = accounts.register(form, value -> signIn(value, request, response));
-    return new AccountDto.Me(true, account, account.crownUnlocked());
+    return new AccountDto.Me(true, account);
   }
 
   @PostMapping("/login")
@@ -67,7 +67,7 @@ public class AccountController {
       HttpServletRequest request,
       HttpServletResponse response) {
     var account = accounts.login(form, identity.owner(), value -> signIn(value, request, response));
-    return new AccountDto.Me(true, account, account.crownUnlocked());
+    return new AccountDto.Me(true, account);
   }
 
   @PostMapping("/password")

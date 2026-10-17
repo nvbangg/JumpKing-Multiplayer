@@ -8,8 +8,6 @@
   "afkMs": 60000,
   "communityPauseMs": 900000,
   "reconnectMs": 300000,
-  "soloSaveMs": 1000,
-  "soloSyncMs": 5000,
   "timeLimitMinutesMin": 1,
   "timeLimitMinutesMax": 30,
   "timeLimitDefaultMinutes": 5,

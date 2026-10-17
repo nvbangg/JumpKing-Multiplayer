@@ -37,9 +37,6 @@ test("Community records load on open and Refresh, never poll", async ({
 			.getByRole("button", { name: "Create Account", exact: true })
 			.click();
 		await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
-		await page
-			.getByRole("button", { name: "Community Tower", exact: true })
-			.click();
 		await page.getByRole("button", { name: "New Game", exact: true }).click();
 		await expect(
 			page.getByRole("button", { name: "Menu", exact: true }),
@@ -53,10 +50,6 @@ test("Community records load on open and Refresh, never poll", async ({
 			page.getByRole("list", { name: "Community records" }),
 		).toBeVisible();
 		expect(requests).toHaveLength(1);
-		await page
-			.locator("summary")
-			.filter({ hasText: /^Players$/ })
-			.click();
 		await page.screenshot({ path: info.outputPath("community-boards.png") });
 		await page.waitForTimeout(10500);
 		expect(requests).toHaveLength(1);

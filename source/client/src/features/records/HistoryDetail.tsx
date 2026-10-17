@@ -22,18 +22,11 @@ interface Detail extends HistoryItem {
 	timeLimitMinutes?: number | null;
 	participants?: Participant[];
 }
-export function HistoryDetail({
-	item,
-	local,
-}: {
-	item: HistoryItem;
-	local: boolean;
-}) {
+export function HistoryDetail({ item }: { item: HistoryItem }) {
 	const [detail, setDetail] = useState<Detail>(item),
-		[loading, setLoading] = useState(!local),
+		[loading, setLoading] = useState(true),
 		[error, setError] = useState("");
 	useEffect(() => {
-		if (local) return;
 		let disposed = false;
 		void api<Detail>(
 			"/history/" + item.kind + "/" + encodeURIComponent(item.id),
@@ -55,7 +48,7 @@ export function HistoryDetail({
 		return () => {
 			disposed = true;
 		};
-	}, [item.kind, item.id, local]);
+	}, [item.kind, item.id]);
 	if (loading) return <p role="status">Loading…</p>;
 	if (error) return <p role="alert">{error}</p>;
 	return (

@@ -10,21 +10,13 @@ test.beforeEach(async ({ page }) => {
 	);
 });
 
-test("account forms persist the session and keep Guest Solo separate through sign out", async ({
+test("account forms persist the session and sign out clears private home data", async ({
 	page,
 	context,
 }, info) => {
 	const name = "player_" + Date.now(),
 		password = "A secure browser password";
 	await page.goto("/");
-	await page
-		.getByRole("button", { name: "New Solo Game", exact: true })
-		.click();
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
-	await page.getByRole("button", { name: "Save & Exit", exact: true }).click();
-	await expect(
-		page.getByRole("button", { name: "Continue Solo", exact: true }),
-	).toBeVisible();
 	await page
 		.getByRole("button", { name: "Create Account", exact: true })
 		.click();
@@ -35,7 +27,7 @@ test("account forms persist the session and keep Guest Solo separate through sig
 		.click();
 	await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
 	await expect(
-		page.getByRole("button", { name: "Continue Solo", exact: true }),
+		page.getByRole("button", { name: "Continue", exact: true }),
 	).toBeHidden();
 	const cookie = (await context.cookies()).find(
 		(cookie) => cookie.name === "JSESSIONID",
@@ -56,8 +48,8 @@ test("account forms persist the session and keep Guest Solo separate through sig
 		page.getByRole("button", { name: "Sign In", exact: true }),
 	).toBeVisible();
 	await expect(
-		page.getByRole("button", { name: "Continue Solo", exact: true }),
-	).toBeVisible();
+		page.getByRole("button", { name: "Continue", exact: true }),
+	).toBeHidden();
 	await page.getByRole("button", { name: "Sign In", exact: true }).click();
 	await page.getByLabel("Username", { exact: true }).fill(name);
 	await page.getByLabel("Password", { exact: true }).fill("incorrect");

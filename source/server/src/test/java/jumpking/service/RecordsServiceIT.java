@@ -34,7 +34,7 @@ class RecordsServiceIT {
       jdbc.update(
           "INSERT INTO matches(id,room_code,mode,started_at,ended_at,duration_ticks,end_reason) VALUES (?,'ABCDEF','RACE',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),180,'FINISH')",
           match);
-      for (String kind : java.util.List.of("SOLO", "COMMUNITY", "ROOM")) {
+      for (String kind : java.util.List.of("COMMUNITY", "ROOM")) {
         boolean room = kind.equals("ROOM");
         long ticks = room ? 180 : 61;
         jdbc.update(
@@ -56,24 +56,24 @@ class RecordsServiceIT {
           peer,
           owner);
       var total = records.statistics(owner);
-      assertThat(total.totalPlayTimeMs()).isEqualTo(BigInteger.valueOf(5033));
-      assertThat(total.totalJumps()).isEqualTo(6);
-      assertThat(total.totalFalls()).isEqualTo(3);
-      assertThat(total.finishes()).isEqualTo(3);
+      assertThat(total.totalPlayTimeMs()).isEqualTo(BigInteger.valueOf(4016));
+      assertThat(total.totalJumps()).isEqualTo(4);
+      assertThat(total.totalFalls()).isEqualTo(2);
+      assertThat(total.finishes()).isEqualTo(2);
       assertThat(total.bestFinishTimeMs()).isEqualTo(1016);
       assertThat(total.matchesPlayed()).isEqualTo(1);
       assertThat(total.wins()).isEqualTo(1);
       assertThat(records.statistics(Long.MAX_VALUE).totalPlayTimeMs()).isEqualTo(BigInteger.ZERO);
-      var first = records.history(owner, 0, 2);
-      var second = records.history(owner, 1, 2);
-      assertThat(first.items()).hasSize(2);
+      var first = records.history(owner, 0, 1);
+      var second = records.history(owner, 1, 1);
+      assertThat(first.items()).hasSize(1);
       assertThat(first.hasNext()).isTrue();
       assertThat(second.items()).hasSize(1);
       assertThat(second.hasNext()).isFalse();
       assertThat(
               java.util.stream.Stream.concat(first.items().stream(), second.items().stream())
                   .map(RecordsDto.History::kind))
-          .containsExactlyInAnyOrder("SOLO", "COMMUNITY", "ROOM");
+          .containsExactlyInAnyOrder("COMMUNITY", "ROOM");
       var detail = records.detail(owner, "ROOM", match);
       assertThat(detail.path("room").path("mapLevel").asInt()).isEqualTo(10);
       assertThat(detail.path("participants").size()).isEqualTo(2);

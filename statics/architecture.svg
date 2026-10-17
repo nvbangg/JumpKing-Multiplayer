@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="700" viewBox="0 0 1000 700" role="img" aria-labelledby="title desc">
   <title id="title">Kiến trúc JumpKing Multiplayer</title>
-  <desc id="desc">Clients giao tiếp HTTP và WebSocket với một Spring Boot server. Game và persistence dùng các hàng đợi nội bộ; JPA truy cập MySQL ngoài vòng tick. Solo mô phỏng và lưu tại trình duyệt.</desc>
+  <desc id="desc">Clients giao tiếp HTTP và WebSocket với một Spring Boot server. Game và persistence dùng các hàng đợi nội bộ; JPA truy cập MySQL ngoài vòng tick.</desc>
   <defs>
     <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto-start-reverse"><path d="M0 0L8 4L0 8" fill="none" stroke="#334155" stroke-width="1.5"/></marker>
     <style>text{font-family:Arial,sans-serif;fill:#172033;text-anchor:middle;font-size:16px}.heading{font-size:22px;font-weight:bold}.small{font-size:14px;fill:#475569}.box{fill:#fff;stroke:#64748b;stroke-width:1.5;rx:9}.edge{fill:none;stroke:#334155;stroke-width:1.6;marker-end:url(#arrow)}.both{marker-start:url(#arrow)}</style>
@@ -9,7 +9,7 @@
   <text x="500" y="34" class="heading">JumpKing Multiplayer — Client / Server</text>
   <rect x="285" y="62" width="430" height="80" class="box" fill="#eff6ff"/>
   <text x="500" y="92">Browser clients — React / Phaser</text>
-  <text x="500" y="119" class="small">Solo: local simulation / storage; Account metrics sync via HTTP</text>
+  <text x="500" y="119" class="small">Prediction / reconciliation; server-owned progress and results</text>
   <rect x="60" y="210" width="880" height="400" rx="14" fill="#f8fafc" stroke="#94a3b8" stroke-dasharray="7 5"/>
   <text x="500" y="238" class="small">ONE SPRING BOOT PROCESS — internal queues and workers</text>
   <rect x="105" y="270" width="280" height="60" class="box"/>

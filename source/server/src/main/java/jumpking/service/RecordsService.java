@@ -38,7 +38,7 @@ public class RecordsService {
   }
 
   public ObjectNode detail(long owner, String kind, String id) {
-    if (!List.of("SOLO", "COMMUNITY", "ROOM").contains(kind))
+    if (!List.of("COMMUNITY", "ROOM").contains(kind))
       throw new ApiException(400, "VALIDATION", "Invalid history kind");
     var history =
         records

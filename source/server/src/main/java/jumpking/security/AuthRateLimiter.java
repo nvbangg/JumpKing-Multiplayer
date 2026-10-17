@@ -25,11 +25,6 @@ public class AuthRateLimiter {
     if (identity != null) consume("identity:" + identity, settings.authRatePerMinute());
   }
 
-  public synchronized void solo(String account) {
-    refreshWindow();
-    consume("solo:" + account, settings.soloSyncRatePerMinute());
-  }
-
   private void refreshWindow() {
     long window = Math.floorDiv(clock.millis(), 60_000);
     if (window != currentWindow) {

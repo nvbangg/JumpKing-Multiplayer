@@ -164,6 +164,14 @@ public final class GameClient implements AutoCloseable {
             .join();
   }
 
+  public Map<String, Object> communityRequest() throws Exception {
+    var current = request("/community/current", "GET", null).path("run");
+    var payload = new HashMap<String, Object>();
+    payload.put("newRun", current.isNull());
+    payload.put("expectedRunId", current.isNull() ? null : current.path("id").asText());
+    return payload;
+  }
+
   public JsonNode command(String type, Map<String, ?> payload) throws Exception {
     String id = UUID.randomUUID().toString();
     send(

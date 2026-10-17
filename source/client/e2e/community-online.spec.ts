@@ -83,7 +83,7 @@ async function leave(page: Page) {
 		await page.getByRole("button", { name: "Menu", exact: true }).click();
 	await page.getByRole("button", { name: "Save & Exit", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "New Solo Game", exact: true }),
+		page.getByRole("button", { name: "New Game", exact: true }),
 	).toBeVisible();
 }
 test("two Accounts share server simulation, see each other jump, leave and Continue the saved run", async ({
@@ -109,18 +109,12 @@ test("two Accounts share server simulation, see each other jump, leave and Conti
 		await observeSound(a);
 		await observeSound(b);
 		await a.bringToFront();
-		await a
-			.getByRole("button", { name: "Community Tower", exact: true })
-			.click();
 		await a.getByRole("button", { name: "New Game", exact: true }).click();
 		await expect(
 			a.getByRole("button", { name: "Menu", exact: true }),
 		).toBeVisible({ timeout: 15_000 });
 		await expect.poll(() => observedA.snapshots.length).toBeGreaterThan(0);
 		const runId = observedA.snapshots.at(-1)!.playId;
-		await b
-			.getByRole("button", { name: "Community Tower", exact: true })
-			.click();
 		await b.getByRole("button", { name: "New Game", exact: true }).click();
 		await expect(
 			b.getByRole("button", { name: "Menu", exact: true }),
@@ -215,9 +209,6 @@ test("two Accounts share server simulation, see each other jump, leave and Conti
 		expect(saved.run.elapsedTimeMs).toBeGreaterThan(0);
 		expect(saved).not.toHaveProperty("snapshot");
 		await expect.poll(() => observedB.rosters.at(-1)?.members.length).toBe(1);
-		await a
-			.getByRole("button", { name: "Community Tower", exact: true })
-			.click();
 		await a.getByRole("button", { name: "Continue", exact: true }).click();
 		await expect(
 			a.getByRole("button", { name: "Menu", exact: true }),
@@ -229,12 +220,11 @@ test("two Accounts share server simulation, see each other jump, leave and Conti
 		await a.getByRole("button", { name: "Chat", exact: true }).click();
 		await expect(a.getByRole("log")).toContainText(text);
 		await a.getByRole("button", { name: "Close chat", exact: true }).click();
-		await leave(a);
 		await leave(b);
 		await a
-			.getByRole("button", { name: "Community Tower", exact: true })
+			.locator("summary")
+			.filter({ hasText: /^Leaderboard$/ })
 			.click();
-		await a.getByRole("button", { name: "Leaderboard", exact: true }).click();
 		const entries = (
 			await (await a.request.get("/api/leaderboard?limit=100")).json()
 		).entries;
@@ -243,17 +233,16 @@ test("two Accounts share server simulation, see each other jump, leave and Conti
 		);
 		expect(best.id).toBe(runId);
 		const row = a
-			.getByLabel("Community leaderboard")
+			.getByLabel("Community records")
 			.getByRole("listitem")
 			.filter({ hasText: nameA });
 		await expect(row).toHaveCount(1);
 		await expect(row).toContainText(best.rank + ". " + nameA);
 		await expect(row).toContainText(Math.floor(best.maxProgress) + " px");
-		await a.getByRole("button", { name: "Back", exact: true }).click();
-		await a.getByRole("button", { name: "Back", exact: true }).click();
+		await leave(a);
 		await expect(
-			a.getByRole("button", { name: "Leaderboard", exact: true }),
-		).toBeHidden();
+			a.getByRole("button", { name: "Continue", exact: true }),
+		).toBeVisible();
 	} finally {
 		for (const context of [first, second])
 			for (const page of context.pages()) await leaveOnline(page);
@@ -295,9 +284,6 @@ test("prediction stays usable with delayed and reordered snapshots across Pause 
 	page.on("pageerror", (error) => errors.push(error.message));
 	const observed = observe(page);
 	await account(page, "latency");
-	await page
-		.getByRole("button", { name: "Community Tower", exact: true })
-		.click();
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "Menu", exact: true }),
@@ -333,9 +319,6 @@ test("Community New Game keeps old History and metrics while replacing only the 
 	);
 	const observed = observe(page);
 	await account(page, "new_run");
-	await page
-		.getByRole("button", { name: "Community Tower", exact: true })
-		.click();
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "Menu", exact: true }),
@@ -347,9 +330,6 @@ test("Community New Game keeps old History and metrics while replacing only the 
 		.poll(() => observed.snapshots.at(-1)?.self.simulation.physics.jumps)
 		.toBe(1);
 	await leave(page);
-	await page
-		.getByRole("button", { name: "Community Tower", exact: true })
-		.click();
 	page.once("dialog", (dialog) => dialog.accept());
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
 	await expect.poll(() => observed.snapshots.at(-1)?.playId).not.toBe(first);
@@ -378,9 +358,6 @@ test("window blur cancels charging and keeps Community time frozen until explici
 	);
 	const observed = observe(page);
 	await account(page, "pause_ui");
-	await page
-		.getByRole("button", { name: "Community Tower", exact: true })
-		.click();
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "Menu", exact: true }),
@@ -414,9 +391,6 @@ test("reload reconnects the same identity and run from IndexedDB and confirmed L
 	);
 	const observed = observe(page);
 	await account(page, "reload_tower");
-	await page
-		.getByRole("button", { name: "Community Tower", exact: true })
-		.click();
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "Menu", exact: true }),

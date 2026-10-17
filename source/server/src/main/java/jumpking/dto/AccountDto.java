@@ -5,5 +5,5 @@ public final class AccountDto {
 
   public record Account(String id, String username, boolean crownUnlocked) {}
 
-  public record Me(boolean authenticated, Account account, boolean crownUnlocked) {}
+  public record Me(boolean authenticated, Account account) {}
 }

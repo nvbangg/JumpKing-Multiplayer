@@ -459,8 +459,8 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
     if (!connection.identity().account())
       throw new ApiException(403, "ACCOUNT_REQUIRED", "Sign in to play Community Tower");
     GameEnvelope.fields(command.payload(), Set.of("newRun", "expectedRunId"));
-    boolean replace = GameEnvelope.bool(command.payload(), "newRun", true);
-    if (replace && !command.payload().has("expectedRunId")) throw GameEnvelope.invalid();
+    boolean replace = GameEnvelope.bool(command.payload(), "newRun", false);
+    if (!command.payload().has("expectedRunId")) throw GameEnvelope.invalid();
     String expected =
         command.payload().hasNonNull("expectedRunId")
             ? GameEnvelope.text(command.payload(), "expectedRunId")
@@ -712,7 +712,8 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
     tower.chat.leave(player.id);
     memberships.release(player.identity.owner(), new Memberships.Membership(tower.id, player.id));
     boolean empty = directory.release(player.slot);
-    if (player.connection != null) {
+    // Join chưa được xác nhận thì chỉ trả lỗi command, không phát ROOM_LEFT.
+    if (player.connection != null && !player.loading) {
       if (player.leaveCommand != null)
         player.connection.reply(player.leaveCommand, "ROOM_LEFT", Map.of("roomId", tower.id));
       else player.connection.send("ROOM_LEFT", Map.of("roomId", tower.id));

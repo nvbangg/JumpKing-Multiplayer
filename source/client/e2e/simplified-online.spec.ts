@@ -152,9 +152,6 @@ test("Community autosave/continue, manual leaderboard and no ID or in-game New G
 }) => {
 	test.setTimeout(90000);
 	await register(page, "tower");
-	await page
-		.getByRole("button", { name: "Community Tower", exact: true })
-		.click();
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
 	await expect(page.locator("canvas")).toBeVisible({ timeout: 40000 });
 	await expect(
@@ -184,9 +181,6 @@ test("Community autosave/continue, manual leaderboard and no ID or in-game New G
 		page.getByRole("button", { name: "New Game", exact: true }),
 	).toHaveCount(0);
 	await page.getByRole("button", { name: "Save & Exit", exact: true }).click();
-	await page
-		.getByRole("button", { name: "Community Tower", exact: true })
-		.click();
 	await expect(
 		page.getByRole("button", { name: "Continue", exact: true }),
 	).toBeVisible();

@@ -16,9 +16,9 @@ test("the production web JAR supports Community save and a two-player Room throu
 }) => {
 	test.setTimeout(60_000);
 	const account = await browser.newContext(),
-		guest = await browser.newContext();
+		peer = await browser.newContext();
 	try {
-		for (const context of [account, guest])
+		for (const context of [account, peer])
 			await context.addInitScript(() =>
 				localStorage.setItem(
 					"jumpking.options",
@@ -26,13 +26,10 @@ test("the production web JAR supports Community save and a two-player Room throu
 				),
 			);
 		const a = await account.newPage(),
-			b = await guest.newPage();
+			b = await peer.newPage();
 		const observed = observeOnline(a);
 		await registerOnline(a, "jar_host");
 		const peerName = await registerOnline(b, "jar_peer");
-		await a
-			.getByRole("button", { name: "Community Tower", exact: true })
-			.click();
 		await a.getByRole("button", { name: "New Game", exact: true }).click();
 		await expect(
 			a.getByRole("button", { name: "Menu", exact: true }),
@@ -40,15 +37,20 @@ test("the production web JAR supports Community save and a two-player Room throu
 		await a.getByRole("button", { name: "Menu", exact: true }).click();
 		await a.getByRole("button", { name: "Save & Exit", exact: true }).click();
 		await expect(
-			a.getByRole("button", { name: "New Solo Game", exact: true }),
+			a.getByRole("button", { name: "New Game", exact: true }),
 		).toBeVisible();
-		await a
-			.getByRole("button", { name: "Community Tower", exact: true })
-			.click();
 		await expect(
 			a.getByRole("button", { name: "Continue", exact: true }),
 		).toBeVisible();
-		await a.getByRole("button", { name: "Back", exact: true }).click();
+		await a.getByRole("button", { name: "Continue", exact: true }).click();
+		await expect(
+			a.getByRole("button", { name: "Menu", exact: true }),
+		).toBeVisible();
+		await a.getByRole("button", { name: "Menu", exact: true }).click();
+		await a.getByRole("button", { name: "Save & Exit", exact: true }).click();
+		await expect(
+			a.getByRole("button", { name: "Continue", exact: true }),
+		).toBeVisible();
 		const code = await createRoom(a);
 		await joinRoom(b, code);
 		await startRoom(a, b);
@@ -70,7 +72,7 @@ test("the production web JAR supports Community save and a two-player Room throu
 			await expect(page.getByRole("table").locator("tbody tr")).toHaveCount(2);
 			await page.getByRole("button", { name: "Leave", exact: true }).click();
 			await expect(
-				page.getByRole("button", { name: "New Solo Game", exact: true }),
+				page.getByRole("button", { name: "New Game", exact: true }),
 			).toBeVisible();
 		}
 		await a.getByRole("button", { name: "History", exact: true }).click();
@@ -82,6 +84,6 @@ test("the production web JAR supports Community save and a two-player Room throu
 		await expect(a.getByLabel("Match participants")).toContainText(peerName);
 	} finally {
 		await account.close();
-		await guest.close();
+		await peer.close();
 	}
 });

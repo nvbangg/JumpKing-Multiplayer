@@ -41,7 +41,7 @@ class CommunityMembershipIT {
         clients.add(client);
         client.register();
         client.connect();
-        var joined = client.ok("JOIN_COMMUNITY", Map.of());
+        var joined = client.ok("JOIN_COMMUNITY", client.communityRequest());
         if (index == 0) {
           full = joined.path("roomId").asText();
           original = joined;

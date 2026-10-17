@@ -48,7 +48,7 @@ Linux/macOS dùng `sh mvnw`; cài Chromium cho E2E bằng `npx playwright instal
 
 E2E (end-to-end) dùng Playwright thao tác trình duyệt qua UI → HTTP/WS → backend/MySQL để kiểm tra cả luồng. Chạy riêng vì cần ứng dụng đang chạy và trình duyệt, khác unit tests kiểm tra từng hàm/module.
 
-Fly E2E đọc quyền từ backend thật, không nhúng cờ vào Vite/build. `CommunityFlyIT` chạy Solo và Community khi server bật Fly; `RoomFlyBrowserIT` kiểm tra cả bốn mode Room. Quyền bay chỉ phụ thuộc cờ server, không phụ thuộc profile; backend từ chối bay khi cờ tắt. Solo không có backend vẫn chơi/lưu bình thường. `E2E_FLY_ENABLED` chỉ đặt kỳ vọng của `fly.spec.ts`, không bật Fly trong ứng dụng.
+Fly E2E đọc quyền từ backend thật, không nhúng cờ vào Vite/build. `CommunityFlyIT` chạy Community khi server bật Fly; `RoomFlyBrowserIT` kiểm tra cả bốn mode Room. Quyền bay chỉ phụ thuộc cờ server, không phụ thuộc profile; backend từ chối bay khi cờ tắt. `E2E_FLY_ENABLED` chỉ đặt kỳ vọng của `fly.spec.ts`, không bật Fly trong ứng dụng.
 
 Integration dùng [Testcontainers MySQL](https://java.testcontainers.org/modules/databases/mysql/), Docker và MySQL theo [deployment](deployment.md#runtime-và-workflow). E2E dùng instance cô lập; không reset database cá nhân. Setup test chỉ nạp phần CREATE TABLE của schema.sql vào database test mới/rỗng, không chạy phần DROP/CREATE database hoặc USE. Runner chỉ cleanup resources/fixtures do nó tạo, kể cả khi test lỗi.
 
@@ -60,7 +60,7 @@ Có thể chạy nhóm bị ảnh hưởng bằng `-IntegrationTest 'RoomRaceIT'
 
 Thêm `-DatabaseRecovery` để thử restart MySQL và restore dump vào database test mới; đối chiếu số dòng/checksum ba bảng. Chỉ thực hiện trên instance do runner tạo; dump được cleanup cùng instance.
 
-Đặt `E2E_BROWSER_PATH` thành đường dẫn Chrome/Chromium trước khi chạy integration để nghiệm thu Account, contracts và Solo sync qua UI với backend/MySQL cô lập. Harness tự chạy Vite/cổng riêng và đóng sau test; bỏ biến này thì browser integration được ghi là skipped, không coi là đã nghiệm thu UI. `npm run test:e2e` riêng chỉ chạy các scenarios không cần backend, trừ khi cung cấp `E2E_BASE_URL` và cờ online tương ứng.
+Đặt `E2E_BROWSER_PATH` thành đường dẫn Chrome/Chromium trước khi chạy integration để nghiệm thu Account, contracts và checkpoint qua UI với backend/MySQL cô lập. Harness tự chạy Vite/cổng riêng và đóng sau test; bỏ biến này thì browser integration được ghi là skipped, không coi là đã nghiệm thu UI. `npm run test:e2e` riêng chỉ chạy các scenarios không cần backend, trừ khi cung cấp `E2E_BASE_URL` và cờ online tương ứng.
 
 Kết quả E2E độc lập ở source/client/test-results; harness online dùng .local/browser-online-tests. Khi có E2E_BROWSER_PATH, integration chạy thêm harness riêng cho ending Room, Fly Community và Fly Room; output tương ứng .local/browser-room-ending-tests, .local/browser-fly-online-tests và .local/browser-room-fly-tests. Có thể đổi bằng E2E_OUTPUT_DIR; các lần chạy đồng thời phải dùng thư mục riêng.
 
@@ -76,19 +76,18 @@ Với `-Web` và `E2E_BROWSER_PATH`, `SchemaIT` còn chạy Chrome trực tiếp
 | --- | --- |
 | Physics | Đi bộ, charge ngắn/full/auto, buffer/air grace, wall/ceiling/corner/slope, ice/snow/wind, splat/cancel; full state đúng expected mỗi tick |
 | Map/camera | Toàn tuyến Main Babe từ spawn tới Finish bằng input hợp lệ; tile/biên/chuyển screen đúng, không stuck, không lọt solid |
-| Solo | Offline save/Continue/New Game, profile Guest/Account, UUID/revision; sync hai thiết bị đúng owner, retry/reload hàng chờ; không upload snapshot hoặc ảnh hưởng leaderboard |
 | Fly Mode | Một cờ server cho mọi người/kiểu chơi/profile, không Options; nhấn đúp/repeat/cancel không launch thừa; giữ Space bay lên, keyboard/touch, biên world, thoát solid/đáy world/restore; save và thành tích đúng [gameplay](gameplay.md#fly-mode) |
 | Nội dung/ending | Main Babe đủ NPC/readables/môi trường/audio; không Inventory/items/merchant/quest nhận đồ; ending/Skip đúng người, không credit hoặc phát trùng; build đúng scope |
 | Adventure boundary | Hai simulation cùng luật/ID, frontend tra cứu đúng nội dung; Java/snapshot không chứa presentation; hội thoại/crown không nhân đôi qua restore/replay/input giả |
-| Community | Account bắt buộc; tự ghép/tạo sảnh, không Join bằng ID; lookup không lộ members/token; một lượt/Account, giữ state/time và không nhân đôi membership |
-| Checkpoint | Restore đủ physics/adventure/world; metrics/snapshot/revision atomic; New Run đồng thời và rollback; Finish/Abandon không mất save hoặc bị writer cũ phục hồi; một Community ACTIVE không khóa Solo |
+| Community | Continue/New Game trực tiếp từ trang chủ, Continue không tạo lượt khi save thiếu/đổi, New Game xác nhận và kiểm tra expectedRunId; Account bắt buộc; tự ghép/tạo sảnh, không Join bằng ID; lookup không lộ members/token; một lượt/Account, giữ state/time và không nhân đôi membership |
+| Checkpoint | Restore đủ physics/adventure/world; metrics/snapshot/revision atomic; New Run đồng thời và rollback; Finish/Abandon không mất save hoặc bị writer cũ phục hồi |
 | Pause/AFK | Hidden/blur và biên AFK theo gameplay; neutral frames/giữ phím/heartbeat/chat không reset AFK, input thật reset; Community đang rơi phải settle, hết hạn lưu/release slot; Room mở menu lâu không tự out hoặc dừng trận |
 | Room | 1/2/max clients Start được, countdown/permissions; Join mới chỉ WAITING, reconnect đúng roster; Leave/Host transfer/End; Play Again từng người giữ code/settings/History, không kéo người chưa xác nhận vào match mới |
 | Room lifecycle | Menu không dừng trận/Time Limit; không có Host Pause; all-offline giữ reconnect 5 phút rồi finalize một lần. Renderer sẵn sàng trước countdown 3 giây; load lỗi/timeout/rời quay lại Lobby |
 | Modes/rank | Race first Finish; Hardcore splat respawn giữ clock/peak/falls; Time Limit biên phút/deadline; No Walk không tạo vận tốc đi bộ; comparator, DNF và đồng hạng theo gameplay |
-| Leaderboard | Chỉ Community; best của một lượt/Account, không ghép peak/time khác lượt, không nhận Room/Solo hoặc client score |
-| Identity/data | Schema/FK/CHECK/unique theo [data](data.md); Register/Login/Logout/Change Password, session rotation/ownership/ID enumeration; rollback/revision/save status; Solo không sửa lượt online |
-| Stats/History | Tổng cả ba kiểu chơi; Guest Solo local và Account đã sync không cộng trùng; History theo kind/run/match, chỉ terminal/finalized; pending Solo thay cùng ID, login không import Guest; ownership/pagination/best/wins đúng data |
+| Leaderboard | Chỉ Community; best của một lượt/Account, không ghép peak/time khác lượt, không nhận Room hoặc client score |
+| Identity/data | Schema/FK/CHECK/unique theo [data](data.md); Register/Login/Logout/Change Password, session rotation/ownership/ID enumeration; rollback/revision/save status |
+| Stats/History | Tổng Community/Room đã commit; History chỉ terminal/finalized, ownership/pagination/best/wins đúng data; lỗi tải không thành dữ liệu rỗng giả |
 | Identity/chat | Ngoại hình không trùng; username cả Room/Community đúng identity; adventure/effects không lặp qua replay; chat plain text, cooldown/history/focus |
 | Mobile/browser | Multi-touch/cancel/capture, xoay màn hình, keyboard/gamepad fallback, viewport/menu, storage/audio bị chặn; refresh UI đúng route, API/asset thiếu giữ đúng lỗi |
 | Assets | Manifest đủ file sử dụng, nguồn/tình trạng giấy phép rõ; artifact/Git đúng phạm vi và không chứa dữ liệu/công cụ riêng tư |
@@ -103,9 +102,9 @@ Chơi toàn tuyến bằng input hợp lệ để nghiệm thu platform/charge/c
 - Snapshot đến muộn/dồn: peers đi đều không giật tại thời điểm nhận packet; bộ đệm có giới hạn, không extrapolate hoặc phục hồi peer đã rời. Chuyển screen/respawn/reconnect không kéo nhân vật qua map. Pose chỉ gửi trong screen hiện tại/liền kề; Players vẫn đủ toàn phòng.
 - Input FIFO giữ cạnh nhấn/thả và chỉ ACK khi consume. Input mới không che backlog quá hạn: socket bị đóng/resync, charge bị hủy an toàn và generation đổi khi reconnect; input timeout thông thường vẫn cancel. Restore lỗi ở bất kỳ phần physics/adventure/world không được sửa state đang chạy.
 - Community đang rơi vẫn chịu physics trước Pause; Resume không mất velocity/buffers hoặc tăng peak giả. Room disconnect không tạo release-jump hoặc reset đồng hồ.
-- Trì hoãn/lặp/đảo callbacks của checkpoint/Room writer và Solo sync: revision cũ, Finish/New Run/Leave không phục hồi lượt đã kết thúc, ghi sai owner hoặc tạo thêm rows. Cùng revision khác nội dung phải CONFLICT; UUID của identity/kind khác bị từ chối.
+- Trì hoãn/lặp/đảo callbacks của checkpoint/Room writer: revision cũ, Finish/New Run/Leave không phục hồi lượt đã kết thúc, ghi sai owner hoặc tạo thêm rows. Cùng revision khác nội dung phải CONFLICT; UUID của identity/kind khác bị từ chối.
 - Tắt MySQL trong instance test: Room tick không block, Community báo lỗi/tạm dừng, không phát SAVED trước commit; retry có giới hạn và transaction atomic.
-- Gửi sai payload/protocol version/mode/input, position/clock online giả, input bay khi cờ tắt, cross-origin, CSRF thiếu và request vượt giới hạn; không làm dừng phòng khác hoặc lộ secrets. Solo metrics tự khai báo không được trở thành Community hoặc đóng góp leaderboard.
+- Gửi sai payload/protocol version/mode/input, position/clock online giả, input bay khi cờ tắt, cross-origin, CSRF thiếu và request vượt giới hạn; không làm dừng phòng khác hoặc lộ secrets.
 - Kiểm tra cùng origin và khác origin nhưng cùng site: credentials, preflight, CSRF, WS Origin và cookies; idle/absolute expiry đóng WS, đăng nhập lại đúng Account reconnect Room còn hạn reconnect, sai owner/token bị từ chối. Internet phải nghiệm thu riêng khi deploy.
 - Thử handshake/Create/Join/New Run flooding và connection/phòng hết quota; từ chối trước cấp phát, không làm treo phòng khác.
 - Chặn storage/quota/autoplay/gamepad; báo đúng giới hạn, không đánh mất input hoặc báo lưu thành công giả.

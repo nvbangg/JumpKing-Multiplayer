@@ -135,7 +135,7 @@ class OnlineWorkloadIT {
                 client
                     .ok(
                         community ? "JOIN_COMMUNITY" : "CREATE_ROOM",
-                        community ? Map.of() : Map.of())
+                        community ? client.communityRequest() : Map.of())
                     .path("roomId")
                     .asText();
           } else client.ok("JOIN_ROOM", Map.of("roomId", roomId + index));

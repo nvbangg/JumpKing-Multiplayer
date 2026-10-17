@@ -4,7 +4,6 @@ import { MenuPanel } from "../components/MenuPanel";
 import { AuthForm } from "../features/account/AuthForm";
 import { ChangePassword } from "../features/account/ChangePassword";
 import { OnlineGame } from "../features/online/OnlineGame";
-import { duration, soloStatistics } from "../features/records/format";
 import { HistoryDetail } from "../features/records/HistoryDetail";
 import { HistoryList } from "../features/records/HistoryList";
 import { StatisticsPanel } from "../features/records/StatisticsPanel";
@@ -14,26 +13,10 @@ import { PublicRooms } from "../features/rooms/PublicRooms";
 import { Results } from "../features/rooms/Results";
 import { OptionsButtons } from "../features/settings/OptionsPanel";
 import { readOptions, saveOptions } from "../features/settings/options";
-import { SoloGame } from "../features/solo/SoloGame";
-import {
-	currentSolo,
-	hasCrown,
-	rememberCrown,
-	type SoloRun,
-	StorageUnavailable,
-	soloRuns,
-} from "../features/solo/storage";
-import { SoloSync, syncSolo } from "../features/solo/sync";
 import { loadManifest } from "../game/content/assets";
 import { AudioBus } from "../game/presentation/AudioBus";
 import { ApiError, api, backendOrigin, clearCsrf } from "../network/api";
-import {
-	EMPTY_STATS,
-	type HistoryItem,
-	type Identity,
-	type LeaderboardEntry,
-	type Statistics,
-} from "../network/contracts";
+import type { HistoryItem, Identity, Statistics } from "../network/contracts";
 import {
 	GameSocket,
 	type MatchResult,
@@ -43,13 +26,10 @@ import { loadReconnect } from "../network/reconnect";
 
 type Screen =
 	| "home"
-	| "play"
 	| "online"
 	| "sign-in"
 	| "register"
 	| "account"
-	| "community"
-	| "leaderboard"
 	| "history"
 	| "detail"
 	| "options"
@@ -58,20 +38,13 @@ type Screen =
 	| "public-rooms"
 	| "lobby"
 	| "results";
-interface SoloLaunch {
-	profile: string;
-	action: "new" | "continue" | "auto";
-	expectedRunId: string | null;
-}
 const initialIdentity: Identity = {
 	authenticated: false,
 	account: null,
 };
 const routes: Partial<Record<Screen, string>> = {
 	home: "/",
-	play: "/play",
 	history: "/history",
-	community: "/community",
 	options: "/options",
 	account: "/account",
 	"sign-in": "/sign-in",
@@ -84,16 +57,6 @@ function locationScreen(): Screen {
 				([, path]) => path === location.pathname,
 			)?.[0] as Screen | undefined) || "home";
 }
-function restoredLaunch(): SoloLaunch {
-	const saved =
-		typeof window !== "undefined" ? window.history.state?.solo : null;
-	return {
-		profile: typeof saved?.profile === "string" ? saved.profile : "guest",
-		action: "auto",
-		expectedRunId: null,
-	};
-}
-
 export function App() {
 	const [screen, setScreenState] = useState<Screen>(locationScreen);
 	const setScreen = (next: Screen) => {
@@ -107,14 +70,17 @@ export function App() {
 		identityRevision.current++;
 		setIdentityState(value);
 	}, []);
-	const [activeSolo, setActiveSolo] = useState<SoloRun | null>(null);
-	const [launch, setLaunch] = useState<SoloLaunch>(restoredLaunch);
-	const [statistics, setStatistics] = useState<Statistics>({ ...EMPTY_STATS });
-	const [detail, setDetail] = useState<HistoryItem | null>(null);
-	const [detailLocal, setDetailLocal] = useState(false);
-	const [communityRun, setCommunityRun] = useState<{ id: string } | null>(null);
-	const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-	const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+	const [homeData, setHomeData] = useState<{
+		accountId: string;
+		run: { id: string } | null;
+		statistics: Statistics;
+	} | null>(null);
+	const [homeLoading, setHomeLoading] = useState(false);
+	const [homeRevision, setHomeRevision] = useState(0);
+	const [detail, setDetail] = useState<{
+		accountId: string;
+		item: HistoryItem;
+	} | null>(null);
 	const [room, setRoom] = useState<RoomState | null>(null);
 	const [result, setResult] = useState<MatchResult | null>(null);
 	const resultRef = useRef<MatchResult | null>(null);
@@ -122,39 +88,14 @@ export function App() {
 	const [options, setOptions] = useState(readOptions);
 	const [error, setError] = useState("");
 	const [pending, setPending] = useState(false);
-	const [recordsRevision, setRecordsRevision] = useState(0);
-	const [syncError, setSyncError] = useState("");
-	const sync = useRef<SoloSync | null>(null);
 	const socket = useRef<GameSocket | null>(null);
 	const connect = useRef<(() => Promise<GameSocket>) | null>(null);
 	const accountId = identity.account?.id;
-	const profile = identity.account
-		? backendOrigin() + ":account:" + identity.account.id
-		: "guest";
-	const reconnectProfile = profile;
-	const playing = screen === "play" || screen === "online";
-	useEffect(() => {
-		if (identity.account?.crownUnlocked || identity.crownUnlocked)
-			void rememberCrown(profile).catch((cause) => setSyncError(cause.message));
-	}, [profile, identity.account?.crownUnlocked, identity.crownUnlocked]);
-	useEffect(() => {
-		setSyncError("");
-		if (!accountId) return;
-		const worker = new SoloSync(
-			profile,
-			accountId,
-			() => setRecordsRevision((value) => value + 1),
-			setSyncError,
-		);
-		sync.current = worker;
-		return () => {
-			worker.stop();
-			if (sync.current === worker) sync.current = null;
-		};
-	}, [profile, accountId]);
-	useEffect(() => {
-		if (screen === "home" || screen === "history") sync.current?.request(true);
-	}, [screen]);
+	const reconnectProfile = accountId
+		? `${backendOrigin()}:account:${accountId}`
+		: "";
+	const home = homeData?.accountId === accountId ? homeData : null;
+	const playing = screen === "online";
 	useEffect(() => {
 		if (playing || !options.sound) return;
 		let disposed = false,
@@ -175,24 +116,15 @@ export function App() {
 			music?.dispose();
 		};
 	}, [playing, options.sound]);
-	// biome-ignore lint/correctness/useExhaustiveDependencies: Profile đổi phải xóa dữ liệu hiển thị của identity trước.
-	useEffect(() => {
-		setActiveSolo(null);
-		setCommunityRun(null);
-		setStatistics({ ...EMPTY_STATS });
-		setDetail(null);
-	}, [profile]);
 	const back = () => {
 		const next =
 			screen === "public-rooms"
 				? "rooms"
 				: screen === "password"
 					? "account"
-					: screen === "leaderboard"
-						? "community"
-						: screen === "detail"
-							? "history"
-							: "home";
+					: screen === "detail"
+						? "history"
+						: "home";
 		if (routes[next]) window.history.replaceState(null, "", routes[next]);
 		setError("");
 		setScreenState(next);
@@ -218,7 +150,6 @@ export function App() {
 		let disposed = false;
 		const expectedIdentityRevision = identityRevision.current;
 		const pop = () => {
-			setLaunch(restoredLaunch());
 			setScreenState(locationScreen());
 		};
 		window.addEventListener("popstate", pop);
@@ -252,94 +183,44 @@ export function App() {
 		};
 	}, [reconnectProfile, identity.authenticated]);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: Revision là tín hiệu tải lại khi Solo sync hoàn tất.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Revision cho phép thử tải lại sau lỗi hoặc save thay đổi ở tab khác.
 	useEffect(() => {
-		if (screen === "play" || screen === "online" || screen === "lobby") return;
+		if (screen !== "home") return;
+		if (!accountId) {
+			setHomeLoading(false);
+			setHomeData(null);
+			return;
+		}
 		let disposed = false;
-		const local = soloRuns(profile)
-			.then((runs) => {
-				const total = soloStatistics(runs);
-				if (!disposed) {
-					setActiveSolo(runs.find((run) => run.status === "ACTIVE") || null);
-					if (!identity.authenticated) setStatistics(total);
-				}
-				return total;
+		setHomeLoading(true);
+		setHomeData(null);
+		void Promise.all([
+			api<{ total: Statistics }>("/profile/me"),
+			api<{ run: { id: string } | null }>("/community/current"),
+		])
+			.then(([profile, current]) => {
+				if (!disposed)
+					setHomeData({
+						accountId,
+						run: current.run,
+						statistics: profile.total,
+					});
 			})
 			.catch((cause) => {
 				if (!disposed)
 					setError(
-						cause instanceof Error
-							? cause.message
-							: "Browser storage is unavailable",
+						cause instanceof Error ? cause.message : "Save could not be loaded",
 					);
-				return { ...EMPTY_STATS };
+			})
+			.finally(() => {
+				if (!disposed) setHomeLoading(false);
 			});
-		if (identity.authenticated) {
-			void api<{ total: Statistics }>("/profile/me")
-				.then(async ({ total }) => {
-					await local;
-					if (!disposed) setStatistics(total);
-				})
-				.catch(() => {});
-		}
-		if (screen === "community" && identity.authenticated)
-			void api<{ run: { id: string } | null }>("/community/current")
-				.then((result) => {
-					if (!disposed) setCommunityRun(result.run);
-				})
-				.catch((cause) => {
-					if (!disposed) setError(cause.message);
-				});
-		if (screen === "leaderboard") {
-			setLeaderboardLoading(true);
-			void api<{ entries: LeaderboardEntry[] }>("/leaderboard?limit=100")
-				.then((result) => {
-					if (!disposed) setLeaderboard(result.entries);
-				})
-				.catch((cause) => {
-					if (!disposed) setError(cause.message);
-				})
-				.finally(() => {
-					if (!disposed) setLeaderboardLoading(false);
-				});
-		}
 		return () => {
 			disposed = true;
 		};
-	}, [profile, screen, identity.authenticated, recordsRevision]);
+	}, [screen, accountId, homeRevision]);
 
-	const openSolo = (action: "new" | "continue") => {
-		void execute(async () => {
-			if (identity.account?.crownUnlocked) await rememberCrown(profile);
-			const current = await currentSolo(profile).catch((cause) => {
-				if (
-					action === "new" &&
-					cause instanceof StorageUnavailable &&
-					window.confirm(
-						"Browser storage is unavailable. Start without saving?",
-					)
-				)
-					return null;
-				throw cause;
-			});
-			if (
-				action === "new" &&
-				current &&
-				!window.confirm("Replace your unfinished Solo game?")
-			)
-				return;
-			window.history.pushState({ solo: { profile } }, "", "/play");
-			setLaunch({ profile, action, expectedRunId: current?.id || null });
-			setScreenState("play");
-		});
-	};
 	const connectedSocket = async () => {
-		if (
-			!socket.current &&
-			identity.account &&
-			(await hasCrown(profile).catch(() => false))
-		)
-			await syncSolo(profile, identity.account.id);
 		if (!identity.authenticated || !identity.account)
 			throw new Error("Sign in to play online");
 		if (!socket.current)
@@ -412,14 +293,6 @@ export function App() {
 								viewedEnding.current,
 							),
 						);
-					} else if (
-						type === "PLAYER_FINISHED" &&
-						payload.playerId === socket.current?.selfId &&
-						payload.showEnding === true
-					) {
-						void rememberCrown(profile).catch((cause) =>
-							setError(cause.message),
-						);
 					} else if (type === "ROOM_LEFT") {
 						setRoom(null);
 						setResult(null);
@@ -441,6 +314,27 @@ export function App() {
 			await connection.command(type, payload);
 		});
 	};
+	const enterCommunity = (newRun: boolean) => {
+		if (!identity.account) {
+			setScreen("sign-in");
+			return;
+		}
+		if (pending || homeLoading || !home || (!newRun && !home.run)) return;
+		if (newRun && home.run && !window.confirm("Replace your unfinished game?"))
+			return;
+		void execute(async () => {
+			try {
+				const connection = await connectedSocket();
+				await connection.command("JOIN_COMMUNITY", {
+					newRun,
+					expectedRunId: home.run?.id ?? null,
+				});
+			} catch (cause) {
+				setHomeRevision((value) => value + 1);
+				throw cause;
+			}
+		});
+	};
 	const updateOptions = (key: keyof typeof options) => {
 		const next = { ...options, [key]: !options[key] };
 		setOptions(next);
@@ -452,16 +346,6 @@ export function App() {
 		}
 	};
 
-	if (screen === "play")
-		return (
-			<SoloGame
-				{...launch}
-				onExit={() => {
-					setOptions(readOptions());
-					back();
-				}}
-			/>
-		);
 	if (screen === "online" && room && socket.current)
 		return (
 			<OnlineGame
@@ -507,7 +391,9 @@ export function App() {
 					<img src="/assets/title_logo.png" alt="JumpKing" />
 				</h1>
 			</header>
-			<div className={screen === "home" ? "home-layout" : "single-panel"}>
+			<div
+				className={screen === "home" && home ? "home-layout" : "single-panel"}
+			>
 				<MenuPanel
 					title={
 						screen === "home"
@@ -519,15 +405,12 @@ export function App() {
 										password: "Change Password",
 										rooms: "Room",
 										account: "Account",
-										community: "Community Tower",
-										leaderboard: "Leaderboard",
 										history: "History",
 										detail: "Game Details",
 										options: "Options",
 
 										"public-rooms": "Join Public Room",
-										lobby:
-											room?.kind === "COMMUNITY" ? "Community Tower" : "Lobby",
+										lobby: "Lobby",
 										results: "Results",
 									} as Partial<Record<Screen, string>>
 								)[screen]
@@ -540,29 +423,31 @@ export function App() {
 				>
 					{screen === "home" && (
 						<>
-							{activeSolo && (
+							{home?.run && (
 								<button
 									type="button"
-									onClick={() => openSolo("continue")}
-									disabled={pending}
+									onClick={() => enterCommunity(false)}
+									disabled={pending || (!!accountId && (homeLoading || !home))}
 								>
-									Continue Solo
+									Continue
 								</button>
 							)}
 							<button
 								type="button"
-								onClick={() => openSolo("new")}
-								disabled={pending}
+								onClick={() => enterCommunity(true)}
+								disabled={pending || (!!accountId && (homeLoading || !home))}
 							>
-								New Solo Game
+								New Game
 							</button>
 							<button type="button" onClick={() => setScreen("rooms")}>
 								Room
 							</button>
-							<button type="button" onClick={() => setScreen("community")}>
-								Community Tower
-							</button>
-							<button type="button" onClick={() => setScreen("history")}>
+							<button
+								type="button"
+								onClick={() =>
+									setScreen(identity.account ? "history" : "sign-in")
+								}
+							>
 								History
 							</button>
 							<button type="button" onClick={() => setScreen("options")}>
@@ -614,13 +499,10 @@ export function App() {
 								onClick={() => {
 									void execute(async () => {
 										await api("/auth/logout", "POST");
+										socket.current?.close();
+										socket.current = null;
 										clearCsrf();
 										setIdentity(initialIdentity);
-										setIdentity(
-											await api<Identity>("/auth/me").catch(
-												() => initialIdentity,
-											),
-										);
 										back();
 									});
 								}}
@@ -640,97 +522,24 @@ export function App() {
 							}}
 						/>
 					)}
-					{screen === "community" && (
-						<>
-							{!identity.authenticated ? (
-								<>
-									<p>Sign in to play Community Tower.</p>
-									<button type="button" onClick={() => setScreen("sign-in")}>
-										Sign In
-									</button>
-									<button type="button" onClick={() => setScreen("register")}>
-										Create Account
-									</button>
-								</>
-							) : (
-								<>
-									{communityRun && (
-										<button
-											type="button"
-											disabled={pending}
-											onClick={() => command("JOIN_COMMUNITY")}
-										>
-											Continue
-										</button>
-									)}
-									<button
-										type="button"
-										disabled={pending}
-										onClick={() => {
-											if (
-												!communityRun ||
-												window.confirm(
-													"Replace your unfinished Community game?",
-												)
-											)
-												command("JOIN_COMMUNITY", {
-													newRun: true,
-													expectedRunId: communityRun?.id || null,
-												});
-										}}
-									>
-										New Game
-									</button>
-								</>
-							)}
-							<button type="button" onClick={() => setScreen("leaderboard")}>
-								Leaderboard
+					{screen === "history" &&
+						(identity.account ? (
+							<HistoryList
+								key={accountId}
+								onSelect={(item) => {
+									setDetail({ accountId: identity.account!.id, item });
+									setScreen("detail");
+								}}
+							/>
+						) : (
+							<button type="button" onClick={() => setScreen("sign-in")}>
+								Sign In
 							</button>
-						</>
-					)}
-					{screen === "leaderboard" && (
-						<>
-							{leaderboardLoading ? (
-								<p role="status">Loading…</p>
-							) : (
-								<ol className="leaderboard" aria-label="Community leaderboard">
-									{leaderboard.map((entry) => (
-										<li key={entry.id}>
-											<span>
-												{entry.rank}. {entry.username}
-											</span>
-											<strong>
-												{entry.finishTimeMs === null
-													? Math.floor(entry.maxProgress) + " px"
-													: duration(entry.finishTimeMs)}
-											</strong>
-										</li>
-									))}
-								</ol>
-							)}
-							{!leaderboardLoading && !leaderboard.length && !error && (
-								<p>No results yet.</p>
-							)}
-						</>
-					)}
-					{screen === "history" && (
-						<HistoryList
-							profile={profile}
-							authenticated={identity.authenticated}
-							hasIdentity={identity.authenticated}
-							revision={recordsRevision}
-							onSelect={(item, local) => {
-								setDetail(item);
-								setDetailLocal(local);
-								setScreen("detail");
-							}}
-						/>
-					)}
-					{screen === "detail" && detail && (
+						))}
+					{screen === "detail" && detail?.accountId === accountId && detail && (
 						<HistoryDetail
-							key={detail.kind + ":" + detail.id}
-							item={detail}
-							local={detailLocal}
+							key={detail.item.kind + ":" + detail.item.id}
+							item={detail.item}
 						/>
 					)}
 					{screen === "options" && (
@@ -836,11 +645,24 @@ export function App() {
 							{error}
 						</p>
 					)}
-					{syncError && (screen === "home" || screen === "history") && (
-						<p role="status">Solo sync pending: {syncError}</p>
+					{screen === "home" && accountId && !home && !homeLoading && (
+						<button
+							type="button"
+							onClick={() => {
+								setError("");
+								setHomeRevision((value) => value + 1);
+							}}
+						>
+							Retry
+						</button>
+					)}
+					{screen === "home" && accountId && homeLoading && (
+						<p role="status">Loading…</p>
 					)}
 				</MenuPanel>
-				{screen === "home" && <StatisticsPanel statistics={statistics} />}
+				{screen === "home" && home && (
+					<StatisticsPanel statistics={home.statistics} />
+				)}
 			</div>
 		</main>
 	);

@@ -38,7 +38,7 @@ class CommunityFlyIT {
   @org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(
       named = "E2E_BROWSER_PATH",
       matches = ".+")
-  void browserUsesOneServerPermissionForSoloAndCommunityFlight() throws Exception {
+  void browserUsesServerPermissionForCommunityFlight() throws Exception {
     jumpking.support.BrowserHarness.run(
         port,
         VITE_PORT,
@@ -54,7 +54,7 @@ class CommunityFlyIT {
     try (var client = new GameClient(port)) {
       client.register();
       client.connect();
-      var joined = client.ok("JOIN_COMMUNITY", Map.of());
+      var joined = client.ok("JOIN_COMMUNITY", client.communityRequest());
       String run = joined.path("playId").asText();
       client.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
       double initialY =
@@ -111,7 +111,7 @@ class CommunityFlyIT {
               jdbc.queryForObject(
                   "SELECT max_progress FROM play_runs WHERE id=?", Double.class, run))
           .isGreaterThan(0);
-      var continued = client.ok("JOIN_COMMUNITY", Map.of());
+      var continued = client.ok("JOIN_COMMUNITY", client.communityRequest());
       assertThat(continued.path("playId").asText()).isEqualTo(run);
       client.await(
           message ->

@@ -6,13 +6,12 @@
 | --- | --- |
 | UI | React + TypeScript: menu, Account, phòng và Records |
 | Hiển thị | Phaser: map, sprite, animation và camera; Web Audio/HTMLAudio: âm thanh |
-| Solo | TypeScript simulation chạy tại trình duyệt |
 | Online | Spring Boot/Java quyết định physics, thời gian, tiến độ và kết quả |
 | Persistence | MySQL + Spring Data JPA/Hibernate: identity, lượt chơi, checkpoint và kết quả |
 
 ![Kiến trúc hệ thống](../statics/architecture.svg)
 
-Solo mô phỏng/lưu local, đồng bộ metrics Account qua HTTP khi có mạng. Community/Room nhận input qua WebSocket; Java quyết định state, TypeScript dự đoán nhân vật của mình và nội suy peers. HTTP xử lý identity/Records theo [protocol](protocol.md).
+Community/Room nhận input qua WebSocket; Java quyết định state, TypeScript dự đoán nhân vật của mình và nội suy peers. HTTP xử lý identity/Records theo [protocol](protocol.md).
 
 Java/TypeScript dùng chung dữ liệu JSON, viết riêng simulation. Tính trung gian bằng double, ép float32 tại cùng điểm với `Math.fround`. Simulation độc lập Spring/Phaser/DOM/database; không dùng Phaser physics thay simulation.
 
@@ -21,7 +20,7 @@ Adventure tách dữ liệu luật, trạng thái lượt chơi và nội dung h
 | Phần | Nơi sở hữu |
 | --- | --- |
 | Trigger hội thoại và tiến độ nội dung | source/common/adventure.json; hai simulation cùng dùng |
-| Tiến độ hội thoại trong lượt | Simulation; server quyết định online, TypeScript quyết định Solo |
+| Tiến độ hội thoại trong lượt | Simulation; server quyết định, TypeScript dự đoán |
 | Câu chữ hội thoại, nhãn, metadata sprite/animation và âm thanh | Frontend; tra cứu bằng ID từ rule/state |
 
 Backend chỉ nạp luật và state gameplay; nội dung hiển thị thuộc frontend.
@@ -36,7 +35,7 @@ source/
     public/assets/                # manifest, game assets và attribution
     src/
       app/                        # routing và bootstrap
-      features/                   # solo, online, community, rooms, account, records, settings
+      features/                   # online, community, rooms, account, records, settings
       components/                 # UI dùng chung
       game/                       # simulation, input, netcode và presentation
         content/                  # lời thoại và metadata hiển thị
@@ -102,13 +101,13 @@ JPA tắt Open EntityManager in View, chỉ validate schema khi start. Repositor
 - Community giữ simulation và active clock riêng cho từng lượt; Pause/Continue không thay pha vật lý của lượt đó. Room dùng đồng hồ trận chung.
 - Room giữ state, roster, reconnect tokens và xác nhận ván kế tiếp trong RAM; khi mọi thành viên offline chỉ giữ cửa sổ reconnect, không chạy bù ticks offline. Room không có Pause toàn phòng.
 - Socket validate rồi enqueue; hàng đợi lệnh và callback hoàn tất có giới hạn riêng, ưu tiên callback để không mất save/cleanup khi quá tải. Tick không chờ database hoặc socket chậm; snapshots gộp bản mới nhất, control messages giữ thứ tự.
-- Persistence worker xử lý ngoài tick theo [data](data.md). Solo sync không đi qua Java simulation hoặc WS membership.
+- Persistence worker xử lý ngoài tick theo [data](data.md).
 
 ## Lỗi và khả năng mở rộng
 
 Lỗi command/connection không dừng scheduler; lỗi simulation chỉ cô lập sảnh/phòng bị ảnh hưởng. Khi mất MySQL, tạm dừng lượt Community bị ảnh hưởng, giữ state trong RAM để retry có giới hạn và không báo lưu thành công.
 
-Một backend instance giữ session/membership/gameplay Room trong RAM. Restart mất gameplay Room, chỉ khôi phục checkpoint Community và metrics đã commit; có thể mất tiến độ từ lần ghi cuối. Cách đóng match dở theo [data](data.md#kết-quả-room). Xóa browser storage trước sync có thể mất số liệu Solo.
+Một backend instance giữ session/membership/gameplay Room trong RAM. Restart mất gameplay Room, chỉ khôi phục checkpoint Community và metrics đã commit; có thể mất tiến độ từ lần ghi cuối. Cách đóng match dở theo [data](data.md#kết-quả-room).
 
 Luật/Finish/comparator thuộc `game`, persistence thuộc `service`/`repository`, độc lập transport/UI.
 

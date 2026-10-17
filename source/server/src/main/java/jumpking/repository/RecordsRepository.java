@@ -29,7 +29,7 @@ public class RecordsRepository {
         WITH history AS (
           SELECT id,kind,status,started_at,ended_at,play_ticks,jumps,falls,current_progress,max_progress,finish_ticks,
             NULL AS mode,NULL AS map_level,NULL AS room_code,NULL AS duration_ticks,NULL AS `rank`,FALSE AS is_winner
-          FROM play_runs WHERE user_id=:owner AND kind IN ('SOLO','COMMUNITY') AND status<>'ACTIVE'
+          FROM play_runs WHERE user_id=:owner AND kind='COMMUNITY' AND status<>'ACTIVE'
           UNION ALL
           SELECT m.id,'ROOM',p.status,m.started_at,m.ended_at,p.play_ticks,p.jumps,p.falls,p.current_progress,p.max_progress,p.finish_ticks,
             m.mode,m.map_level,m.room_code,m.duration_ticks,p.`rank`,p.is_winner

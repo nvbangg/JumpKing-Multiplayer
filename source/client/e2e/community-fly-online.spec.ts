@@ -33,9 +33,6 @@ test("server-enabled flight, double Space and movement save and Continue online 
 		.getByRole("button", { name: "Create Account", exact: true })
 		.click();
 	await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
-	await page
-		.getByRole("button", { name: "Community Tower", exact: true })
-		.click();
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "Menu", exact: true }),
@@ -74,16 +71,13 @@ test("server-enabled flight, double Space and movement save and Continue online 
 	await page.getByRole("button", { name: "Menu", exact: true }).click();
 	await page.getByRole("button", { name: "Save & Exit", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "New Solo Game", exact: true }),
+		page.getByRole("button", { name: "New Game", exact: true }),
 	).toBeVisible();
 	const best = (
 		await (await page.request.get("/api/leaderboard")).json()
 	).entries.find((entry: { username: string }) => entry.username === name);
 	expect(best.id).toBe(run);
 	expect(best.maxProgress).toBeGreaterThan(40);
-	await page
-		.getByRole("button", { name: "Community Tower", exact: true })
-		.click();
 	await page.getByRole("button", { name: "Continue", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "Menu", exact: true }),
@@ -103,7 +97,7 @@ test("server-enabled flight, double Space and movement save and Continue online 
 	await page.getByRole("button", { name: "Menu", exact: true }).click();
 	await page.getByRole("button", { name: "Save & Exit", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "New Solo Game", exact: true }),
+		page.getByRole("button", { name: "New Game", exact: true }),
 	).toBeVisible();
 	expect(errors).toEqual([]);
 });

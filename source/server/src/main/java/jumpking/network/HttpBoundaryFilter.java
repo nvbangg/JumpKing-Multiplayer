@@ -61,9 +61,6 @@ public class HttpBoundaryFilter extends OncePerRequestFilter {
       if (session != null && !sessions.valid(session, false))
         throw new ApiException(401, "SESSION_EXPIRED", "Your session has expired");
       String account = account(session);
-      if (account != null
-          && "PUT".equals(request.getMethod())
-          && request.getRequestURI().startsWith("/api/solo/runs/")) limits.solo(account);
       if ("POST".equals(request.getMethod()) && AUTH_MUTATIONS.contains(request.getRequestURI())) {
         limits.check(request.getRemoteAddr(), account == null ? null : "account:" + account);
       }

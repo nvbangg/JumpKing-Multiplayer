@@ -56,9 +56,6 @@ test("a delayed anonymous me response cannot overwrite a subsequently registered
 		holding = false;
 		release();
 		await Promise.all(deliveries);
-		await page
-			.getByRole("button", { name: "Community Tower", exact: true })
-			.click();
 		await expect(
 			page.getByRole("button", { name: "New Game", exact: true }),
 		).toBeVisible();

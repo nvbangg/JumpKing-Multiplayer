@@ -56,9 +56,6 @@ test("committed Community Finish plays only for its owner and New Game clears th
 			.getByRole("button", { name: "Create Account", exact: true })
 			.click();
 		await expect(peer.getByRole("button", { name, exact: true })).toBeVisible();
-		await peer
-			.getByRole("button", { name: "Community Tower", exact: true })
-			.click();
 		await peer.getByRole("button", { name: "New Game", exact: true }).click();
 		await expect(
 			peer.getByRole("button", { name: "Menu", exact: true }),
@@ -72,9 +69,6 @@ test("committed Community Finish plays only for its owner and New Game clears th
 			.getByLabel("Password", { exact: true })
 			.fill(process.env.E2E_FINISH_PASSWORD!);
 		await winner.getByRole("button", { name: "Sign In", exact: true }).click();
-		await winner
-			.getByRole("button", { name: "Community Tower", exact: true })
-			.click();
 		await winner.getByRole("button", { name: "Continue", exact: true }).click();
 		await expect(
 			winner.getByRole("button", { name: "Skip", exact: true }),
@@ -101,9 +95,6 @@ test("committed Community Finish plays only for its owner and New Game clears th
 		await winner
 			.getByRole("button", { name: "Back to Menu", exact: true })
 			.click();
-		await winner
-			.getByRole("button", { name: "Community Tower", exact: true })
-			.click();
 		await winner.getByRole("button", { name: "New Game", exact: true }).click();
 		await expect(
 			winner.getByRole("button", { name: "Menu", exact: true }),
@@ -119,7 +110,7 @@ test("committed Community Finish plays only for its owner and New Game clears th
 			.getByRole("button", { name: "Save & Exit", exact: true })
 			.click();
 		await expect(
-			winner.getByRole("button", { name: "New Solo Game", exact: true }),
+			winner.getByRole("button", { name: "New Game", exact: true }),
 		).toBeVisible();
 		await peer.bringToFront();
 		if (
@@ -139,7 +130,7 @@ test("committed Community Finish plays only for its owner and New Game clears th
 			.getByRole("button", { name: "Save & Exit", exact: true })
 			.click();
 		await expect(
-			peer.getByRole("button", { name: "New Solo Game", exact: true }),
+			peer.getByRole("button", { name: "New Game", exact: true }),
 		).toBeVisible();
 		expect(peerFinishes).toEqual([]);
 		expect(errors).toEqual([]);

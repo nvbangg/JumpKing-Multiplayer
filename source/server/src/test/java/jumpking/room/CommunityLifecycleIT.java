@@ -42,6 +42,26 @@ class CommunityLifecycleIT {
     }
   }
 
+  @Test
+  void staleContinueReturnsConflictWithoutLeavingOrClosingTheConnection() throws Exception {
+    try (var client = new GameClient(port)) {
+      client.register();
+      client.connect();
+      var missing = new java.util.HashMap<String, Object>();
+      missing.put("newRun", false);
+      missing.put("expectedRunId", java.util.UUID.randomUUID().toString());
+      int before = client.messages.size();
+      var rejected = client.command("JOIN_COMMUNITY", missing);
+      assertThat(rejected.path("type").asText()).isEqualTo("ERROR");
+      assertThat(rejected.path("payload").path("code").asText()).isEqualTo("CONFLICT");
+      assertThat(client.messages.subList(before, client.messages.size()))
+          .noneMatch(message -> message.path("type").asText().equals("ROOM_LEFT"));
+      assertThat(client.request("/community/current", "GET", null).path("run").isNull()).isTrue();
+      client.ok("JOIN_COMMUNITY", client.communityRequest());
+      client.ok("LEAVE_ROOM", Map.of());
+    }
+  }
+
   @TestConfiguration
   static class TimeConfiguration {
     @Bean
@@ -134,7 +154,7 @@ class CommunityLifecycleIT {
     try (var client = new GameClient(port)) {
       client.register();
       client.connect();
-      var joined = client.ok("JOIN_COMMUNITY", Map.of());
+      var joined = client.ok("JOIN_COMMUNITY", client.communityRequest());
       client.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
       assertCurrentProgress(client, tickAt(client, 77, 158, true, 0, false), 144);
       var airborne = tickAt(client, 200, 50, false, 0, false);
@@ -175,7 +195,7 @@ class CommunityLifecycleIT {
     try (var client = new GameClient(port)) {
       client.register();
       client.connect();
-      var join = client.ok("JOIN_COMMUNITY", Map.of());
+      var join = client.ok("JOIN_COMMUNITY", client.communityRequest());
       client.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
       String play = join.path("playId").asText();
       for (int seq = 1; seq <= 40; seq++)
@@ -246,7 +266,7 @@ class CommunityLifecycleIT {
     try (var client = new GameClient(port)) {
       client.register();
       client.connect();
-      var join = client.ok("JOIN_COMMUNITY", Map.of());
+      var join = client.ok("JOIN_COMMUNITY", client.communityRequest());
       client.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
       client.input(
           Map.of(
@@ -326,7 +346,7 @@ class CommunityLifecycleIT {
     try (var client = new GameClient(port)) {
       client.register();
       client.connect();
-      var join = client.ok("JOIN_COMMUNITY", Map.of());
+      var join = client.ok("JOIN_COMMUNITY", client.communityRequest());
       client.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
       step(client, 29_999);
       client.ok("CHAT_SEND", Map.of("text", "Chat does not count as a movement input"));
@@ -399,7 +419,7 @@ class CommunityLifecycleIT {
               shared.adventure(),
               false,
               false);
-      var initial = records.open(client.owner, false, null, game.snapshot());
+      var initial = records.open(client.owner, true, null, game.snapshot());
       double maximum = 0;
       long peak = 0;
       for (int tick = 0; tick < 40; tick++) {
@@ -414,7 +434,7 @@ class CommunityLifecycleIT {
           new CommunityRuns.Write(
               initial.id(), client.owner, 2, "ACTIVE", game.snapshot(), 0, maximum, peak, null));
       client.connect();
-      client.ok("JOIN_COMMUNITY", Map.of());
+      client.ok("JOIN_COMMUNITY", client.communityRequest());
       client.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
       assertCurrentProgress(client, client.snapshot(), 0);
       var paused = client.ok("SET_COMMUNITY_PAUSED", Map.of("paused", true));
@@ -472,7 +492,7 @@ class CommunityLifecycleIT {
     try (var client = new GameClient(port)) {
       client.register();
       client.connect();
-      var joined = client.ok("JOIN_COMMUNITY", Map.of());
+      var joined = client.ok("JOIN_COMMUNITY", client.communityRequest());
       client.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
       client.ok("SET_COMMUNITY_PAUSED", Map.of("paused", true));
       client.disconnect();
@@ -491,7 +511,7 @@ class CommunityLifecycleIT {
       time.advance(1);
       GameClient.until(() -> memberships.find(client.owner) == null);
       client.connect();
-      var continued = client.ok("JOIN_COMMUNITY", Map.of());
+      var continued = client.ok("JOIN_COMMUNITY", client.communityRequest());
       assertThat(continued.path("playId").asText()).isEqualTo(joined.path("playId").asText());
       client.ok("LEAVE_ROOM", Map.of());
     }
@@ -502,7 +522,7 @@ class CommunityLifecycleIT {
     try (var client = new GameClient(port)) {
       client.register();
       client.connect();
-      var joined = client.ok("JOIN_COMMUNITY", Map.of());
+      var joined = client.ok("JOIN_COMMUNITY", client.communityRequest());
       client.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
       String trigger = "pause_failure_" + UUID.randomUUID().toString().replace("-", "");
       var jdbc = TestDatabase.get().jdbc;

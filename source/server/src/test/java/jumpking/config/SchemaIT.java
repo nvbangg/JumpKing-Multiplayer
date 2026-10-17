@@ -370,7 +370,7 @@ class SchemaIT {
     assertThatThrownBy(
             () ->
                 jdbc.update(
-                    "INSERT INTO play_runs(id,user_id,kind,status,started_at,updated_at,ended_at) VALUES (?,?,'SOLO','FINISHED',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                    "INSERT INTO play_runs(id,user_id,kind,status,started_at,updated_at,ended_at) VALUES (?,?,'COMMUNITY','FINISHED',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
                     UUID.randomUUID().toString(),
                     owner))
         .isInstanceOf(org.springframework.dao.DataAccessException.class);

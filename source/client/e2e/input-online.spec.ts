@@ -1,12 +1,20 @@
 import { expect, test } from "@playwright/test";
-import { soloJumps } from "./support/solo";
+import {
+	leaveOnline,
+	newCommunity,
+	observeOnline,
+	registerOnline,
+} from "./support/online";
 
 test("touch holds direction and Jump simultaneously and cancellation never launches", async ({
 	page,
 	context,
 }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
-	await page.goto("/play");
+	test.skip(process.env.E2E_AUTH_ONLINE !== "true", "Requires backend/MySQL");
+	const observed = observeOnline(page);
+	await registerOnline(page, "touch");
+	await newCommunity(page);
 	const jump = page.getByRole("button", { name: "Jump", exact: true });
 	await expect(jump).toBeVisible();
 	const bounds = await jump.boundingBox(),
@@ -29,12 +37,20 @@ test("touch holds direction and Jump simultaneously and cancellation never launc
 		touchPoints: [],
 	});
 	await page.waitForTimeout(250);
-	await expect.poll(() => soloJumps(page)).toBe(0);
+	await expect
+		.poll(() =>
+			Promise.resolve(observed.snapshot?.self.simulation.physics.jumps),
+		)
+		.toBe(0);
 	await cdp.send("Input.dispatchTouchEvent", {
 		type: "touchStart",
 		touchPoints: [point(left!, 1), point(bounds!, 2)],
 	});
-	await expect.poll(() => soloJumps(page)).toBe(1);
+	await expect
+		.poll(() =>
+			Promise.resolve(observed.snapshot?.self.simulation.physics.jumps),
+		)
+		.toBe(1);
 	await cdp.send("Input.dispatchTouchEvent", {
 		type: "touchEnd",
 		touchPoints: [],
@@ -43,6 +59,7 @@ test("touch holds direction and Jump simultaneously and cancellation never launc
 	await expect(
 		page.getByRole("heading", { name: "Paused", exact: true }),
 	).toBeVisible();
+	await leaveOnline(page);
 });
 
 test("gamepad changes count as activity and held input is blocked across cancel/resume", async ({

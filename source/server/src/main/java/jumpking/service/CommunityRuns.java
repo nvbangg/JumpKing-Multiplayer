@@ -98,10 +98,11 @@ public class CommunityRuns {
                       active.getMaxProgress(),
                       active.getPeakReachedTicks(),
                       active.getStartedAt());
-          if (!replace && old != null) return old;
-          if (replace && !java.util.Objects.equals(expected, old == null ? null : old.id()))
+          if ((!replace && old == null)
+              || !java.util.Objects.equals(expected, old == null ? null : old.id()))
             throw new ApiException(
-                409, "CONFLICT", "Community save changed; refresh before starting a new game");
+                409, "CONFLICT", "Community save changed; refresh and try again");
+          if (!replace) return old;
           var now = clock.instant();
           if (active != null) {
             active.setStatus("ABANDONED");

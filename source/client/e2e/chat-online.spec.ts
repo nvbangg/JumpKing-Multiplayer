@@ -102,17 +102,21 @@ test("chat shortcuts, passive ten-second messages and touch work without launchi
 		await a.waitForTimeout(180);
 		await a.keyboard.up("Space");
 		await expect
-			.poll(
-				() =>
-					snapshots
-						.at(-1)
-						?.players?.find((player) => player.nickname === peerName)?.rank,
-				{ intervals: [20] },
-			)
-			.toBe(2);
+			.poll(() => snapshots.at(-1)?.self.simulation.physics.jumps)
+			.toBe(jumps + 1);
+		// Nhảy thẳng đáp lại cùng nền: Race vẫn đồng hạng theo currentProgress.
+		await expect
+			.poll(() => snapshots.at(-1)?.self.simulation.physics.grounded)
+			.toBe(true);
+		expect(snapshots.at(-1)!.players!.map((player) => player.rank)).toEqual([
+			1, 1,
+		]);
 		await expect(
-			a.getByRole("list", { name: "Current players" }).locator("li").first(),
-		).toContainText("1. " + hostName);
+			a.getByRole("list", { name: "Current players" }),
+		).toContainText(hostName);
+		await expect(
+			a.getByRole("list", { name: "Current players" }),
+		).toContainText(peerName);
 		await a.getByRole("button", { name: "Menu", exact: true }).click();
 		await a.getByRole("button", { name: "End Match", exact: true }).click();
 		await expect(

@@ -16,7 +16,6 @@ export interface Account {
 export interface Identity {
 	authenticated: boolean;
 	account: Account | null;
-	crownUnlocked?: boolean;
 }
 export interface Statistics {
 	totalPlayTimeMs: number;
@@ -29,7 +28,7 @@ export interface Statistics {
 }
 export interface HistoryItem {
 	id: string;
-	kind: "SOLO" | "COMMUNITY" | "ROOM";
+	kind: "COMMUNITY" | "ROOM";
 	status: string;
 	startedAt: string;
 	endedAt: string;
@@ -74,12 +73,3 @@ export interface ChatMessage {
 	sentAt: string;
 	colorSlot: number;
 }
-export const EMPTY_STATS: Readonly<Statistics> = Object.freeze({
-	totalPlayTimeMs: 0,
-	totalJumps: 0,
-	totalFalls: 0,
-	finishes: 0,
-	matchesPlayed: 0,
-	wins: 0,
-	bestFinishTimeMs: null,
-});

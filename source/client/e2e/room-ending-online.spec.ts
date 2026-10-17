@@ -49,7 +49,7 @@ test("only the committed Room winner sees ending while peers can confirm the nex
 				.fill(credential.password);
 			await page.getByRole("button", { name: "Sign In", exact: true }).click();
 			await expect(
-				page.getByRole("button", { name: "New Solo Game", exact: true }),
+				page.getByRole("button", { name: "New Game", exact: true }),
 			).toBeVisible();
 			await page.evaluate(async (value) => {
 				const path = "/src/network/reconnect.ts";

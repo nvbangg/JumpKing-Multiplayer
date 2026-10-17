@@ -11,8 +11,7 @@ public record SecuritySettings(
     Duration sessionAbsoluteTimeout,
     int authRatePerMinute,
     int httpBodyLimit,
-    int rateBucketLimit,
-    int soloSyncRatePerMinute) {
+    int rateBucketLimit) {
   public SecuritySettings {
     if (allowedOrigins == null || allowedOrigins.isEmpty())
       throw new IllegalArgumentException("An origin allowlist is required");
@@ -33,8 +32,7 @@ public record SecuritySettings(
         || sessionAbsoluteTimeout.toSeconds() > Integer.MAX_VALUE - 60
         || authRatePerMinute < 1
         || httpBodyLimit < 1
-        || rateBucketLimit < 1
-        || soloSyncRatePerMinute < 1) throw new IllegalArgumentException("Invalid security bounds");
+        || rateBucketLimit < 1) throw new IllegalArgumentException("Invalid security bounds");
   }
 
   public boolean acceptsOrigin(String origin) {

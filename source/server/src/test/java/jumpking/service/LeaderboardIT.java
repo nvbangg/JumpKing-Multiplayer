@@ -24,6 +24,7 @@ class LeaderboardIT {
     var jdbc = TestDatabase.get().jdbc;
     var owners = new ArrayList<Long>();
     var ids = new ArrayList<String>();
+    String match = UUID.randomUUID().toString();
     try {
       for (int index = 0; index < 4; index++) {
         String name = "ranking_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
@@ -54,9 +55,13 @@ class LeaderboardIT {
           UUID.randomUUID().toString(),
           owners.get(3));
       jdbc.update(
-          "INSERT INTO play_runs(id,user_id,kind,status,play_ticks,current_progress,max_progress,peak_reached_ticks,finish_ticks,started_at,ended_at,updated_at) VALUES (?,?,'SOLO','FINISHED',1,15000,15000,1,1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+          "INSERT INTO matches(id,room_code,mode,started_at,ended_at,duration_ticks,end_reason) VALUES (?,'ABCDEF','RACE',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),1,'FINISH')",
+          match);
+      jdbc.update(
+          "INSERT INTO play_runs(id,user_id,kind,match_id,nickname,status,play_ticks,current_progress,max_progress,peak_reached_ticks,finish_ticks,`rank`,is_winner,started_at,ended_at,updated_at) VALUES (?,?,'ROOM',?,'Player','FINISHED',1,15000,15000,1,1,1,TRUE,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
           UUID.randomUUID().toString(),
-          owners.get(3));
+          owners.get(3),
+          match);
       var entries = records.leaderboard(100);
       assertThat(entries.subList(0, 3))
           .extracting(RecordsDto.LeaderboardEntry::rank)
@@ -84,6 +89,7 @@ class LeaderboardIT {
         jdbc.update("DELETE FROM play_runs WHERE user_id=?", owner);
         jdbc.update("DELETE FROM users WHERE id=?", owner);
       }
+      jdbc.update("DELETE FROM matches WHERE id=?", match);
     }
   }
 }

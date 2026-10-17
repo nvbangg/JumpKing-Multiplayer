@@ -82,7 +82,7 @@ class CommunityRunsIT {
   void continueRestoresSavedCurrentProgressInsteadOfAirborneHeightAndNewRunResetsIt() {
     long owner = account();
     var game = game();
-    var initial = records.open(owner, false, null, game.snapshot());
+    var initial = records.open(owner, true, null, game.snapshot());
     assertThat(initial.progress()).isZero();
     for (int tick = 0; tick < 40; tick++) game.tick(new PlayerInput(false, false, true));
     assertThat(game.physics().snapshot().grounded).isFalse();
@@ -99,7 +99,7 @@ class CommunityRunsIT {
             maximum,
             game.physics().snapshot().ticks,
             null));
-    var continued = records.open(owner, false, null, game().snapshot());
+    var continued = records.open(owner, false, initial.id(), game().snapshot());
     assertThat(continued.progress()).isEqualTo(12.5);
     assertThat(continued.maximum()).isEqualTo(maximum);
     assertThat(continued.snapshot().physics().grounded).isFalse();
@@ -108,12 +108,13 @@ class CommunityRunsIT {
   }
 
   @Test
-  void concurrentContinueCreatesExactlyOneActiveRunAndRejectsUnknownOwner() throws Exception {
+  void concurrentContinueRestoresExactlyOneActiveRunAndRejectsUnknownOwner() throws Exception {
     long owner = account();
     var spawn = game().snapshot();
+    var initial = records.open(owner, true, null, spawn);
     try (var pool = Executors.newFixedThreadPool(2)) {
-      var first = pool.submit(() -> records.open(owner, false, null, spawn));
-      var second = pool.submit(() -> records.open(owner, false, null, spawn));
+      var first = pool.submit(() -> records.open(owner, false, initial.id(), spawn));
+      var second = pool.submit(() -> records.open(owner, false, initial.id(), spawn));
       assertThat(first.get(5, TimeUnit.SECONDS).id())
           .isEqualTo(second.get(5, TimeUnit.SECONDS).id());
     }
@@ -128,13 +129,72 @@ class CommunityRunsIT {
   }
 
   @Test
+  void concurrentNewGamesReplaceTheExpectedSaveOnlyOnce() throws Exception {
+    long owner = account();
+    var spawn = game().snapshot();
+    var initial = records.open(owner, true, null, spawn);
+    Callable<String> replace =
+        () -> {
+          try {
+            return records.open(owner, true, initial.id(), spawn).id();
+          } catch (ApiException conflict) {
+            assertThat(conflict.status()).isEqualTo(409);
+            return null;
+          }
+        };
+    try (var pool = Executors.newFixedThreadPool(2)) {
+      var first = pool.submit(replace);
+      var second = pool.submit(replace);
+      assertThat(Arrays.asList(first.get(5, TimeUnit.SECONDS), second.get(5, TimeUnit.SECONDS)))
+          .containsOnlyOnce((String) null)
+          .filteredOn(Objects::nonNull)
+          .hasSize(1);
+    }
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM play_runs WHERE user_id=?", Integer.class, owner))
+        .isEqualTo(2);
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM play_runs WHERE user_id=? AND status='ACTIVE'",
+                Integer.class,
+                owner))
+        .isEqualTo(1);
+  }
+
+  @Test
+  void continueNeverCreatesOrReplacesASaveAndRejectsStaleIds() {
+    long owner = account();
+    var spawn = game().snapshot();
+    assertThatThrownBy(() -> records.open(owner, false, null, spawn))
+        .isInstanceOf(ApiException.class);
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM play_runs WHERE user_id=?", Integer.class, owner))
+        .isZero();
+    var first = records.open(owner, true, null, spawn);
+    assertThatThrownBy(() -> records.open(owner, false, null, spawn))
+        .isInstanceOf(ApiException.class);
+    var next = records.open(owner, true, first.id(), spawn);
+    assertThatThrownBy(() -> records.open(owner, false, first.id(), spawn))
+        .isInstanceOf(ApiException.class);
+    assertThatThrownBy(() -> records.open(owner, true, first.id(), spawn))
+        .isInstanceOf(ApiException.class);
+    assertThat(records.open(owner, false, next.id(), spawn).id()).isEqualTo(next.id());
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM play_runs WHERE user_id=?", Integer.class, owner))
+        .isEqualTo(2);
+  }
+
+  @Test
   void saveIsOwnerScopedRevisionedIdempotentAndCountersCannotDecrease() throws Exception {
     long owner = account();
-    var initial = records.open(owner, false, null, game().snapshot());
+    var initial = records.open(owner, true, null, game().snapshot());
     var write = progressed(initial, 2);
     records.save(write);
     records.save(write);
-    var restored = records.open(owner, false, null, game().snapshot());
+    var restored = records.open(owner, false, initial.id(), game().snapshot());
     assertThat(restored.id()).isEqualTo(initial.id());
     assertThat(restored.revision()).isEqualTo(2);
     // JSON/MySQL chuẩn hóa kiểu số nguyên; so sánh hai state sau cùng một JSON codec.
@@ -184,7 +244,7 @@ class CommunityRunsIT {
   @Test
   void newRunChecksExpectedIdRollsBackOnInsertFailureAndLateWriterCannotRestoreOldRun() {
     long owner = account();
-    var initial = records.open(owner, false, null, game().snapshot());
+    var initial = records.open(owner, true, null, game().snapshot());
     var write = progressed(initial, 2);
     records.save(write);
     assertThatThrownBy(
@@ -203,7 +263,7 @@ class CommunityRunsIT {
     } finally {
       jdbc.execute("DROP TRIGGER " + trigger);
     }
-    var retained = records.open(owner, false, null, game().snapshot());
+    var retained = records.open(owner, false, initial.id(), game().snapshot());
     assertThat(retained.id()).isEqualTo(initial.id());
     assertThat(retained.revision()).isEqualTo(2);
     var next = records.open(owner, true, initial.id(), game().snapshot());
@@ -237,7 +297,7 @@ class CommunityRunsIT {
   @Test
   void finishUnlocksCrownInTheSameTransactionAndNewRunKeepsIt() throws Exception {
     long owner = account();
-    var initial = records.open(owner, false, null, game().snapshot());
+    var initial = records.open(owner, true, null, game().snapshot());
     var finished = game();
     finished.restore(jumpking.support.MainBabeRoute.beforeFinish(shared, json));
     finished.tick(PlayerInput.NEUTRAL);
@@ -280,7 +340,9 @@ class CommunityRunsIT {
             jdbc.queryForObject(
                 "SELECT crown_unlocked FROM users WHERE id=?", Boolean.class, owner))
         .isTrue();
-    records.open(owner, false, null, game().snapshot());
+    assertThatThrownBy(() -> records.open(owner, false, initial.id(), game().snapshot()))
+        .isInstanceOf(ApiException.class);
+    records.open(owner, true, null, game().snapshot());
     assertThat(
             jdbc.queryForObject(
                 "SELECT crown_unlocked FROM users WHERE id=?", Boolean.class, owner))

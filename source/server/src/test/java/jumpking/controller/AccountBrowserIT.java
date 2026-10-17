@@ -36,9 +36,9 @@ class AccountBrowserIT {
 
   private record FinishFixture(long owner, String username, String password, String run) {}
 
-  private record AdventureFixture(String username, String password) {}
+  private record AccountFixture(String username, String password) {}
 
-  private AdventureFixture adventureFixture() throws Exception {
+  private AccountFixture adventureFixture() throws Exception {
     var jdbc = TestDatabase.get().jdbc;
     String
         name =
@@ -62,8 +62,29 @@ class AccountBrowserIT {
             false);
     var physics = game.physics().snapshot();
     game.physics().restore(physics);
-    communityRuns.open(owner, false, null, game.snapshot());
-    return new AdventureFixture(name, password);
+    communityRuns.open(owner, true, null, game.snapshot());
+    return new AccountFixture(name, password);
+  }
+
+  // Chuẩn bị trang History qua service thật, không flood Join hoặc nới rate limit.
+  private AccountFixture historyFixture() throws Exception {
+    var fixture = adventureFixture();
+    var jdbc = TestDatabase.get().jdbc;
+    long owner =
+        jdbc.queryForObject(
+            "SELECT id FROM users WHERE username=?", Long.class, fixture.username());
+    String id =
+        jdbc.queryForObject(
+            "SELECT id FROM play_runs WHERE user_id=? AND kind='COMMUNITY' AND status='ACTIVE'",
+            String.class,
+            owner);
+    var snapshot =
+        json.readValue(
+            jdbc.queryForObject("SELECT snapshot FROM play_runs WHERE id=?", String.class, id),
+            jumpking.game.GameSimulation.Snapshot.class);
+    for (int index = 0; index < 21; index++)
+      id = communityRuns.open(owner, true, id, snapshot).id();
+    return fixture;
   }
 
   private FinishFixture finishFixture() throws Exception {
@@ -77,7 +98,7 @@ class AccountBrowserIT {
         passwords.encode(password));
     long owner = jdbc.queryForObject("SELECT id FROM users WHERE username=?", Long.class, name);
     var before = jumpking.support.MainBabeRoute.beforeFinish(shared, json);
-    var stored = communityRuns.open(owner, false, null, before);
+    var stored = communityRuns.open(owner, true, null, before);
     var physics = before.physics();
     double progress =
         Math.max(
@@ -168,6 +189,9 @@ class AccountBrowserIT {
       var adventure = adventureFixture();
       builder.environment().put("E2E_ADVENTURE_USERNAME", adventure.username);
       builder.environment().put("E2E_ADVENTURE_PASSWORD", adventure.password);
+      var history = historyFixture();
+      builder.environment().put("E2E_HISTORY_USERNAME", history.username());
+      builder.environment().put("E2E_HISTORY_PASSWORD", history.password());
       browser =
           builder
               .redirectErrorStream(true)

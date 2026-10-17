@@ -8,8 +8,8 @@ export async function leaveOnline(page: Page): Promise<void> {
 			reconnectPath = "/src/network/reconnect.ts";
 		const { loadReconnect } = await import(reconnectPath);
 		const me = await (await fetch("/api/auth/me")).json();
-		const profile =
-			location.origin + (me.account ? ":account:" + me.account.id : ":guest");
+		if (!me.account) return;
+		const profile = location.origin + ":account:" + me.account.id;
 		if (!(await loadReconnect(profile))) return;
 		const { GameSocket } = await import(socketPath),
 			socket = new GameSocket(
@@ -89,4 +89,12 @@ export async function startRoom(host: Page, peer: Page) {
 		await host.getByRole("button", { name: "Resume", exact: true }).click();
 	await host.locator("canvas").click();
 	await expect(host.locator("canvas")).toBeFocused();
+}
+
+export async function newCommunity(page: Page) {
+	await page.getByRole("button", { name: "New Game", exact: true }).click();
+	await expect(
+		page.getByRole("button", { name: "Menu", exact: true }),
+	).toBeVisible({ timeout: 30000 });
+	await page.locator("canvas").click();
 }

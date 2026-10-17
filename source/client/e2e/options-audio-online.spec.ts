@@ -1,10 +1,16 @@
 import { expect, test } from "@playwright/test";
-import { soloJumps } from "./support/solo";
+import {
+	leaveOnline,
+	newCommunity,
+	observeOnline,
+	registerOnline,
+} from "./support/online";
 
 test("Options keep sound, show controls and the game timer is always visible", async ({
 	page,
 }) => {
-	await page.goto("/");
+	test.skip(process.env.E2E_AUTH_ONLINE !== "true", "Requires backend/MySQL");
+	await registerOnline(page, "options");
 	await expect(
 		page.getByText("Hold Space / W / ↑, then release", { exact: true }),
 	).toHaveCount(0);
@@ -35,9 +41,7 @@ test("Options keep sound, show controls and the game timer is always visible", a
 		).not.toBeChecked();
 	}
 	await page.getByRole("button", { name: "Back", exact: true }).click();
-	await page
-		.getByRole("button", { name: "New Solo Game", exact: true })
-		.click();
+	await newCommunity(page);
 	await expect(page.getByLabel("Play time", { exact: true })).toBeVisible();
 	await expect(page.getByText(/^Jumps:/)).toHaveCount(0);
 	await page.getByRole("button", { name: "Menu", exact: true }).click();
@@ -64,6 +68,7 @@ test("Options keep sound, show controls and the game timer is always visible", a
 	await expect(
 		page.getByRole("switch", { name: "Sound: Off", exact: true }),
 	).toBeVisible();
+	await leaveOnline(page);
 });
 
 test("native audio unlocks, decodes and caches effects and stops old ambience", async ({
@@ -146,6 +151,7 @@ test("native audio unlocks, decodes and caches effects and stops old ambience", 
 		cacheRetained: true,
 	});
 	expect((await inspect()).errors).toEqual([]);
+	await leaveOnline(page);
 });
 
 test("blocked audio reports a limitation without blocking the game", async ({
@@ -161,12 +167,19 @@ test("blocked audio reports a limitation without blocking the game", async ({
 			},
 		});
 	});
-	await page.goto("/play");
+	test.skip(process.env.E2E_AUTH_ONLINE !== "true", "Requires backend/MySQL");
+	const observed = observeOnline(page);
+	await registerOnline(page, "blocked_audio");
+	await newCommunity(page);
 	await expect(
 		page.getByRole("button", { name: "Menu", exact: true }),
 	).toBeVisible();
 	await page.keyboard.down("Space");
-	await expect.poll(() => soloJumps(page)).toBe(1);
+	await expect
+		.poll(() =>
+			Promise.resolve(observed.snapshot?.self.simulation.physics.jumps),
+		)
+		.toBe(1);
 	await page.keyboard.up("Space");
 	await page.getByRole("button", { name: "Menu", exact: true }).click();
 	await expect(page.getByRole("alert")).toContainText(
@@ -177,4 +190,5 @@ test("blocked audio reports a limitation without blocking the game", async ({
 	await expect(
 		page.getByRole("switch", { name: "Sound: Off", exact: true }),
 	).toBeVisible();
+	await leaveOnline(page);
 });

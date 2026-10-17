@@ -2,15 +2,14 @@
 
 ## Phạm vi và kiểu chơi
 
-Solo/Community dùng Main Babe hoàn chỉnh theo geometry, physics, camera và trải nghiệm Jump King gốc. Room chọn một trong 10 độ dài cộng dồn theo vùng; nghiệm thu theo [testing](testing.md).
+Community dùng Main Babe hoàn chỉnh theo geometry, physics, camera và trải nghiệm Jump King gốc. Room chọn một trong 10 độ dài cộng dồn theo vùng; nghiệm thu theo [testing](testing.md).
 
 | Kiểu chơi | Bắt đầu | Tiến độ và thành tích |
 | --- | --- | --- |
-| Solo | Lượt mới hoặc tiếp tục save, không cần đăng nhập/backend | Save/Stats/History local; Account đồng bộ metrics khi có mạng, không lên leaderboard |
 | Community Tower | Bắt buộc Account; tạo mới hoặc tiếp tục lượt cá nhân | Lưu tiến độ/History trên server; chỉ kiểu chơi này lên leaderboard |
 | Room | Account tạo Public/Private, Join Public hoặc bằng ID; chờ Host Start | Cuộc đua cùng xuất phát; lưu History, không lên leaderboard, không checkpoint dài hạn |
 
-Solo/Community chỉ có chế độ bình thường. Continue của hai kiểu chơi độc lập, không chuyển save cho nhau. Solo lưu trên thiết bị, Community theo Account; chỉ có thể Continue lượt chưa kết thúc. Room chọn `RACE`, `HARDCORE`, `TIME_LIMIT` hoặc `NO_WALK`. Tất cả players không va chạm và không dùng item tác động người khác.
+Community chỉ có chế độ bình thường; Continue chỉ dành cho lượt chưa kết thúc. Room chọn `RACE`, `HARDCORE`, `TIME_LIMIT` hoặc `NO_WALK`. Tất cả players không va chạm và không dùng item tác động người khác.
 
 ## Điều khiển và physics
 
@@ -46,7 +45,7 @@ Wind chỉ kích hoạt sau grounded trong screen có gió hoặc rơi vào scre
 
 Mất focus, menu, chat hoặc disconnect phải cancel input/charge, không tạo release-jump. Touch phải nhả input khi pointer cancel/lost capture; tay cầm lỗi vẫn dùng được bàn phím/cảm ứng.
 
-Tab bị ẩn (visibilitychange/document.hidden), cửa sổ mất focus (window.blur), hoặc không nhấn/thả/đổi input điều khiển trong 1 phút thì mở menu/hủy input. Solo/Community yêu cầu Pause; Room chỉ mở menu, không dừng trận. Frame trung tính/giữ nguyên, heartbeat và chat không reset AFK; chat vẫn dùng được khi paused. Quay lại phải chọn Resume để nhận input và bắt đầu lại mốc AFK.
+Tab bị ẩn (visibilitychange/document.hidden), cửa sổ mất focus (window.blur), hoặc không nhấn/thả/đổi input điều khiển trong 1 phút thì mở menu/hủy input. Community yêu cầu Pause; Room chỉ mở menu, không dừng trận. Frame trung tính/giữ nguyên, heartbeat và chat không reset AFK; chat vẫn dùng được khi paused. Quay lại phải chọn Resume để nhận input và bắt đầu lại mốc AFK.
 
 ## Map và camera
 
@@ -58,17 +57,9 @@ Tile codes: space rỗng, `#` solid, `a/b/c/d` bốn slope, `I` băng, `N` tuy�
 
 Camera nguyên screen 4:3, letterbox; không smooth-follow. Screen ứng viên = clamp(−floor((y+bodyHeight/2)/360),0,42); chỉ đổi khi hướng vận tốc khớp hướng đổi screen, trừ lúc đang lên với |vy|<3. Textures được tải trước khi dựng màn chơi; chỉ hiển thị screen hiện tại.
 
-## Solo
-
-Autosave trạng thái hiện tại, thời gian, adventure và môi trường mỗi giây, khi Pause/chuyển screen/thoát; Continue khôi phục đúng trạng thái. New Game xác nhận thay lượt đang lưu; vương miện đã mở khóa giữ trong profile. Không có tải lại các save cũ hoặc gửi save lên server.
-
-Guest và từng Account có profile local riêng. Offline vẫn chơi/lưu; UI phân biệt local save với sync Account. Ownership và đồng bộ theo [data](data.md#ghi-lượt-và-đồng-bộ-solo).
-
-Pause dừng simulation/clock ngay. Lỗi hoặc thiếu storage phải báo không lưu được; vẫn chơi trong phiên nhưng không báo save thành công.
-
 ## Fly Mode
 
-Tính năng thử nghiệm cho Solo, Community và cả bốn mode Room, được mở bằng `FLY_ENABLED` theo [deployment](deployment.md#fly-mode). Khi server bật cờ, mọi người được dùng ngay ở mọi môi trường, không có thiết lập riêng theo Account hoặc Options; nhấn Space hai lần trong 300 ms để bắt đầu/tắt bay. Chỉ đếm lần nhấn mới sau khi thả, không tính key repeat; cảm ứng dùng nhấn đúp Jump. Tốc độ ngang/dọc và khoảng nhấn đúp tập trung trong shared tuning.
+Tính năng thử nghiệm cho Community và cả bốn mode Room, được mở bằng `FLY_ENABLED` theo [deployment](deployment.md#fly-mode). Khi server bật cờ, mọi người được dùng ngay ở mọi môi trường, không có thiết lập riêng theo Account hoặc Options; nhấn Space hai lần trong 300 ms để bắt đầu/tắt bay. Chỉ đếm lần nhấn mới sau khi thả, không tính key repeat; cảm ứng dùng nhấn đúp Jump. Tốc độ ngang/dọc và khoảng nhấn đúp tập trung trong shared tuning.
 
 Khi bay, WASD hoặc các mũi tên di chuyển bốn hướng; giữ Space cũng bay lên; cảm ứng thêm lên/xuống. Bay xuyên địa hình, không gravity/charge/splat, giữ biên world. Đổi trạng thái bay xóa charge/velocity; không tạo cú nhảy ngoài ý muốn và phải thả Jump trước khi charge tiếp. Khi chưa bay, lần nhấn Space đầu vẫn điều khiển nhảy bình thường, không chờ nhận diện nhấn đúp.
 
@@ -80,7 +71,7 @@ Bay vẫn tính save/Stats/History/xếp hạng/leaderboard bình thường. Com
 
 Mỗi sảnh tối đa 10 người, gồm slot reconnect còn hạn. Tự tìm sảnh còn chỗ, ưu tiên sảnh đông hơn; không còn chỗ thì tạo sảnh mới. Không chọn Community bằng ID; New Game/Continue tự xếp sảnh. Reconnect hợp lệ giữ membership khi còn hạn.
 
-Một Account có một lượt Community đang lưu và một membership online hoạt động. Continue tự khôi phục lượt đó; chưa có thì tạo mới. Save & Exit rồi Continue giữ state/time của lượt; New Run xác nhận bỏ lượt hiện tại, giữ thành tích cũ. Không chuyển save Solo/Room sang Community.
+Một Account có một lượt Community đang lưu và một membership online hoạt động. Trang chủ mở thẳng lượt chơi bằng New Game hoặc Continue. Continue chỉ hiện khi có lượt ACTIVE và phải khôi phục đúng ID; nếu save đã đổi ở tab khác thì báo lỗi/tải lại, không tạo lượt mới. New Game xác nhận thay lượt đang dở, giữ thành tích cũ. Save & Exit rồi Continue giữ state/time; Room không chuyển tiến độ sang Community.
 
 - Pause chỉ tác động bản thân. Nếu đang charge, cancel rồi pause; nếu đang trên không, simulation và clock chạy đến khi grounded ổn định rồi mới pause. Khi đang bay có thể pause ngay và xóa input; trạng thái đang rơi thoát solid phải hoàn tất như cú rơi bình thường.
 - Save & Exit lưu state đã ổn định trước khi xác nhận rời. Disconnect xử lý như yêu cầu Pause rồi lưu; không kéo người chơi về checkpoint trước cú rơi.
@@ -140,11 +131,11 @@ Chỉ triển khai Main Babe; không mở rộng campaign/DLC khác.
 
 Timer luôn hiện; không hiển thị số lần nhảy trong HUD. Jumps vẫn được đếm cho Stats/History.
 
-Giữ NPC/hội thoại, bảng/sách/nhật ký và môi trường Main Babe; đọc/hội thoại không trực tiếp yêu cầu Pause. Không có Inventory, nhặt/mua vật phẩm hoặc quest nhận đồ. Loại hội thoại/trigger phụ thuộc đồ đã bỏ; dùng một ending cơ bản không credit.
+NPC/hội thoại, bảng/sách/nhật ký và môi trường thuộc Main Babe; đọc/hội thoại không trực tiếp yêu cầu Pause. Không có Inventory, nhặt/mua vật phẩm hoặc quest nhận đồ. Hội thoại/trigger không phụ thuộc vật phẩm; ending không có credit.
 
-Hoàn thành full map ở Solo/Community/Room map 10 tự mở vương miện cho các lượt sau. Account lưu server, Guest lưu profile trình duyệt; Guest Solo không chuyển crown sang Account. Room ngắn không mở vương miện. Solo do client khai báo chỉ cấp ngoại hình, không làm bằng chứng leaderboard. Màu của mỗi người nhất quán trên mọi client; bản thân opacity=1 và vẽ trên peers opacity=0.7. Nickname rõ và hội thoại vẽ trên tên.
+Hoàn thành Community hoặc Room map 10 tự mở vương miện trên Account cho các lượt sau; Room ngắn không mở vương miện. Màu của mỗi người nhất quán trên mọi client; bản thân opacity=1 và vẽ trên peers opacity=0.7. Nickname rõ và hội thoại vẽ trên tên.
 
-Ending giữ cảnh/nhạc/ảnh kết thúc và Skip, bỏ credit. Solo Finish phát ending; Community chỉ người Finish xem; Room chỉ winners xem, người khác tới Results. End/timeout chưa có Finish không phát ending. Ending không đổi kết quả/thời gian, xử lý một lần theo runId/matchId và hủy khi chuyển lượt.
+Ending giữ cảnh/nhạc/ảnh kết thúc và Skip, bỏ credit. Community chỉ người Finish xem; Room chỉ winners xem, người khác tới Results. End/timeout chưa có Finish không phát ending. Ending không đổi kết quả/thời gian, xử lý một lần theo runId/matchId và hủy khi chuyển lượt.
 
 Server cấp một trong 10 ngoại hình riêng cho mỗi membership, giữ qua reconnect và giải phóng khi rời. Mọi player online dùng username của Account; kết quả Room giữ tên lúc Join. Trạng thái hiển thị không tác động hitbox/physics.
 
@@ -152,7 +143,7 @@ Server cấp một trong 10 ngoại hình riêng cho mỗi membership, giữ qua
 
 Thống kê chỉ có tổng: active play time, jumps/falls, số lượt Finish, số trận/thắng Room và best finish time. Nhảy tính khi launch, ngã khi splat, thắng chỉ tính Room; respawn/lượt mới không xóa số liệu cũ. Lượt chưa Finish không có finish time. Nguồn số liệu và chống cộng trùng theo [data](data.md#history-và-leaderboard).
 
-History gồm các lượt Solo/Community đã kết thúc và các trận Room đã finalize. Continue/Pause/Save & Exit không tạo mục mới; cùng lượt/trận chỉ có một mục. Account xem dữ liệu thuộc mình; Guest chỉ xem Solo trên thiết bị; Account xem cả ba kiểu chơi. Login/Register không import dữ liệu Guest.
+History gồm các lượt Community đã kết thúc và các trận Room đã finalize, chỉ Account sở hữu được xem. Continue/Pause/Save & Exit không tạo mục mới; cùng lượt/trận chỉ có một mục.
 
 Community và Room có chat riêng theo sảnh; chat hủy input nhưng không trực tiếp Pause. AFK áp dụng theo [điều khiển](#điều-khiển-và-physics); định dạng, giới hạn và lưu chat theo [protocol](protocol.md).
 
