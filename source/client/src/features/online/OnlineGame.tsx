@@ -61,11 +61,6 @@ export function OnlineGame({
 	);
 
 	useEffect(() => {
-		if (import.meta.env.DEV) {
-			(
-				window as unknown as { simulatePing?: (ms: number) => void }
-			).simulatePing = (ms: number) => socket.recordPing(ms);
-		}
 		return socket.subscribeQuality(setNetworkQuality);
 	}, [socket]);
 	const [ending, setEnding] = useState<"playing" | "picture" | null>(null),

@@ -75,20 +75,20 @@ Với `-Web` và `E2E_BROWSER_PATH`, `SchemaIT` còn chạy Chrome trực tiếp
 | Nhóm | Kiểm tra và kết quả mong đợi |
 | --- | --- |
 | Physics | Đi bộ, charge ngắn/full/auto, buffer/air grace, wall/ceiling/corner/slope, ice/snow/wind, splat/cancel; full state đúng expected mỗi tick |
-| Map/camera | Toàn tuyến Main Babe từ spawn tới Finish bằng input hợp lệ; tile/biên/chuyển screen đúng, không stuck, không lọt solid |
+| Map/camera | Toàn tuyến Main Babe từ spawn tới Finish bằng input hợp lệ; mười mốc Finish hợp lệ từ mọi spawn; map ngắn không cấp crown/ending hoặc ghi đè best full-map; tile/biên/chuyển screen đúng, không stuck, không lọt solid |
 | Fly Mode | Một cờ server cho mọi người/kiểu chơi/profile, không Options; nhấn đúp/repeat/cancel không launch thừa; giữ Space bay lên, keyboard/touch, biên world, thoát solid/đáy world/restore; save và thành tích đúng [gameplay](gameplay.md#fly-mode) |
 | Nội dung/ending | Main Babe đủ NPC/readables/môi trường/audio; không Inventory/items/merchant/quest nhận đồ; ending/Skip đúng người, không credit hoặc phát trùng; build đúng scope |
 | Adventure boundary | Hai simulation cùng luật/ID, frontend tra cứu đúng nội dung; Java/snapshot không chứa presentation; hội thoại/crown không nhân đôi qua restore/replay/input giả |
 | Community | Continue/New Game trực tiếp từ trang chủ, Continue không tạo lượt khi save thiếu/đổi, New Game xác nhận và kiểm tra expectedRunId; Account bắt buộc; tự ghép/tạo sảnh, không Join bằng ID; lookup không lộ members/token; một lượt/Account, giữ state/time và không nhân đôi membership |
-| Checkpoint | Restore đủ physics/adventure/world; metrics/snapshot/revision atomic; New Run đồng thời và rollback; Finish/Abandon không mất save hoặc bị writer cũ phục hồi |
+| Checkpoint | Restore đủ physics/adventure/world; metrics/snapshot/revision atomic; New Run đồng thời và rollback; writer đến muộn; Finish/Abandon không mất save hoặc bị writer cũ phục hồi |
 | Pause/AFK | Hidden/blur và biên AFK theo gameplay; neutral frames/giữ phím/heartbeat/chat không reset AFK, input thật reset; Community đang rơi phải settle, hết hạn lưu/release slot; Room mở menu lâu không tự out hoặc dừng trận |
-| Room | 1/2/max clients Start được, countdown/permissions; Join mới chỉ WAITING, reconnect đúng roster; Leave/Host transfer/End; Play Again từng người giữ code/settings/History, không kéo người chưa xác nhận vào match mới |
+| Room | Public/Private, danh sách chỉ có phòng WAITING còn chỗ; Join/Start đồng thời không vượt capacity, map không đổi giữa trận; 1/2/max clients Start được, countdown/permissions; Join mới chỉ WAITING, reconnect đúng roster; Leave/Host transfer/End; Play Again từng người giữ code/settings/History, không kéo người chưa xác nhận vào match mới |
 | Room lifecycle | Menu không dừng trận/Time Limit; không có Host Pause; all-offline giữ reconnect 5 phút rồi finalize một lần. Renderer sẵn sàng trước countdown 3 giây; load lỗi/timeout/rời quay lại Lobby |
 | Modes/rank | Race first Finish; Hardcore splat respawn giữ clock/peak/falls; Time Limit biên phút/deadline; No Walk không tạo vận tốc đi bộ; comparator, DNF và đồng hạng theo gameplay |
 | Leaderboard | Chỉ Community; best của một lượt/Account, không ghép peak/time khác lượt, không nhận Room hoặc client score |
-| Identity/data | Schema/FK/CHECK/unique theo [data](data.md); Register/Login/Logout/Change Password, session rotation/ownership/ID enumeration; rollback/revision/save status |
+| Identity/data | JPA/MySQL thật, không dùng H2; đủ ba bảng/FK/CHECK/unique theo [data](data.md), generated unique Community và transaction/lock/rollback; Controller/Service không chứa SQL/JdbcTemplate, API không trả Entity hoặc tải snapshot cho bảng tổng hợp; Register/Login/Logout/Change Password, session rotation/ownership/ID enumeration; rollback/revision/save status |
 | Stats/History | Tổng Community/Room đã commit; History chỉ terminal/finalized, ownership/pagination/best/wins đúng data; lỗi tải không thành dữ liệu rỗng giả |
-| Identity/chat | Ngoại hình không trùng; username cả Room/Community đúng identity; adventure/effects không lặp qua replay; chat plain text, cooldown/history/focus |
+| Identity/chat | Ngoại hình không trùng; username cả Room/Community đúng identity; adventure/effects không lặp qua replay; chat plain text, cooldown/history/focus; Enter/Escape, tin mới hiện 10 giây không tự lấy focus; Players luôn hiện gọn, chỉ leaderboard thu gọn, hai bảng tách phạm vi |
 | Mobile/browser | Multi-touch/cancel/capture, xoay màn hình, keyboard/gamepad fallback, viewport/menu, storage/audio bị chặn; refresh UI đúng route, API/asset thiếu giữ đúng lỗi |
 | Assets | Manifest đủ file sử dụng, nguồn/tình trạng giấy phép rõ; artifact/Git đúng phạm vi và không chứa dữ liệu/công cụ riêng tư |
 
@@ -134,12 +134,3 @@ Nghiệm thu Local, LAN/ZeroTier bằng hai thiết bị và điện thoại th�
 Đối chiếu README với build configuration; báo checks đã chạy và phần chưa kiểm chứng khi bàn giao. Raw traces/screenshots/logs ở `.local/reports/` hoặc reports được ignore. Git giữ tests/fixtures/scripts tái tạo và báo cáo bàn giao, không dữ liệu riêng tư.
 
 Báo cáo giải thích networking/concurrency/protocol, đóng góp có số đo, results/discussion/limitations và trích dẫn nguồn; đáp ứng Compilatio và demo theo yêu cầu học phần.
-
-## Nghiệm thu thay đổi persistence và Room
-
-- JPA mapping chạy trên MySQL, transaction/lock/rollback, generated unique Community và writer đến muộn; không dùng H2 thay MySQL.
-- Schema hiện tại tạo đủ ba bảng, CHECK/unique/FK; test setup không thực thi lệnh reset database thật.
-- Không còn SQL/JdbcTemplate trong Controller/Service; API không trả Entity hoặc truy vấn snapshot cho bảng tổng hợp.
-- Room Public/Private: list chỉ WAITING còn chỗ, Join/Start cạnh tranh không vượt capacity, map không đổi giữa trận.
-- Mười mốc Finish đạt bằng input không Fly và tất cả spawn; map ngắn không cấp crown/ending hoặc ghi đè best full-map.
-- Chat Enter/Esc, focus form, tin mới 10 giây không tự lấy focus; Players luôn hiện gọn, chỉ leaderboard thu gọn; hai bảng tách phạm vi.

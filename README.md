@@ -82,7 +82,7 @@ Restart JAR, cho phép inbound TCP 8080 từ mạng cần dùng; players mở `h
 
 ## VPS
 
-Chạy cùng JAR và MySQL nội bộ; cấu hình domain, HTTPS/WSS, origins và cookie theo [deployment](docs/deployment.md#vps-một-domain). Không cần tách frontend sang dịch vụ hosting khác.
+Chạy cùng JAR và MySQL nội bộ; cấu hình domain, HTTPS/WSS, origins và cookie theo [deployment](docs/deployment.md#vps-và-github-actions). Không cần tách frontend sang dịch vụ hosting khác.
 
 ## Tài liệu
 

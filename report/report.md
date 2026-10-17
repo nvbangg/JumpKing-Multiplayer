@@ -4,7 +4,7 @@
 
 ## Tóm tắt
 
-Game nhảy chính xác cần phản hồi điều khiển nhanh nhưng kết quả online phải do server xác nhận. JumpKing Multiplayer giải quyết hai yêu cầu này bằng Spring Boot/Java mô phỏng authoritative ở 60 Hz, client TypeScript prediction/reconciliation và snapshot WebSocket 20 Hz. Dữ liệu map, tuning và fixtures dùng chung; hai implementation được kiểm chứng độc lập với phần hiển thị Phaser. JPA/MySQL lưu tiến độ và kết quả ngoài vòng tick, có revision, khóa và retry để tránh ghi đè hoặc cộng trùng. Hệ thống gồm Community Tower và Room tối đa 10 người. Hồi quy đạt 77 client unit, 54 Java unit, 77 MySQL integration và 62 Chrome scenarios qua các harness. Thực nghiệm tải riêng giữ khoảng 20 snapshots/giây/client ở Room 10 người; RTT p95 trên loopback là 2,31 ms. Với trễ mô hình 100 ms mỗi chiều, prediction giảm thời gian nhìn thấy cú nhảy từ 566,7 xuống 350 ms, cùng thời gian charge. Các kết quả chứng minh tính khả thi trong môi trường đo, chưa xác định sức chứa VPS hoặc chất lượng mạng Internet.
+Game nhảy chính xác cần phản hồi điều khiển nhanh nhưng kết quả online phải do server xác nhận. JumpKing Multiplayer giải quyết hai yêu cầu này bằng Spring Boot/Java mô phỏng authoritative ở 60 Hz, client TypeScript prediction/reconciliation và snapshot WebSocket 20 Hz. Dữ liệu map, tuning và fixtures dùng chung; hai implementation được kiểm chứng độc lập với phần hiển thị Phaser. JPA/MySQL lưu tiến độ và kết quả ngoài vòng tick, có revision, khóa và retry để tránh ghi đè hoặc cộng trùng. Hệ thống gồm Community Tower và Room tối đa 10 người. Trong đợt đo ngày 15/10/2026, hồi quy đạt 77 client unit, 54 Java unit, 77 MySQL integration và 62 Chrome scenarios qua các harness. Thực nghiệm tải riêng giữ khoảng 20 snapshots/giây/client ở Room 10 người; RTT p95 trên loopback là 2,31 ms. Với trễ mô hình 100 ms mỗi chiều, prediction giảm thời gian nhìn thấy cú nhảy từ 566,7 xuống 350 ms, cùng thời gian charge. Các kết quả chứng minh tính khả thi trong môi trường đo, chưa xác định sức chứa VPS hoặc chất lượng mạng Internet.
 
 **Từ khóa:** server-authoritative; WebSocket; client-side prediction; concurrency; checkpoint; transaction.
 
@@ -89,7 +89,9 @@ Account dùng BCrypt và server-side session; cookie HttpOnly/SameSite, Secure k
 
 ## 7. Thiết lập thực nghiệm
 
-Đo ngày 15/10/2026 trên Windows 11 Home 10.0.26200, AMD Ryzen AI 7 H 350, 8 cores/16 logical processors, RAM OS nhận 31,3 GiB. Runtime: Java 25.0.1, Node 24.18.0, MySQL 9.6; Spring Boot 3.5.16, Hibernate 6.6.53.Final. MySQL chạy instance cô lập, không dùng hoặc reset database cá nhân.
+Số liệu kiểm thử và thực nghiệm ở mục 8–9 thuộc bản được đo ngày 15/10/2026, không đại diện cho kết quả của các commit sau đó.
+
+Đo trên Windows 11 Home 10.0.26200, AMD Ryzen AI 7 H 350, 8 cores/16 logical processors, RAM OS nhận 31,3 GiB. Runtime: Java 25.0.1, Node 24.18.0, MySQL 9.6; Spring Boot 3.5.16, Hibernate 6.6.53.Final. MySQL chạy instance cô lập, không dùng hoặc reset database cá nhân.
 
 ### 7.1. Phương pháp
 
@@ -161,7 +163,7 @@ Mẫu tải 5 giây, loopback, một JVM gồm server/driver, chưa có khoảng
 
 Kết quả quét dependency không bảo đảm loại hết lỗ hổng: npm audit không có cảnh báo; hai advisory Spring MVC liên quan SSE fragments/XsltView được ghi nhận nhưng ứng dụng không dùng các chức năng đó [7][8].
 
-Nội dung Main Babe chuyển thể từ Jump King 1.04 của Nexile; chưa có giấy phép phân phối lại được cung cấp, không coi assets là nguồn mở [1]. Attribution hiện có ghi tại `source/client/public/assets/ATTRIBUTION.md`. Kế hoạch sau nghiệm thu gồm thay assets bằng nguồn có quyền sử dụng, deploy online và items/player collision nếu được chọn. Chưa xác nhận Compilatio hoặc nộp bài.
+Nội dung Main Babe chuyển thể từ Jump King 1.04 của Nexile; chưa có giấy phép phân phối lại được cung cấp, không coi assets là nguồn mở [1]. Attribution hiện có ghi tại `source/client/public/assets/ATTRIBUTION.md`. Kế hoạch sau nghiệm thu gồm thay assets bằng nguồn có quyền sử dụng và items/player collision nếu được chọn. Ứng dụng đã triển khai trên VPS; việc này không thay thế nghiệm thu đầy đủ từ mạng ngoài. Chưa xác nhận Compilatio hoặc nộp bài.
 
 ## 12. Kết luận
 
