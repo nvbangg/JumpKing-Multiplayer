@@ -1,15 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PRESENTATION } from "../../game/presentation/config";
+import type { ChatMessage } from "../../network/contracts";
 import type { GameSocket } from "../../network/GameSocket";
+
+export interface RoomChatState {
+	open: boolean;
+	messages: ChatMessage[];
+	focusRequest: number;
+	openChat: () => void;
+	closeChat: () => void;
+}
 
 export function useRoomChat(
 	socket: GameSocket,
 	enabled = true,
 	onOpen?: () => void,
 	onClose?: () => void,
-) {
-	const [open, setOpen] = useState(false),
-		[preview, setPreview] = useState(false);
+): RoomChatState {
+	const [open, setOpen] = useState(false);
 	const [focusRequest, setFocusRequest] = useState(0);
 	const [messages, setMessages] = useState(() => socket.chatHistory);
 	// Listener giữ ổn định; callback luôn đọc trạng thái render mới nhất.
@@ -22,7 +29,6 @@ export function useRoomChat(
 		if (opened.current) return;
 		opened.current = true;
 		setOpen(true);
-		setPreview(false);
 		callbacks.current.onOpen?.();
 	}, []);
 	const closeChat = useCallback(() => {
@@ -34,45 +40,21 @@ export function useRoomChat(
 	useEffect(() => {
 		if (!enabled) {
 			closeChat();
-			setPreview(false);
 		}
 	}, [enabled, closeChat]);
 	useEffect(() => {
-		let timer: ReturnType<typeof setTimeout> | undefined,
-			lastId = socket.chatHistory.at(-1)?.id;
 		const unsubscribe = socket.subscribe((type) => {
 			if (type === "ROOM_JOINED") {
 				closeChat();
 				setMessages([]);
-				setPreview(false);
-				clearTimeout(timer);
-				lastId = undefined;
 				return;
 			}
 			if (type !== "CHAT_MESSAGE" && type !== "CHAT_HISTORY") return;
-			const rows = socket.chatHistory,
-				id = rows.at(-1)?.id;
-			setMessages(rows);
-			if (
-				type === "CHAT_MESSAGE" &&
-				id &&
-				id !== lastId &&
-				!opened.current &&
-				callbacks.current.enabled
-			) {
-				setPreview(true);
-				clearTimeout(timer);
-				timer = setTimeout(() => setPreview(false), PRESENTATION.chatPreviewMs);
-			}
-			lastId = id;
+			setMessages(socket.chatHistory);
 		});
 		// History có thể tới giữa render và lúc đăng ký listener, nhất là sau reconnect.
 		setMessages(socket.chatHistory);
-		lastId = socket.chatHistory.at(-1)?.id;
-		return () => {
-			unsubscribe();
-			clearTimeout(timer);
-		};
+		return unsubscribe;
 	}, [socket, closeChat]);
 	useEffect(() => {
 		const key = (event: KeyboardEvent) => {
@@ -94,5 +76,5 @@ export function useRoomChat(
 		window.addEventListener("keydown", key);
 		return () => window.removeEventListener("keydown", key);
 	}, [openChat]);
-	return { open, preview, messages, focusRequest, openChat, closeChat };
+	return { open, messages, focusRequest, openChat, closeChat };
 }

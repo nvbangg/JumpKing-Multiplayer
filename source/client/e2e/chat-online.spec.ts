@@ -12,7 +12,7 @@ test.skip(
 	process.env.E2E_AUTH_ONLINE !== "true",
 	"Requires the isolated backend/MySQL integration harness",
 );
-test("chat shortcuts, passive ten-second messages and touch work without launching a held jump", async ({
+test("persistent chat, ten-message limit, shortcuts and touch work without launching a held jump", async ({
 	browser,
 }, info) => {
 	test.setTimeout(60_000);
@@ -48,16 +48,14 @@ test("chat shortcuts, passive ten-second messages and touch work without launchi
 		await joinRoom(b, id);
 		await a.getByLabel("Message", { exact: true }).fill("Lobby hello");
 		await a.getByRole("button", { name: "Send", exact: true }).click();
+		await expect(a.getByLabel("Message", { exact: true })).toBeFocused();
 		await expect(b.getByRole("log")).toContainText("Lobby hello");
 		await expect(b.getByLabel("Message", { exact: true })).toBeVisible();
 		await expect(
 			b.getByRole("button", { name: "Close chat", exact: true }),
 		).toHaveCount(0);
 		await startRoom(a, b);
-		const preview = b.getByRole("region", {
-			name: "New chat messages",
-			exact: true,
-		});
+		const history = b.getByRole("log");
 		await a.locator("canvas").click();
 		const jumps = snapshots.at(-1)!.self.simulation.physics.jumps;
 		await expect(
@@ -86,18 +84,55 @@ test("chat shortcuts, passive ten-second messages and touch work without launchi
 		const elapsed = snapshots.at(-1)!.elapsedTimeMs;
 		await a.getByLabel("Message", { exact: true }).fill("Online hello");
 		await a.keyboard.press("Enter");
-		await expect(preview).toContainText("Online hello");
-		await expect(preview).toBeHidden({ timeout: 12000 });
-		await expect(b.getByLabel("Message", { exact: true })).toHaveCount(0);
+		await expect(history).toContainText("Online hello");
+		await expect(a.getByLabel("Message", { exact: true })).not.toBeFocused();
+		await expect(b.getByLabel("Message", { exact: true })).toBeVisible();
+		for (let index = 0; index < 10; index++) {
+			// Tôn trọng cooldown chat thật trên server.
+			await a.waitForTimeout(1100);
+			await a
+				.getByLabel("Message", { exact: true })
+				.fill(`Line ${index} ${"message ".repeat(18)}`);
+			await a.getByRole("button", { name: "Send", exact: true }).click();
+			await expect(history).toContainText(`Line ${index}`);
+		}
+		await expect(history.locator("p")).toHaveCount(10);
+		await expect(history).not.toContainText("Online hello");
+		expect(
+			await history.evaluate(
+				(element) =>
+					element.scrollHeight - element.clientHeight - element.scrollTop,
+			),
+		).toBeLessThanOrEqual(1);
+		await expect(b.getByLabel("Message", { exact: true })).not.toBeFocused();
 		await a.screenshot({ path: info.outputPath("online-chat.png") });
+		await a.getByRole("log").evaluate((element) => {
+			element.scrollTop = 0;
+		});
+		await a.getByLabel("Message", { exact: true }).fill("draft");
+		expect(
+			await a.getByRole("log").evaluate((element) => element.scrollTop),
+		).toBe(0);
+		await a.keyboard.press("Escape");
+		await a.keyboard.press("Enter");
+		await expect(a.getByLabel("Message", { exact: true })).toBeFocused();
 		await a.keyboard.press("Escape");
 		await expect(
 			a.getByRole("region", { name: "Room chat", exact: true }),
-		).toHaveCount(0);
+		).toBeVisible();
+		await expect(a.getByLabel("Message", { exact: true })).not.toBeFocused();
 		await expect
 			.poll(() => snapshots.at(-1)?.elapsedTimeMs ?? 0)
 			.toBeGreaterThan(elapsed);
+		await a.keyboard.press("Enter");
+		await a.getByRole("button", { name: "Close chat", exact: true }).click();
+		await a.keyboard.press("Escape");
+		await expect(
+			a.getByRole("button", { name: "Resume", exact: true }),
+		).toBeVisible();
+		await a.getByRole("button", { name: "Resume", exact: true }).click();
 		expect(snapshots.at(-1)!.self.simulation.physics.jumps).toBe(jumps);
+		await a.locator("canvas").click();
 		await a.keyboard.down("Space");
 		await a.waitForTimeout(180);
 		await a.keyboard.up("Space");
@@ -117,6 +152,27 @@ test("chat shortcuts, passive ten-second messages and touch work without launchi
 		await expect(
 			a.getByRole("list", { name: "Current players" }),
 		).toContainText(peerName);
+		await b.bringToFront();
+		if (
+			await b.getByRole("button", { name: "Resume", exact: true }).isVisible()
+		)
+			await b.getByRole("button", { name: "Resume", exact: true }).click();
+		const chatBox = await b
+			.getByRole("region", { name: "Room chat", exact: true })
+			.boundingBox();
+		const controlsBox = await b
+			.getByRole("button", { name: "Move Left", exact: true })
+			.boundingBox();
+		expect(
+			chatBox && controlsBox && chatBox.y + chatBox.height <= controlsBox.y,
+		).toBe(true);
+		await b.getByRole("button", { name: "Move Left", exact: true }).tap();
+		await b.screenshot({ path: info.outputPath("mobile-chat.png") });
+		await a.bringToFront();
+		if (
+			await a.getByRole("button", { name: "Resume", exact: true }).isVisible()
+		)
+			await a.getByRole("button", { name: "Resume", exact: true }).click();
 		await a.getByRole("button", { name: "Menu", exact: true }).click();
 		await a.getByRole("button", { name: "End Match", exact: true }).click();
 		await expect(

@@ -422,42 +422,60 @@ button {
 .chat-panel {
 	position: absolute;
 	z-index: 4;
-	left: 16px;
-	bottom: max(16px, env(safe-area-inset-bottom));
-	width: min(340px, calc(100vw - 32px));
-	padding: 10px;
+	--pillar: max(0px, calc((100vw - 100dvh * 4 / 3) / 2));
+	--chat-w: clamp(220px, calc(var(--pillar) - 24px), 320px);
+	left: max(12px, calc((var(--pillar) - var(--chat-w)) / 2));
+	bottom: max(12px, env(safe-area-inset-bottom));
+	width: var(--chat-w);
+	max-width: calc(100vw - 24px);
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	pointer-events: none;
+}
+.chat-history-box,
+.chat-input-box {
+	pointer-events: auto;
+	padding: 8px 10px;
 	background: #08090cef;
 	border: 1px solid #6b6250;
-	font-size: 15px;
+	font-size: 14px;
 }
-.chat-panel header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
+.chat-history-box {
+	overflow-wrap: anywhere;
 }
-.chat-panel button,
-.chat-panel input {
-	color: #ede7d3;
-	background: #08090c;
-	border: 1px solid #6b6250;
-	padding: 6px;
-}
-.chat-panel .chat-messages {
-	max-height: 25dvh;
+.chat-history-box .chat-messages {
+	max-height: 35dvh;
 	overflow-y: auto;
 	overflow-wrap: anywhere;
 }
-.chat-panel p {
-	margin: 6px 0;
+.chat-history-box p {
+	margin: 4px 0;
+	line-height: 1.35;
 }
-.chat-panel form {
+.chat-input-box header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	color: #e4bb68;
+	font-size: 15px;
+	margin-bottom: 6px;
+}
+.chat-input-box button,
+.chat-input-box input {
+	color: #ede7d3;
+	background: #08090c;
+	border: 1px solid #6b6250;
+	padding: 5px 8px;
+	font-size: 14px;
+}
+.chat-input-box form {
 	display: flex;
 	gap: 6px;
-	margin-top: 8px;
 }
-.chat-panel input {
+.chat-input-box input {
 	min-width: 0;
-	width: 100%;
+	flex: 1;
 }
 .visually-hidden {
 	position: absolute;
@@ -494,11 +512,8 @@ button {
 	}
 }
 
-.chat-preview {
-	pointer-events: none;
-}
 @media (pointer: coarse), (max-width: 680px) {
-	.chat-preview {
+	.play-page .chat-panel {
 		bottom: max(100px, env(safe-area-inset-bottom));
 	}
 }
