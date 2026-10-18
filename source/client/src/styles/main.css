@@ -21,8 +21,8 @@ body {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	justify-content: center;
-	padding: 24px;
+	justify-content: flex-start;
+	padding: 44px 24px 24px;
 }
 h1 {
 	color: #e4bb68;
@@ -178,7 +178,7 @@ button {
 	grid-template-columns: minmax(300px, 400px) minmax(250px, 300px);
 	gap: 42px;
 	width: min(100%, 800px);
-	align-items: center;
+	align-items: start;
 }
 .single-panel {
 	width: min(100%, 500px);
@@ -187,10 +187,10 @@ button {
 	border: 2px solid #72684d;
 	outline: 4px solid #26231a;
 	background: #080808;
-	padding: 16px;
+	padding: 10px 14px;
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
+	gap: 3px;
 	min-width: 0;
 }
 .menu-panel h2 {
@@ -205,7 +205,7 @@ button {
 	background: transparent;
 	color: #e9e3cf;
 	text-align: left;
-	padding: 9px 14px;
+	padding: 6px 12px;
 	font-size: 22px;
 	position: relative;
 }
@@ -239,13 +239,13 @@ button {
 	display: flex;
 	flex-wrap: wrap;
 	border-top: 1px solid #302c20;
-	margin-top: 12px;
-	padding-top: 10px;
+	margin-top: 8px;
+	padding-top: 8px;
 	gap: 8px;
 }
 .account-actions button {
 	font-size: 17px;
-	padding: 8px;
+	padding: 6px 8px;
 }
 .statistics dl {
 	margin: 0;
@@ -307,6 +307,9 @@ button {
 	gap: 14px 24px;
 	font-size: 18px;
 }
+.home.screen-detail {
+	padding: 24px;
+}
 .account-info dt,
 .record-detail dt {
 	color: #aaa28b;
@@ -358,6 +361,14 @@ button {
 .players li > span:last-child {
 	color: #aaa28b;
 	font-size: 15px;
+}
+.home.screen-detail .leaderboard {
+	max-height: none;
+	overflow: visible;
+}
+.home.screen-detail .leaderboard li {
+	flex-wrap: wrap;
+	overflow-wrap: anywhere;
 }
 .room-code {
 	display: flex;

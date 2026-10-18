@@ -385,12 +385,14 @@ export function App() {
 			/>
 		);
 	return (
-		<main className="home">
-			<header className="brand">
-				<h1>
-					<img src="/assets/title_logo.png" alt="JumpKing" />
-				</h1>
-			</header>
+		<main className={`home screen-${screen}`}>
+			{screen !== "detail" && (
+				<header className="brand">
+					<h1>
+						<img src="/assets/title_logo.png" alt="JumpKing" />
+					</h1>
+				</header>
+			)}
 			<div
 				className={screen === "home" && home ? "home-layout" : "single-panel"}
 			>

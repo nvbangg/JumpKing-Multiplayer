@@ -5,6 +5,15 @@ test("home keeps the required menu and separate account forms", async ({
 }, info) => {
 	await page.goto("/");
 	await expect(
+		page.getByText("Hold Space / W / ↑, then release", { exact: true }),
+	).toHaveCount(0);
+	await page.getByRole("button", { name: "Options", exact: true }).click();
+	await expect(
+		page.getByText("Hold Space / W / ↑, then release", { exact: true }),
+	).toBeVisible();
+	await expect(page.getByText("Chat Online", { exact: true })).toBeVisible();
+	await page.getByRole("button", { name: "Back", exact: true }).click();
+	await expect(
 		page.getByRole("button", { name: "Continue", exact: true }),
 	).toBeHidden();
 	await expect(
