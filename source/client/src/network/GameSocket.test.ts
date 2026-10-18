@@ -307,3 +307,84 @@ test("network quality tracks ping, average, jitter, stalls, and notifies subscri
 	game.recordPing(30);
 	expect(qualities).toHaveLength(4);
 });
+
+test("Leave is shared until acknowledgement and clears membership before notifying the app", async () => {
+	let memberAtLeave: string | null = "unconfirmed";
+	const game = new GameSocket((type) => {
+		if (type === "ROOM_LEFT") memberAtLeave = game.selfId;
+	}, vi.fn());
+	const socket = await open(game);
+	socket.receive({
+		v: 1,
+		type: "ROOM_JOINED",
+		payload: { roomId: "ABCDEF", playerId: "self" },
+	});
+	const first = game.command("LEAVE_ROOM"),
+		second = game.command("LEAVE_ROOM");
+	expect(second).toBe(first);
+	expect(socket.sent).toHaveLength(1);
+	expect(socket.readyState).toBe(Socket.OPEN);
+	const request = JSON.parse(socket.sent[0]!);
+	socket.receive({
+		v: 1,
+		type: "ROOM_LEFT",
+		requestId: request.requestId,
+		payload: { roomId: "ABCDEF" },
+	});
+	await expect(first).resolves.toMatchObject({ type: "ROOM_LEFT" });
+	expect(memberAtLeave).toBeNull();
+	game.close();
+});
+
+test("a failed Save and Exit keeps membership and allows one fresh Leave retry", async () => {
+	const game = new GameSocket(vi.fn(), vi.fn()),
+		socket = await open(game);
+	socket.receive({
+		v: 1,
+		type: "ROOM_JOINED",
+		payload: { roomId: "ABCDEF", playerId: "self" },
+	});
+	const first = game.command("LEAVE_ROOM"),
+		rejected = expect(first).rejects.toMatchObject({ code: "SAVE_FAILED" }),
+		request = JSON.parse(socket.sent[0]!);
+	socket.receive({
+		v: 1,
+		type: "ERROR",
+		requestId: request.requestId,
+		payload: { code: "SAVE_FAILED", message: "Retry saving" },
+	});
+	await rejected;
+	expect(game.selfId).toBe("self");
+	expect(socket.readyState).toBe(Socket.OPEN);
+	const retry = game.command("LEAVE_ROOM");
+	expect(retry).not.toBe(first);
+	expect(game.command("LEAVE_ROOM")).toBe(retry);
+	expect(socket.sent).toHaveLength(2);
+	const closed = expect(retry).rejects.toMatchObject({
+		code: "CONNECTION_FAILED",
+	});
+	game.close();
+	await closed;
+});
+
+test("closing an old Leave does not reuse it on a replacement connection", async () => {
+	const game = new GameSocket(vi.fn(), vi.fn()),
+		old = await open(game),
+		first = game.command("LEAVE_ROOM"),
+		rejected = expect(first).rejects.toMatchObject({
+			code: "CONNECTION_FAILED",
+		});
+	game.close();
+	const next = await open(game),
+		leave = game.command("LEAVE_ROOM");
+	await rejected;
+	old.onclose?.();
+	expect(game.command("LEAVE_ROOM")).toBe(leave);
+	expect(next.sent).toHaveLength(1);
+	expect(next.readyState).toBe(Socket.OPEN);
+	const closed = expect(leave).rejects.toMatchObject({
+		code: "CONNECTION_FAILED",
+	});
+	game.close();
+	await closed;
+});

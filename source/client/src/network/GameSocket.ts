@@ -127,6 +127,7 @@ export class GameSocket {
 	private heartbeat: ReturnType<typeof setInterval> | null = null;
 	private connecting: Promise<void> | null = null;
 	private cancelConnect: (() => void) | null = null;
+	private leaving: Promise<Message> | null = null;
 	private pending = new Map<
 		string,
 		{
@@ -435,7 +436,12 @@ export class GameSocket {
 				);
 			if (message.type === "GAME_SNAPSHOT") this.lastSnapshot = message.payload;
 			if (message.type === "PLAYER_FINISHED") this.lastFinish = message.payload;
-			if (message.type === "ROOM_LEFT") this.lastFinish = null;
+			if (message.type === "ROOM_LEFT") {
+				this.lastFinish = null;
+				this.selfId = null;
+				this.roomId = null;
+				this.playContext = null;
+			}
 			if (
 				[
 					"ROOM_JOINED",
@@ -471,6 +477,7 @@ export class GameSocket {
 		type: string,
 		payload: Record<string, unknown> = {},
 	): Promise<Message> {
+		if (type === "LEAVE_ROOM" && this.leaving) return this.leaving;
 		if (this.socket?.readyState !== WebSocket.OPEN)
 			return Promise.reject(
 				new ApiError("CONNECTION_FAILED", "The game connection is unavailable"),
@@ -480,7 +487,7 @@ export class GameSocket {
 				new ApiError("RATE_LIMITED", "Too many pending commands"),
 			);
 		const requestId = uuid();
-		return new Promise((resolve, reject) => {
+		const request = new Promise<Message>((resolve, reject) => {
 			const timer = setTimeout(() => {
 				this.pending.delete(requestId);
 				reject(
@@ -504,6 +511,14 @@ export class GameSocket {
 				);
 			}
 		});
+		if (type === "LEAVE_ROOM") {
+			this.leaving = request;
+			const settled = () => {
+				if (this.leaving === request) this.leaving = null;
+			};
+			void request.then(settled, settled);
+		}
+		return request;
 	}
 	private clearPending(): void {
 		for (const pending of this.pending.values()) {
@@ -522,6 +537,7 @@ export class GameSocket {
 		this.selfId = null;
 		this.lastSnapshot = null;
 		this.playContext = null;
+		this.leaving = null;
 		if (this.heartbeat) clearInterval(this.heartbeat);
 		this.heartbeat = null;
 		this.clearPending();

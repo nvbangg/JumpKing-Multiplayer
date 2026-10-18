@@ -59,11 +59,6 @@ function locationScreen(): Screen {
 }
 export function App() {
 	const [screen, setScreenState] = useState<Screen>(locationScreen);
-	const setScreen = (next: Screen) => {
-		if (routes[next] && location.pathname !== routes[next])
-			window.history.pushState(null, "", routes[next]);
-		setScreenState(next);
-	};
 	const [identity, setIdentityState] = useState<Identity>(initialIdentity);
 	const identityRevision = useRef(0);
 	const setIdentity = useCallback((value: Identity) => {
@@ -89,6 +84,40 @@ export function App() {
 	const [error, setError] = useState("");
 	const [pending, setPending] = useState(false);
 	const socket = useRef<GameSocket | null>(null);
+	const exitScreen = useRef<Screen | null>(null);
+	const [navigationError, setNavigationError] = useState("");
+	const leaveOnline = useCallback(() => {
+		const connection = socket.current;
+		return connection?.selfId
+			? connection.command("LEAVE_ROOM").then(() => {})
+			: Promise.resolve();
+	}, []);
+	const setScreen = useCallback(
+		(next: Screen) => {
+			const connection = socket.current;
+			if (
+				connection?.selfId &&
+				!["online", "lobby", "results"].includes(next)
+			) {
+				exitScreen.current = next;
+				setNavigationError("");
+				void leaveOnline().catch((cause) => {
+					if (socket.current !== connection) return;
+					exitScreen.current = null;
+					setNavigationError(
+						cause instanceof Error
+							? cause.message
+							: "Unable to leave online game",
+					);
+				});
+				return;
+			}
+			if (routes[next] && location.pathname !== routes[next])
+				window.history.pushState(null, "", routes[next]);
+			setScreenState(next);
+		},
+		[leaveOnline],
+	);
 	const connect = useRef<(() => Promise<GameSocket>) | null>(null);
 	const accountId = identity.account?.id;
 	const reconnectProfile = accountId
@@ -127,7 +156,7 @@ export function App() {
 						: "home";
 		if (routes[next]) window.history.replaceState(null, "", routes[next]);
 		setError("");
-		setScreenState(next);
+		setScreen(next);
 	};
 	const execute = async (action: () => Promise<void>) => {
 		if (pending) return;
@@ -150,9 +179,14 @@ export function App() {
 		let disposed = false;
 		const expectedIdentityRevision = identityRevision.current;
 		const pop = () => {
-			setScreenState(locationScreen());
+			setScreen(locationScreen());
+		};
+		const pageHide = () => {
+			// Gửi ngay khi page rời đi; không đóng socket trước xác nhận Leave.
+			void leaveOnline().catch(() => {});
 		};
 		window.addEventListener("popstate", pop);
+		window.addEventListener("pagehide", pageHide);
 		void api<Identity>("/auth/me")
 			.then((value) => {
 				if (typeof value.authenticated !== "boolean") return;
@@ -163,9 +197,15 @@ export function App() {
 		return () => {
 			disposed = true;
 			window.removeEventListener("popstate", pop);
-			socket.current?.close();
+			window.removeEventListener("pagehide", pageHide);
+			const connection = socket.current;
+			if (connection?.selfId)
+				void leaveOnline()
+					.catch(() => {})
+					.finally(() => connection.close());
+			else connection?.close();
 		};
-	}, [setIdentity]);
+	}, [setIdentity, leaveOnline, setScreen]);
 	useEffect(() => {
 		if (!identity.authenticated) return;
 		let cancelled = false;
@@ -223,9 +263,10 @@ export function App() {
 	const connectedSocket = async () => {
 		if (!identity.authenticated || !identity.account)
 			throw new Error("Sign in to play online");
-		if (!socket.current)
-			socket.current = new GameSocket(
+		if (!socket.current) {
+			const connection = new GameSocket(
 				(type, payload) => {
+					if (socket.current !== connection) return;
 					if (type === "ROOM_STATE") {
 						const next = payload as unknown as RoomState;
 						if (!next.roomId) {
@@ -294,16 +335,25 @@ export function App() {
 							),
 						);
 					} else if (type === "ROOM_LEFT") {
+						const next = exitScreen.current;
+						exitScreen.current = null;
+						setNavigationError("");
 						setRoom(null);
 						setResult(null);
 						resultRef.current = null;
 						socket.current?.close();
 						socket.current = null;
-						back();
+						if (next) setScreen(next);
+						else back();
 					} else if (type === "ERROR") setError(String(payload.message));
 				},
-				() => setError("Disconnected from the game server"),
+				() => {
+					if (socket.current === connection)
+						setError("Disconnected from the game server");
+				},
 			);
+			socket.current = connection;
+		}
 		await socket.current.restore(reconnectProfile);
 		return socket.current;
 	};
@@ -346,16 +396,19 @@ export function App() {
 		}
 	};
 
+	const displayedError = navigationError || error;
 	if (screen === "online" && room && socket.current)
 		return (
 			<OnlineGame
 				room={room}
 				socket={socket.current}
+				navigationError={navigationError}
 				onResults={() => {
 					viewedEnding.current = resultRef.current?.playId || null;
 					setScreen("results");
 				}}
 				onHome={() => {
+					setNavigationError("");
 					socket.current?.close();
 					socket.current = null;
 					setRoom(null);
@@ -642,9 +695,9 @@ export function App() {
 						/>
 					)}
 
-					{error && (
+					{displayedError && (
 						<p className="error" role="alert">
-							{error}
+							{displayedError}
 						</p>
 					)}
 					{screen === "home" && accountId && !home && !homeLoading && (

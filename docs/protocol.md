@@ -16,7 +16,7 @@ CORS nhận origins cụ thể, preflight trước authentication. WS yêu cầu
 
 Register/Login/Change Password: 20 requests/phút/IP và identity, đổi session không reset quota IP. Password BCrypt; lỗi credentials không tiết lộ Account tồn tại. Reconnect token ngẫu nhiên 256 bit, so sánh constant-time, hết hiệu lực khi membership kết thúc; không đặt secrets vào URL/logs/broadcast.
 
-Client giữ context reconnect (roomId/playerId/token) trong IndexedDB theo backend origin và identity để quay lại sau đóng tab; xóa khi Leave đã xác nhận hoặc server báo hết hạn. Không chia sẻ token qua room code.
+Client giữ context reconnect (roomId/playerId/token) trong IndexedDB theo backend origin và identity để quay lại sau disconnect; xóa khi Leave đã xác nhận hoặc server báo hết hạn. Chủ động rời page gửi `LEAVE_ROOM` qua socket hiện có; không đóng socket trước `ROOM_LEFT` khi còn có thể chờ. Frame từ `pagehide` không bảo đảm được nhận trước khi browser đóng page; trường hợp đó vẫn dùng grace/reconnect hiện có, không suy diễn mọi socket close thành Leave. Không chia sẻ token qua room code.
 
 Tham chiếu: [Spring CSRF](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html), [OWASP session](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html), [OWASP WebSocket](https://cheatsheetseries.owasp.org/cheatsheets/WebSocket_Security_Cheat_Sheet.html).
 

@@ -31,11 +31,13 @@ import { type Options, readOptions, saveOptions } from "../settings/options";
 export function OnlineGame({
 	socket,
 	room,
+	navigationError,
 	onHome,
 	onResults,
 }: {
 	socket: GameSocket;
 	room: RoomState;
+	navigationError: string;
 	onHome: () => void;
 	onResults: () => void;
 }) {
@@ -392,6 +394,7 @@ export function OnlineGame({
 			setError("Options could not be saved on this device");
 		}
 	};
+	const displayedError = navigationError || error;
 	return (
 		<main className="play-page">
 			<section
@@ -399,14 +402,14 @@ export function OnlineGame({
 				ref={container}
 				aria-label="Online Main Babe game"
 			/>
-			{!ready && !error && (
+			{!ready && !displayedError && (
 				<p className="game-message" role="status">
 					Loading…
 				</p>
 			)}
-			{!ready && error && (
+			{!ready && displayedError && (
 				<div className="game-message">
-					<p role="alert">{error}</p>
+					<p role="alert">{displayedError}</p>
 					<button
 						type="button"
 						disabled={pending}
@@ -581,13 +584,13 @@ export function OnlineGame({
 								onError={setError}
 							/>
 						)}
-						{error && <p role="alert">{error}</p>}
+						{displayedError && <p role="alert">{displayedError}</p>}
 					</MenuPanel>
 				</section>
 			)}
-			{ready && error && !menu && (
+			{ready && displayedError && !menu && (
 				<p className="save-error" role="alert">
-					{error}
+					{displayedError}
 				</p>
 			)}
 		</main>

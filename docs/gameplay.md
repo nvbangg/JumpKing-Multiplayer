@@ -115,7 +115,7 @@ Room hiện cờ ca-rô và chữ FINISH tại một platform đủ điều ki�
 
 ## Leave và reconnect online
 
-Đóng tab hoặc mất kết nối hủy input; server giữ slot 5 phút từ lúc phát hiện disconnect. Reconnect cần đúng identity/token, không tự bật lại điều khiển. Với Community, hạn disconnect thay hạn Pause; reconnect khi còn paused bắt đầu lại hạn Pause. Các mốc AFK/Pause/reconnect tập trung trong shared rules.
+Chủ động rời page (`pagehide`) hoặc điều hướng ra khỏi context online yêu cầu Leave; khi page còn hoạt động, client chờ xác nhận trước khi đóng socket/chuyển màn. Chuyển Game → Results/Lobby, đổi tab và blur không phải Leave. Khi page bị đóng, frame Leave chỉ được gửi best effort; nếu server chưa nhận được hoặc mất kết nối bất thường thì hủy input và giữ slot 5 phút từ lúc phát hiện disconnect. Reconnect cần đúng identity/token, không tự bật lại điều khiển. Với Community, hạn disconnect thay hạn Pause; reconnect khi còn paused bắt đầu lại hạn Pause. Các mốc AFK/Pause/reconnect tập trung trong shared rules.
 
 Room giữ slot reconnect tối đa 5 phút. Khi còn người connected, trận tiếp tục; khi mọi người offline, ngừng tick đến lúc có reconnect hoặc hết hạn rồi finalize. Leave/hết hạn reconnect chốt DNF, đóng băng metrics.
 

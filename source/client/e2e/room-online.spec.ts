@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import {
 	createRoom,
 	joinRoom,
@@ -12,6 +12,129 @@ test.skip(
 	process.env.E2E_AUTH_ONLINE !== "true",
 	"Requires isolated backend/MySQL",
 );
+
+function observeLifecycle(page: Page) {
+	const state = { leaves: 0, members: [] as string[] };
+	page.on("websocket", (socket) => {
+		if (new URL(socket.url()).pathname !== "/ws/game") return;
+		socket.on("framesent", (frame) => {
+			if (JSON.parse(frame.payload.toString()).type === "LEAVE_ROOM")
+				state.leaves++;
+		});
+		socket.on("framereceived", (frame) => {
+			const message = JSON.parse(frame.payload.toString());
+			if (message.type === "ROOM_STATE")
+				state.members = message.payload.members.map(
+					(member: { nickname: string }) => member.nickname,
+				);
+		});
+	});
+	return state;
+}
+
+test("closing a Room page removes its avatar and releases membership through Leave", async ({
+	browser,
+}) => {
+	test.setTimeout(60000);
+	const first = await browser.newContext(),
+		second = await browser.newContext();
+	const a = await first.newPage(),
+		b = await second.newPage();
+	const lifecycle = observeLifecycle(a),
+		peer = observeLifecycle(b),
+		observed = observeOnline(b);
+	let returned: Page | undefined;
+	try {
+		const name = await registerOnline(a, "close_host");
+		await registerOnline(b, "close_peer");
+		const room = await createRoom(a);
+		await joinRoom(b, room);
+		await startRoom(a, b);
+		await expect
+			.poll(() =>
+				observed.snapshot?.peers.some((item) => item.nickname === name),
+			)
+			.toBe(true);
+		expect(lifecycle.leaves).toBe(0);
+		await a.close({ runBeforeUnload: true });
+		await expect.poll(() => peer.members.includes(name)).toBe(false);
+		await expect
+			.poll(() =>
+				observed.snapshot?.peers.some((item) => item.nickname === name),
+			)
+			.toBe(false);
+		// Document đóng có thể mất event DevTools; membership phải được giải phóng ngay.
+		await expect(
+			b.getByRole("button", { name: "Menu", exact: true }),
+		).toBeVisible();
+		returned = await first.newPage();
+		await returned.goto("/");
+		await expect(
+			returned.getByRole("button", { name, exact: true }),
+		).toBeVisible();
+		await createRoom(returned);
+		await expect(
+			returned.getByRole("button", { name: "Start", exact: true }),
+		).toBeEnabled();
+	} finally {
+		if (returned) await leaveOnline(returned);
+		await leaveOnline(a);
+		await leaveOnline(b);
+		await first.close();
+		await second.close();
+	}
+});
+
+test("Back leaves the online context but blur and valid Room transitions do not", async ({
+	browser,
+}) => {
+	test.setTimeout(60000);
+	const first = await browser.newContext(),
+		second = await browser.newContext();
+	const a = await first.newPage(),
+		b = await second.newPage();
+	const lifecycle = observeLifecycle(a),
+		peer = observeLifecycle(b);
+	try {
+		const name = await registerOnline(a, "back_host");
+		await registerOnline(b, "back_peer");
+		const room = await createRoom(a);
+		await joinRoom(b, room);
+		await a.evaluate(() => {
+			window.dispatchEvent(new Event("blur"));
+			document.dispatchEvent(new Event("visibilitychange"));
+		});
+		await b.bringToFront();
+		await b.getByLabel("Message", { exact: true }).fill("still joined");
+		await b.getByRole("button", { name: "Send", exact: true }).click();
+		await expect(a.getByRole("log")).toContainText("still joined");
+		expect(lifecycle.leaves).toBe(0);
+		await a.goBack();
+		await expect.poll(() => peer.members.includes(name)).toBe(false);
+		expect(lifecycle.leaves).toBe(1);
+		await a.goto("/");
+		await joinRoom(a, room);
+		await startRoom(b, a);
+		await b.getByRole("button", { name: "Menu", exact: true }).click();
+		await b.getByRole("button", { name: "End Match", exact: true }).click();
+		await expect(a.getByText("Results saved", { exact: true })).toBeVisible();
+		expect(lifecycle.leaves).toBe(1);
+		await a.getByRole("button", { name: "Play Again", exact: true }).click();
+		await expect(a.locator(".room-code code")).toHaveText(room);
+		expect(lifecycle.leaves).toBe(1);
+		await a.getByRole("button", { name: "Leave", exact: true }).click();
+		await expect.poll(() => lifecycle.leaves).toBe(2);
+		await a.evaluate(() =>
+			window.dispatchEvent(new PageTransitionEvent("pagehide")),
+		);
+		expect(lifecycle.leaves).toBe(2);
+	} finally {
+		await leaveOnline(a);
+		await leaveOnline(b);
+		await first.close();
+		await second.close();
+	}
+});
 
 test("Account lobby, permanent chat, settings draft and Host transfer", async ({
 	browser,
