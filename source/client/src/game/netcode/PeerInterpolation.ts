@@ -1,4 +1,5 @@
 import { NETWORK } from "../../network/config";
+import { required } from "../../required";
 import type { OnlineSnapshot } from "./OnlineRuntime";
 
 interface Sample {
@@ -46,9 +47,12 @@ export class PeerInterpolation {
 		}
 		this.renderedAt = now;
 		this.cursor = Math.min(this.cursor, newest.time);
-		while (this.samples.length > 2 && this.samples[1]!.time <= this.cursor)
+		while (
+			this.samples.length > 2 &&
+			required(this.samples[1]).time <= this.cursor
+		)
 			this.samples.shift();
-		const previous = this.samples[0]!,
+		const previous = required(this.samples[0]),
 			current = this.samples[1] ?? previous;
 		const alpha =
 			current.time === previous.time
@@ -69,7 +73,7 @@ export class PeerInterpolation {
 		return current.value.peers
 			.filter((peer) => visible.has(peer.playerId))
 			.map((peer) => {
-				const latest = visible.get(peer.playerId)!;
+				const latest = required(visible.get(peer.playerId));
 				if (
 					latest.state.screen !== peer.state.screen ||
 					latest.state.ticks < peer.state.ticks ||

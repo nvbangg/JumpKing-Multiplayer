@@ -1,3 +1,4 @@
+import { required } from "../../required";
 import {
 	ADVENTURE,
 	Adventure,
@@ -128,7 +129,7 @@ export class GameSimulation {
 				events.push({ type: "JINGLE", id: "finish" });
 		}
 		for (const wall of ADVENTURE.walls) {
-			const s = this.world.walls[wall.id]!;
+			const s = required(this.world.walls[wall.id]);
 			const touching = wall.hitboxes.some(
 				(rect) =>
 					Math.trunc(player.x) < rect.x + rect.width &&

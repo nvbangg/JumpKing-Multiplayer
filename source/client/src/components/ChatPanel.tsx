@@ -61,7 +61,6 @@ export function ChatPanel({
 			messageLimit === undefined ? messages : messages.slice(-messageLimit),
 		[messages, messageLimit],
 	);
-	// biome-ignore lint/correctness/useExhaustiveDependencies: Mỗi focusRequest yêu cầu focus lại cùng ô nhập.
 	useEffect(() => {
 		if (focusRequest > 0) input.current?.focus();
 	}, [focusRequest]);

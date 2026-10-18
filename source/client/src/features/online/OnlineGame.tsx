@@ -20,6 +20,7 @@ import type {
 	PlayerStanding,
 } from "../../network/contracts";
 import type { GameSocket, RoomState } from "../../network/GameSocket";
+import { required } from "../../required";
 import { InGameLeaderboard } from "../community/InGameLeaderboard";
 import { duration } from "../records/format";
 import { ChatOverlay } from "../rooms/ChatOverlay";
@@ -203,7 +204,7 @@ export function OnlineGame({
 						payload,
 						latestRoom.current.roomId,
 						socket.selfId || "",
-						session.latest!.playId,
+						required(session.latest).playId,
 						session.game.physics.snapshot().screen,
 					)) {
 						audio.current?.effect(
@@ -295,7 +296,7 @@ export function OnlineGame({
 			if (socket.lastFinish) session.finish(socket.lastFinish);
 			if (socket.lastSnapshot) session.receive(socket.lastSnapshot);
 			game = renderer.createGame(
-				container.current!,
+				required(container.current),
 				manifest,
 				session,
 				() => {

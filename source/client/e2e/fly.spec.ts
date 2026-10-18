@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import physics from "../../common/physics.json" with { type: "json" };
+import { required } from "../src/required";
 
 import {
 	leaveOnline,
@@ -41,7 +42,7 @@ test("Flight follows the server permission and double Space toggles real Communi
 	}
 	await page.getByRole("button", { name: "Menu", exact: true }).click();
 	await expect(page.getByText("Saved", { exact: true })).toBeVisible();
-	const first = observed.snapshot!.self.simulation.physics;
+	const first = required(observed.snapshot).self.simulation.physics;
 	expect(first.freeFlight).toBe(enabled);
 	if (!enabled) return;
 	expect(first.x).toBeGreaterThan(231);
@@ -55,7 +56,7 @@ test("Flight follows the server permission and double Space toggles real Communi
 	await page.keyboard.press("Space");
 	await page.getByRole("button", { name: "Menu", exact: true }).click();
 	await expect(page.getByText("Saved", { exact: true })).toBeVisible();
-	const off = observed.snapshot!.self.simulation.physics;
+	const off = required(observed.snapshot).self.simulation.physics;
 	expect(off.freeFlight).toBe(false);
 	expect(off.jumps).toBe(first.jumps);
 	await leaveOnline(page);
@@ -79,7 +80,7 @@ test("touch double Jump respects the gate and simultaneous Jump fingers are one 
 	const jump = page.getByRole("button", { name: "Jump", exact: true });
 	await expect(jump).toBeVisible();
 	const cdp = await context.newCDPSession(page),
-		box = (await jump.boundingBox())!;
+		box = required(await jump.boundingBox());
 	const point = (id: number) => ({
 		id,
 		x: box.x + box.width / 2,
@@ -99,7 +100,9 @@ test("touch double Jump respects the gate and simultaneous Jump fingers are one 
 	});
 	await page.getByRole("button", { name: "Menu", exact: true }).click();
 	await expect(page.getByText("Saved", { exact: true })).toBeVisible();
-	expect(observed.snapshot!.self.simulation.physics.freeFlight).toBe(false);
+	expect(required(observed.snapshot).self.simulation.physics.freeFlight).toBe(
+		false,
+	);
 	await page.getByRole("button", { name: "Resume", exact: true }).click();
 	await page.waitForTimeout(physics.flyDoubleTapMs + 1);
 	for (let tap = 0; tap < 2; tap++) {
@@ -122,6 +125,8 @@ test("touch double Jump respects the gate and simultaneous Jump fingers are one 
 		).toBeHidden();
 	await page.getByRole("button", { name: "Menu", exact: true }).click();
 	await expect(page.getByText("Saved", { exact: true })).toBeVisible();
-	expect(observed.snapshot!.self.simulation.physics.freeFlight).toBe(enabled);
+	expect(required(observed.snapshot).self.simulation.physics.freeFlight).toBe(
+		enabled,
+	);
 	await leaveOnline(page);
 });

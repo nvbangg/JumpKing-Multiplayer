@@ -15,7 +15,7 @@ test("Main Babe geometry and adventure have no presentation fields", () => {
 		"utf8",
 	);
 	for (const field of ["texture", "lines", "font", "sound", "intro", "quotes"])
-		expect(adventure).not.toContain('"' + field + '"');
+		expect(adventure).not.toContain(`"${field}"`);
 	expect(() =>
 		parseMap({ ...rawMap, screens: rawMap.screens.slice(0, 42) }),
 	).toThrow();

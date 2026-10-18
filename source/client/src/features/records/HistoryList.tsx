@@ -22,7 +22,7 @@ export function HistoryList({
 	const pageSize = 20;
 	useEffect(() => {
 		let disposed = false;
-		void api<HistoryPage>("/history?page=0&size=" + pageSize)
+		void api<HistoryPage>(`/history?page=0&size=${pageSize}`)
 			.then((result) => {
 				if (!disposed) {
 					setItems(result.items);
@@ -52,7 +52,7 @@ export function HistoryList({
 		const requestGeneration = generation.current;
 		try {
 			const result = await api<HistoryPage>(
-				"/history?page=" + (page + 1) + "&size=" + pageSize,
+				`/history?page=${page + 1}&size=${pageSize}`,
 			);
 			if (generation.current !== requestGeneration) return;
 			setItems((rows) => [...rows, ...result.items]);
@@ -74,7 +74,7 @@ export function HistoryList({
 			{items.map((item) => (
 				<button
 					type="button"
-					key={item.kind + ":" + item.id}
+					key={`${item.kind}:${item.id}`}
 					onClick={() => onSelect(item)}
 				>
 					<span className="kind-label">

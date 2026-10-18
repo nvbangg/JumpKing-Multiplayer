@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { required } from "../../required";
 import {
 	type AssetManifest,
 	assetUrl,
@@ -69,7 +70,7 @@ export class TowerScene extends Phaser.Scene {
 			this.load.bitmapFont(key, assetUrl(font.texture), assetUrl(font.data));
 		this.load.on("loaderror", (file: Phaser.Loader.File) => {
 			this.loadFailed = true;
-			this.onError("Could not load " + file.key);
+			this.onError(`Could not load ${file.key}`);
 		});
 	}
 	create(): void {
@@ -128,23 +129,26 @@ export class TowerScene extends Phaser.Scene {
 			layer.sprite.tilePositionX = layer.speed * seconds;
 		for (const weather of this.weather) {
 			weather.sprite.setTexture(
-				weather.textures[
-					Math.floor(seconds * weather.fps) % weather.textures.length
-				]!,
+				required(
+					weather.textures[
+						Math.floor(seconds * weather.fps) % weather.textures.length
+					],
+				),
 			);
 			weather.sprite.tilePositionX =
-				this.weatherWind * this.manifest.textures[weather.textures[0]!]!.width;
+				this.weatherWind *
+				required(this.manifest.textures[required(weather.textures[0])]).width;
 		}
 		for (const { sprite, data, durations, duration } of this.props) {
 			const count = data.cells.X * data.cells.Y;
 			if (durations.length) {
 				let elapsed = duration ? seconds % duration : 0;
 				for (let i = 0; i < durations.length; i++) {
-					if (elapsed < durations[i]!) {
+					if (elapsed < required(durations[i])) {
 						sprite.setFrame(String(i));
 						break;
 					}
-					elapsed -= durations[i]!;
+					elapsed -= required(durations[i]);
 				}
 			} else sprite.setFrame(String(Math.floor(seconds * data.fps) % count));
 		}
@@ -156,15 +160,18 @@ export class TowerScene extends Phaser.Scene {
 				sprite: this.add
 					.sprite(0, 0, "king/base", "idle")
 					.setOrigin(0.5, 1)
-					.setName("player:" + player.id),
+					.setName(`player:${player.id}`),
 				name: this.add
 					.text(0, 0, "", {
-						fontFamily: "monospace",
+						fontFamily: "Arial, sans-serif",
 						fontSize: V.nameFontSize,
+						fontStyle: "bold",
 						color: "#ffffff",
 						stroke: "#000000",
-						strokeThickness: 3,
+						strokeThickness: V.nameStrokeThickness,
 					})
+					.setResolution(V.nameResolution)
+					.setName(`nickname:${player.id}`)
 					.setOrigin(0.5, 1)
 					.setDepth(V.nameDepth),
 				crown: this.add
@@ -190,12 +197,14 @@ export class TowerScene extends Phaser.Scene {
 		avatar.name.setText(player.nickname);
 		avatar.name
 			.setPosition(
-				Phaser.Math.Clamp(
-					s.x + PHYSICS.bodyWidth / 2,
-					avatar.name.width / 2,
-					V.width - avatar.name.width / 2,
+				Math.round(
+					Phaser.Math.Clamp(
+						s.x + PHYSICS.bodyWidth / 2,
+						avatar.name.width / 2,
+						V.width - avatar.name.width / 2,
+					),
 				),
-				s.y - V.nameGap,
+				Math.round(s.y - V.nameGap),
 			)
 			.setVisible(visible);
 		avatar.crown
@@ -223,6 +232,29 @@ export class TowerScene extends Phaser.Scene {
 			}
 		for (const peer of frame.peers) this.avatar(peer, false);
 		this.avatar(frame.self, true);
+		// Ưu tiên tên bản thân; xếp lệch theo chiều dọc khi nhiều người đứng sát nhau.
+		const occupied: Phaser.Geom.Rectangle[] = [];
+		for (const player of [frame.self, ...frame.peers]) {
+			const name = this.avatars.get(player.id)?.name;
+			if (!name?.visible) continue;
+			name.y = Math.max(name.y, this.cameras.main.scrollY + name.height);
+			const bounds = name.getBounds(),
+				initialY = name.y;
+			let row = 0;
+			while (
+				occupied.some((other) =>
+					Phaser.Geom.Intersects.RectangleToRectangle(bounds, other),
+				)
+			) {
+				const offset = ++row * (bounds.height + V.nameGap);
+				name.y =
+					initialY - offset - bounds.height >= this.cameras.main.scrollY
+						? initialY - offset
+						: initialY + offset;
+				bounds.y = name.y - bounds.height;
+			}
+			occupied.push(bounds);
+		}
 		this.adventureVisuals?.render(frame);
 		this.conversations?.render(frame, this.npcSprites);
 		if (frame.ending && !this.ending) {
@@ -244,7 +276,7 @@ export class TowerScene extends Phaser.Scene {
 		}
 	}
 	private addFrames(key: string, columns: number, rows: number): void {
-		const info = this.manifest.textures[key]!,
+		const info = required(this.manifest.textures[key]),
 			texture = this.textures.get(key);
 		const width = info.width / columns,
 			height = info.height / rows;
@@ -291,7 +323,7 @@ export class TowerScene extends Phaser.Scene {
 		this.props = [];
 		this.babe = undefined;
 		this.screen = index;
-		const screen = this.manifest.screens[index]!,
+		const screen = required(this.manifest.screens[index]),
 			top = -index * V.height;
 		this.cameras.main.setScroll(0, top);
 		for (const key of screen.layers)
@@ -315,8 +347,8 @@ export class TowerScene extends Phaser.Scene {
 				? layers
 				: [layers]
 			: []) {
-			const key = "screens/scrolling/textures/" + layer.texture,
-				info = this.manifest.textures[key]!;
+			const key = `screens/scrolling/textures/${layer.texture}`,
+				info = required(this.manifest.textures[key]);
 			const sprite = this.add
 				.tileSprite(0, top + (layer.position || 0), V.width, info.height, key)
 				.setOrigin(0)
@@ -329,14 +361,14 @@ export class TowerScene extends Phaser.Scene {
 		}
 		for (const weather of screen.weather) {
 			const keys = Object.keys(this.manifest.textures).filter((key) =>
-				key.startsWith("particles/" + weather.name + "/"),
+				key.startsWith(`particles/${weather.name}/`),
 			);
 			if (!keys.length) continue;
 			const sprite = this.add
-				.tileSprite(0, top, V.width, V.height, keys[0]!)
+				.tileSprite(0, top, V.width, V.height, required(keys[0]))
 				.setOrigin(0)
 				.setDepth(weather.foreground ? 22 : 7);
-			const info = this.manifest.textures[keys[0]!]!;
+			const info = required(this.manifest.textures[required(keys[0])]);
 			sprite.setTileScale(
 				V.width / (Math.trunc(V.width / info.width) * info.width),
 				V.height / (Math.trunc(V.height / info.height) * info.height),
@@ -366,7 +398,7 @@ export class TowerScene extends Phaser.Scene {
 			this.npcSprites.push({ data: npc, sprite });
 		}
 		if (index === this.manifest.screens.length - 1) {
-			const frame = ENDING_FRAMES["babe.idle0"]!,
+			const frame = required(ENDING_FRAMES["babe.idle0"]),
 				texture = this.textures.get("king/base"),
 				name = endingFrameName("babe.idle0");
 			if (!texture.has(name))

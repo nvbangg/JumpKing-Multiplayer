@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { required } from "../../required";
 import type { AssetManifest } from "../content/assets";
 import { PHYSICS as P } from "../simulation/tuning";
 import { PRESENTATION as V } from "./config";
@@ -108,7 +109,7 @@ export class MainBabeEnding {
 			...(actor.king ? (this.crowned ? [this.manifest.crown] : []) : []),
 		];
 		actor.sprites = textures.map((texture) => {
-			const frame = FRAMES[actor.frame]!;
+			const frame = required(FRAMES[actor.frame]);
 			const sprite = this.scene.add
 				.sprite(0, 0, texture, this.register(texture, actor.frame))
 				.setOrigin(frame.originX, frame.originY);
@@ -118,7 +119,7 @@ export class MainBabeEnding {
 	}
 	private apply(actor: Actor, key: string): void {
 		actor.frame = key;
-		const frame = FRAMES[key]!;
+		const frame = required(FRAMES[key]);
 		for (const sprite of actor.sprites)
 			sprite
 				.setFrame(this.register(sprite.texture.key, key))
@@ -143,7 +144,7 @@ export class MainBabeEnding {
 				durations,
 				startedAt: this.scene.time.now,
 			});
-			this.apply(actor, frames[0]!);
+			this.apply(actor, required(frames[0]));
 		});
 	}
 	private loop(actor: Actor, frames: string[], time: number, step = 0.2): void {
@@ -169,12 +170,12 @@ export class MainBabeEnding {
 				(this.scene.time.now - loop.startedAt) %
 				loop.durations.reduce((a, b) => a + b, 0);
 			for (let i = 0; i < loop.frames.length; i++) {
-				if (elapsed < loop.durations[i]!) {
+				if (elapsed < required(loop.durations[i])) {
 					if (loop.actor.frame !== loop.frames[i])
-						this.apply(loop.actor, loop.frames[i]!);
+						this.apply(loop.actor, required(loop.frames[i]));
 					break;
 				}
-				elapsed -= loop.durations[i]!;
+				elapsed -= required(loop.durations[i]);
 			}
 		}
 	}
@@ -213,7 +214,7 @@ export class MainBabeEnding {
 			const y = actor.root.y;
 			this.tween({
 				targets: actor.root,
-				y: y + points.at(-1)!,
+				y: y + required(points.at(-1)),
 				duration: duration * 1000,
 				ease: "Linear",
 				onUpdate: (tween: Phaser.Tweens.Tween) => {
@@ -225,8 +226,8 @@ export class MainBabeEnding {
 					actor.root.y =
 						y +
 						Phaser.Math.Linear(
-							points[i]!,
-							points[Math.min(i + 1, points.length - 1)]!,
+							required(points[i]),
+							required(points[Math.min(i + 1, points.length - 1)]),
 							index - i,
 						);
 				},
@@ -268,16 +269,24 @@ export class MainBabeEnding {
 		this.at(time, () =>
 			this.tween({
 				targets: actor.root,
-				x: x.at(-1)! - 1,
-				y: y.at(-1)! + 2,
+				x: required(x.at(-1)) - 1,
+				y: required(y.at(-1)) + 2,
 				duration: 4000,
 				ease: "Linear",
 				onUpdate: (tween: Phaser.Tweens.Tween) => {
 					const sample = Math.max(0, Math.min(59, tween.progress * 60 - 1)),
 						i = Math.floor(sample);
 					actor.root.setPosition(
-						Phaser.Math.Linear(x[i]!, x[Math.min(59, i + 1)]!, sample - i) - 1,
-						Phaser.Math.Linear(y[i]!, y[Math.min(59, i + 1)]!, sample - i) + 2,
+						Phaser.Math.Linear(
+							required(x[i]),
+							required(x[Math.min(59, i + 1)]),
+							sample - i,
+						) - 1,
+						Phaser.Math.Linear(
+							required(y[i]),
+							required(y[Math.min(59, i + 1)]),
+							sample - i,
+						) + 2,
 					);
 				},
 			}),
@@ -315,10 +324,10 @@ export class MainBabeEnding {
 							tween.progress * (points.length - 1),
 						),
 						i = Math.floor(index),
-						next = points[Math.min(i + 1, points.length - 1)]!;
+						next = required(points[Math.min(i + 1, points.length - 1)]);
 					actor.root.setPosition(
-						Phaser.Math.Linear(points[i]!.x, next.x, index - i),
-						Phaser.Math.Linear(points[i]!.y, next.y, index - i),
+						Phaser.Math.Linear(required(points[i]).x, next.x, index - i),
+						Phaser.Math.Linear(required(points[i]).y, next.y, index - i),
 					);
 				},
 			});

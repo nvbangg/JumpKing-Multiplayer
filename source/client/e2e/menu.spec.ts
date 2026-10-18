@@ -68,8 +68,20 @@ test("keyboard navigation restores focus and offline actions report real errors"
 		page.getByRole("button", { name: "Room", exact: true }),
 	).toBeFocused();
 	await page.keyboard.press("Enter");
-	await expect(page.getByText("Sign in to play online.")).toBeVisible();
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await expect(
+		page.getByRole("heading", { name: "Sign In", exact: true }),
+	).toBeVisible();
+	await expect(page.getByText("Sign in to play online.")).toHaveCount(0);
+	expect(
+		await page
+			.getByRole("heading", { name: "Sign In", exact: true })
+			.evaluate((element) => getComputedStyle(element).userSelect),
+	).toBe("none");
+	expect(
+		await page
+			.getByLabel("Username", { exact: true })
+			.evaluate((element) => getComputedStyle(element).userSelect),
+	).toBe("text");
 	await page.getByLabel("Username", { exact: true }).fill("Player");
 	await page.getByLabel("Password", { exact: true }).fill("A valid password");
 	await page.getByRole("button", { name: "Sign In", exact: true }).click();

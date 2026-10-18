@@ -1,3 +1,4 @@
+import { required } from "../../required";
 import { type FinishPlatform, findFinishPlatform } from "./finishPlatform";
 import { PHYSICS as P } from "./tuning";
 import type {
@@ -201,14 +202,14 @@ export class Simulation {
 			const screenIndex = -Math.floor(ty / rows);
 			const screen = this.map.screens[screenIndex];
 			if (!screen) continue;
-			const row = screen.tiles[ty + screenIndex * rows]!;
+			const row = required(screen.tiles[ty + screenIndex * rows]);
 			for (
 				let tx = Math.max(0, Math.floor(x / size));
 				tx <=
 				Math.min(this.map.width / size - 1, Math.floor((right - 1) / size));
 				tx++
 			) {
-				const code = row[tx]!,
+				const code = required(row[tx]),
 					px = tx * size,
 					py = ty * size;
 				if (code === " ") continue;
@@ -256,7 +257,7 @@ export class Simulation {
 	private move(): boolean {
 		const s = this.state;
 		let info = this.contact();
-		if (!this.map.screens[s.screen]!.wind) s.wind = false;
+		if (!required(this.map.screens[s.screen]).wind) s.wind = false;
 		else if (s.grounded) s.wind = true;
 		if (s.wind && !s.snow) {
 			const phase = (s.ticks / P.tickRate) * P.windFrequency;
@@ -443,7 +444,8 @@ export class Simulation {
 			Math.sign(next - s.screen) === Math.sign(-s.vy) &&
 			!(s.vy < 0 && Math.abs(s.vy) < P.cameraMinimumRiseSpeed)
 		) {
-			if (next < s.screen && this.map.screens[next]!.wind) s.wind = true;
+			if (next < s.screen && required(this.map.screens[next]).wind)
+				s.wind = true;
 			s.screen = next;
 		}
 		const effects: MovementEffect[] = [];

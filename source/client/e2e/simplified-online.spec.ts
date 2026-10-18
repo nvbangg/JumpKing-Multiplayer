@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { required } from "../src/required";
 
 test.skip(
 	process.env.E2E_AUTH_ONLINE !== "true",
@@ -31,23 +32,25 @@ test("username account, change password and online authentication", async ({
 }) => {
 	await page.goto("/");
 	await page.getByRole("button", { name: "Room", exact: true }).click();
-	await expect(page.getByText("Sign in to play online.")).toBeVisible();
+	await expect(
+		page.getByRole("heading", { name: "Sign In", exact: true }),
+	).toBeVisible();
 	await page.getByRole("button", { name: "Back", exact: true }).click();
 	const username = await register(page, "auth");
 	await page.getByRole("button", { name: username, exact: true }).click();
 	expect(
-		await page
-			.locator(".account-info")
-			.evaluate(
-				(info) =>
-					!!(
-						info.compareDocumentPosition(
-							Array.from(document.querySelectorAll("button")).find(
-								(button) => button.textContent === "Change Password",
-							)!,
-						) & Node.DOCUMENT_POSITION_FOLLOWING
-					),
-			),
+		await page.locator(".account-info").evaluate((info) => {
+			const button = Array.from(document.querySelectorAll("button")).find(
+				(button) => button.textContent === "Change Password",
+			);
+			return (
+				!!button &&
+				!!(
+					info.compareDocumentPosition(button) &
+					Node.DOCUMENT_POSITION_FOLLOWING
+				)
+			);
+		}),
 	).toBe(true);
 	await page
 		.getByRole("button", { name: "Change Password", exact: true })
@@ -93,7 +96,7 @@ test("Room menu, public lobby chat, server countdown and end/leave", async ({
 		await expect(
 			a.getByRole("button", { name: "Chat", exact: true }),
 		).toHaveCount(0);
-		const room = (await a.locator(".room-code code").textContent())!;
+		const room = required(await a.locator(".room-code code").textContent());
 		await a.getByLabel("Visibility", { exact: true }).selectOption("PUBLIC");
 		await b.getByRole("button", { name: "Room", exact: true }).click();
 		await b
@@ -162,7 +165,9 @@ test("Community autosave/continue, manual leaderboard and no ID or in-game New G
 	page.on("request", (request) => {
 		if (request.url().includes("/api/leaderboard")) requests++;
 	});
-	await page.getByText("Leaderboard", { exact: true }).click();
+	await expect(
+		page.getByRole("heading", { name: "Leaderboard", exact: true }),
+	).toBeVisible();
 	await expect(
 		page.getByRole("button", { name: "Refresh", exact: true }),
 	).toBeEnabled();

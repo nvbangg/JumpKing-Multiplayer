@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
 				configureServer(server) {
 					server.middlewares.use((req, res, next) => {
 						if (!req.url?.startsWith("/shared/")) return next();
-						const file = req.url.slice("/shared/".length).split("?")[0]!;
+						const [file = ""] = req.url.slice("/shared/".length).split("?");
 						if (!sharedFiles.includes(file)) {
 							res.statusCode = 404;
 							res.end();
@@ -55,7 +55,7 @@ export default defineConfig(({ mode }) => {
 					for (const file of sharedFiles) {
 						this.emitFile({
 							type: "asset",
-							fileName: "shared/" + file,
+							fileName: `shared/${file}`,
 							source: readFileSync(fileURLToPath(new URL(file, sharedRoot))),
 						});
 					}

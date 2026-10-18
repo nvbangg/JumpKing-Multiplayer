@@ -17,6 +17,10 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 	await page.goto("/");
 	const output = await page.evaluate(
 		async ({ states, colors }) => {
+			const requiredPath = "/src/required.ts";
+			const { required }: typeof import("../src/required") = await import(
+				requiredPath
+			);
 			const modulePath = "/src/game/presentation/createGame.ts",
 				markerPath = "/src/game/simulation/finishPlatform.ts",
 				roomMapsPath = "/src/game/simulation/roomMaps.ts";
@@ -29,7 +33,7 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 			parent.style.cssText =
 				"position:fixed;inset:0;background:black;z-index:100";
 			document.body.append(parent);
-			let state = states[0]!;
+			let state = required(states[0]);
 			let ownColor = 0;
 			let frameReads = 0;
 			const failures: string[] = [];
@@ -55,7 +59,7 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 								id: "peer",
 								nickname: "Friend",
 								color: colors[(ownColor + 1) % colors.length],
-								state: { ...state, x: state.x + 30 },
+								state: { ...state },
 								crowned: state.screen % 2 === 0,
 							},
 						],
@@ -88,7 +92,7 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 					if (goal)
 						runtime.finishMarker = findFinishPlatform(roomMap(map, goal.level));
 					state = states.find((candidate) => candidate.screen === screen) || {
-						...states[0]!,
+						...required(states[0]),
 						screen,
 						x: 231,
 						y: -screen * 360 + 302,
@@ -98,10 +102,10 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 					const readsBefore = frameReads;
 					scene.update(0, 0);
 					if (frameReads !== readsBefore + 1)
-						failures.push("Repeated frame snapshot " + screen);
+						failures.push(`Repeated frame snapshot ${screen}`);
 					await frames();
 					const marker = scene.children.getByName("room-finish");
-					if (!!marker !== !!goal) failures.push("Finish screen " + screen);
+					if (!!marker !== !!goal) failures.push(`Finish screen ${screen}`);
 					if (marker) {
 						const bounds = marker.getBounds(),
 							camera = scene.cameras.main;
@@ -112,7 +116,7 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 							bounds.top < camera.scrollY ||
 							bounds.bottom > camera.scrollY + 360
 						)
-							failures.push("Finish label clipped " + screen);
+							failures.push(`Finish label clipped ${screen}`);
 					}
 					const sprites = scene.children.list.filter(
 						(child: {
@@ -129,7 +133,7 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 						!sprites.some((sprite: { alpha: number }) => sprite.alpha === 1) ||
 						!sprites.some((sprite: { alpha: number }) => sprite.alpha === 0.7)
 					)
-						failures.push("Avatar opacity " + screen);
+						failures.push(`Avatar opacity ${screen}`);
 					const self = sprites.find(
 						(sprite: { name: string }) => sprite.name === "player:self",
 					);
@@ -138,19 +142,20 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 					);
 					if (
 						self.alpha !== 1 ||
-						self.tintTopLeft !== Number.parseInt(colors[ownColor]!.slice(1), 16)
+						self.tintTopLeft !==
+							Number.parseInt(required(colors[ownColor]).slice(1), 16)
 					)
-						failures.push("Local player appearance " + screen);
+						failures.push(`Local player appearance ${screen}`);
 					if (
 						peer.alpha !== 0.7 ||
 						peer.tintTopLeft !==
 							Number.parseInt(
-								colors[(ownColor + 1) % colors.length]!.slice(1),
+								required(colors[(ownColor + 1) % colors.length]).slice(1),
 								16,
 							)
 					)
-						failures.push("Peer appearance " + screen);
-					if (self.depth <= peer.depth) failures.push("Self depth " + screen);
+						failures.push(`Peer appearance ${screen}`);
+					if (self.depth <= peer.depth) failures.push(`Self depth ${screen}`);
 					const crowns = scene.children.list.filter(
 						(child: { type: string; texture?: { key: string } }) =>
 							child.type === "Sprite" && child.texture?.key === manifest.crown,
@@ -170,9 +175,9 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 								crown.visible !== (screen % 2 === 0),
 						)
 					)
-						failures.push("Crown " + screen);
+						failures.push(`Crown ${screen}`);
 					if (scene.cameras.main.scrollY !== -screen * 360)
-						failures.push("Camera " + screen);
+						failures.push(`Camera ${screen}`);
 					const labels = scene.children.list.filter(
 						(child: { type: string; name: string }) =>
 							child.type === "Text" && child.name !== "room-finish",
@@ -184,7 +189,27 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 								label.alpha !== 1 || !label.visible,
 						)
 					)
-						failures.push("Names " + screen);
+						failures.push(`Names ${screen}`);
+					const ownName = scene.children.getByName("nickname:self"),
+						peerName = scene.children.getByName("nickname:peer");
+					if (
+						!ownName ||
+						!peerName ||
+						ownName.style.strokeThickness !== 1 ||
+						ownName.style.resolution !== 2
+					)
+						failures.push(`Name font ${screen}`);
+					if (ownName && peerName) {
+						const a = ownName.getBounds(),
+							b = peerName.getBounds();
+						if (
+							a.left < b.right &&
+							a.right > b.left &&
+							a.top < b.bottom &&
+							a.bottom > b.top
+						)
+							failures.push(`Overlapping names ${screen}`);
+					}
 					screens.push(screen);
 				}
 				return { screens, failures };

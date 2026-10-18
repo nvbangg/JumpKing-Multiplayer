@@ -53,7 +53,7 @@ test("Public rooms can be discovered and joined while Private rooms remain acces
 			0,
 		);
 		expect(
-			(await (await b.request.get("/api/rooms/" + id)).json()).joinable,
+			(await (await b.request.get(`/api/rooms/${id}`)).json()).joinable,
 		).toBe(true);
 		await a.getByLabel("Visibility", { exact: true }).selectOption("PUBLIC");
 		await expect(a.getByLabel("Visibility", { exact: true })).toHaveValue(

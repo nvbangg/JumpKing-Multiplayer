@@ -1,4 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
+import { required } from "../required";
 import { ApiError, api, clearCsrf } from "./api";
 
 afterEach(() => {
@@ -55,7 +56,7 @@ test("CSRF denial clears the cached token so retry fetches a new session token",
 		"http://127.0.0.1:5173/api/auth/csrf",
 		"http://127.0.0.1:5173/api/auth/login",
 	]);
-	expect(fetcher.mock.calls[3]![1]).toMatchObject({
+	expect(required(fetcher.mock.calls[3])[1]).toMatchObject({
 		credentials: "include",
 		headers: { "X-CSRF-TOKEN": "second" },
 	});

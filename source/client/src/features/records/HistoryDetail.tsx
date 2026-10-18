@@ -28,9 +28,7 @@ export function HistoryDetail({ item }: { item: HistoryItem }) {
 		[error, setError] = useState("");
 	useEffect(() => {
 		let disposed = false;
-		void api<Detail>(
-			"/history/" + item.kind + "/" + encodeURIComponent(item.id),
-		)
+		void api<Detail>(`/history/${item.kind}/${encodeURIComponent(item.id)}`)
 			.then((value) => {
 				if (!disposed) setDetail(value);
 			})
@@ -100,7 +98,7 @@ export function HistoryDetail({ item }: { item: HistoryItem }) {
 							<strong>
 								{player.status} ·{" "}
 								{player.finishTimeMs === null
-									? Math.floor(player.currentProgress) + " px"
+									? `${Math.floor(player.currentProgress)} px`
 									: duration(player.finishTimeMs)}
 							</strong>
 						</li>

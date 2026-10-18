@@ -14,6 +14,10 @@ test("plays the complete Main Babe input route and renders every reached checkpo
 	const result = await page.goto("/").then(() =>
 		page.evaluate(
 			async (fixture) => {
+				const requiredPath = "/src/required.ts";
+				const { required }: typeof import("../src/required") = await import(
+					requiredPath
+				);
 				const renderer = "/src/game/presentation/createGame.ts",
 					simulation = "/src/game/simulation/GameSimulation.ts";
 				const { createGame } = await import(renderer),
@@ -67,24 +71,24 @@ test("plays the complete Main Babe input route and renders every reached checkpo
 				for (let index = 0; index < 30; index++) step();
 				for (const [index, action] of fixture.route.entries()) {
 					if ("walk" in action)
-						for (let tick = 0; tick < action.ticks!; tick++)
+						for (let tick = 0; tick < required(action.ticks); tick++)
 							step({
 								...idle,
-								left: action.walk! < 0,
-								right: action.walk! > 0,
+								left: required(action.walk) < 0,
+								right: required(action.walk) > 0,
 							});
 					else {
 						step();
-						for (let tick = 0; tick < action.charge!; tick++)
+						for (let tick = 0; tick < required(action.charge); tick++)
 							step({
-								left: action.charge === 36 && action.direction! < 0,
-								right: action.charge === 36 && action.direction! > 0,
+								left: action.charge === 36 && required(action.direction) < 0,
+								right: action.charge === 36 && required(action.direction) > 0,
 								jump: true,
 							});
 						if (action.charge !== 36)
 							step({
-								left: action.direction! < 0,
-								right: action.direction! > 0,
+								left: required(action.direction) < 0,
+								right: required(action.direction) > 0,
 								jump: false,
 							});
 						for (let tick = 0; tick < 180; tick++) {
@@ -93,7 +97,7 @@ test("plays the complete Main Babe input route and renders every reached checkpo
 						}
 					}
 					const pose = state.physics.snapshot();
-					const expected = fixture.checkpoints[index]!;
+					const expected = required(fixture.checkpoints[index]);
 					for (const key of new Set([
 						...Object.keys(pose),
 						...Object.keys(expected),
@@ -113,7 +117,7 @@ test("plays the complete Main Babe input route and renders every reached checkpo
 						game.scene.getScene("Tower").cameras.main.scrollY !==
 						-pose.screen * map.screenHeight
 					)
-						failures.push("Camera checkpoint " + index);
+						failures.push(`Camera checkpoint ${index}`);
 				}
 				const pose = state.physics.snapshot();
 				return {

@@ -1,3 +1,4 @@
+import { required } from "../../required";
 import { type AssetManifest, assetUrl } from "../content/assets";
 import type { MovementEffect, PlayerState } from "../simulation/types";
 import { PRESENTATION } from "./config";
@@ -59,9 +60,12 @@ export class AudioBus {
 		if (this.loading.has(key)) return this.loading.get(key);
 		const context = this.context;
 		const pending = (async () => {
-			const response = await fetch(assetUrl(this.manifest.sounds[key]!.file), {
-				signal: this.fetches.signal,
-			});
+			const response = await fetch(
+				assetUrl(required(this.manifest.sounds[key]).file),
+				{
+					signal: this.fetches.signal,
+				},
+			);
 			if (!response.ok) throw new Error("Could not load sound");
 			const buffer = await context.decodeAudioData(
 				await response.arrayBuffer(),
@@ -95,7 +99,7 @@ export class AudioBus {
 			const key = Object.keys(this.manifest.sounds).find(
 				(value) =>
 					value.toLowerCase() ===
-					("audio/background/" + stream.name).toLowerCase(),
+					`audio/background/${stream.name}`.toLowerCase(),
 			);
 			if (!key || stream.volume <= 0) continue;
 			this.stream(key, stream.volume * PRESENTATION.ambienceVolume);
@@ -168,11 +172,11 @@ export class AudioBus {
 		const name = effect.toLowerCase();
 		const variant =
 			state.snow && effect !== "BUMP"
-				? "snow/king_" + name
+				? `snow/king_${name}`
 				: state.ice && ["JUMP", "LAND"].includes(effect)
-					? "ice/king_" + name
-					: "king_" + name;
-		this.play("audio/jump_king/" + variant, volume);
+					? `ice/king_${name}`
+					: `king_${name}`;
+		this.play(`audio/jump_king/${variant}`, volume);
 	}
 	setEnabled(enabled: boolean): void {
 		if (enabled === this.enabled) return;

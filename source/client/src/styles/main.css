@@ -8,6 +8,20 @@
 	color: #ede7d3;
 	background: #000;
 	color-scheme: dark;
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-touch-callout: none;
+}
+input,
+textarea,
+[contenteditable="true"] {
+	user-select: text;
+	-webkit-user-select: text;
+	-webkit-touch-callout: default;
+}
+img,
+canvas {
+	-webkit-user-drag: none;
 }
 * {
 	box-sizing: border-box;
@@ -91,11 +105,6 @@ button {
 	align-items: center;
 	gap: 1rem;
 	background: #000b;
-}
-.game-overlay .menu-panel {
-	width: min(500px, 90vw);
-	max-height: 90dvh;
-	overflow-y: auto;
 }
 .game-hud .timer {
 	padding-left: 20px;
@@ -192,6 +201,11 @@ button {
 	flex-direction: column;
 	gap: 3px;
 	min-width: 0;
+}
+.game-overlay .menu-panel {
+	width: min(500px, 90vw);
+	max-height: 90dvh;
+	overflow-y: auto;
 }
 .menu-panel h2 {
 	margin: 0 0 16px;
@@ -358,6 +372,10 @@ button {
 	font-size: 18px;
 	border-bottom: 1px solid #28251b;
 }
+.game-hud > span:last-child {
+	display: flex;
+	gap: 8px;
+}
 .players li > span:last-child {
 	color: #aaa28b;
 	font-size: 15px;
@@ -366,22 +384,23 @@ button {
 	max-height: none;
 	overflow: visible;
 }
-.home.screen-detail .leaderboard li {
-	flex-wrap: wrap;
-	overflow-wrap: anywhere;
-}
 .room-code {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	gap: 10px;
 }
+.room-code code,
+output.room-code {
+	user-select: all;
+	-webkit-user-select: all;
+	-webkit-touch-callout: default;
+}
 .room-code code {
 	font: inherit;
 	font-size: 32px;
 	letter-spacing: 0.15em;
 	color: #e4bb68;
-	user-select: all;
 }
 .save-error {
 	position: absolute;
@@ -414,10 +433,6 @@ button {
 .self-result,
 .winner {
 	color: #e4bb68;
-}
-.game-hud > span:last-child {
-	display: flex;
-	gap: 8px;
 }
 .chat-panel {
 	position: absolute;
@@ -524,15 +539,26 @@ button {
 	width: min(210px, 44vw);
 	z-index: 2;
 	font-size: 0.75rem;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	max-height: calc(100dvh - 82px);
 }
 .in-game-panel {
-	margin-bottom: 6px;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
 	padding: 8px;
 	background: #08090cef;
 	border: 1px solid #6b6250;
 }
-.in-game-panel summary {
-	cursor: pointer;
+.in-game-panel h2 {
+	margin: 0;
+	font-size: inherit;
+}
+.in-game-panel h2,
+.in-game-panel button {
+	flex-shrink: 0;
 }
 .in-game-panel ol {
 	list-style: none;
@@ -540,6 +566,25 @@ button {
 	padding: 0;
 	max-height: 28dvh;
 	overflow-y: auto;
+	min-height: 0;
+	overscroll-behavior: contain;
+}
+.records-panel button {
+	margin-top: 6px;
+	font-size: inherit;
+	padding: 4px 8px;
+	color: inherit;
+	background: #08090c;
+	border: 1px solid #6b6250;
+}
+.records-panel ol {
+	max-height: 20dvh;
+}
+@media (pointer: coarse), (max-width: 680px) {
+	.in-game-panels {
+		max-height: calc(100dvh - 164px);
+		font-size: 0.65rem;
+	}
 }
 .in-game-panel li {
 	display: flex;
@@ -585,6 +630,10 @@ button {
 	gap: 6px;
 }
 
+.home.screen-detail .leaderboard li {
+	flex-wrap: wrap;
+	overflow-wrap: anywhere;
+}
 .network-badge {
 	display: inline-flex;
 	align-items: center;

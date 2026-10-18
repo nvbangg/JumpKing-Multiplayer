@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { required } from "../src/required";
 import { leaveOnline, observeOnline } from "./support/online";
 
 test.skip(
@@ -8,7 +9,7 @@ test.skip(
 test("only the committed Room winner sees ending while peers can confirm the next game", async ({
 	browser,
 }, info) => {
-	const fixture = JSON.parse(process.env.E2E_ROOM_FINISH!);
+	const fixture = JSON.parse(required(process.env.E2E_ROOM_FINISH));
 	const first = await browser.newContext(),
 		second = await browser.newContext();
 	try {
@@ -55,7 +56,7 @@ test("only the committed Room winner sees ending while peers can confirm the nex
 				const path = "/src/network/reconnect.ts";
 				const { saveReconnect } = await import(path);
 				await saveReconnect(
-					location.origin + ":account:" + value.owner,
+					`${location.origin}:account:${value.owner}`,
 					value.context,
 				);
 			}, credential);
@@ -75,7 +76,7 @@ test("only the committed Room winner sees ending while peers can confirm the nex
 		expect(peerFinishes).toEqual([]);
 		expect(winnerFinishes).toHaveLength(1);
 		const history = await (
-			await winner.request.get("/api/history/ROOM/" + fixture.playId)
+			await winner.request.get(`/api/history/ROOM/${fixture.playId}`)
 		).json();
 		expect(
 			history.participants.filter((row: { isWinner: boolean }) => row.isWinner),
@@ -111,7 +112,7 @@ test("only the committed Room winner sees ending while peers can confirm the nex
 			winner.getByRole("button", { name: "Skip", exact: true }),
 		).toBeHidden();
 		await expect.poll(() => observed.snapshot?.playId).not.toBe(fixture.playId);
-		expect(observed.snapshot!.self.simulation.physics.jumps).toBe(0);
+		expect(required(observed.snapshot).self.simulation.physics.jumps).toBe(0);
 		await winner.getByRole("button", { name: "Menu", exact: true }).click();
 		await winner
 			.getByRole("button", { name: "End Match", exact: true })

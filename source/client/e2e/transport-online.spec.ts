@@ -18,8 +18,7 @@ test("two independent browser identities use real WS and logout revokes only the
 		const setup = async (page: typeof a) =>
 			page.evaluate(async () => {
 				const csrf = await (await fetch("/api/auth/csrf")).json();
-				const name =
-					"ws_" + crypto.randomUUID().replaceAll("-", "").slice(0, 15);
+				const name = `ws_${crypto.randomUUID().replaceAll("-", "").slice(0, 15)}`;
 				const response = await fetch("/api/auth/register", {
 					method: "POST",
 					headers: {
@@ -32,11 +31,11 @@ test("two independent browser identities use real WS and logout revokes only the
 					}),
 				});
 				if (!response.ok)
-					throw new Error("Identity creation failed: " + response.status);
+					throw new Error(`Identity creation failed: ${response.status}`);
 				const messages: Record<string, unknown>[] = [];
 				let closed = false;
 				const socket = new WebSocket(
-					location.origin.replace("http", "ws") + "/ws/game",
+					`${location.origin.replace("http", "ws")}/ws/game`,
 				);
 				socket.onmessage = (event) => messages.push(JSON.parse(event.data));
 				socket.onclose = () => {
@@ -138,7 +137,7 @@ test("two independent browser identities use real WS and logout revokes only the
 			const connect = () =>
 				new Promise<WebSocket>((resolve, reject) => {
 					const socket = new WebSocket(
-						location.origin.replace("http", "ws") + "/ws/game",
+						`${location.origin.replace("http", "ws")}/ws/game`,
 					);
 					socket.onopen = () => resolve(socket);
 					socket.onerror = () => reject(new Error("rejected"));

@@ -1,6 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 import type { OnlineSnapshot } from "../src/game/netcode/OnlineRuntime";
 import { NETWORK } from "../src/network/config";
+import { required } from "../src/required";
 import { leaveOnline } from "./support/online";
 
 test.skip(
@@ -11,8 +12,7 @@ test.afterEach(async ({ page }) => {
 	await leaveOnline(page);
 });
 async function account(page: Page, prefix: string) {
-	const name =
-		prefix + "_" + crypto.randomUUID().replaceAll("-", "").slice(0, 12);
+	const name = `${prefix}_${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
 	await page.goto("/");
 	await page
 		.getByRole("button", { name: "Create Account", exact: true })
@@ -126,7 +126,7 @@ for (const failure of ["rejected", "timeout"] as const)
 			page.getByRole("button", { name: "Menu", exact: true }),
 		).toBeVisible();
 		await expect.poll(() => observed.snapshots.length).toBeGreaterThan(0);
-		const run = observed.snapshots.at(-1)!.playId;
+		const run = required(observed.snapshots.at(-1)).playId;
 		await page.goBack();
 		const message =
 			failure === "rejected"
@@ -136,7 +136,7 @@ for (const failure of ["rejected", "timeout"] as const)
 			timeout: NETWORK.timeoutMs + 5000,
 		});
 		expect(attempts).toBe(1);
-		expect(observed.snapshots.at(-1)!.playId).toBe(run);
+		expect(required(observed.snapshots.at(-1)).playId).toBe(run);
 		await leave(page);
 		expect(attempts).toBe(2);
 		await expect(page.getByRole("alert")).toHaveCount(0);
@@ -146,7 +146,7 @@ for (const failure of ["rejected", "timeout"] as const)
 			page.getByRole("button", { name: "Menu", exact: true }),
 		).toBeVisible();
 		await expect.poll(() => observed.snapshots.length).toBeGreaterThan(count);
-		expect(observed.snapshots.at(-1)!.playId).toBe(run);
+		expect(required(observed.snapshots.at(-1)).playId).toBe(run);
 		await expect(page.getByRole("alert")).toHaveCount(0);
 	});
 test("two Accounts share server simulation, see each other jump, leave and Continue the saved run", async ({
@@ -177,7 +177,7 @@ test("two Accounts share server simulation, see each other jump, leave and Conti
 			a.getByRole("button", { name: "Menu", exact: true }),
 		).toBeVisible({ timeout: 15_000 });
 		await expect.poll(() => observedA.snapshots.length).toBeGreaterThan(0);
-		const runId = observedA.snapshots.at(-1)!.playId;
+		const runId = required(observedA.snapshots.at(-1)).playId;
 		await b.getByRole("button", { name: "New Game", exact: true }).click();
 		await expect(
 			b.getByRole("button", { name: "Menu", exact: true }),
@@ -185,14 +185,15 @@ test("two Accounts share server simulation, see each other jump, leave and Conti
 		await expect.poll(() => observedA.rosters.at(-1)?.members.length).toBe(2);
 		await expect.poll(() => observedB.rosters.at(-1)?.members.length).toBe(2);
 		expect(
-			observedA.rosters
-				.at(-1)!
+			required(observedA.rosters.at(-1))
 				.members.map((member) => member.nickname)
 				.sort(),
 		).toEqual([nameA, nameB].sort());
 		expect(
 			new Set(
-				observedA.rosters.at(-1)!.members.map((member) => member.colorSlot),
+				required(observedA.rosters.at(-1)).members.map(
+					(member) => member.colorSlot,
+				),
 			).size,
 		).toBe(2);
 		await expect
@@ -205,7 +206,9 @@ test("two Accounts share server simulation, see each other jump, leave and Conti
 			b.getByRole("list", { name: "Current players" }).locator("li"),
 		).toHaveCount(2);
 		expect(
-			observedB.snapshots.at(-1)!.players!.map((player) => player.rank),
+			required(required(observedB.snapshots.at(-1)).players).map(
+				(player) => player.rank,
+			),
 		).toEqual([1, 1]);
 		await b.locator("canvas").click();
 		await expect(b.locator("canvas")).toBeFocused();
@@ -237,10 +240,10 @@ test("two Accounts share server simulation, see each other jump, leave and Conti
 		expect(
 			sounds.filter((call) => call.effect === "JUMP" && call.volume === 0.35),
 		).toHaveLength(1);
-		expect(observedA.snapshots.at(-1)!.peers[0]!.state).not.toHaveProperty(
-			"directions",
-		);
-		expect(observedA.snapshots.at(-1)!.peers[0]).not.toHaveProperty(
+		expect(
+			required(required(observedA.snapshots.at(-1)).peers[0]).state,
+		).not.toHaveProperty("directions");
+		expect(required(observedA.snapshots.at(-1)).peers[0]).not.toHaveProperty(
 			"adventure",
 		);
 		await a.bringToFront();
@@ -278,16 +281,15 @@ test("two Accounts share server simulation, see each other jump, leave and Conti
 		).toBeVisible();
 		await expect.poll(() => observedA.snapshots.at(-1)?.playId).toBe(runId);
 		expect(
-			observedA.snapshots.at(-1)!.self.simulation.physics.jumps,
+			required(observedA.snapshots.at(-1)).self.simulation.physics.jumps,
 		).toBeGreaterThan(0);
 		await a.getByRole("button", { name: "Chat", exact: true }).click();
 		await expect(a.getByRole("log")).toContainText(text);
 		await a.getByRole("button", { name: "Close chat", exact: true }).click();
 		await leave(b);
-		await a
-			.locator("summary")
-			.filter({ hasText: /^Leaderboard$/ })
-			.click();
+		await expect(
+			a.getByRole("heading", { name: "Leaderboard", exact: true }),
+		).toBeVisible();
 		const entries = (
 			await (await a.request.get("/api/leaderboard?limit=100")).json()
 		).entries;
@@ -300,8 +302,8 @@ test("two Accounts share server simulation, see each other jump, leave and Conti
 			.getByRole("listitem")
 			.filter({ hasText: nameA });
 		await expect(row).toHaveCount(1);
-		await expect(row).toContainText(best.rank + ". " + nameA);
-		await expect(row).toContainText(Math.floor(best.maxProgress) + " px");
+		await expect(row).toContainText(`${best.rank}. ${nameA}`);
+		await expect(row).toContainText(`${Math.floor(best.maxProgress)} px`);
 		await leave(a);
 		await expect(
 			a.getByRole("button", { name: "Continue", exact: true }),
@@ -387,7 +389,7 @@ test("Community New Game keeps old History and metrics while replacing only the 
 		page.getByRole("button", { name: "Menu", exact: true }),
 	).toBeVisible();
 	await expect.poll(() => observed.snapshots.length).toBeGreaterThan(0);
-	const first = observed.snapshots.at(-1)!.playId;
+	const first = required(observed.snapshots.at(-1)).playId;
 	await jump(page);
 	await expect
 		.poll(() => observed.snapshots.at(-1)?.self.simulation.physics.jumps)
@@ -396,7 +398,9 @@ test("Community New Game keeps old History and metrics while replacing only the 
 	page.once("dialog", (dialog) => dialog.accept());
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
 	await expect.poll(() => observed.snapshots.at(-1)?.playId).not.toBe(first);
-	expect(observed.snapshots.at(-1)!.self.simulation.physics.jumps).toBe(0);
+	expect(
+		required(observed.snapshots.at(-1)).self.simulation.physics.jumps,
+	).toBe(0);
 	await leave(page);
 	const history = await (await page.request.get("/api/history")).json(),
 		stats = await (await page.request.get("/api/profile/me")).json();
@@ -433,10 +437,15 @@ test("window blur cancels charging and keeps Community time frozen until explici
 		page.getByRole("button", { name: "Resume", exact: true }),
 	).toBeVisible();
 	await expect.poll(() => observed.snapshots.at(-1)?.self.paused).toBe(true);
-	const ticks = observed.snapshots.at(-1)!.self.simulation.physics.ticks;
+	const ticks = required(observed.snapshots.at(-1)).self.simulation.physics
+		.ticks;
 	await page.waitForTimeout(1100);
-	expect(observed.snapshots.at(-1)!.self.simulation.physics.ticks).toBe(ticks);
-	expect(observed.snapshots.at(-1)!.self.simulation.physics.jumps).toBe(0);
+	expect(
+		required(observed.snapshots.at(-1)).self.simulation.physics.ticks,
+	).toBe(ticks);
+	expect(
+		required(observed.snapshots.at(-1)).self.simulation.physics.jumps,
+	).toBe(0);
 	await page.getByRole("button", { name: "Resume", exact: true }).click();
 	await expect.poll(() => observed.snapshots.at(-1)?.generation).toBe(2);
 	await jump(page);
@@ -471,8 +480,8 @@ test("transport disconnect reconnects the same identity and run while confirmed 
 	await expect
 		.poll(() => observed.snapshots.at(-1)?.self.simulation.physics.jumps)
 		.toBe(1);
-	const run = observed.snapshots.at(-1)!.playId,
-		generation = observed.snapshots.at(-1)!.generation;
+	const run = required(observed.snapshots.at(-1)).playId,
+		generation = required(observed.snapshots.at(-1)).generation;
 	await page.evaluate(() => {
 		const connection = (
 			window as unknown as {
@@ -492,14 +501,16 @@ test("transport disconnect reconnects the same identity and run while confirmed 
 	await expect
 		.poll(() => observed.snapshots.at(-1)?.generation)
 		.toBeGreaterThan(generation);
-	expect(observed.snapshots.at(-1)!.playId).toBe(run);
-	expect(observed.snapshots.at(-1)!.self.simulation.physics.jumps).toBe(1);
+	expect(required(observed.snapshots.at(-1)).playId).toBe(run);
+	expect(
+		required(observed.snapshots.at(-1)).self.simulation.physics.jumps,
+	).toBe(1);
 	await leave(page);
 	const saved = await page.evaluate(async () => {
 		const path = "/src/network/reconnect.ts",
 			me = await (await fetch("/api/auth/me")).json();
 		return (await import(path)).loadReconnect(
-			location.origin + ":account:" + me.account.id,
+			`${location.origin}:account:${me.account.id}`,
 		);
 	});
 	expect(saved).toBeNull();
@@ -557,7 +568,7 @@ test("leaving a Community page saves the run, releases membership and reload nev
 		await expect
 			.poll(() => own.snapshots.at(-1)?.self.simulation.physics.grounded)
 			.toBe(true);
-		const run = own.snapshots.at(-1)!.playId;
+		const run = required(own.snapshots.at(-1)).playId;
 		await a.goto("about:blank");
 		await expect
 			.poll(() =>
@@ -577,7 +588,9 @@ test("leaving a Community page saves the run, releases membership and reload nev
 			a.getByRole("button", { name: "Menu", exact: true }),
 		).toBeVisible();
 		await expect.poll(() => own.snapshots.at(-1)?.playId).toBe(run);
-		expect(own.snapshots.at(-1)!.self.simulation.physics.jumps).toBe(1);
+		expect(required(own.snapshots.at(-1)).self.simulation.physics.jumps).toBe(
+			1,
+		);
 		await expect
 			.poll(
 				() =>
@@ -607,8 +620,10 @@ test("leaving a Community page saves the run, releases membership and reload nev
 		)
 			await a.getByRole("button", { name: "Continue", exact: true }).click();
 		await expect.poll(() => own.snapshots.length).toBeGreaterThan(count);
-		expect(own.snapshots.at(-1)!.playId).toBe(run);
-		expect(own.snapshots.at(-1)!.self.simulation.physics.jumps).toBe(1);
+		expect(required(own.snapshots.at(-1)).playId).toBe(run);
+		expect(required(own.snapshots.at(-1)).self.simulation.physics.jumps).toBe(
+			1,
+		);
 		await expect
 			.poll(
 				() =>

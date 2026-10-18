@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import rules from "../../common/rules.json" with { type: "json" };
+import { required } from "../src/required";
 import {
 	createRoom,
 	joinRoom,
@@ -53,7 +54,7 @@ async function appearance(page: Page) {
 		const frame = scene.runtime.frame();
 		return [frame.self, ...frame.peers].map((player) => {
 			const sprite = scene.children.list.find(
-				(child) => child.name === "player:" + player.id,
+				(child) => child.name === `player:${player.id}`,
 			);
 			return (
 				sprite && {
@@ -91,21 +92,23 @@ test("player colors match across browsers while only the local player has full o
 				return page;
 			}),
 		);
-		const hostName = (await (await host!.request.get("/api/auth/me")).json())
-			.account.username;
-		const peerName = (await (await guest!.request.get("/api/auth/me")).json())
-			.account.username;
-		const id = await createRoom(host!);
-		await joinRoom(guest!, id);
-		await startRoom(host!, guest!);
-		for (const [index, page] of [host!, guest!].entries()) {
+		const hostName = (
+			await (await required(host).request.get("/api/auth/me")).json()
+		).account.username;
+		const peerName = (
+			await (await required(guest).request.get("/api/auth/me")).json()
+		).account.username;
+		const id = await createRoom(required(host));
+		await joinRoom(required(guest), id);
+		await startRoom(required(host), required(guest));
+		for (const [index, page] of [required(host), required(guest)].entries()) {
 			await expect(
 				page.getByRole("button", { name: "Menu", exact: true }),
 			).toBeVisible({ timeout: 15_000 });
 			const ownName = index === 0 ? hostName : peerName;
 			const otherName = index === 0 ? peerName : hostName;
-			const ownColor = rules.appearanceColors[index]!;
-			const peerColor = rules.appearanceColors[1 - index]!;
+			const ownColor = required(rules.appearanceColors[index]);
+			const peerColor = required(rules.appearanceColors[1 - index]);
 			await expect
 				.poll(async () => {
 					const players = await appearance(page);
@@ -137,7 +140,9 @@ test("player colors match across browsers while only the local player has full o
 					},
 				]);
 			const players = await appearance(page);
-			expect(players![0]!.depth).toBeGreaterThan(players![1]!.depth);
+			expect(required(required(players)[0]).depth).toBeGreaterThan(
+				required(required(players)[1]).depth,
+			);
 			await page.bringToFront();
 			if (
 				await page

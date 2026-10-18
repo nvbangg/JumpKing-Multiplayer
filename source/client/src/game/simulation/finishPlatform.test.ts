@@ -1,5 +1,6 @@
 import { expect, test } from "vitest";
 import map from "../../../../common/maps/main-babe.json";
+import { required } from "../../required";
 import { findFinishPlatform } from "./finishPlatform";
 import { GameSimulation } from "./GameSimulation";
 import { ROOM_MAPS, roomMap } from "./roomMaps";
@@ -9,7 +10,7 @@ import { NEUTRAL_INPUT } from "./types";
 test("Room markers use the approved landing platforms", () => {
 	expect(
 		ROOM_MAPS.map(({ level }) => {
-			const marker = findFinishPlatform(roomMap(map, level))!;
+			const marker = required(findFinishPlatform(roomMap(map, level)));
 			return [level, marker.x, marker.y, marker.width];
 		}),
 	).toEqual([
@@ -44,7 +45,7 @@ test("Room 7 does not Finish on the right walkway at the same height", () => {
 for (const goal of ROOM_MAPS)
 	test(`Room ${goal.level}: landing at the marker satisfies the real Finish rule`, () => {
 		const world = roomMap(map, goal.level),
-			marker = findFinishPlatform(world)!;
+			marker = required(findFinishPlatform(world));
 		expect(marker).toBeDefined();
 		expect(marker.screen).toBe(goal.finish.screen);
 		const game = new GameSimulation(world);

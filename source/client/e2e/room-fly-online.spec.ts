@@ -3,6 +3,7 @@ import map from "../../common/maps/main-babe.json" with { type: "json" };
 import physics from "../../common/physics.json" with { type: "json" };
 import goals from "../../common/room-maps.json" with { type: "json" };
 import type { OnlineSnapshot } from "../src/game/netcode/OnlineRuntime";
+import { required } from "../src/required";
 import {
 	createRoom,
 	joinRoom,
@@ -69,7 +70,7 @@ test("short Room finish shows Results and History without ending or full-map rew
 		await expect
 			.poll(() => snapshots.at(-1)?.self.simulation.physics.freeFlight)
 			.toBe(true);
-		const goal = goals[0]!.finish;
+		const goal = required(goals[0]).finish;
 		await a.keyboard.down("ArrowLeft");
 		await expect
 			.poll(() => snapshots.at(-1)?.self.simulation.physics.x, {
@@ -100,20 +101,20 @@ test("short Room finish shows Results and History without ending or full-map rew
 			physics.bodyHeight -
 			physics.flyVerticalSpeed * 2;
 		for (let attempt = 0; attempt < 12; attempt++) {
-			const state = snapshots.at(-1)!.self.simulation.physics;
+			const state = required(snapshots.at(-1)).self.simulation.physics;
 			if (Math.abs(state.y - landingY) <= physics.flyVerticalSpeed) break;
 			await a.keyboard.press(state.y < landingY ? "ArrowDown" : "ArrowUp", {
 				delay: 20,
 			});
 			await expect
 				.poll(() => {
-					const current = snapshots.at(-1)!.self.simulation.physics;
+					const current = required(snapshots.at(-1)).self.simulation.physics;
 					return current.ticks > state.ticks && current.vy === 0;
 				})
 				.toBe(true);
 		}
 		expect(
-			Math.abs(snapshots.at(-1)!.self.simulation.physics.y - landingY),
+			Math.abs(required(snapshots.at(-1)).self.simulation.physics.y - landingY),
 		).toBeLessThanOrEqual(physics.flyVerticalSpeed);
 		await a.screenshot({ path: info.outputPath("room-map-1-finish.png") });
 		await a.waitForTimeout(400);
@@ -212,7 +213,7 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"])
 			await expect
 				.poll(() => snapshots.at(-1)?.self.simulation.physics.freeFlight)
 				.toBe(true);
-			const y = snapshots.at(-1)!.self.simulation.physics.y;
+			const y = required(snapshots.at(-1)).self.simulation.physics.y;
 			await a.waitForTimeout(400);
 			await a.keyboard.down("Space");
 			await a.waitForTimeout(200);
@@ -242,9 +243,9 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"])
 				await expect
 					.poll(() => peer.snapshot?.self.simulation.physics.freeFlight)
 					.toBe(true);
-				expect(snapshots.at(-1)!.self.simulation.physics.freeFlight).toBe(
-					false,
-				);
+				expect(
+					required(snapshots.at(-1)).self.simulation.physics.freeFlight,
+				).toBe(false);
 				await a.bringToFront();
 			}
 			if (

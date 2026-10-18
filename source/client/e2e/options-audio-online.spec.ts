@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { required } from "../src/required";
 import {
 	leaveOnline,
 	newCommunity,
@@ -46,23 +47,25 @@ test("Options keep sound, show controls and the game timer is always visible", a
 	await expect(page.getByText(/^Jumps:/)).toHaveCount(0);
 	await page.getByRole("button", { name: "Menu", exact: true }).click();
 	expect(
-		await page
-			.locator(".controls-help")
-			.evaluate(
-				(help) =>
-					!!(
-						document
-							.querySelector(".game-overlay button:last-of-type")!
-							.compareDocumentPosition(help) & Node.DOCUMENT_POSITION_FOLLOWING
-					),
-			),
+		await page.locator(".controls-help").evaluate((help) => {
+			const button = document.querySelector(
+				".game-overlay button:last-of-type",
+			);
+			return (
+				!!button &&
+				!!(
+					button.compareDocumentPosition(help) &
+					Node.DOCUMENT_POSITION_FOLLOWING
+				)
+			);
+		}),
 	).toBe(true);
 	const paused = await page
 		.getByLabel("Play time", { exact: true })
 		.textContent();
 	await page.waitForTimeout(500);
 	await expect(page.getByLabel("Play time", { exact: true })).toHaveText(
-		paused!,
+		required(paused),
 	);
 	await page.getByRole("button", { name: "Options", exact: true }).click();
 	await expect(

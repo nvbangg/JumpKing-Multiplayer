@@ -1,6 +1,7 @@
 import { expect, test, vi } from "vitest";
 import mapData from "../../../../common/maps/main-babe.json";
 import { GameSocket, type RoomState } from "../../network/GameSocket";
+import { required } from "../../required";
 import { GameSimulation } from "../simulation/GameSimulation";
 import { parseMap } from "../simulation/map";
 import { OnlineRuntime, type OnlineSnapshot } from "./OnlineRuntime";
@@ -274,8 +275,8 @@ test("remote interpolation follows server tick spacing and never extrapolates or
 	const interpolation = new PeerInterpolation(60);
 	interpolation.receive(previous, 0);
 	interpolation.receive(current, 50);
-	expect(interpolation.frame(125)[0]!.state.x).toBe(110);
-	expect(interpolation.frame(200)[0]!.state.x).toBe(120);
+	expect(required(interpolation.frame(125)[0]).state.x).toBe(110);
+	expect(required(interpolation.frame(200)[0]).state.x).toBe(120);
 	interpolation.receive({ ...current, serverTick: 9, peers: [] }, 200);
 	expect(interpolation.frame(220)).toEqual([]);
 });
@@ -308,7 +309,7 @@ test("buffered peers move continuously through delayed and bunched snapshots", (
 			];
 			interpolation.receive(packet, now);
 		}
-		const x = interpolation.frame(now)[0]!.state.x;
+		const x = required(interpolation.frame(now)[0]).state.x;
 		if (now > 110) {
 			expect(x - previousX).toBeGreaterThan(0);
 			expect(x - previousX).toBeLessThanOrEqual(0.221);
@@ -338,21 +339,21 @@ test("interpolation snaps screen changes and respawns and resets after a long si
 	interpolation.receive(packet(3, 110), 50);
 	interpolation.frame(50);
 	interpolation.receive(packet(6, 300), 100);
-	expect(interpolation.frame(100)[0]!.state.x).toBe(300);
+	expect(required(interpolation.frame(100)[0]).state.x).toBe(300);
 	interpolation.receive(packet(9, 10, 1), 150);
-	expect(interpolation.frame(150)[0]!.state.screen).toBe(1);
+	expect(required(interpolation.frame(150)[0]).state.screen).toBe(1);
 	interpolation.receive(packet(8, 400), 160);
-	expect(interpolation.frame(160)[0]!.state.screen).toBe(1);
+	expect(required(interpolation.frame(160)[0]).state.screen).toBe(1);
 	interpolation.receive(packet(12, 200), 5000);
-	expect(interpolation.frame(5000)[0]!.state.x).toBe(200);
+	expect(required(interpolation.frame(5000)[0]).state.x).toBe(200);
 	interpolation.reset();
 	expect(interpolation.frame(6000)).toEqual([]);
 	interpolation.receive(packet(0, 40), 0);
 	interpolation.frame(0);
 	const respawn = packet(3, 30);
-	respawn.peers[0]!.state.falls = 1;
+	required(respawn.peers[0]).state.falls = 1;
 	interpolation.receive(respawn, 50);
-	expect(interpolation.frame(50)[0]!.state.x).toBe(30);
+	expect(required(interpolation.frame(50)[0]).state.x).toBe(30);
 });
 
 test("interpolation adjusts clock drift without draining its buffer during a long session", () => {
@@ -375,7 +376,7 @@ test("interpolation adjusts clock drift without draining its buffer during a lon
 			];
 			interpolation.receive(packet, now);
 		}
-		x = interpolation.frame(now)[0]!.state.x;
+		x = required(interpolation.frame(now)[0]).state.x;
 	}
 	expect(x).toBeGreaterThan(1970);
 	expect(x).toBeLessThan(1999);
@@ -416,7 +417,7 @@ test("runtime ignores stale snapshots and clears sequence/prediction on generati
 	runtime.receive(
 		snapshot(server, 100, 2, 1) as unknown as Record<string, unknown>,
 	);
-	expect(runtime.latest!.generation).toBe(2);
+	expect(required(runtime.latest).generation).toBe(2);
 	socket.playContext = { playId: "run", generation: 3 };
 	const count = vi.mocked(socket.input).mock.calls.length;
 	runtime.advance(100);
@@ -426,5 +427,5 @@ test("runtime ignores stale snapshots and clears sequence/prediction on generati
 		...snapshot(server, 101, 1, 2),
 		self: { ...snapshot(server, 101, 1, 2).self, paused: true },
 	} as unknown as Record<string, unknown>);
-	expect(runtime.latest!.serverTick).toBe(2);
+	expect(required(runtime.latest).serverTick).toBe(2);
 });

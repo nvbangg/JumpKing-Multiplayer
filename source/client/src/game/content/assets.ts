@@ -90,7 +90,7 @@ export function assetUrl(file: string): string {
 		file.includes(":")
 	)
 		throw new Error("Invalid asset path");
-	return "/assets/" + file.split("/").map(encodeURIComponent).join("/");
+	return `/assets/${file.split("/").map(encodeURIComponent).join("/")}`;
 }
 export async function loadManifest(
 	signal?: AbortSignal,

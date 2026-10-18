@@ -3,6 +3,7 @@ import fixtures from "../../../../common/fixtures/adventure-traces.json";
 import checkpoints from "../../../../common/fixtures/main-babe-checkpoints.json";
 import route from "../../../../common/fixtures/main-babe-route.json";
 import map from "../../../../common/maps/main-babe.json";
+import { required } from "../../required";
 import { Adventure } from "./Adventure";
 import { GameSimulation } from "./GameSimulation";
 import { Simulation } from "./Simulation";
@@ -52,7 +53,7 @@ test.each(fixtures.cases)(
 					adventure.tick(player, step.input);
 				}
 			}
-			expect(projection(adventure), fixture.name + "/" + index).toEqual(
+			expect(projection(adventure), `${fixture.name}/${index}`).toEqual(
 				step.expected,
 			);
 			const restored = new Adventure(map);
@@ -70,7 +71,7 @@ test("restores dialogue atomically and rejects malformed counters and flags", ()
 		adventure.restore({ ...saved, flags: ["UnknownFlag"] }),
 	).toThrow();
 	const invalid = structuredClone(saved);
-	invalid.dialogue.old_man!.ticks = -1;
+	required(invalid.dialogue.old_man).ticks = -1;
 	expect(() => adventure.restore(invalid)).toThrow();
 	expect(adventure.snapshot()).toEqual(saved);
 });
@@ -89,7 +90,7 @@ test("game restore validates every component before applying and copies caller-o
 	const before = game.snapshot();
 	const invalid = structuredClone(before);
 	invalid.physics.x += 10;
-	invalid.adventure.dialogue.old_man!.wait = -1;
+	required(invalid.adventure.dialogue.old_man).wait = -1;
 	expect(() => game.restore(invalid)).toThrow();
 	expect(game.snapshot()).toEqual(before);
 	const saved = structuredClone(before);
@@ -108,24 +109,24 @@ test("full game restores adventure and environment without changing the legitima
 	for (let i = 0; i < 30; i++) game.tick(NEUTRAL_INPUT);
 	for (const [index, action] of route.entries()) {
 		if ("walk" in action) {
-			for (let i = 0; i < action.ticks!; i++)
+			for (let i = 0; i < required(action.ticks); i++)
 				game.tick({
-					left: action.walk! < 0,
-					right: action.walk! > 0,
+					left: required(action.walk) < 0,
+					right: required(action.walk) > 0,
 					jump: false,
 				});
 		} else {
 			game.tick(NEUTRAL_INPUT);
-			for (let i = 0; i < action.charge!; i++)
+			for (let i = 0; i < required(action.charge); i++)
 				game.tick({
-					left: action.charge === 36 && action.direction! < 0,
-					right: action.charge === 36 && action.direction! > 0,
+					left: action.charge === 36 && required(action.direction) < 0,
+					right: action.charge === 36 && required(action.direction) > 0,
 					jump: true,
 				});
 			if (action.charge !== 36)
 				game.tick({
-					left: action.direction! < 0,
-					right: action.direction! > 0,
+					left: required(action.direction) < 0,
+					right: required(action.direction) > 0,
 					jump: false,
 				});
 			for (let i = 0; i < 180; i++) {

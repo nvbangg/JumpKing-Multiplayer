@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { required } from "../src/required";
 import {
 	createRoom,
 	joinRoom,
@@ -157,7 +158,7 @@ test("Account lobby, permanent chat, settings draft and Host transfer", async ({
 		await a.getByLabel("Message", { exact: true }).fill("<b>Hello Room</b>");
 		await a.getByRole("button", { name: "Send", exact: true }).click();
 		await expect(b.getByRole("log")).toContainText(
-			host + ": <b>Hello Room</b>",
+			`${host}: <b>Hello Room</b>`,
 		);
 		await expect(b.getByRole("log").locator("b")).toHaveCount(0);
 		await expect(
@@ -215,14 +216,14 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 				.poll(() => observed.snapshot?.self.simulation.physics.grounded)
 				.toBe(true);
 			if (mode === "NO_WALK") {
-				const before = observed.snapshot!.elapsedTimeMs;
+				const before = required(observed.snapshot).elapsedTimeMs;
 				await a.keyboard.down("ArrowRight");
 				await expect
 					.poll(() => observed.snapshot?.elapsedTimeMs)
 					.toBeGreaterThan(before + 300);
 				await a.keyboard.up("ArrowRight");
-				expect(observed.snapshot!.self.simulation.physics.x).toBe(231);
-				expect(observed.snapshot!.self.simulation.physics.vx).toBe(0);
+				expect(required(observed.snapshot).self.simulation.physics.x).toBe(231);
+				expect(required(observed.snapshot).self.simulation.physics.vx).toBe(0);
 			}
 			if (mode === "TIME_LIMIT")
 				await expect(a.getByLabel("Time left", { exact: true })).toContainText(
@@ -235,7 +236,7 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 				.poll(() => observed.snapshot?.self.simulation.physics.jumps)
 				.toBe(1);
 			await a.getByRole("button", { name: "Menu", exact: true }).click();
-			const before = observed.snapshot!.elapsedTimeMs;
+			const before = required(observed.snapshot).elapsedTimeMs;
 			await expect
 				.poll(() => observed.snapshot?.elapsedTimeMs)
 				.toBeGreaterThan(before + 500);
@@ -255,7 +256,7 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 				.items[0];
 			expect(first.room.mode).toBe(mode);
 			const detail = await (
-				await a.request.get("/api/history/ROOM/" + first.id)
+				await a.request.get(`/api/history/ROOM/${first.id}`)
 			).json();
 			expect(
 				detail.participants.find(
@@ -279,7 +280,7 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			await expect(a.getByLabel("Mode", { exact: true })).toHaveValue(mode);
 			await startRoom(a, b);
 			await expect.poll(() => observed.snapshot?.playId).not.toBe(first.id);
-			expect(observed.snapshot!.self.simulation.physics.jumps).toBe(0);
+			expect(required(observed.snapshot).self.simulation.physics.jumps).toBe(0);
 			await a.getByRole("button", { name: "Menu", exact: true }).click();
 			await a.getByRole("button", { name: "End Match", exact: true }).click();
 			await expect(a.getByText("Results saved", { exact: true })).toBeVisible();
@@ -318,8 +319,8 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			const idInput = page.getByPlaceholder("Enter Room ID", { exact: true });
 			await expect(idInput).toBeVisible();
 			const join = page.getByRole("button", { name: "Join", exact: true });
-			const inputBox = (await idInput.boundingBox())!,
-				joinBox = (await join.boundingBox())!;
+			const inputBox = required(await idInput.boundingBox()),
+				joinBox = required(await join.boundingBox());
 			expect(
 				Math.abs(
 					inputBox.y + inputBox.height / 2 - joinBox.y - joinBox.height / 2,
@@ -337,20 +338,23 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			await expect(
 				page.getByRole("list", { name: "Current players" }).locator("li"),
 			).toHaveCount(1);
-			const id = observed.snapshot!.playId;
+			const id = required(observed.snapshot).playId;
 			await page.setViewportSize({ width: 390, height: 844 });
 			await page.screenshot({ path: info.outputPath("players-mobile.png") });
 			await page.getByRole("button", { name: "Menu", exact: true }).click();
 			expect(
-				await page.locator(".controls-help").evaluate(
-					(help) =>
+				await page.locator(".controls-help").evaluate((help) => {
+					const button = Array.from(
+						document.querySelectorAll(".game-overlay button"),
+					).find((button) => button.textContent === "Leave Room");
+					return (
+						!!button &&
 						!!(
-							Array.from(document.querySelectorAll(".game-overlay button"))
-								.find((button) => button.textContent === "Leave Room")!
-								.compareDocumentPosition(help) &
+							button.compareDocumentPosition(help) &
 							Node.DOCUMENT_POSITION_FOLLOWING
-						),
-				),
+						)
+					);
+				}),
 			).toBe(true);
 			await page
 				.getByRole("button", { name: "End Match", exact: true })

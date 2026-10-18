@@ -23,6 +23,7 @@ import {
 	type RoomState,
 } from "../network/GameSocket";
 import { loadReconnect } from "../network/reconnect";
+import { required } from "../required";
 
 type Screen =
 	| "home"
@@ -494,7 +495,12 @@ export function App() {
 							>
 								New Game
 							</button>
-							<button type="button" onClick={() => setScreen("rooms")}>
+							<button
+								type="button"
+								onClick={() =>
+									setScreen(identity.authenticated ? "rooms" : "sign-in")
+								}
+							>
 								Room
 							</button>
 							<button
@@ -582,7 +588,7 @@ export function App() {
 							<HistoryList
 								key={accountId}
 								onSelect={(item) => {
-									setDetail({ accountId: identity.account!.id, item });
+									setDetail({ accountId: required(identity.account).id, item });
 									setScreen("detail");
 								}}
 							/>
@@ -593,7 +599,7 @@ export function App() {
 						))}
 					{screen === "detail" && detail?.accountId === accountId && detail && (
 						<HistoryDetail
-							key={detail.item.kind + ":" + detail.item.id}
+							key={`${detail.item.kind}:${detail.item.id}`}
 							item={detail.item}
 						/>
 					)}
@@ -607,67 +613,50 @@ export function App() {
 							<ControlsHelp />
 						</>
 					)}
-					{screen === "rooms" && (
+					{screen === "rooms" && identity.authenticated && (
 						<>
-							{!identity.authenticated ? (
-								<>
-									<p>Sign in to play online.</p>
-									<button type="button" onClick={() => setScreen("sign-in")}>
-										Sign In
-									</button>
-									<button type="button" onClick={() => setScreen("register")}>
-										Create Account
-									</button>
-								</>
-							) : (
-								<>
-									<button
-										type="button"
-										disabled={pending}
-										onClick={() => command("CREATE_ROOM")}
-									>
-										Create Room
-									</button>
-									<button
-										type="button"
-										onClick={() => setScreen("public-rooms")}
-									>
-										Join Public Room
-									</button>
-									<form
-										className="room-join-form"
-										onSubmit={(event) => {
-											event.preventDefault();
-											const roomId = String(
-												new FormData(event.currentTarget).get("roomId") || "",
-											)
-												.trim()
-												.toUpperCase();
-											command("JOIN_ROOM", { roomId });
-										}}
-									>
-										<input
-											name="roomId"
-											aria-label="Room ID"
-											placeholder="Enter Room ID"
-											required
-											minLength={6}
-											maxLength={6}
-											autoComplete="off"
-											autoCapitalize="characters"
-											pattern="[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}"
-											onInput={(event) => {
-												event.currentTarget.value =
-													event.currentTarget.value.toUpperCase();
-											}}
-										/>
+							<button
+								type="button"
+								disabled={pending}
+								onClick={() => command("CREATE_ROOM")}
+							>
+								Create Room
+							</button>
+							<button type="button" onClick={() => setScreen("public-rooms")}>
+								Join Public Room
+							</button>
+							<form
+								className="room-join-form"
+								onSubmit={(event) => {
+									event.preventDefault();
+									const roomId = String(
+										new FormData(event.currentTarget).get("roomId") || "",
+									)
+										.trim()
+										.toUpperCase();
+									command("JOIN_ROOM", { roomId });
+								}}
+							>
+								<input
+									name="roomId"
+									aria-label="Room ID"
+									placeholder="Enter Room ID"
+									required
+									minLength={6}
+									maxLength={6}
+									autoComplete="off"
+									autoCapitalize="characters"
+									pattern="[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}"
+									onInput={(event) => {
+										event.currentTarget.value =
+											event.currentTarget.value.toUpperCase();
+									}}
+								/>
 
-										<button type="submit" disabled={pending}>
-											Join
-										</button>
-									</form>
-								</>
-							)}
+								<button type="submit" disabled={pending}>
+									Join
+								</button>
+							</form>
 						</>
 					)}
 					{screen === "public-rooms" && identity.authenticated && (

@@ -1,3 +1,4 @@
+import { required } from "../../required";
 import { PHYSICS } from "./tuning";
 import type { GameMap } from "./types";
 
@@ -10,7 +11,7 @@ export interface FinishPlatform {
 
 export function findFinishPlatform(map: GameMap): FinishPlatform | undefined {
 	const { finish, tileSize: size, screenHeight: height } = map,
-		tiles = map.screens[finish.screen]!.tiles,
+		tiles = required(map.screens[finish.screen]).tiles,
 		top = -finish.screen * height,
 		limit = map.progressOriginY - (finish.minProgress ?? 0) - top,
 		firstColumn = Math.ceil(finish.minCenterX / size),
@@ -29,11 +30,13 @@ export function findFinishPlatform(map: GameMap): FinishPlatform | undefined {
 		let start = firstColumn,
 			bestStart = 0,
 			bestWidth = 0;
+		const floor = required(tiles[row]),
+			above = required(tiles[row - 1]);
 		const exposed = (column: number) =>
-			column < tiles[row]!.length &&
-			"#IN".includes(tiles[row]![column]!) &&
-			tiles[row - 1]![column] === " ";
-		for (let column = firstColumn; column <= tiles[row]!.length; column++) {
+			column < floor.length &&
+			"#IN".includes(floor.charAt(column)) &&
+			above[column] === " ";
+		for (let column = firstColumn; column <= floor.length; column++) {
 			if (exposed(column)) continue;
 			if (column - start > bestWidth) {
 				bestStart = start;

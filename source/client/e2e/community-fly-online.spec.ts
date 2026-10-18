@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import type { OnlineSnapshot } from "../src/game/netcode/OnlineRuntime";
+import { required } from "../src/required";
 
 test.skip(
 	process.env.E2E_FLY_ONLINE !== "true",
@@ -20,7 +21,7 @@ test("server-enabled flight, double Space and movement save and Continue online 
 			if (message.type === "ERROR") errors.push(message.payload);
 		}),
 	);
-	const name = "flight_" + crypto.randomUUID().replaceAll("-", "").slice(0, 12);
+	const name = `flight_${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
 	await page.goto("/");
 	await page
 		.getByRole("button", { name: "Create Account", exact: true })
@@ -45,8 +46,8 @@ test("server-enabled flight, double Space and movement save and Continue online 
 	await expect
 		.poll(() => snapshots.at(-1)?.self.simulation.physics.freeFlight)
 		.toBe(true);
-	const initialY = snapshots.at(-1)!.self.simulation.physics.y,
-		run = snapshots.at(-1)!.playId;
+	const initialY = required(snapshots.at(-1)).self.simulation.physics.y,
+		run = required(snapshots.at(-1)).playId;
 	await page.waitForTimeout(400);
 	await page.keyboard.down("Space");
 	await page.waitForTimeout(250);

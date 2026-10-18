@@ -2,6 +2,7 @@ import rules from "../../../../common/rules.json";
 import { NETWORK } from "../../network/config";
 import type { PlayerStanding } from "../../network/contracts";
 import type { GameSocket, RoomState } from "../../network/GameSocket";
+import { required } from "../../required";
 import { PRESENTATION } from "../presentation/config";
 import type {
 	EndingSignal,
@@ -109,7 +110,7 @@ export class OnlineRuntime implements GameRuntime {
 			ending.screen !== this.game.physics.map.finish.screen
 		)
 			throw new Error("Invalid ending state");
-		this.ending ??= { id: payload.playId, screen: ending.screen! };
+		this.ending ??= { id: payload.playId, screen: required(ending.screen) };
 	}
 	receive(payload: Record<string, unknown>): void {
 		const value = payload as unknown as OnlineSnapshot;
@@ -234,7 +235,7 @@ export class OnlineRuntime implements GameRuntime {
 				(member) => member.playerId === this.socket.selfId,
 			);
 		const color = (slot: number) =>
-			rules.appearanceColors[slot] || rules.appearanceColors[0]!;
+			rules.appearanceColors[slot] || required(rules.appearanceColors[0]);
 		const peers: RenderPlayer[] = this.peers
 			.frame(performance.now())
 			.map((peer) => ({

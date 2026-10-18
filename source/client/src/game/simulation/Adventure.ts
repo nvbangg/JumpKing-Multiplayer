@@ -1,4 +1,5 @@
 import data from "../../../../common/adventure.json";
+import { required } from "../../required";
 import { PHYSICS as P } from "./tuning";
 import type { GameMap, PlayerInput, PlayerState } from "./types";
 
@@ -103,13 +104,13 @@ export class Adventure {
 		const events: AdventureEvent[] = [],
 			hitbox = box(player);
 		for (const npc of data.npcs) {
-			const s = this.state.dialogue[npc.id]!;
+			const s = required(this.state.dialogue[npc.id]);
 			const quotes = npc.progressQuotes
 				.map((quote, i) => ({ ...quote, i }))
 				.filter((quote) => quote.screen === player.screen + 1);
 			if (quotes.length && player.screen + 1 > s.best) {
 				s.best = player.screen + 1;
-				s.pool.push(...quotes.map((quote) => "progress:" + quote.i).reverse());
+				s.pool.push(...quotes.map((quote) => `progress:${quote.i}`).reverse());
 			}
 			if (s.busy > 0) {
 				s.busy--;
@@ -119,7 +120,7 @@ export class Adventure {
 				const lengths = this.quoteLengths(npc.id, s.quote);
 				if (
 					++s.ticks >=
-					lengths[s.line]! * npc.characterSeconds * P.tickRate +
+					required(lengths[s.line]) * npc.characterSeconds * P.tickRate +
 						T.speechHoldTicks
 				) {
 					s.ticks = 0;
@@ -143,18 +144,18 @@ export class Adventure {
 			);
 			let consumed = true;
 			if (flagged >= 0) {
-				const flag = npc.flagQuotes[flagged]!.flag,
+				const flag = required(npc.flagQuotes[flagged]).flag,
 					index = s.flags[flag] || 0;
-				s.quote = "flag:" + flagged + ":" + index;
+				s.quote = `flag:${flagged}:${index}`;
 				s.flags[flag] = index + 1;
 				s.introduced = true;
 			} else if (!s.introduced) {
 				s.quote = "intro";
 				s.introduced = true;
-			} else if (s.pool.length) s.quote = s.pool.pop()!;
+			} else if (s.pool.length) s.quote = required(s.pool.pop());
 			else {
 				s.quote = npc.loopLengths.length
-					? "loop:" + (s.loop % npc.loopLengths.length)
+					? `loop:${s.loop % npc.loopLengths.length}`
 					: null;
 				s.loop++;
 				consumed = false;
@@ -162,7 +163,7 @@ export class Adventure {
 			if (consumed && s.quote !== null) s.talks++;
 		}
 		for (const readable of data.readables) {
-			const s = this.state.readables[readable.id]!;
+			const s = required(this.state.readables[readable.id]);
 			if (!overlap(hitbox, this.worldRect(readable.trigger, readable.screen))) {
 				this.state.readables[readable.id] = freshReadable();
 				continue;
@@ -173,7 +174,7 @@ export class Adventure {
 				continue;
 			}
 			s.ticks++;
-			const length = readable.lineLengths[s.line]!;
+			const length = required(readable.lineLengths[s.line]);
 			if (
 				s.ticks % T.readableCharacterTicks === 0 &&
 				s.ticks <= length * T.readableCharacterTicks

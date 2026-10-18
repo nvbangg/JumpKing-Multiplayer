@@ -60,7 +60,7 @@ test("every screen and NPC references an included texture", () => {
 				: [layers]
 			: [])
 			expect(
-				manifest.textures["screens/scrolling/textures/" + layer.texture],
+				manifest.textures[`screens/scrolling/textures/${layer.texture}`],
 			).toBeDefined();
 	}
 	for (const npc of manifest.npcs)

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { required } from "../src/required";
 import { leaveOnline, newCommunity, registerOnline } from "./support/online";
 
 test.skip(process.env.E2E_AUTH_ONLINE !== "true", "Requires backend/MySQL");
@@ -56,14 +57,14 @@ test("History paginates owned Community results without depending on local stora
 	await page.getByRole("button", { name: "Sign In", exact: true }).click();
 	await page
 		.getByLabel("Username", { exact: true })
-		.fill(process.env.E2E_HISTORY_USERNAME!);
+		.fill(required(process.env.E2E_HISTORY_USERNAME));
 	await page
 		.getByLabel("Password", { exact: true })
-		.fill(process.env.E2E_HISTORY_PASSWORD!);
+		.fill(required(process.env.E2E_HISTORY_PASSWORD));
 	await page.getByRole("button", { name: "Sign In", exact: true }).click();
 	await expect(
 		page.getByRole("button", {
-			name: process.env.E2E_HISTORY_USERNAME!,
+			name: required(process.env.E2E_HISTORY_USERNAME),
 			exact: true,
 		}),
 	).toBeVisible();

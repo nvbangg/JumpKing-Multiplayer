@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 import checkpoints from "../../../../common/fixtures/main-babe-checkpoints.json";
 import route from "../../../../common/fixtures/main-babe-route.json";
 import rawMap from "../../../../common/maps/main-babe.json";
+import { required } from "../../required";
 import { parseMap } from "./map";
 import { Simulation } from "./Simulation";
 import { PHYSICS as P } from "./tuning";
@@ -106,20 +107,24 @@ test("legitimate replay reaches Finish through all 43 screens without fly or tel
 	};
 	for (const [index, action] of route.entries()) {
 		if ("walk" in action) {
-			for (let i = 0; i < action.ticks!; i++)
-				step({ left: action.walk! < 0, right: action.walk! > 0, jump: false });
+			for (let i = 0; i < required(action.ticks); i++)
+				step({
+					left: required(action.walk) < 0,
+					right: required(action.walk) > 0,
+					jump: false,
+				});
 		} else {
 			step();
-			for (let i = 0; i < action.charge!; i++)
+			for (let i = 0; i < required(action.charge); i++)
 				step({
-					left: action.charge === 36 && action.direction! < 0,
-					right: action.charge === 36 && action.direction! > 0,
+					left: action.charge === 36 && required(action.direction) < 0,
+					right: action.charge === 36 && required(action.direction) > 0,
 					jump: true,
 				});
 			if (action.charge !== 36)
 				step({
-					left: action.direction! < 0,
-					right: action.direction! > 0,
+					left: required(action.direction) < 0,
+					right: required(action.direction) > 0,
 					jump: false,
 				});
 			for (let i = 0; i < 180; i++) {

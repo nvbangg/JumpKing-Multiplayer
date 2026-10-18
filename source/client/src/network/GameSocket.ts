@@ -1,3 +1,4 @@
+import { required } from "../required";
 import { ApiError, backendOrigin } from "./api";
 import { NETWORK } from "./config";
 import type { ChatMessage, NetworkQuality } from "./contracts";
@@ -502,7 +503,7 @@ export class GameSocket {
 				const message = JSON.stringify({ v: 1, type, requestId, payload });
 				if (new TextEncoder().encode(message).length > NETWORK.maxMessageBytes)
 					throw new Error("Message is too large");
-				this.socket!.send(message);
+				required(this.socket).send(message);
 			} catch {
 				clearTimeout(timer);
 				this.pending.delete(requestId);

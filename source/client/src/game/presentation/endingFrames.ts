@@ -1,3 +1,4 @@
+import { required } from "../../required";
 import { PHYSICS as P } from "../simulation/tuning";
 
 export interface EndingFrame {
@@ -22,10 +23,10 @@ function grid(
 ) {
 	const positions = cells.split(" ");
 	names.split(" ").forEach((name, i) => {
-		const [column, row] = positions[i]!.split(",").map(Number);
-		ENDING_FRAMES[group + "." + name] = {
-			x: x + column! * width,
-			y: y + row! * height,
+		const [column, row] = required(positions[i]).split(",").map(Number);
+		ENDING_FRAMES[`${group}.${name}`] = {
+			x: x + required(column) * width,
+			y: y + required(row) * height,
 			width,
 			height,
 			originX,
@@ -89,7 +90,7 @@ grid(
 	0.5,
 	0.5,
 );
-export const endingFrameName = (frame: string) => "ending:" + frame;
+export const endingFrameName = (frame: string) => `ending:${frame}`;
 export function jumpStrength(height: number): number {
 	let distance = 0,
 		velocity = 0,
@@ -107,20 +108,22 @@ export function jumpPath(
 ): number[] {
 	const points = [0],
 		ticks = Math.trunc(Math.abs(jumpStrength(78) / P.gravity));
+	let last = 0;
 	for (let i = 0; i < 300; i++) {
 		if (stop !== "ground") {
 			velocity = Math.fround(velocity + P.gravity);
 			if (i >= ticks - 1) {
-				points.push(points.at(-1)!);
+				points.push(last);
 				break;
 			}
 		}
-		const next = Math.fround(points.at(-1)! + velocity);
+		const next = Math.fround(last + velocity);
 		if (stop === "ground" && next >= 0 && i > 0) {
-			points.push(points.at(-1)!);
+			points.push(last);
 			break;
 		}
 		points.push(next);
+		last = next;
 		if (stop === "ground") velocity = Math.fround(velocity + P.gravity);
 	}
 	return points;

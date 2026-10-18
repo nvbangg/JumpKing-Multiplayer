@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { required } from "../required";
 import { NETWORK } from "./config";
 import { GameSocket } from "./GameSocket";
 
@@ -52,7 +53,7 @@ afterEach(() => {
 });
 const open = async (game: GameSocket) => {
 	const ready = game.connect();
-	const socket = Socket.instances.at(-1)!;
+	const socket = required(Socket.instances.at(-1));
 	socket.open();
 	await ready;
 	return socket;
@@ -115,7 +116,7 @@ test("parallel connects share one handshake and stale sockets cannot affect the 
 		second = game.connect();
 	expect(first).toBe(second);
 	expect(Socket.instances).toHaveLength(1);
-	const old = Socket.instances[0]!;
+	const old = required(Socket.instances[0]);
 	old.open();
 	await first;
 	expect(old.url).toBe("ws://127.0.0.1:5173/ws/game");
@@ -127,7 +128,7 @@ test("parallel connects share one handshake and stale sockets cannot affect the 
 	expect(disconnect).not.toHaveBeenCalled();
 	expect(game.selfId).toBeNull();
 	const pending = game.command("GET_ROOM_STATE");
-	const request = JSON.parse(next.sent[0]!);
+	const request = JSON.parse(required(next.sent[0]));
 	next.receive({
 		v: 1,
 		type: "ROOM_STATE",
@@ -181,7 +182,7 @@ test("closing during handshake rejects immediately and does not start a stale he
 	const rejected = expect(ready).rejects.toMatchObject({
 		code: "CONNECTION_FAILED",
 	});
-	const old = Socket.instances[0]!;
+	const old = required(Socket.instances[0]);
 	game.close();
 	await rejected;
 	old.open();
@@ -197,13 +198,13 @@ test("reconnecting before the old close event rejects old pending commands", asy
 	});
 	old.readyState = 3;
 	const next = game.connect();
-	Socket.instances.at(-1)!.open();
+	required(Socket.instances.at(-1)).open();
 	await next;
 	await rejected;
 	old.onclose?.();
 	const command = game.command("GET_ROOM_STATE"),
-		socket = Socket.instances.at(-1)!,
-		request = JSON.parse(socket.sent[0]!);
+		socket = required(Socket.instances.at(-1)),
+		request = JSON.parse(required(socket.sent[0]));
 	socket.receive({
 		v: 1,
 		type: "ROOM_STATE",
@@ -239,7 +240,7 @@ test("heartbeat confirms nonce and a silent connection expires without leaking c
 		game = new GameSocket(vi.fn(), disconnected),
 		socket = await open(game);
 	await vi.advanceTimersByTimeAsync(NETWORK.heartbeatMs);
-	const ping = JSON.parse(socket.sent[0]!);
+	const ping = JSON.parse(required(socket.sent[0]));
 	socket.receive({
 		v: 1,
 		type: "PONG",
@@ -324,7 +325,7 @@ test("Leave is shared until acknowledgement and clears membership before notifyi
 	expect(second).toBe(first);
 	expect(socket.sent).toHaveLength(1);
 	expect(socket.readyState).toBe(Socket.OPEN);
-	const request = JSON.parse(socket.sent[0]!);
+	const request = JSON.parse(required(socket.sent[0]));
 	socket.receive({
 		v: 1,
 		type: "ROOM_LEFT",
@@ -346,7 +347,7 @@ test("a failed Save and Exit keeps membership and allows one fresh Leave retry",
 	});
 	const first = game.command("LEAVE_ROOM"),
 		rejected = expect(first).rejects.toMatchObject({ code: "SAVE_FAILED" }),
-		request = JSON.parse(socket.sent[0]!);
+		request = JSON.parse(required(socket.sent[0]));
 	socket.receive({
 		v: 1,
 		type: "ERROR",

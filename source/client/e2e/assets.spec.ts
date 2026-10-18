@@ -16,7 +16,7 @@ test("Main Babe textures decode in a browser and audio/font resources load", asy
 			height: number;
 		}[]) {
 			const image = new Image();
-			image.src = "/assets/" + texture.file;
+			image.src = `/assets/${texture.file}`;
 			try {
 				await image.decode();
 				if (
@@ -32,7 +32,7 @@ test("Main Babe textures decode in a browser and audio/font resources load", asy
 	}, manifest.textures);
 	expect(failures).toEqual([]);
 	for (const asset of Object.values(manifest.sounds) as { file: string }[])
-		expect((await request.get("/assets/" + asset.file)).ok()).toBe(true);
+		expect((await request.get(`/assets/${asset.file}`)).ok()).toBe(true);
 	expect(
 		(await request.get("/assets/font/ttf_litter_lover2_bold.ttf")).ok(),
 	).toBe(true);

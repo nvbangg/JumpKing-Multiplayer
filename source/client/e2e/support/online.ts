@@ -9,7 +9,7 @@ export async function leaveOnline(page: Page): Promise<void> {
 		const { loadReconnect } = await import(reconnectPath);
 		const me = await (await fetch("/api/auth/me")).json();
 		if (!me.account) return;
-		const profile = location.origin + ":account:" + me.account.id;
+		const profile = `${location.origin}:account:${me.account.id}`;
 		if (!(await loadReconnect(profile))) return;
 		const { GameSocket } = await import(socketPath),
 			socket = new GameSocket(
@@ -41,8 +41,7 @@ export function observeOnline(page: Page) {
 }
 
 export async function registerOnline(page: Page, prefix: string) {
-	const username =
-		prefix + "_" + crypto.randomUUID().replaceAll("-", "").slice(0, 10);
+	const username = `${prefix}_${crypto.randomUUID().replaceAll("-", "").slice(0, 10)}`;
 	await page.goto("/");
 	await page
 		.getByRole("button", { name: "Create Account", exact: true })

@@ -178,7 +178,7 @@ test("late home responses cannot restore the previous Account's save or statisti
 			page.getByRole("button", { name: "Continue", exact: true }),
 		).toHaveCount(0);
 		await expect(page.getByLabel("Total statistics")).toHaveCount(0);
-		const next = "next_" + crypto.randomUUID().replaceAll("-", "").slice(0, 10);
+		const next = `next_${crypto.randomUUID().replaceAll("-", "").slice(0, 10)}`;
 		await page
 			.getByRole("button", { name: "Create Account", exact: true })
 			.click();

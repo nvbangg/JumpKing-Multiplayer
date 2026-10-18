@@ -41,7 +41,7 @@ test("a delayed anonymous me response cannot overwrite a subsequently registered
 	try {
 		await page.goto("/");
 		await ready;
-		const name = "race_" + crypto.randomUUID().replaceAll("-", "").slice(0, 12);
+		const name = `race_${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
 		await page
 			.getByRole("button", { name: "Create Account", exact: true })
 			.click();

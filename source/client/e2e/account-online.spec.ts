@@ -14,7 +14,7 @@ test("account forms persist the session and sign out clears private home data", 
 	page,
 	context,
 }, info) => {
-	const name = "player_" + Date.now(),
+	const name = `player_${Date.now()}`,
 		password = "A secure browser password";
 	await page.goto("/");
 	await page
@@ -70,7 +70,7 @@ test("two browser identities stay isolated and duplicate registration is a safe 
 	try {
 		const a = await first.newPage(),
 			b = await second.newPage(),
-			name = "isolated_" + Date.now();
+			name = `isolated_${Date.now()}`;
 		for (const page of [a, b]) {
 			await page.goto("/");
 			await page

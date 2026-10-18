@@ -1,4 +1,5 @@
 import type Phaser from "phaser";
+import { required } from "../../required";
 import type { AssetManifest } from "../content/assets";
 import { ADVENTURE } from "../simulation/Adventure";
 import { PRESENTATION as V } from "./config";
@@ -25,8 +26,7 @@ export class AdventureVisuals {
 	}
 	render(frame: WorldFrame): void {
 		for (const wall of this.manifest.walls)
-			this.walls
-				.get(wall.id)!
+			required(this.walls.get(wall.id))
 				.setVisible(wall.screen === frame.self.state.screen)
 				.setAlpha(
 					(frame.world?.walls[wall.id]?.fadeTicks ??

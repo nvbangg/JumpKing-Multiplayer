@@ -163,4 +163,4 @@ Nhóm error codes: INVALID_MESSAGE/INVALID_INPUT/INVALID_SETTINGS, AUTH_REQUIRED
 
 ## Mở rộng dữ liệu hiển thị
 
-Account/profile có `crownUnlocked`; public render state chỉ mang trạng thái vương miện, không nhận quyền mở từ input online. GAME_SNAPSHOT bổ sung Players ranking từ server RAM, giữ đồng hạng; Room theo mode, Community theo độ cao hiện tại. Không truy vấn DB theo tick để tạo bảng này. Leaderboard HTTP tải khi mở hoặc nhấn Refresh; bảng Players vẫn cập nhật qua snapshot.
+Account/profile có `crownUnlocked`; public render state chỉ mang trạng thái vương miện, không nhận quyền mở từ input online. GAME_SNAPSHOT bổ sung Players ranking từ server RAM, giữ đồng hạng; Room theo mode, Community theo độ cao hiện tại. Không truy vấn DB theo tick để tạo bảng này. Leaderboard dùng HTTP theo [gameplay](gameplay.md#chat-và-bảng-trong-trận); bảng Players vẫn cập nhật qua snapshot.

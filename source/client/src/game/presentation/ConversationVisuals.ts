@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { required } from "../../required";
 import type { AssetManifest, Npc } from "../content/assets";
 import { ADVENTURE } from "../simulation/Adventure";
 import { PHYSICS as P } from "../simulation/tuning";
@@ -39,7 +40,7 @@ export class ConversationVisuals {
 					.bitmapText(0, 0, font, "")
 					.setDepth(V.dialogueTextDepth)
 					.setTint(0xe4dfcd)
-					.setName("dialogue:" + id),
+					.setName(`dialogue:${id}`),
 				full: "",
 				wrapped: "",
 			};
@@ -104,8 +105,8 @@ export class ConversationVisuals {
 				V.bubbleOffsetY -
 				bubble.text.height;
 			bubble.text.setPosition(x + V.bubblePadding, y + V.bubblePadding - 1);
-			bubble
-				.frame!.clear()
+			required(bubble.frame)
+				.clear()
 				.fillStyle(0x0b100b, 0.92)
 				.fillRoundedRect(
 					x,
@@ -141,7 +142,7 @@ export class ConversationVisuals {
 			const line = definition.lines[message.line];
 			if (!line) continue;
 			const bubble = this.bubble(definition.id, definition.font, false),
-				font = this.manifest.fonts[definition.font]!;
+				font = required(this.manifest.fonts[definition.font]);
 			bubble.text
 				.setOrigin(definition.bubble.anchor.X === "Right" ? 1 : 0, 0)
 				.setLineSpacing(V.readableLineHeight - font.lineHeight);

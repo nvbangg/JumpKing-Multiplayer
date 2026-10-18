@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import type { OnlineSnapshot } from "../src/game/netcode/OnlineRuntime";
+import { required } from "../src/required";
 import {
 	createRoom,
 	joinRoom,
@@ -57,7 +58,7 @@ test("persistent chat, ten-message limit, shortcuts and touch work without launc
 		await startRoom(a, b);
 		const history = b.getByRole("log");
 		await a.locator("canvas").click();
-		const jumps = snapshots.at(-1)!.self.simulation.physics.jumps;
+		const jumps = required(snapshots.at(-1)).self.simulation.physics.jumps;
 		await expect(
 			a.getByRole("heading", { name: "Players", exact: true }),
 		).toBeVisible();
@@ -81,7 +82,7 @@ test("persistent chat, ten-message limit, shortcuts and touch work without launc
 		await expect
 			.poll(() => snapshots.at(-1)?.self.simulation.physics.charge)
 			.toBe(0);
-		const elapsed = snapshots.at(-1)!.elapsedTimeMs;
+		const elapsed = required(snapshots.at(-1)).elapsedTimeMs;
 		await a.getByLabel("Message", { exact: true }).fill("Online hello");
 		await a.keyboard.press("Enter");
 		await expect(history).toContainText("Online hello");
@@ -131,7 +132,9 @@ test("persistent chat, ten-message limit, shortcuts and touch work without launc
 			a.getByRole("button", { name: "Resume", exact: true }),
 		).toBeVisible();
 		await a.getByRole("button", { name: "Resume", exact: true }).click();
-		expect(snapshots.at(-1)!.self.simulation.physics.jumps).toBe(jumps);
+		expect(required(snapshots.at(-1)).self.simulation.physics.jumps).toBe(
+			jumps,
+		);
 		await a.locator("canvas").click();
 		await a.keyboard.down("Space");
 		await a.waitForTimeout(180);
@@ -143,9 +146,9 @@ test("persistent chat, ten-message limit, shortcuts and touch work without launc
 		await expect
 			.poll(() => snapshots.at(-1)?.self.simulation.physics.grounded)
 			.toBe(true);
-		expect(snapshots.at(-1)!.players!.map((player) => player.rank)).toEqual([
-			1, 1,
-		]);
+		expect(
+			required(required(snapshots.at(-1)).players).map((player) => player.rank),
+		).toEqual([1, 1]);
 		await expect(
 			a.getByRole("list", { name: "Current players" }),
 		).toContainText(hostName);

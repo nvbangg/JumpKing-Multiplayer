@@ -50,7 +50,7 @@ export async function api<T>(
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), NETWORK.timeoutMs);
 	try {
-		const response = await fetch(backendOrigin() + "/api" + path, {
+		const response = await fetch(`${backendOrigin()}/api${path}`, {
 			method,
 			credentials: "include",
 			signal: controller.signal,

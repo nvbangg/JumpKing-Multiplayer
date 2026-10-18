@@ -10,6 +10,10 @@ test("compares snapshot-only and prediction with the same deterministic delayed 
 }) => {
 	await page.goto("/");
 	const measurements = await page.evaluate(async () => {
+		const requiredPath = "/src/required.ts";
+		const { required }: typeof import("../src/required") = await import(
+			requiredPath
+		);
 		const simulationPath = "/src/game/simulation/GameSimulation.ts",
 			predictionPath = "/src/game/netcode/Prediction.ts";
 		const { GameSimulation } = await import(simulationPath),
@@ -21,9 +25,9 @@ test("compares snapshot-only and prediction with the same deterministic delayed 
 			const sorted = [...values].sort((a, b) => a - b);
 			return {
 				samples: sorted.length,
-				p50: sorted[Math.ceil(sorted.length * 0.5) - 1]!,
-				p95: sorted[Math.ceil(sorted.length * 0.95) - 1]!,
-				p99: sorted[Math.ceil(sorted.length * 0.99) - 1]!,
+				p50: required(sorted[Math.ceil(sorted.length * 0.5) - 1]),
+				p95: required(sorted[Math.ceil(sorted.length * 0.95) - 1]),
+				p99: required(sorted[Math.ceil(sorted.length * 0.99) - 1]),
 			};
 		};
 		return [0, 3, 6].map((delay) => {
@@ -63,7 +67,7 @@ test("compares snapshot-only and prediction with the same deterministic delayed 
 				}
 				if (tick % 3 === 0 && source >= 0)
 					snapshots.push({
-						arrives: tick + delay + [0, 2, 1, 0][(tick / 3) % 4]!,
+						arrives: tick + delay + required([0, 2, 1, 0][(tick / 3) % 4]),
 						seq: serverSeq,
 						state: server.snapshot(),
 					});

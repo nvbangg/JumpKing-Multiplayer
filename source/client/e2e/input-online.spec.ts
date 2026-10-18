@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { required } from "../src/required";
 import {
 	leaveOnline,
 	newCommunity,
@@ -29,7 +30,7 @@ test("touch holds direction and Jump simultaneously and cancellation never launc
 	});
 	await cdp.send("Input.dispatchTouchEvent", {
 		type: "touchStart",
-		touchPoints: [point(bounds!, 1)],
+		touchPoints: [point(required(bounds), 1)],
 	});
 	await page.waitForTimeout(120);
 	await cdp.send("Input.dispatchTouchEvent", {
@@ -44,7 +45,7 @@ test("touch holds direction and Jump simultaneously and cancellation never launc
 		.toBe(0);
 	await cdp.send("Input.dispatchTouchEvent", {
 		type: "touchStart",
-		touchPoints: [point(left!, 1), point(bounds!, 2)],
+		touchPoints: [point(required(left), 1), point(required(bounds), 2)],
 	});
 	await expect
 		.poll(() =>

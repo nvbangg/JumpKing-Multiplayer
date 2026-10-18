@@ -7,8 +7,8 @@ test("reconnect context is stored per backend/identity and contains only the own
 	const result = await page.evaluate(async () => {
 		const path = "/src/network/reconnect.ts",
 			{ saveReconnect, loadReconnect, clearReconnect } = await import(path);
-		const a = location.origin + ":account:1",
-			b = location.origin + ":account:2",
+		const a = `${location.origin}:account:1`,
+			b = `${location.origin}:account:2`,
 			otherBackend = "http://127.0.0.1:9090:account:1";
 		const context = {
 			roomId: "ABCDEF",
@@ -54,7 +54,7 @@ test("reconnect context is stored per backend/identity and contains only the own
 	expect(
 		await page.evaluate(async () => {
 			const path = "/src/network/reconnect.ts";
-			return (await import(path)).loadReconnect(location.origin + ":account:1");
+			return (await import(path)).loadReconnect(`${location.origin}:account:1`);
 		}),
 	).toBeNull();
 });
