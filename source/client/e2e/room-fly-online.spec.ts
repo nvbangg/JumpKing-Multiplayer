@@ -147,7 +147,7 @@ test("short Room finish shows Results and History without ending or full-map rew
 			})
 			.toBeLessThan(goal.minCenterX + map.tileSize * 5);
 		await a.keyboard.up("ArrowLeft");
-		await a.keyboard.down("Space");
+		await a.keyboard.down("KeyW");
 		await expect
 			.poll(() => snapshots.at(-1)?.self.simulation.physics.y, {
 				timeout: 15_000,
@@ -159,7 +159,7 @@ test("short Room finish shows Results and History without ending or full-map rew
 					physics.bodyHeight -
 					map.tileSize,
 			);
-		await a.keyboard.up("Space");
+		await a.keyboard.up("KeyW");
 		await expect
 			.poll(() => snapshots.at(-1)?.self.simulation.physics.vy)
 			.toBe(0);
@@ -168,17 +168,19 @@ test("short Room finish shows Results and History without ending or full-map rew
 			map.progressOriginY -
 			goal.minProgress -
 			physics.bodyHeight -
-			physics.flyVerticalSpeed * 2;
+			map.tileSize * 4;
 		for (let attempt = 0; attempt < 12; attempt++) {
 			const state = required(snapshots.at(-1)).self.simulation.physics;
 			if (Math.abs(state.y - landingY) <= physics.flyVerticalSpeed) break;
 			await a.keyboard.press(state.y < landingY ? "ArrowDown" : "ArrowUp", {
 				delay: 20,
 			});
+			const releasedAt = required(snapshots.at(-1)).self.simulation.physics
+				.ticks;
 			await expect
 				.poll(() => {
 					const current = required(snapshots.at(-1)).self.simulation.physics;
-					return current.ticks > state.ticks && current.vy === 0;
+					return current.ticks > releasedAt && current.vy === 0;
 				})
 				.toBe(true);
 		}
@@ -284,9 +286,9 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"])
 				.toBe(true);
 			const y = required(snapshots.at(-1)).self.simulation.physics.y;
 			await a.waitForTimeout(400);
-			await a.keyboard.down("Space");
+			await a.keyboard.down("KeyW");
 			await a.waitForTimeout(200);
-			await a.keyboard.up("Space");
+			await a.keyboard.up("KeyW");
 			await a.waitForTimeout(400);
 			await expect
 				.poll(() => snapshots.at(-1)?.self.simulation.physics.y)

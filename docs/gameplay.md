@@ -59,9 +59,9 @@ Camera nguyên screen 4:3, letterbox; không smooth-follow. Screen ứng viên =
 
 ## Fly Mode
 
-Tính năng thử nghiệm cho Community và cả bốn mode Room, được mở bằng `FLY_ENABLED` theo [deployment](deployment.md#fly-mode). Khi server bật cờ, mọi người được dùng ngay ở mọi môi trường, không có thiết lập riêng theo Account hoặc Options; nhấn Space hai lần trong 300 ms để bắt đầu/tắt bay. Chỉ đếm lần nhấn mới sau khi thả, không tính key repeat; cảm ứng dùng nhấn đúp Jump. Tốc độ ngang/dọc và khoảng nhấn đúp tập trung trong shared tuning.
+Tính năng thử nghiệm cho Community và cả bốn mode Room, được mở bằng `FLY_ENABLED` theo [deployment](deployment.md#fly-mode). Khi server bật cờ, mọi người được dùng ngay ở mọi môi trường, không có thiết lập riêng theo Account hoặc Options; nhấn Space hai lần trong 300 ms để bắt đầu/tắt bay. Chỉ đếm lần nhấn mới sau khi thả, không tính key repeat; cảm ứng dùng nhấn đúp Jump. Tốc độ bay ngang 3 px/tick (2× tốc độ đi bộ), dọc 6 px/tick (4×); các giá trị và khoảng nhấn đúp tập trung trong shared tuning.
 
-Khi bay, WASD hoặc các mũi tên di chuyển bốn hướng; giữ Space cũng bay lên; cảm ứng thêm lên/xuống. Bay xuyên địa hình, không gravity/charge/splat, giữ biên world. Đổi trạng thái bay xóa charge/velocity; không tạo cú nhảy ngoài ý muốn và phải thả Jump trước khi charge tiếp. Khi chưa bay, lần nhấn Space đầu vẫn điều khiển nhảy bình thường, không chờ nhận diện nhấn đúp.
+Khi bay, WASD hoặc các mũi tên di chuyển bốn hướng; Space không di chuyển nhân vật khi bay; cảm ứng thêm lên/xuống. Bay xuyên địa hình, không gravity/charge/splat, giữ biên world. Đổi trạng thái bay xóa charge/velocity; không tạo cú nhảy ngoài ý muốn và phải thả Jump trước khi charge tiếp. Khi chưa bay, lần nhấn Space đầu vẫn điều khiển nhảy bình thường, không chờ nhận diện nhấn đúp.
 
 Tắt bay khi đang trong solid: tự rơi thẳng xuống, tạm bỏ collision đến khi toàn bộ body ra ngoài khối rồi khôi phục physics bình thường. Trong lúc thoát khối không nhận movement/charge; nếu tới đáy world vẫn chưa thoát thì đưa về spawn để tránh kẹt. Restore save khi tính năng đã tắt cũng áp dụng cách thoát khối này.
 

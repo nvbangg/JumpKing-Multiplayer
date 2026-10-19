@@ -36,9 +36,9 @@ test("Flight follows the server permission and double Space toggles real Communi
 		await page.waitForTimeout(200);
 		await page.keyboard.up("KeyD");
 		await page.waitForTimeout(400);
-		await page.keyboard.down("Space");
+		await page.keyboard.down("KeyW");
 		await page.waitForTimeout(200);
-		await page.keyboard.up("Space");
+		await page.keyboard.up("KeyW");
 	}
 	await page.getByRole("button", { name: "Menu", exact: true }).click();
 	await expect(page.getByText("Saved", { exact: true })).toBeVisible();

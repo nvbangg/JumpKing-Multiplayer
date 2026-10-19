@@ -353,9 +353,7 @@ export class Simulation {
 			this.setFlight(input.freeFlight);
 		if (s.freeFlight) {
 			s.vx = (Number(input.right) - Number(input.left)) * P.flyHorizontalSpeed;
-			s.vy =
-				(Number(!!input.down) - Number(!!input.up || input.jump)) *
-				P.flyVerticalSpeed;
+			s.vy = (Number(!!input.down) - Number(!!input.up)) * P.flyVerticalSpeed;
 			s.x = clamp(f(s.x + s.vx), 0, this.map.width - P.bodyWidth);
 			s.y = clamp(
 				f(s.y + s.vy),

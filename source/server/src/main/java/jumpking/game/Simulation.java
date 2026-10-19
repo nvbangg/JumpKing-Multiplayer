@@ -286,7 +286,7 @@ public final class Simulation {
       setFlight(input.freeFlight());
     if (s.freeFlight) {
       s.vx = ((input.right() ? 1 : 0) - (input.left() ? 1 : 0)) * p.flyHorizontalSpeed;
-      s.vy = ((input.down() ? 1 : 0) - (input.up() || input.jump() ? 1 : 0)) * p.flyVerticalSpeed;
+      s.vy = ((input.down() ? 1 : 0) - (input.up() ? 1 : 0)) * p.flyVerticalSpeed;
       s.x = clamp(f(s.x + s.vx), 0, map.width() - p.bodyWidth);
       s.y =
           clamp(

@@ -22,8 +22,8 @@ test("fly is denied by default and cancel does not toggle enabled flight", () =>
 	sim.setFlight(true);
 	sim.tick({ ...idle, left: true, up: true });
 	expect(sim.snapshot()).toMatchObject({
-		x: 226,
-		y: 287,
+		x: 228,
+		y: 296,
 		ticks: 1,
 		jumps: 0,
 		falls: 0,
@@ -33,19 +33,21 @@ test("fly is denied by default and cancel does not toggle enabled flight", () =>
 	expect(sim.snapshot().freeFlight).toBe(true);
 });
 
-test("holding Jump ascends in flight without charging or counting jumps", () => {
+test("flight uses only direction keys; holding Jump neither moves nor charges", () => {
 	const sim = new Simulation(world, true);
 	sim.setFlight(true);
 	for (let i = 0; i < 10; i++) sim.tick({ ...idle, jump: true });
 	expect(sim.snapshot()).toMatchObject({
-		y: 152,
-		vy: -15,
+		y: 302,
+		vy: 0,
 		charge: 0,
 		jumps: 0,
 		freeFlight: true,
 	});
-	sim.tick(idle);
-	expect(sim.snapshot().vy).toBe(0);
+	sim.tick({ ...idle, up: true });
+	expect(sim.snapshot().vy).toBe(-6);
+	sim.tick({ ...idle, down: true });
+	expect(sim.snapshot().vy).toBe(6);
 	sim.tick({ ...idle, jump: true, up: true, down: true });
 	expect(sim.snapshot().vy).toBe(0);
 });

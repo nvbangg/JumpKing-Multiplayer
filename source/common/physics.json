@@ -21,8 +21,8 @@
   "windFrequency": 0.48124886,
   "windAcceleration": 0.1,
   "cameraMinimumRiseSpeed": 3,
-  "flyHorizontalSpeed": 5,
-  "flyVerticalSpeed": 15,
+  "flyHorizontalSpeed": 3,
+  "flyVerticalSpeed": 6,
   "flyDoubleTapMs": 300,
   "collisionRecoveryLimit": 500
 }

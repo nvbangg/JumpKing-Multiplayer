@@ -53,6 +53,10 @@ test("server-enabled flight, double Space and movement save and Continue online 
 	await page.waitForTimeout(250);
 	await page.keyboard.up("Space");
 	await page.waitForTimeout(400);
+	expect(required(snapshots.at(-1)).self.simulation.physics.y).toBe(initialY);
+	await page.keyboard.down("KeyW");
+	await page.waitForTimeout(250);
+	await page.keyboard.up("KeyW");
 	await expect
 		.poll(() => snapshots.at(-1)?.self.simulation.physics.y)
 		.toBeLessThan(initialY - 40);
