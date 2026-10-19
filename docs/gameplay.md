@@ -131,7 +131,7 @@ Chỉ triển khai Main Babe; không mở rộng campaign/DLC khác.
 
 Timer luôn hiện; không hiển thị số lần nhảy trong HUD. Jumps vẫn được đếm cho Stats/History.
 
-Tên vùng hiện trong 6 giây khi bắt đầu chơi hoặc đổi vùng; chuyển screen cùng vùng không phát lại. Menu tạm giữ hiệu ứng, ending không hiển thị tên vùng.
+Tên mỗi vùng hiện trong 6 giây ở lần đầu tới vùng đó trong phiên chơi; chuyển screen cùng vùng hoặc quay lại vùng đã tới không phát lại. Menu tạm giữ hiệu ứng, ending không hiển thị tên vùng.
 
 NPC/hội thoại, bảng/sách/nhật ký và môi trường thuộc Main Babe; đọc/hội thoại không trực tiếp yêu cầu Pause. Không có Inventory, nhặt/mua vật phẩm hoặc quest nhận đồ. Hội thoại/trigger không phụ thuộc vật phẩm; ending không có credit.
 

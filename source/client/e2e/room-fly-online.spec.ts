@@ -18,7 +18,7 @@ test.skip(
 	"Requires the local-profile Room flight harness",
 );
 
-test("region caption changes only across regions and fades without blocking mobile controls", async ({
+test("region caption appears once per region and fades without blocking mobile controls", async ({
 	page,
 }, info) => {
 	test.setTimeout(45000);
@@ -81,8 +81,21 @@ test("region caption changes only across regions and fades without blocking mobi
 			);
 		});
 		await expect(caption).toHaveCSS("opacity", "0");
+		await page.keyboard.down("ArrowDown");
+		await expect
+			.poll(() => observed.snapshot?.self.simulation.physics.screen)
+			.toBeLessThan(6);
+		await page.keyboard.up("ArrowDown");
+		await expect(caption).toHaveCount(0);
+		await page.keyboard.down("ArrowUp");
+		await expect
+			.poll(() => observed.snapshot?.self.simulation.physics.screen)
+			.toBeGreaterThanOrEqual(6);
+		await page.keyboard.up("ArrowUp");
+		await expect(caption).toHaveCount(0);
 	} finally {
 		await page.keyboard.up("ArrowUp");
+		await page.keyboard.up("ArrowDown");
 		await leaveOnline(page);
 	}
 });

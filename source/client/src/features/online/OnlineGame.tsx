@@ -148,6 +148,8 @@ export function OnlineGame({
 		const effects = new PlayerEffects(),
 			adventureEffects = new AdventureEffects();
 		let cueManifest: Awaited<ReturnType<typeof loadManifest>> | null = null;
+		const seenLocations = new Set<string>();
+		let currentLocation = "";
 		const controls = new InputController(
 			() => {
 				lastActivity = performance.now();
@@ -266,7 +268,12 @@ export function OnlineGame({
 					setRemaining(snapshot.remainingTimeMs);
 					setFlying(state.freeFlight);
 					setPlayers(snapshot.players || []);
-					setLocation(manifest.screens[state.screen]?.location || "");
+					const nextLocation = manifest.screens[state.screen]?.location || "";
+					if (nextLocation !== currentLocation) {
+						currentLocation = nextLocation;
+						setLocation(seenLocations.has(nextLocation) ? "" : nextLocation);
+						seenLocations.add(nextLocation);
+					}
 					audio.current?.setScreen(state.screen);
 					if (snapshot.self.paused && !session.menu) {
 						session.menu = true;
