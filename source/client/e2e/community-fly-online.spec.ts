@@ -1,6 +1,88 @@
 import { expect, test } from "@playwright/test";
 import type { OnlineSnapshot } from "../src/game/netcode/OnlineRuntime";
 import { required } from "../src/required";
+import {
+	leaveOnline,
+	newCommunity,
+	observeOnline,
+	registerOnline,
+} from "./support/online";
+
+test("region discovery persists through Community Continue and resets for New Game", async ({
+	page,
+}) => {
+	test.setTimeout(60000);
+	const observed = observeOnline(page);
+	await page.addInitScript(() =>
+		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false })),
+	);
+	try {
+		await registerOnline(page, "region");
+		await newCommunity(page);
+		const caption = page.getByLabel("Current region", { exact: true });
+		await expect(caption).toHaveText("REDCROWN WOODS");
+		await page.locator("canvas").click();
+		await page.keyboard.press("Space");
+		await page.waitForTimeout(80);
+		await page.keyboard.press("Space");
+		await expect
+			.poll(() => observed.snapshot?.self.simulation.physics.freeFlight)
+			.toBe(true);
+		await page.keyboard.down("ArrowUp");
+		await expect
+			.poll(() => observed.snapshot?.self.simulation.physics.screen, {
+				timeout: 15000,
+				intervals: [30],
+			})
+			.toBe(5);
+		await page.keyboard.up("ArrowUp");
+		await expect(caption).toHaveText("COLOSSAL DRAIN");
+		await expect(caption).toHaveCount(0, { timeout: 8000 });
+		const intro = structuredClone(
+			required(observed.snapshot).self.simulation.world.regionIntro,
+		);
+		const run = required(observed.snapshot).playId;
+		await page.getByRole("button", { name: "Menu", exact: true }).click();
+		await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+		await page
+			.getByRole("button", { name: "Save & Exit", exact: true })
+			.click();
+		await page.getByRole("button", { name: "Continue", exact: true }).click();
+		await expect(
+			page.getByRole("button", { name: "Menu", exact: true }),
+		).toBeVisible();
+		await expect.poll(() => observed.snapshot?.playId).toBe(run);
+		expect(
+			required(observed.snapshot).self.simulation.world.regionIntro,
+		).toEqual(intro);
+		await expect(caption).toHaveCount(0);
+		await page.locator("canvas").click();
+		await page.keyboard.down("ArrowDown");
+		await expect
+			.poll(() => observed.snapshot?.self.simulation.physics.screen)
+			.toBeLessThan(5);
+		await page.keyboard.up("ArrowDown");
+		await expect(caption).toHaveCount(0);
+		await page.keyboard.down("ArrowUp");
+		await expect
+			.poll(() => observed.snapshot?.self.simulation.physics.screen)
+			.toBeGreaterThanOrEqual(5);
+		await page.keyboard.up("ArrowUp");
+		await expect(caption).toHaveCount(0);
+		await page.getByRole("button", { name: "Menu", exact: true }).click();
+		await page
+			.getByRole("button", { name: "Save & Exit", exact: true })
+			.click();
+		page.once("dialog", (dialog) => dialog.accept());
+		await newCommunity(page);
+		await expect(caption).toHaveText("REDCROWN WOODS");
+		await expect.poll(() => observed.snapshot?.playId).not.toBe(run);
+	} finally {
+		await page.keyboard.up("ArrowUp");
+		await page.keyboard.up("ArrowDown");
+		await leaveOnline(page);
+	}
+});
 
 test.skip(
 	process.env.E2E_FLY_ONLINE !== "true",

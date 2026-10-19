@@ -110,7 +110,7 @@ New Game/Room Start tạo UUID mới; Continue/reconnect giữ ID. Ghi counters 
 
 Continue chỉ khôi phục COMMUNITY/ACTIVE thuộc Account và khớp expectedRunId; không có/khác ID thì CONFLICT, không tạo lượt. New Game mới tạo spawn snapshot, revision=1. Save thuộc lượt, không gắn room code. Save & Exit/Continue/AFK giữ lượt, không gắn lượt với một sảnh cố định.
 
-Snapshot do server tạo: physics (freeFlight/phasingFall), hội thoại theo ID, tiến độ/vị trí/vận tốc quạ, screen events/hidden walls/pha gió và codec version. Tiến độ quạ chưa được ghi nhận bắt đầu tại điểm đậu đầu tiên. Không chứa định nghĩa shared hoặc nội dung hiển thị. Backend validate codec/metrics khi restore; xử lý quyền bay theo [gameplay](gameplay.md#fly-mode).
+Snapshot do server tạo: physics (freeFlight/phasingFall), hội thoại theo ID, tiến độ/vị trí/vận tốc quạ, mốc/thời điểm giới thiệu vùng, screen events/hidden walls/pha gió và codec version. Tiến độ quạ chưa được ghi nhận bắt đầu tại điểm đậu đầu tiên. Không chứa định nghĩa shared hoặc nội dung hiển thị. Backend validate codec/metrics khi restore; xử lý quyền bay theo [gameplay](gameplay.md#fly-mode).
 
 Autosave ghi metrics/snapshot/revision/updated_at cùng transaction trên đúng id/owner/COMMUNITY/ACTIVE, không upsert lượt đã mất. Worker tuần tự từng lượt, gộp bản chưa ghi. Chu kỳ theo [deployment](deployment.md#cấu-hình); Pause/Leave/Finish yêu cầu flush.
 

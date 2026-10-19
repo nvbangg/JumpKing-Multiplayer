@@ -6,10 +6,53 @@ import ravenTrace from "../../../../common/fixtures/raven-trace.json";
 import whiteRavenTrace from "../../../../common/fixtures/white-raven-trace.json";
 import map from "../../../../common/maps/main-babe.json";
 import { required } from "../../required";
-import { Adventure } from "./Adventure";
+import { ADVENTURE, Adventure } from "./Adventure";
 import { GameSimulation } from "./GameSimulation";
 import { Simulation } from "./Simulation";
 import { NEUTRAL_INPUT } from "./types";
+
+test("region intros start at their first screen and survive restore and respawn", () => {
+	const game = new GameSimulation(map, true);
+	for (const screen of ADVENTURE.regionStarts) {
+		game.physics.restore({
+			...game.physics.snapshot(),
+			y: -screen * map.screenHeight + 100,
+			screen,
+			freeFlight: true,
+			grounded: false,
+		});
+		game.tick(NEUTRAL_INPUT);
+		const saved = game.snapshot();
+		expect(saved.world.regionIntro).toEqual({
+			screen,
+			tick: saved.physics.ticks,
+		});
+		const restored = new GameSimulation(map, true);
+		restored.restore(saved);
+		restored.physics.respawn();
+		restored.tick(NEUTRAL_INPUT);
+		expect(restored.snapshot().world.regionIntro).toEqual(
+			saved.world.regionIntro,
+		);
+		expect(
+			new GameSimulation(map).snapshot().world.regionIntro,
+		).toBeUndefined();
+	}
+	const before = game.snapshot();
+	for (const intro of [
+		{ screen: 6, tick: 0 },
+		{ screen: 5, tick: -1 },
+		{ screen: 5, tick: before.physics.ticks + 1 },
+	]) {
+		expect(() =>
+			game.restore({
+				...before,
+				world: { ...before.world, regionIntro: intro },
+			}),
+		).toThrow();
+		expect(game.snapshot()).toEqual(before);
+	}
+});
 
 test("raven requires the same screen and strictly less than forty pixels", () => {
 	const adventure = new Adventure(map);

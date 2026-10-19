@@ -80,6 +80,17 @@ public final class GameSimulation {
           || screen.asInt() >= map.screens().size()
           || !screens.add(screen.asInt()))
         throw new IllegalArgumentException("Invalid registered screen");
+    if (w.has("regionIntro")) {
+      var intro = w.path("regionIntro");
+      boolean known = false;
+      for (JsonNode start : data.path("regionStarts"))
+        if (start.equals(intro.path("screen"))) known = true;
+      if (!known
+          || !intro.path("tick").isIntegralNumber()
+          || intro.path("tick").asLong() < 0
+          || intro.path("tick").asLong() > saved.physics().ticks)
+        throw new IllegalArgumentException("Invalid region intro");
+    }
     for (JsonNode wall : data.path("walls")) {
       var state = w.path("walls").path(wall.path("id").asText());
       if (!state.path("touching").isBoolean()
@@ -115,6 +126,12 @@ public final class GameSimulation {
     world
         .put("weatherWind", player.wind ? world.path("weatherWind").asDouble() - force * 2 / 3 : 0)
         .put("lastTick", player.ticks);
+    int region = 0;
+    for (JsonNode start : data.path("regionStarts"))
+      if (start.asInt() <= player.screen) region = start.asInt();
+    // Main Babe tuyến tính: rơi xuống hoặc respawn không mở lại vùng đã khám phá.
+    if (!world.has("regionIntro") || region > world.path("regionIntro").path("screen").asInt())
+      world.putObject("regionIntro").put("screen", region).put("tick", player.ticks);
     var registered = (ArrayNode) world.path("registeredScreens");
     boolean seen = false;
     for (JsonNode screen : registered) if (screen.asInt() == player.screen) seen = true;

@@ -29,6 +29,15 @@ test("region caption appears once per region and fades without blocking mobile c
 	try {
 		const observed = observeOnline(page);
 		await registerOnline(page, "region");
+		await page.evaluate(async () => {
+			const path = "/src/network/GameSocket.ts";
+			const { GameSocket } = await import(path);
+			const connect = GameSocket.prototype.connect;
+			GameSocket.prototype.connect = function () {
+				Object.assign(window, { regionConnection: this });
+				return connect.call(this);
+			};
+		});
 		await createRoom(page);
 		await page.getByLabel("Map", { exact: true }).selectOption("10");
 		await page.getByRole("button", { name: "Start", exact: true }).click();
@@ -59,7 +68,7 @@ test("region caption appears once per region and fades without blocking mobile c
 				timeout: 15000,
 				intervals: [30],
 			})
-			.toBeGreaterThanOrEqual(6);
+			.toBe(5);
 		await page.keyboard.up("ArrowUp");
 		await expect(caption).toHaveText("COLOSSAL DRAIN");
 		await expect(caption).not.toHaveAttribute("data-same-region", "retained");
@@ -84,14 +93,31 @@ test("region caption appears once per region and fades without blocking mobile c
 		await page.keyboard.down("ArrowDown");
 		await expect
 			.poll(() => observed.snapshot?.self.simulation.physics.screen)
-			.toBeLessThan(6);
+			.toBeLessThan(5);
 		await page.keyboard.up("ArrowDown");
-		await expect(caption).toHaveCount(0);
+		await expect(caption).toHaveCount(0, { timeout: 8000 });
 		await page.keyboard.down("ArrowUp");
 		await expect
 			.poll(() => observed.snapshot?.self.simulation.physics.screen)
-			.toBeGreaterThanOrEqual(6);
+			.toBeGreaterThanOrEqual(5);
 		await page.keyboard.up("ArrowUp");
+		await expect(caption).toHaveCount(0);
+		const intro = structuredClone(
+			required(observed.snapshot).self.simulation.world.regionIntro,
+		);
+		await page.evaluate(() => {
+			const connection = (
+				window as unknown as { regionConnection: { socket: WebSocket } }
+			).regionConnection;
+			connection.socket.close(4000, "Test region reconnect");
+		});
+		await page.getByRole("button", { name: "Reconnect", exact: true }).click();
+		await expect(
+			page.getByRole("button", { name: "Resume", exact: true }),
+		).toBeVisible();
+		await expect
+			.poll(() => observed.snapshot?.self.simulation.world.regionIntro)
+			.toEqual(intro);
 		await expect(caption).toHaveCount(0);
 	} finally {
 		await page.keyboard.up("ArrowUp");

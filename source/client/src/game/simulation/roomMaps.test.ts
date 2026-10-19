@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+import adventure from "../../../../common/adventure.json";
 import checkpoints from "../../../../common/fixtures/main-babe-checkpoints.json";
 import route from "../../../../common/fixtures/main-babe-route.json";
 import map from "../../../../common/maps/main-babe.json";
@@ -10,6 +11,15 @@ import { PHYSICS } from "./tuning";
 import { NEUTRAL_INPUT, type PlayerInput } from "./types";
 
 const floorEnds = [208, 328, 56, 280, 176, 104, 72, 384, 288];
+
+test("region boundaries match the manifest and Colossal Drain starts on screen six", () => {
+	const starts = manifest.screens.flatMap((screen, index) =>
+		screen.location !== manifest.screens[index - 1]?.location ? [index] : [],
+	);
+	expect(starts).toEqual(adventure.regionStarts);
+	expect(manifest.screens[4]?.location).toBe("REDCROWN WOODS");
+	expect(manifest.screens[5]?.location).toBe("COLOSSAL DRAIN");
+});
 
 test("Room maps keep the ten approved Finish boundaries", () => {
 	expect(

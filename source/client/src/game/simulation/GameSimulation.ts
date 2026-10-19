@@ -11,6 +11,7 @@ import type { GameMap, PlayerInput, PlayerState } from "./types";
 
 export interface WorldState {
 	lastTick: number;
+	regionIntro?: { screen: number; tick: number };
 	registeredScreens: number[];
 	weatherWind: number;
 	walls: Record<
@@ -69,6 +70,11 @@ export class GameSimulation {
 			!saved.world ||
 			saved.world.lastTick !== saved.physics.ticks ||
 			!Number.isFinite(saved.world.weatherWind) ||
+			(saved.world.regionIntro !== undefined &&
+				(!ADVENTURE.regionStarts.includes(saved.world.regionIntro.screen) ||
+					!Number.isSafeInteger(saved.world.regionIntro.tick) ||
+					saved.world.regionIntro.tick < 0 ||
+					saved.world.regionIntro.tick > saved.physics.ticks)) ||
 			!Array.isArray(saved.world.registeredScreens) ||
 			new Set(saved.world.registeredScreens).size !==
 				saved.world.registeredScreens.length ||
@@ -120,6 +126,12 @@ export class GameSimulation {
 			? this.world.weatherWind - (force * 2) / 3
 			: 0;
 		this.world.lastTick = player.ticks;
+		const region = required(
+			ADVENTURE.regionStarts.findLast((screen) => screen <= player.screen),
+		);
+		// Main Babe tuyến tính: rơi xuống hoặc respawn không mở lại vùng đã khám phá.
+		if (!this.world.regionIntro || region > this.world.regionIntro.screen)
+			this.world.regionIntro = { screen: region, tick: player.ticks };
 		if (
 			player.grounded &&
 			!this.world.registeredScreens.includes(player.screen)

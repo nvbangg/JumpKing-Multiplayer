@@ -131,7 +131,7 @@ Chỉ triển khai Main Babe; không mở rộng campaign/DLC khác.
 
 Timer luôn hiện; không hiển thị số lần nhảy trong HUD. Jumps vẫn được đếm cho Stats/History.
 
-Tên mỗi vùng hiện trong 6 giây ở lần đầu tới vùng đó trong phiên chơi; chuyển screen cùng vùng hoặc quay lại vùng đã tới không phát lại. Menu tạm giữ hiệu ứng, ending không hiển thị tên vùng.
+Tên vùng hiện ngay khi vào màn đầu của vùng, trong 6 giây; Colossal Drain bắt đầu từ màn 6 (index 5). Mốc khám phá và thời điểm hiệu ứng thuộc từng lượt, lưu trong checkpoint Community; rơi xuống, respawn, Continue hoặc reconnect không phát lại từ đầu. Lượt mới reset; tới vùng cao hơn bỏ qua tên các vùng thấp đã vượt qua. Menu tạm giữ hiệu ứng, ending không hiển thị tên vùng.
 
 NPC/hội thoại, bảng/sách/nhật ký và môi trường thuộc Main Babe; đọc/hội thoại không trực tiếp yêu cầu Pause. Không có Inventory, nhặt/mua vật phẩm hoặc quest nhận đồ. Hội thoại/trigger không phụ thuộc vật phẩm; ending không có credit.
 

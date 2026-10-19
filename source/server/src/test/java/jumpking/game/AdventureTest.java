@@ -22,6 +22,51 @@ class AdventureTest {
   private final GameMap map;
   private final Physics physics;
 
+  @Test
+  void regionIntrosStartAtTheirFirstScreenAndSurviveRestoreAndRespawn() {
+    var game = new GameSimulation(map, physics, shared.adventure(), true, false);
+    for (JsonNode start : shared.adventure().path("regionStarts")) {
+      int screen = start.asInt();
+      var player = game.physics().snapshot();
+      player.y = -screen * map.screenHeight() + 100;
+      player.screen = screen;
+      player.freeFlight = true;
+      player.grounded = false;
+      game.physics().restore(player);
+      game.tick(PlayerInput.NEUTRAL);
+      var saved = game.snapshot();
+      var intro = saved.world().path("regionIntro");
+      assertThat(intro.path("screen").asInt()).isEqualTo(screen);
+      assertThat(intro.path("tick").asLong()).isEqualTo(saved.physics().ticks);
+      var restored = new GameSimulation(map, physics, shared.adventure(), true, false);
+      restored.restore(saved);
+      restored.physics().respawn();
+      restored.tick(PlayerInput.NEUTRAL);
+      assertThat(restored.snapshot().world().path("regionIntro")).isEqualTo(intro);
+      assertThat(
+              new GameSimulation(map, physics, shared.adventure(), true, false)
+                  .snapshot()
+                  .world()
+                  .has("regionIntro"))
+          .isFalse();
+    }
+    var saved = game.snapshot();
+    for (var intro :
+        List.of(
+            mapper.createObjectNode().put("screen", 6).put("tick", 0),
+            mapper.createObjectNode().put("screen", 5).put("tick", -1),
+            mapper.createObjectNode().put("screen", 5).put("tick", saved.physics().ticks + 1))) {
+      var invalid = (ObjectNode) saved.world().deepCopy();
+      invalid.set("regionIntro", intro);
+      assertThatThrownBy(
+              () ->
+                  game.restore(
+                      new GameSimulation.Snapshot(1, saved.physics(), saved.adventure(), invalid)))
+          .isInstanceOf(IllegalArgumentException.class);
+      assertThat(game.snapshot().world()).isEqualTo(saved.world());
+    }
+  }
+
   AdventureTest() throws Exception {
     shared = new SharedData(mapper);
     map = mapper.treeToValue(shared.map(), GameMap.class);
