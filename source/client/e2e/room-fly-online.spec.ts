@@ -17,6 +17,75 @@ test.skip(
 	process.env.E2E_ROOM_FLY !== "true",
 	"Requires the local-profile Room flight harness",
 );
+
+test("region caption changes only across regions and fades without blocking mobile controls", async ({
+	page,
+}, info) => {
+	test.setTimeout(45000);
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.addInitScript(() =>
+		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false })),
+	);
+	try {
+		const observed = observeOnline(page);
+		await registerOnline(page, "region");
+		await createRoom(page);
+		await page.getByLabel("Map", { exact: true }).selectOption("10");
+		await page.getByRole("button", { name: "Start", exact: true }).click();
+		await expect(page.getByLabel("Play time", { exact: true })).not.toHaveText(
+			"00:00",
+			{ timeout: 15000 },
+		);
+		await page.locator("canvas").click();
+		const caption = page.getByLabel("Current region", { exact: true });
+		await expect(caption).toHaveText("REDCROWN WOODS");
+		await caption.evaluate((element) =>
+			element.setAttribute("data-same-region", "retained"),
+		);
+		await page.keyboard.press("Space");
+		await page.waitForTimeout(80);
+		await page.keyboard.press("Space");
+		await expect
+			.poll(() => observed.snapshot?.self.simulation.physics.freeFlight)
+			.toBe(true);
+		await page.keyboard.down("ArrowUp");
+		await expect
+			.poll(() => observed.snapshot?.self.simulation.physics.screen)
+			.toBeGreaterThanOrEqual(1);
+		await expect(caption).toHaveText("REDCROWN WOODS");
+		await expect(caption).toHaveAttribute("data-same-region", "retained");
+		await expect
+			.poll(() => observed.snapshot?.self.simulation.physics.screen, {
+				timeout: 15000,
+				intervals: [30],
+			})
+			.toBeGreaterThanOrEqual(6);
+		await page.keyboard.up("ArrowUp");
+		await expect(caption).toHaveText("COLOSSAL DRAIN");
+		await expect(caption).not.toHaveAttribute("data-same-region", "retained");
+		await expect
+			.poll(() =>
+				caption.evaluate((element) =>
+					Number(getComputedStyle(element).opacity),
+				),
+			)
+			.toBeGreaterThan(0.1);
+		const bounds = required(await caption.boundingBox());
+		expect(bounds.x).toBeGreaterThanOrEqual(0);
+		expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+		await page.screenshot({ path: info.outputPath("region-mobile.png") });
+		await caption.evaluate(async (element) => {
+			for (const animation of element.getAnimations()) animation.finish();
+			await new Promise<void>((resolve) =>
+				requestAnimationFrame(() => resolve()),
+			);
+		});
+		await expect(caption).toHaveCSS("opacity", "0");
+	} finally {
+		await page.keyboard.up("ArrowUp");
+		await leaveOnline(page);
+	}
+});
 test("short Room finish shows Results and History without ending or full-map rewards", async ({
 	browser,
 }, info) => {

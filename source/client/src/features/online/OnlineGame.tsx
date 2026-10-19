@@ -42,7 +42,7 @@ export function OnlineGame({
 	onHome: () => void;
 	onResults: () => void;
 }) {
-	const container = useRef<HTMLElement>(null),
+	const container = useRef<HTMLDivElement>(null),
 		runtime = useRef<OnlineRuntime | null>(null),
 		input = useRef<InputController | null>(null),
 		audio = useRef<AudioBus | null>(null);
@@ -58,6 +58,7 @@ export function OnlineGame({
 		[saveStatus, setSaveStatus] = useState("SAVED");
 	const [remaining, setRemaining] = useState<number | null>(null);
 	const [players, setPlayers] = useState<PlayerStanding[]>([]);
+	const [location, setLocation] = useState("");
 	const [disconnected, setDisconnected] = useState(false);
 	const [networkQuality, setNetworkQuality] = useState<NetworkQuality>(() =>
 		socket.getNetworkQuality(),
@@ -265,6 +266,7 @@ export function OnlineGame({
 					setRemaining(snapshot.remainingTimeMs);
 					setFlying(state.freeFlight);
 					setPlayers(snapshot.players || []);
+					setLocation(manifest.screens[state.screen]?.location || "");
 					audio.current?.setScreen(state.screen);
 					if (snapshot.self.paused && !session.menu) {
 						session.menu = true;
@@ -398,13 +400,27 @@ export function OnlineGame({
 		}
 	};
 	const displayedError = navigationError || error;
+	const captionPaused =
+		!!menu || !!ending || disconnected || room.state === "COUNTDOWN";
 	return (
 		<main className="play-page">
-			<section
-				className="game-viewport"
-				ref={container}
-				aria-label="Online Main Babe game"
-			/>
+			<section className="game-viewport" aria-label="Online Main Babe game">
+				{/* Phaser quản lý canvas; React giữ overlay ở phần tử anh em. */}
+				<div className="game-surface" ref={container} />
+				{ready && location && !ending && (
+					<output
+						key={location}
+						className="region-caption"
+						aria-label="Current region"
+						style={{
+							visibility: captionPaused ? "hidden" : "visible",
+							animationPlayState: captionPaused ? "paused" : "running",
+						}}
+					>
+						{location}
+					</output>
+				)}
+			</section>
 			{!ready && !displayedError && (
 				<p className="game-message" role="status">
 					Loading…

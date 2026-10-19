@@ -131,6 +131,8 @@ Chỉ triển khai Main Babe; không mở rộng campaign/DLC khác.
 
 Timer luôn hiện; không hiển thị số lần nhảy trong HUD. Jumps vẫn được đếm cho Stats/History.
 
+Tên vùng hiện trong 6 giây khi bắt đầu chơi hoặc đổi vùng; chuyển screen cùng vùng không phát lại. Menu tạm giữ hiệu ứng, ending không hiển thị tên vùng.
+
 NPC/hội thoại, bảng/sách/nhật ký và môi trường thuộc Main Babe; đọc/hội thoại không trực tiếp yêu cầu Pause. Không có Inventory, nhặt/mua vật phẩm hoặc quest nhận đồ. Hội thoại/trigger không phụ thuộc vật phẩm; ending không có credit.
 
 Hoàn thành Community hoặc Room map 10 tự mở vương miện trên Account cho các lượt sau; Room ngắn không mở vương miện. Màu của mỗi người nhất quán trên mọi client; bản thân opacity=1 và vẽ trên peers opacity=0.7. Nickname rõ và hội thoại vẽ trên tên.
