@@ -7611,6 +7611,11 @@
       "file": "props/textures/raven/raven_crown.png",
       "width": 168,
       "height": 48
+    },
+    "props/textures/raven/white_raven": {
+      "file": "props/textures/raven/white_raven.png",
+      "width": 144,
+      "height": 160
     }
   },
   "sounds": {
@@ -7993,7 +7998,8 @@
     "font/sf_pixolde.xml": "53ad40f71de75d1dd8bee9d627d2a8b575e6044b57625338f7dc3962f2f62fa2",
     "font/ttf_litter_lover2_bold.ttf": "aa0c7321bd35f5ff95a0e8e65a764c1c27d6ef6ef87f19450cd8f7cea991c355",
     "props/textures/raven/raven.png": "be95d49c860a434180c01eec9cf0da69192d68627a857585c754eab8f087afa2",
-    "props/textures/raven/raven_crown.png": "3531cf0588e3fcd99fae9f6c3c344b65963a9e19116c5d18bf3920aefec28c9c"
+    "props/textures/raven/raven_crown.png": "3531cf0588e3fcd99fae9f6c3c344b65963a9e19116c5d18bf3920aefec28c9c",
+    "props/textures/raven/white_raven.png": "6112378396d655b7200e211e10fb47fb65de065b630059a63226be088d4281df"
   },
   "crown": "king/crown"
 }

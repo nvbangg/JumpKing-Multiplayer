@@ -91,6 +91,42 @@ class AdventureTest {
   }
 
   @Test
+  void whiteRavenFollowsEveryMainBabePerchWithoutRewardsOrChangingEnding() throws Exception {
+    var adventure = adventure();
+    var other = adventure();
+    int flees = 0;
+    for (var leg : fixture("white-raven-trace.json").path("legs")) {
+      var player = new Simulation(map, physics, false, false).snapshot();
+      player.x = leg.path("player").path("x").asDouble();
+      player.y = leg.path("player").path("y").asDouble();
+      player.screen = leg.path("player").path("screen").asInt();
+      for (int tick = 1; tick <= leg.path("ticks").asInt(); tick++) {
+        boolean flee =
+            adventure.tick(player, PlayerInput.NEUTRAL).stream()
+                .anyMatch(event -> event.type().equals("FLEE") && event.id().equals("whiteRaven"));
+        if (flee) flees++;
+        for (var sample : leg.path("samples"))
+          if (sample.path("tick").asInt() == tick) {
+            assertJson(
+                adventure.snapshot().path("whiteRaven"),
+                sample.path("state"),
+                "whiteRaven/" + tick);
+            assertThat(flee).isEqualTo(sample.path("flee").asBoolean());
+            var restored = adventure();
+            restored.restore(adventure.snapshot());
+            adventure = restored;
+          }
+      }
+    }
+    assertThat(flees).isEqualTo(17);
+    assertThat(adventure.snapshot().path("whiteRaven").path("done").asBoolean()).isTrue();
+    assertThat(adventure.ravenDone()).isFalse();
+    assertThat(adventure.snapshot().path("flags")).isEmpty();
+    assertThat(other.ravenDone()).isFalse();
+    assertThat(other.snapshot().path("whiteRaven").path("index").asInt()).isZero();
+  }
+
+  @Test
   void ravenRestoreRejectsCorruptionAndDefaultsOnlyAbsentProgress() {
     var adventure = adventure();
     var saved = adventure.snapshot();
@@ -102,6 +138,15 @@ class AdventureTest {
     var unrecorded = saved.deepCopy();
     unrecorded.remove("raven");
     adventure.restore(unrecorded);
+    assertThat(adventure.snapshot()).isEqualTo(saved);
+    var invalidWhite = saved.deepCopy();
+    ((ObjectNode) invalidWhite.path("whiteRaven")).put("index", 17);
+    assertThatThrownBy(() -> adventure.restore(invalidWhite))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThat(adventure.snapshot()).isEqualTo(saved);
+    var unrecordedWhite = saved.deepCopy();
+    unrecordedWhite.remove("whiteRaven");
+    adventure.restore(unrecordedWhite);
     assertThat(adventure.snapshot()).isEqualTo(saved);
   }
 
@@ -130,6 +175,7 @@ class AdventureTest {
     var state = adventure.snapshot();
     state.remove("codecVersion");
     state.remove("raven");
+    state.remove("whiteRaven");
     var readables = (ObjectNode) state.path("readables");
     var remove = new java.util.ArrayList<String>();
     readables

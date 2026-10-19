@@ -3,6 +3,7 @@ import fixtures from "../../../../common/fixtures/adventure-traces.json";
 import checkpoints from "../../../../common/fixtures/main-babe-checkpoints.json";
 import route from "../../../../common/fixtures/main-babe-route.json";
 import ravenTrace from "../../../../common/fixtures/raven-trace.json";
+import whiteRavenTrace from "../../../../common/fixtures/white-raven-trace.json";
 import map from "../../../../common/maps/main-babe.json";
 import { required } from "../../required";
 import { Adventure } from "./Adventure";
@@ -59,6 +60,67 @@ test("raven follows all fourteen perches with exact flight and checkpoint contin
 	expect(
 		adventure.tick(new Simulation(map).snapshot(), NEUTRAL_INPUT),
 	).not.toContainEqual({ type: "FLEE", id: "raven" });
+});
+
+test("white raven follows seventeen Main Babe perches without rewards or changing the ending", () => {
+	let adventure = new Adventure(map);
+	const other = new Adventure(map);
+	let flees = 0;
+	for (const leg of whiteRavenTrace.legs) {
+		const player = { ...new Simulation(map).snapshot(), ...leg.player };
+		for (let tick = 1; tick <= leg.ticks; tick++) {
+			const flee = adventure
+				.tick(player, NEUTRAL_INPUT)
+				.some((event) => event.type === "FLEE" && event.id === "whiteRaven");
+			if (flee) flees++;
+			const sample = leg.samples.find((sample) => sample.tick === tick);
+			if (sample) {
+				expect(adventure.snapshot().whiteRaven).toEqual(sample.state);
+				expect(flee).toBe(sample.flee);
+				const restored = new Adventure(map);
+				restored.restore(adventure.snapshot());
+				adventure = restored;
+			}
+		}
+	}
+	expect(flees).toBe(17);
+	expect(adventure.snapshot().whiteRaven.done).toBe(true);
+	expect(adventure.ravenDone).toBe(false);
+	expect(adventure.completed).toBe(false);
+	expect(adventure.snapshot().flags).toEqual([]);
+	expect(other.snapshot().whiteRaven.index).toBe(0);
+	expect(
+		adventure.tick(
+			{
+				...new Simulation(map).snapshot(),
+				...whiteRavenTrace.legs[16]?.player,
+			},
+			NEUTRAL_INPUT,
+		),
+	).not.toContainEqual({ type: "FLEE", id: "whiteRaven" });
+});
+
+test("white raven restore validates progress and preserves recorded black raven state", () => {
+	const adventure = new Adventure(map),
+		saved = adventure.snapshot();
+	for (const value of [
+		{ index: 17 },
+		{ index: -1 },
+		{ x: NaN },
+		{ flying: "yes" },
+		{ done: true },
+	]) {
+		expect(() =>
+			adventure.restore({
+				...saved,
+				whiteRaven: { ...saved.whiteRaven, ...value },
+			}),
+		).toThrow();
+		expect(adventure.snapshot()).toEqual(saved);
+	}
+	const { whiteRaven: _whiteRaven, ...unrecorded } = saved;
+	adventure.restore(unrecorded);
+	expect(adventure.snapshot()).toEqual(saved);
 });
 
 test("raven restore rejects corrupt state atomically and starts unrecorded progress at the first perch", () => {

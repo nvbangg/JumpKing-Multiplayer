@@ -139,6 +139,8 @@ Hoàn thành Community hoặc Room map 10 tự mở vương miện trên Account
 
 Quạ Main Babe có 14 điểm đậu; tới gần trong bán kính 40 px khiến quạ kêu và bay tới điểm kế tiếp. Tiến độ riêng từng lượt; Community lưu qua Continue, Room khởi tạo lại mỗi ván. Đuổi quạ ở điểm cuối rồi Finish full map thì quạ thay thiên thần trao vương miện; không có vật phẩm nhận từ quạ, không đổi physics hoặc xếp hạng.
 
+Quạ trắng là chi tiết môi trường với 17 điểm đậu trong Main Babe, dùng cùng cơ chế đuổi/lưu tiến độ riêng. Sau điểm cuối nó bay đi; không có vật phẩm, nhiệm vụ hoặc ảnh hưởng ending.
+
 Ending giữ cảnh/nhạc/ảnh kết thúc và Skip, bỏ credit. Community chỉ người Finish xem; Room chỉ winners xem, người khác tới Results. End/timeout chưa có Finish không phát ending. Ending không đổi kết quả/thời gian, xử lý một lần theo runId/matchId và hủy khi chuyển lượt.
 
 Server cấp một trong 10 ngoại hình riêng cho mỗi membership, giữ qua reconnect và giải phóng khi rời. Mọi player online dùng username của Account; kết quả Room giữ tên lúc Join. Trạng thái hiển thị không tác động hitbox/physics.

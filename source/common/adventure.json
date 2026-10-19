@@ -1023,5 +1023,145 @@
     "velocityGrowthY": 1.15,
     "accelerationTicks": 2,
     "motionScale": 0.5
+  },
+  "whiteRaven": {
+    "positions": [
+      {
+        "screen": 0,
+        "x": 210,
+        "y": 31,
+        "treasure": false,
+        "direction": -1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 1,
+        "x": 50,
+        "y": 71,
+        "treasure": false,
+        "direction": 1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 2,
+        "x": 182,
+        "y": 112,
+        "treasure": false,
+        "direction": -1,
+        "flyDirection": -1
+      },
+      {
+        "screen": 3,
+        "x": 197,
+        "y": 208,
+        "treasure": false,
+        "direction": -1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 4,
+        "x": 456,
+        "y": 152,
+        "treasure": false,
+        "direction": -1,
+        "flyDirection": -1
+      },
+      {
+        "screen": 5,
+        "x": 298,
+        "y": 72,
+        "treasure": false,
+        "direction": -1,
+        "flyDirection": -1
+      },
+      {
+        "screen": 6,
+        "x": 200,
+        "y": 232,
+        "treasure": false,
+        "direction": 1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 7,
+        "x": 244,
+        "y": 136,
+        "treasure": false,
+        "direction": 1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 8,
+        "x": 98,
+        "y": 80,
+        "treasure": false,
+        "direction": -1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 9,
+        "x": 167,
+        "y": 96,
+        "treasure": false,
+        "direction": -1,
+        "flyDirection": -1
+      },
+      {
+        "screen": 11,
+        "x": 312,
+        "y": 120,
+        "treasure": false,
+        "direction": 1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 12,
+        "x": 249,
+        "y": 88,
+        "treasure": false,
+        "direction": -1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 13,
+        "x": 262,
+        "y": 88,
+        "treasure": false,
+        "direction": 1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 14,
+        "x": 341,
+        "y": 216,
+        "treasure": false,
+        "direction": -1,
+        "flyDirection": -1
+      },
+      {
+        "screen": 15,
+        "x": 401,
+        "y": 168,
+        "treasure": false,
+        "direction": -1,
+        "flyDirection": -1
+      },
+      {
+        "screen": 16,
+        "x": 107,
+        "y": 248,
+        "treasure": false,
+        "direction": 1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 17,
+        "x": 8,
+        "y": 191,
+        "treasure": false,
+        "direction": 1,
+        "flyDirection": -1
+      }
+    ]
   }
 }

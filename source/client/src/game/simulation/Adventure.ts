@@ -30,6 +30,7 @@ export interface AdventureState {
 	dialogue: Record<string, DialogueState>;
 	readables: Record<string, ReadableState>;
 	raven: RavenState;
+	whiteRaven: RavenState;
 }
 export interface RavenState {
 	index: number;
@@ -63,8 +64,10 @@ const freshReadable = (): ReadableState => ({
 	ticks: 0,
 	done: false,
 });
-const freshRaven = (height: number): RavenState => {
-	const first = required(data.raven.positions[0]);
+type Bird = "raven" | "whiteRaven";
+const BIRDS: Bird[] = ["raven", "whiteRaven"];
+const freshRaven = (height: number, bird: Bird): RavenState => {
+	const first = required(data[bird].positions[0]);
 	return {
 		index: 0,
 		x: first.x,
@@ -85,7 +88,8 @@ export class Adventure {
 			flags: [],
 			dialogue: {},
 			readables: {},
-			raven: freshRaven(map.screenHeight),
+			raven: freshRaven(map.screenHeight, "raven"),
+			whiteRaven: freshRaven(map.screenHeight, "whiteRaven"),
 		};
 		for (const npc of data.npcs)
 			this.state.dialogue[npc.id] = {
@@ -113,9 +117,13 @@ export class Adventure {
 	get ravenDone(): boolean {
 		return this.state.raven.done;
 	}
-	private tickRaven(player: PlayerState, events: AdventureEvent[]): void {
-		const s = this.state.raven,
-			positions = data.raven.positions,
+	private tickRaven(
+		bird: Bird,
+		player: PlayerState,
+		events: AdventureEvent[],
+	): void {
+		const s = this.state[bird],
+			positions = data[bird].positions,
 			pos = required(positions[s.index]);
 		if (s.done) return;
 		if (
@@ -129,7 +137,7 @@ export class Adventure {
 			s.ticks = 0;
 			s.vy = data.raven.launchVelocityY;
 			s.vx = 0;
-			events.push({ type: "FLEE", id: "raven" });
+			events.push({ type: "FLEE", id: bird });
 		}
 		if (!s.flying) return;
 		s.ticks++;
@@ -263,7 +271,7 @@ export class Adventure {
 				else s.done = true;
 			}
 		}
-		this.tickRaven(player, events);
+		for (const bird of BIRDS) this.tickRaven(bird, player, events);
 		return events;
 	}
 	restore(value: unknown): void {
@@ -322,30 +330,34 @@ export class Adventure {
 			)
 				throw new Error("Invalid readable snapshot");
 		}
-		const raven =
-			saved.raven === undefined
-				? freshRaven(this.map.screenHeight)
-				: saved.raven;
-		if (
-			!raven ||
-			!count(raven.index) ||
-			raven.index >= data.raven.positions.length ||
-			!count(raven.ticks) ||
-			typeof raven.flying !== "boolean" ||
-			typeof raven.done !== "boolean" ||
-			[raven.x, raven.y, raven.vx, raven.vy].some(
-				(value) => !Number.isFinite(value) || Math.abs(value) > T.maxCounter,
-			) ||
-			(raven.done &&
-				(raven.index !== data.raven.positions.length - 1 || raven.flying))
-		)
-			throw new Error("Invalid raven snapshot");
+		const birds = {} as Record<Bird, RavenState>;
+		for (const bird of BIRDS) {
+			const raven =
+				saved[bird] === undefined
+					? freshRaven(this.map.screenHeight, bird)
+					: saved[bird];
+			if (
+				!raven ||
+				!count(raven.index) ||
+				raven.index >= data[bird].positions.length ||
+				!count(raven.ticks) ||
+				typeof raven.flying !== "boolean" ||
+				typeof raven.done !== "boolean" ||
+				[raven.x, raven.y, raven.vx, raven.vy].some(
+					(value) => !Number.isFinite(value) || Math.abs(value) > T.maxCounter,
+				) ||
+				(raven.done &&
+					(raven.index !== data[bird].positions.length - 1 || raven.flying))
+			)
+				throw new Error("Invalid raven snapshot");
+			birds[bird] = raven;
+		}
 		const restored: AdventureState = structuredClone({
 			codecVersion: 2,
 			flags: saved.flags,
 			dialogue: saved.dialogue,
 			readables: saved.readables,
-			raven,
+			...birds,
 		});
 		return () => {
 			this.state = restored;

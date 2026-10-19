@@ -89,16 +89,28 @@ class CommunityRunsIT {
     for (int tick = 0; tick < 10; tick++) game.adventure().tick(player, PlayerInput.NEUTRAL);
     var raven = game.adventure().snapshot().path("raven");
     assertThat(raven.path("flying").asBoolean()).isTrue();
+    player.screen = 0;
+    player.x = 201;
+    player.y = 18;
+    for (int tick = 0; tick < 5; tick++) game.adventure().tick(player, PlayerInput.NEUTRAL);
+    var whiteRaven = game.adventure().snapshot().path("whiteRaven");
+    assertThat(whiteRaven.path("flying").asBoolean()).isTrue();
+    raven = game.adventure().snapshot().path("raven");
     var stored = records.open(owner, true, null, game.snapshot());
     var continued = records.open(owner, false, stored.id(), game().snapshot());
     var restored = game();
     restored.restore(continued.snapshot());
     assertThat(restored.adventure().snapshot().path("raven")).isEqualTo(raven);
+    assertThat(restored.adventure().snapshot().path("whiteRaven")).isEqualTo(whiteRaven);
     var other = records.open(account(), true, null, game().snapshot());
     assertThat(other.snapshot().adventure().path("raven").path("flying").asBoolean()).isFalse();
+    assertThat(other.snapshot().adventure().path("whiteRaven").path("flying").asBoolean())
+        .isFalse();
     var next = records.open(owner, true, stored.id(), game().snapshot());
     assertThat(next.snapshot().adventure().path("raven").path("index").asInt()).isZero();
     assertThat(next.snapshot().adventure().path("raven").path("flying").asBoolean()).isFalse();
+    assertThat(next.snapshot().adventure().path("whiteRaven").path("index").asInt()).isZero();
+    assertThat(next.snapshot().adventure().path("whiteRaven").path("flying").asBoolean()).isFalse();
   }
 
   @Test
