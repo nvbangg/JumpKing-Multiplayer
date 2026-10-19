@@ -271,7 +271,8 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
             player.peakTicks = player.game.physics().snapshot().ticks;
           }
           if (player.game.finished()) {
-            player.ending = Map.of("screen", pose.screen);
+            player.ending =
+                Map.of("screen", pose.screen, "ravenDone", player.game.adventure().ravenDone());
             player.finished = true;
             player.finishedAt = clock.instant();
             player.paused = true;

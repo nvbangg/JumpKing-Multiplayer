@@ -37,7 +37,7 @@ export class MainBabeEnding {
 	constructor(
 		private scene: Phaser.Scene,
 		private manifest: AssetManifest,
-		signal: EndingSignal,
+		private signal: EndingSignal,
 		private onSound: (key: string) => void,
 		private onPicture: () => void,
 	) {
@@ -246,10 +246,25 @@ export class MainBabeEnding {
 		});
 	}
 	private cherubs(time: number): { actor: Actor; delivered: number } {
-		const actor = this.actor(479, 2, "cherub.deliver0", true);
+		const raven = this.signal.ravenDone;
+		const actor = this.actor(
+			479,
+			2,
+			raven ? "ravenCrown.0" : "cherub.deliver0",
+			true,
+			raven ? "props/textures/raven/raven_crown" : "king/base",
+		);
+		actor.root.setName("ending-crown-carrier");
 		actor.root.setVisible(false);
 		this.at(time, () => actor.root.setVisible(true));
-		this.loop(actor, ["cherub.deliver0", "cherub.deliver1"], time, 1 / 30);
+		this.loop(
+			actor,
+			raven
+				? ["ravenCrown.0", "ravenCrown.1", "ravenCrown.2"]
+				: ["cherub.deliver0", "cherub.deliver1"],
+			time,
+			raven ? 0.1 : 1 / 30,
+		);
 		const x = [480],
 			y = [0];
 		let currentX = 480,
@@ -294,7 +309,21 @@ export class MainBabeEnding {
 		return { actor, delivered: time + 4 };
 	}
 	private escape(actor: Actor, time: number): void {
-		this.loop(actor, ["cherub.escape0", "cherub.escape1"], time, 1 / 30);
+		const raven = this.signal.ravenDone;
+		if (raven)
+			this.at(time, () => {
+				actor.texture = "props/textures/raven/raven";
+				actor.frame = "ravenFly.0";
+				this.dress(actor);
+			});
+		this.loop(
+			actor,
+			raven
+				? ["ravenFly.0", "ravenFly.1", "ravenFly.2"]
+				: ["cherub.escape0", "cherub.escape1"],
+			time,
+			raven ? 0.1 : 1 / 30,
+		);
 		this.at(time, () => {
 			let x = actor.root.x,
 				y = actor.root.y,

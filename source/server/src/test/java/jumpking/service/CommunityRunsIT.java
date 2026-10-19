@@ -79,6 +79,29 @@ class CommunityRunsIT {
   }
 
   @Test
+  void communityPersistsRavenFlightWithoutSharingItWithAnotherAccountOrNewRun() {
+    long owner = account();
+    var game = game();
+    var player = game.physics().snapshot();
+    player.screen = 2;
+    player.x = 25;
+    player.y = 88 - 720 - 13;
+    for (int tick = 0; tick < 10; tick++) game.adventure().tick(player, PlayerInput.NEUTRAL);
+    var raven = game.adventure().snapshot().path("raven");
+    assertThat(raven.path("flying").asBoolean()).isTrue();
+    var stored = records.open(owner, true, null, game.snapshot());
+    var continued = records.open(owner, false, stored.id(), game().snapshot());
+    var restored = game();
+    restored.restore(continued.snapshot());
+    assertThat(restored.adventure().snapshot().path("raven")).isEqualTo(raven);
+    var other = records.open(account(), true, null, game().snapshot());
+    assertThat(other.snapshot().adventure().path("raven").path("flying").asBoolean()).isFalse();
+    var next = records.open(owner, true, stored.id(), game().snapshot());
+    assertThat(next.snapshot().adventure().path("raven").path("index").asInt()).isZero();
+    assertThat(next.snapshot().adventure().path("raven").path("flying").asBoolean()).isFalse();
+  }
+
+  @Test
   void continueRestoresSavedCurrentProgressInsteadOfAirborneHeightAndNewRunResetsIt() {
     long owner = account();
     var game = game();

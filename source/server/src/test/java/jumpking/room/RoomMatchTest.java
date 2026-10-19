@@ -52,6 +52,30 @@ class RoomMatchTest {
   }
 
   @Test
+  void eachWinnerKeepsTheirOwnRavenEndingAndANewMatchResetsProgress() throws Exception {
+    var match = match();
+    var now = Instant.parse("2026-01-01T00:00:00Z");
+    match.start(now);
+    var point = landing(10);
+    match.ticks = point.ticks;
+    for (var player : match.players.values()) player.game.physics().restore(point);
+    var first = match.players.get("first");
+    var saved = first.game.adventure().snapshot();
+    var raven = (com.fasterxml.jackson.databind.node.ObjectNode) saved.path("raven");
+    var perch = shared.adventure().path("raven").path("positions").get(13);
+    raven
+        .put("index", 13)
+        .put("done", true)
+        .put("x", perch.path("x").asDouble())
+        .put("y", perch.path("y").asDouble() - perch.path("screen").asInt() * 360);
+    first.game.adventure().restore(saved);
+    match.tick(1_000_000_000L, now);
+    assertThat(first.ending).containsEntry("ravenDone", true);
+    assertThat(match.players.get("second").ending).containsEntry("ravenDone", false);
+    assertThat(match().players.get("first").game.adventure().ravenDone()).isFalse();
+  }
+
+  @Test
   void currentProgressOnlyChangesOnValidLandingsWhilePeakTracksAirborneHeight() {
     var match = match();
     var start = Instant.parse("2026-01-01T00:00:00Z");

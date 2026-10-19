@@ -123,6 +123,12 @@ class RoomEndingIT {
             match.ticks = before.physics().ticks;
             var player = match.players.values().iterator().next();
             player.game.restore(before);
+            var adventure = player.game.adventure().snapshot();
+            ((com.fasterxml.jackson.databind.node.ObjectNode) adventure.path("raven"))
+                .put("index", 13)
+                .put("done", true)
+                .put("flying", false);
+            player.game.adventure().restore(adventure);
             player.maximum = player.game.physics().progress();
             player.peak = before.physics().ticks;
           });
@@ -143,7 +149,8 @@ class RoomEndingIT {
       jdbc.execute("DROP TRIGGER " + trigger);
       a.ok("PLAY_AGAIN", Map.of("matchId", game.play));
       saved(a);
-      a.await(message -> message.path("type").asText().equals("PLAYER_FINISHED"));
+      var finished = a.await(message -> message.path("type").asText().equals("PLAYER_FINISHED"));
+      assertThat(finished.path("payload").path("ending").path("ravenDone").asBoolean()).isTrue();
       assertThat(
               b.messages.stream()
                   .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED")))

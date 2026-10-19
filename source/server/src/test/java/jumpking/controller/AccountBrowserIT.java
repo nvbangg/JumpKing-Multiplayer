@@ -98,6 +98,13 @@ class AccountBrowserIT {
         passwords.encode(password));
     long owner = jdbc.queryForObject("SELECT id FROM users WHERE username=?", Long.class, name);
     var before = jumpking.support.MainBabeRoute.beforeFinish(shared, json);
+    var perch = shared.adventure().path("raven").path("positions").get(13);
+    ((com.fasterxml.jackson.databind.node.ObjectNode) before.adventure().path("raven"))
+        .put("index", 13)
+        .put("done", true)
+        .put("flying", false)
+        .put("x", perch.path("x").asDouble())
+        .put("y", perch.path("y").asDouble() - perch.path("screen").asInt() * 360);
     var stored = communityRuns.open(owner, true, null, before);
     var physics = before.physics();
     double progress =

@@ -194,7 +194,9 @@ export function OnlineGame({
 									? "audio/music/event_music/ending_jingle"
 									: cueManifest.walls.find((wall) => wall.id === cue.id)
 											?.appearSound || "audio/illusion"
-								: "audio/talking";
+								: cue.type === "FLEE"
+									? "audio/event_sfx/bird_fly"
+									: "audio/talking";
 						audio.current?.play(key);
 					}
 				}

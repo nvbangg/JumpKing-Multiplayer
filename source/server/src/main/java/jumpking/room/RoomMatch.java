@@ -107,7 +107,12 @@ final class RoomMatch {
         player.status = "FINISHED";
         player.finish = ticks;
         if (settings.mapLevel() == RoomSettings.FULL_MAP_LEVEL)
-          player.ending = Map.of("screen", player.game.physics().snapshot().screen);
+          player.ending =
+              Map.of(
+                  "screen",
+                  player.game.physics().snapshot().screen,
+                  "ravenDone",
+                  player.game.adventure().ravenDone());
       }
     }
     if (players.values().stream().anyMatch(player -> player.finish != null))

@@ -110,7 +110,13 @@ export class OnlineRuntime implements GameRuntime {
 			ending.screen !== this.game.physics.map.finish.screen
 		)
 			throw new Error("Invalid ending state");
-		this.ending ??= { id: payload.playId, screen: required(ending.screen) };
+		if (ending.ravenDone !== undefined && typeof ending.ravenDone !== "boolean")
+			throw new Error("Invalid ending state");
+		this.ending ??= {
+			id: payload.playId,
+			screen: required(ending.screen),
+			ravenDone: ending.ravenDone === true,
+		};
 	}
 	receive(payload: Record<string, unknown>): void {
 		const value = payload as unknown as OnlineSnapshot;

@@ -73,7 +73,7 @@ test("online ending waits for the private committed notice and matching finished
 		playerId: "self",
 		playId: "run",
 		showEnding: true,
-		ending: { screen: 42 },
+		ending: { screen: 42, ravenDone: true },
 	};
 	runtime.receive(snapshot(game, 1, 0) as unknown as Record<string, unknown>);
 	runtime.finish({ ...notice, playerId: "other" });
@@ -84,9 +84,17 @@ test("online ending waits for the private committed notice and matching finished
 	finished.self.status = "FINISHED";
 	finished.self.paused = true;
 	runtime.receive(finished as unknown as Record<string, unknown>);
-	expect(runtime.frame().ending).toEqual({ id: "run", screen: 42 });
+	expect(runtime.frame().ending).toEqual({
+		id: "run",
+		screen: 42,
+		ravenDone: true,
+	});
 	runtime.finish(notice);
-	expect(runtime.frame().ending).toEqual({ id: "run", screen: 42 });
+	expect(runtime.frame().ending).toEqual({
+		id: "run",
+		screen: 42,
+		ravenDone: true,
+	});
 	socket.playContext = { playId: "next", generation: 2 };
 	runtime.receive({
 		...snapshot(game, 3, 0, 2),

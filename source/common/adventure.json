@@ -901,5 +901,127 @@
       ],
       "everyTime": false
     }
-  ]
+  ],
+  "raven": {
+    "triggerRadius": 40,
+    "positions": [
+      {
+        "screen": 2,
+        "x": 34,
+        "y": 88,
+        "treasure": false,
+        "direction": 1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 4,
+        "x": 64,
+        "y": 80,
+        "treasure": false,
+        "direction": 1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 8,
+        "x": 417,
+        "y": 200,
+        "treasure": false,
+        "direction": -1,
+        "flyDirection": -1
+      },
+      {
+        "screen": 10,
+        "x": 24,
+        "y": 200,
+        "treasure": true,
+        "direction": 1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 14,
+        "x": 27,
+        "y": 72,
+        "treasure": true,
+        "direction": 1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 15,
+        "x": 24,
+        "y": 72,
+        "treasure": true,
+        "direction": 1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 17,
+        "x": 125,
+        "y": 296,
+        "treasure": true,
+        "direction": 1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 18,
+        "x": 448,
+        "y": 160,
+        "treasure": true,
+        "direction": -1,
+        "flyDirection": -1
+      },
+      {
+        "screen": 19,
+        "x": 458,
+        "y": 264,
+        "treasure": true,
+        "direction": -1,
+        "flyDirection": -1
+      },
+      {
+        "screen": 21,
+        "x": 148,
+        "y": 328,
+        "treasure": true,
+        "direction": 1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 22,
+        "x": 21,
+        "y": 96,
+        "treasure": true,
+        "direction": 1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 24,
+        "x": 69,
+        "y": 184,
+        "treasure": true,
+        "direction": -1,
+        "flyDirection": 1
+      },
+      {
+        "screen": 25,
+        "x": 459,
+        "y": 184,
+        "treasure": true,
+        "direction": -1,
+        "flyDirection": -1
+      },
+      {
+        "screen": 31,
+        "x": 291,
+        "y": 88,
+        "treasure": false,
+        "direction": -1,
+        "flyDirection": -1
+      }
+    ],
+    "launchVelocityY": -2,
+    "accelerationX": 0.5,
+    "velocityGrowthY": 1.15,
+    "accelerationTicks": 2,
+    "motionScale": 0.5
+  }
 }

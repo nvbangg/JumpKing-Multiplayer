@@ -130,7 +130,7 @@ Client nhận diện nhấn đúp khi cấu hình cho phép Fly Mode và gửi f
 | COMMUNITY_RUN_STATE | {run:RunSummary,generation,paused,pausePending,saveStatus} |
 | PLAYER_EFFECTS | {roomId,events:[{eventSeq,playerId,playId,screen,effect,terrain}]} |
 | ADVENTURE_EVENTS | {roomId,playId,events:[{eventSeq,kind,type,id}]}; chỉ owner, kind=ADVENTURE/WORLD, nội dung hiển thị tra tại client |
-| PLAYER_FINISHED | {playerId,playId,result,showEnding,ending:{screen}}; sau commit, riêng người Finish ở Community hoặc winners ở Room; result tương ứng RunSummary/MatchResult |
+| PLAYER_FINISHED | {playerId,playId,result,showEnding,ending:{screen,ravenDone}}; sau commit, riêng người Finish ở Community hoặc winners ở Room; result tương ứng RunSummary/MatchResult |
 | GAME_FINISHED | {playId,mapLevel,reason,durationMs,results,saveStatus}; Room broadcast |
 | SAVE_STATUS | {playId,revision,saveStatus}; chỉ owner checkpoint hoặc members của match |
 | CHAT_MESSAGE / CHAT_HISTORY | {roomId,messages:[{id,playerId,nickname,text,sentAt,colorSlot}]}; client bỏ chat từ sảnh cũ |
@@ -145,7 +145,7 @@ self gồm lastProcessedInputSeq, status, metrics và full simulation để rest
 
 players=[{playerId,nickname,colorSlot,rank,currentProgress}] gồm các thành viên còn trong phòng, tối đa capacity. Server tính từ cùng state RAM với snapshot; Room dùng comparator mode, Community chỉ so độ cao hiện tại. Giữ đồng hạng, ID chỉ ổn định thứ tự; không truy vấn database theo tick.
 
-adventure gồm ID/counters tiến độ hội thoại. Vương miện là ngoại hình profile tự cấp theo data, không có lệnh trang bị. Client dựng nội dung theo [architecture](architecture.md#công-nghệ-và-trách-nhiệm); thay đổi state phải do server xác nhận.
+adventure gồm ID/counters tiến độ hội thoại và state quạ riêng của owner; không gửi state quạ cho peers. Cue FLEE phát tiếng quạ một lần, không phát lại khi reconciliation. Vương miện là ngoại hình profile tự cấp theo data, không có lệnh trang bị. Client dựng nội dung theo [architecture](architecture.md#công-nghệ-và-trách-nhiệm); thay đổi state phải do server xác nhận.
 
 Results={playerId,nickname,status,rank,currentProgress,maxProgress,isWinner,finishTimeMs}; nickname giữ lúc Join để Results vẫn hiển thị đúng người đã Leave. Status/reason/saveStatus theo data; SAVE_STATUS Room có revision=null. Server chốt metrics và showEnding theo gameplay.
 

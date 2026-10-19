@@ -34,7 +34,7 @@ export class AdventureEffects {
 					cue.kind === "WORLD"
 						? ["WALL", "JINGLE"]
 						: cue.kind === "ADVENTURE"
-							? ["SPEECH"]
+							? ["SPEECH", "FLEE"]
 							: []
 				).includes(cue.type)
 			)

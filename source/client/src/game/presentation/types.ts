@@ -33,6 +33,7 @@ export interface RenderPlayer {
 export interface EndingSignal {
 	id: string;
 	screen: number;
+	ravenDone?: boolean;
 }
 export interface PresentationHooks {
 	onEndingStart?: (skip: () => void) => void;

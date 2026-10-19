@@ -16,4 +16,7 @@ test("private adventure cues deduplicate and ignore an old run or another room",
 	expect(() => receive([{ ...cue, eventSeq: 3, type: "UNKNOWN" }])).toThrow(
 		"Invalid",
 	);
+	const flee = { ...cue, eventSeq: 3, type: "FLEE", id: "raven" };
+	expect(receive([flee])).toEqual([flee]);
+	expect(receive([flee])).toEqual([]);
 });

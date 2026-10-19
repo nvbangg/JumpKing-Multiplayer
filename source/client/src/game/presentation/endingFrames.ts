@@ -34,6 +34,8 @@ function grid(
 		};
 	});
 }
+grid("ravenCrown", "0 1 2", "0,0 1,0 2,0", 56, 48, 0, 0, 0.5, 1 - 16 / 48);
+grid("ravenFly", "0 1 2", "0,0 1,0 2,0", 48, 32, 0, 64);
 grid(
 	"regular",
 	"idle walk_one walk_smear walk_two charge up fall bounce splat look_up",

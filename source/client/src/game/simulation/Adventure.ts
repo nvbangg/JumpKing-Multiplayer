@@ -29,9 +29,20 @@ export interface AdventureState {
 	flags: string[];
 	dialogue: Record<string, DialogueState>;
 	readables: Record<string, ReadableState>;
+	raven: RavenState;
+}
+export interface RavenState {
+	index: number;
+	x: number;
+	y: number;
+	vx: number;
+	vy: number;
+	flying: boolean;
+	ticks: number;
+	done: boolean;
 }
 export interface AdventureEvent {
-	type: "SPEECH";
+	type: "SPEECH" | "FLEE";
 	id: string;
 }
 const T = data.tuning;
@@ -52,11 +63,30 @@ const freshReadable = (): ReadableState => ({
 	ticks: 0,
 	done: false,
 });
+const freshRaven = (height: number): RavenState => {
+	const first = required(data.raven.positions[0]);
+	return {
+		index: 0,
+		x: first.x,
+		y: first.y - first.screen * height,
+		vx: 0,
+		vy: 0,
+		flying: false,
+		ticks: 0,
+		done: false,
+	};
+};
 
 export class Adventure {
 	private state: AdventureState;
 	constructor(readonly map: GameMap) {
-		this.state = { codecVersion: 2, flags: [], dialogue: {}, readables: {} };
+		this.state = {
+			codecVersion: 2,
+			flags: [],
+			dialogue: {},
+			readables: {},
+			raven: freshRaven(map.screenHeight),
+		};
 		for (const npc of data.npcs)
 			this.state.dialogue[npc.id] = {
 				introduced: !npc.introLengths.length,
@@ -79,6 +109,53 @@ export class Adventure {
 	}
 	get completed(): boolean {
 		return this.state.flags.includes("CompletedNormalGame");
+	}
+	get ravenDone(): boolean {
+		return this.state.raven.done;
+	}
+	private tickRaven(player: PlayerState, events: AdventureEvent[]): void {
+		const s = this.state.raven,
+			positions = data.raven.positions,
+			pos = required(positions[s.index]);
+		if (s.done) return;
+		if (
+			!s.flying &&
+			player.screen === pos.screen &&
+			(Math.trunc(player.x) + P.bodyWidth / 2 - s.x) ** 2 +
+				(Math.trunc(player.y) + P.bodyHeight / 2 - s.y) ** 2 <
+				data.raven.triggerRadius ** 2
+		) {
+			s.flying = true;
+			s.ticks = 0;
+			s.vy = data.raven.launchVelocityY;
+			s.vx = 0;
+			events.push({ type: "FLEE", id: "raven" });
+		}
+		if (!s.flying) return;
+		s.ticks++;
+		if (s.ticks % data.raven.accelerationTicks === 0) {
+			s.vx += pos.flyDirection * data.raven.accelerationX;
+			s.vy *= data.raven.velocityGrowthY;
+		}
+		s.x += s.vx * data.raven.motionScale;
+		s.y += s.vy * data.raven.motionScale;
+		const localY = s.y + pos.screen * this.map.screenHeight;
+		if (
+			s.x < 0 ||
+			s.x >= this.map.width ||
+			localY < 0 ||
+			localY >= this.map.screenHeight
+		) {
+			s.index++;
+			if (s.index >= positions.length) {
+				s.done = true;
+				s.index = positions.length - 1;
+			}
+			s.flying = false;
+			const next = required(positions[s.index]);
+			s.x = next.x;
+			s.y = next.y - next.screen * this.map.screenHeight;
+		}
 	}
 	private worldRect(rect: Rect, screen: number): Rect {
 		return { ...rect, y: rect.y - screen * this.map.screenHeight };
@@ -186,6 +263,7 @@ export class Adventure {
 				else s.done = true;
 			}
 		}
+		this.tickRaven(player, events);
 		return events;
 	}
 	restore(value: unknown): void {
@@ -244,11 +322,30 @@ export class Adventure {
 			)
 				throw new Error("Invalid readable snapshot");
 		}
+		const raven =
+			saved.raven === undefined
+				? freshRaven(this.map.screenHeight)
+				: saved.raven;
+		if (
+			!raven ||
+			!count(raven.index) ||
+			raven.index >= data.raven.positions.length ||
+			!count(raven.ticks) ||
+			typeof raven.flying !== "boolean" ||
+			typeof raven.done !== "boolean" ||
+			[raven.x, raven.y, raven.vx, raven.vy].some(
+				(value) => !Number.isFinite(value) || Math.abs(value) > T.maxCounter,
+			) ||
+			(raven.done &&
+				(raven.index !== data.raven.positions.length - 1 || raven.flying))
+		)
+			throw new Error("Invalid raven snapshot");
 		const restored: AdventureState = structuredClone({
 			codecVersion: 2,
 			flags: saved.flags,
 			dialogue: saved.dialogue,
 			readables: saved.readables,
+			raven,
 		});
 		return () => {
 			this.state = restored;

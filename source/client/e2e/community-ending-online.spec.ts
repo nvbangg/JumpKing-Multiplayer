@@ -88,6 +88,7 @@ test("committed Community Finish plays only for its owner and New Game clears th
 		).toHaveLength(1);
 		expect(history[0].status).toBe("FINISHED");
 		expect(history[0].finishTimeMs).toBe(282616);
+		expect(required(finishEvents[0]).ending).toMatchObject({ ravenDone: true });
 		await winner.getByRole("button", { name: "Skip", exact: true }).click();
 		await winner.screenshot({
 			path: info.outputPath("community-ending-picture.png"),
