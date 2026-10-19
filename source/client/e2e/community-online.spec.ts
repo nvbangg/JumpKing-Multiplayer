@@ -14,16 +14,12 @@ test.afterEach(async ({ page }) => {
 async function account(page: Page, prefix: string) {
 	const name = `${prefix}_${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
 	await page.goto("/");
-	await page
-		.getByRole("button", { name: "Create Account", exact: true })
-		.click();
+	await page.getByRole("button", { name: "Sign In", exact: true }).click();
 	await page.getByLabel("Username", { exact: true }).fill(name);
 	await page
 		.getByLabel("Password", { exact: true })
 		.fill("A secure Community test password");
-	await page
-		.getByRole("button", { name: "Create Account", exact: true })
-		.click();
+	await page.getByRole("button", { name: "Sign In", exact: true }).click();
 	await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
 	return name;
 }

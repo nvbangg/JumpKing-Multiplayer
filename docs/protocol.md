@@ -14,7 +14,7 @@ HTTP dùng credentials:include và CSRF trước mutation. Login/Register đổi
 
 CORS nhận origins cụ thể, preflight trước authentication. WS yêu cầu Account và Origin trong allowlist; không tin tên/owner do client gửi. Login Account khác khi còn membership bị từ chối; đăng nhập lại đúng Account để reconnect vẫn cần token cũ. Session idle 30 phút, absolute 24 giờ; HTTP/WS cùng kiểm tra, heartbeat không gia hạn idle. Hết session xử lý như disconnect, không xóa dữ liệu đã lưu.
 
-Register/Login/Change Password: 20 requests/phút/IP và identity, đổi session không reset quota IP. Password BCrypt; lỗi credentials không tiết lộ Account tồn tại. Reconnect token ngẫu nhiên 256 bit, so sánh constant-time, hết hiệu lực khi membership kết thúc; không đặt secrets vào URL/logs/broadcast.
+Register/Login/Change Password: 20 requests/phút/IP và identity, đổi session không reset quota IP. Password BCrypt; sai mật khẩu trả INVALID_CREDENTIALS, không sửa mật khẩu hoặc tạo Account khác. Reconnect token ngẫu nhiên 256 bit, so sánh constant-time, hết hiệu lực khi membership kết thúc; không đặt secrets vào URL/logs/broadcast.
 
 Client giữ context reconnect (roomId/playerId/token) trong IndexedDB theo backend origin và identity để quay lại sau disconnect; xóa khi Leave đã xác nhận hoặc server báo hết hạn. Chủ động rời page gửi `LEAVE_ROOM` qua socket hiện có; không đóng socket trước `ROOM_LEFT` khi còn có thể chờ. Frame từ `pagehide` không bảo đảm được nhận trước khi browser đóng page; trường hợp đó vẫn dùng grace/reconnect hiện có, không suy diễn mọi socket close thành Leave. Không chia sẻ token qua room code.
 
@@ -29,7 +29,7 @@ Các path có prefix `/api`. Auth/private responses dùng Cache-Control:no-store
 | GET /auth/csrf | → {token,headerName} |
 | GET /auth/me | → {authenticated,account:null hoặc {id,username,crownUnlocked}}; id là chuỗi ID của chính Account |
 | POST /auth/register | {username,password} → me |
-| POST /auth/login | {username,password} → me |
+| POST /auth/login | {username,password} → me; chưa có username thì tạo Account theo validation Register, đã có thì xác thực mật khẩu |
 | POST /auth/password | Account + CSRF; {currentPassword,newPassword} → {ok:true}; thu hồi các phiên sau commit |
 | POST /auth/logout | → {ok:true} |
 | GET /game-config | → {features:{flyEnabled:boolean}} |
@@ -41,6 +41,8 @@ Các path có prefix `/api`. Auth/private responses dùng Cache-Control:no-store
 | GET /history?page=0&size=20 | Account → {items,page,size,hasNext}; History đã kết thúc theo data |
 | GET /history/{kind}/{id} | Owner → History detail; kind=COMMUNITY/ROOM, id là run ID hoặc match ID |
 | GET /profile/me | Account → {username,total} |
+
+Sign In dùng chung luồng đăng nhập/tạo Account. Username trùng khi tạo đồng thời phải xác thực mật khẩu của Account đã được tạo, không ghi đè. Session đã đăng nhập không được tự tạo Account khác; đổi Account khi còn membership vẫn bị từ chối.
 
 HTTP JSON body tối đa 16 KiB. Register: username 3–32 letters/numbers/_/-, password ≥6 Unicode code points và ≤72 UTF-8 bytes. Tên online lấy từ username đã xác thực, không nhận nickname từ client; playerId phân biệt người chơi.
 

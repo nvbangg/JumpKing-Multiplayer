@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("home keeps the required menu and separate account forms", async ({
+test("home keeps the required menu and one account form", async ({
 	page,
 }, info) => {
 	await page.goto("/");
@@ -19,14 +19,23 @@ test("home keeps the required menu and separate account forms", async ({
 	await expect(
 		page.getByRole("button", { name: "Leaderboard", exact: true }),
 	).toBeHidden();
+	await expect(
+		page.getByRole("button", { name: "Sign In", exact: true }),
+	).toHaveCount(1);
+	await expect(
+		page.getByRole("button", { name: /Create Account/ }),
+	).toHaveCount(0);
 	await page.getByRole("button", { name: "Sign In", exact: true }).click();
 	await expect(page.getByLabel("Username", { exact: true })).toBeVisible();
 	await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
 	await expect(page.getByLabel("Email", { exact: true })).toHaveCount(0);
-	await page
-		.getByRole("button", { name: "New here? Create Account", exact: true })
-		.click();
-	await expect(page.getByLabel("Username", { exact: true })).toBeVisible();
+	await expect(page.locator('form button[type="submit"]')).toHaveCount(1);
+	await expect(page.locator('form button[type="submit"]')).toHaveText(
+		"Sign In",
+	);
+	await expect(
+		page.getByRole("button", { name: /Create Account/ }),
+	).toHaveCount(0);
 	await page.getByRole("button", { name: "Back", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "Community Tower", exact: true }),
@@ -53,6 +62,113 @@ test("home keeps the required menu and separate account forms", async ({
 		path: info.outputPath("menu-mobile.png"),
 		fullPage: true,
 	});
+});
+
+test("register route is an alias for the same Sign In form", async ({
+	page,
+}) => {
+	await page.goto("/register");
+	await expect(
+		page.getByRole("heading", { name: "Sign In", exact: true }),
+	).toBeVisible();
+	await expect(page.getByLabel("Username", { exact: true })).toBeVisible();
+	await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
+	await expect(page.locator('form button[type="submit"]')).toHaveCount(1);
+	await expect(page.locator('form button[type="submit"]')).toHaveText(
+		"Sign In",
+	);
+	await expect(
+		page.getByRole("button", { name: /Create Account/ }),
+	).toHaveCount(0);
+});
+
+test("one auth flow keeps credentials errors and submits new usernames only to login", async ({
+	page,
+}) => {
+	const mutations: { path: string; body: unknown }[] = [];
+	let release!: () => void;
+	const pending = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	await page.route("**/api/auth/**", async (route) => {
+		const request = route.request(),
+			path = new URL(request.url()).pathname;
+		if (request.method() === "POST")
+			mutations.push({ path, body: request.postDataJSON() });
+		if (path === "/api/auth/csrf") {
+			await route.fulfill({
+				json: { token: "test-csrf", headerName: "X-CSRF-TOKEN" },
+			});
+		} else if (path === "/api/auth/me") {
+			await route.fulfill({ json: { authenticated: false, account: null } });
+		} else if (path === "/api/auth/login" && mutations.length === 1) {
+			await pending;
+			await route.fulfill({
+				status: 401,
+				json: {
+					error: {
+						code: "INVALID_CREDENTIALS",
+						message: "Username or password is incorrect",
+					},
+				},
+			});
+		} else if (path === "/api/auth/login") {
+			await route.fulfill({
+				json: {
+					authenticated: true,
+					account: { id: "1", username: "new_player", crownUnlocked: false },
+				},
+			});
+		} else {
+			await route.abort();
+		}
+	});
+	await page.route("**/api/community/current", (route) =>
+		route.fulfill({ json: { run: null } }),
+	);
+	try {
+		await page.goto("/sign-in");
+		await page.getByLabel("Username", { exact: true }).fill("existing_player");
+		await page.getByLabel("Password", { exact: true }).fill("wrong");
+		await page.getByRole("button", { name: "Sign In", exact: true }).click();
+		await expect(
+			page.getByRole("button", { name: "Please wait…", exact: true }),
+		).toBeDisabled();
+		release();
+		await expect(page.getByRole("alert")).toHaveText(
+			"Username or password is incorrect",
+		);
+		await expect(page.getByLabel("Username", { exact: true })).toHaveValue(
+			"existing_player",
+		);
+		await expect(
+			page.getByRole("button", { name: "Sign In", exact: true }),
+		).toBeEnabled();
+		expect(mutations).toEqual([
+			{
+				path: "/api/auth/login",
+				body: { username: "existing_player", password: "wrong" },
+			},
+		]);
+		await page.getByLabel("Username", { exact: true }).fill("new_player");
+		await page.getByLabel("Password", { exact: true }).fill("password123");
+		await page.getByRole("button", { name: "Sign In", exact: true }).click();
+		await expect(
+			page.getByRole("button", { name: "new_player", exact: true }),
+		).toBeVisible();
+		expect(mutations).toEqual([
+			{
+				path: "/api/auth/login",
+				body: { username: "existing_player", password: "wrong" },
+			},
+			{
+				path: "/api/auth/login",
+				body: { username: "new_player", password: "password123" },
+			},
+		]);
+	} finally {
+		release();
+	}
 });
 
 test("keyboard navigation restores focus and offline actions report real errors", async ({

@@ -1,6 +1,8 @@
 package jumpking.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doAnswer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,6 +16,10 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import jumpking.JumpKingApplication;
 import jumpking.security.SessionAuthority;
@@ -28,6 +34,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 @SpringBootTest(
     classes = {JumpKingApplication.class, IdentityIT.TimeConfiguration.class},
@@ -78,7 +85,7 @@ class IdentityIT {
   @Autowired MutableClock clock;
   @Autowired SessionAuthority sessions;
   @Autowired ObjectMapper json;
-  @Autowired org.springframework.security.crypto.password.PasswordEncoder passwords;
+  @MockitoSpyBean org.springframework.security.crypto.password.PasswordEncoder passwords;
 
   @BeforeEach
   void nextWindow() {
@@ -140,6 +147,213 @@ class IdentityIT {
 
   private String registration(String username, String password) throws Exception {
     return json.writeValueAsString(java.util.Map.of("username", username, "password", password));
+  }
+
+  private long accountCount() {
+    return TestDatabase.get().jdbc.queryForObject("SELECT COUNT(*) FROM users", Long.class);
+  }
+
+  private String passwordHash(String username) {
+    return TestDatabase.get()
+        .jdbc
+        .queryForObject("SELECT password_hash FROM users WHERE username=?", String.class, username);
+  }
+
+  @Test
+  void unifiedLoginCreatesAndReopensAnAccountWithThirtyTwoUnicodeCodePoints() throws Exception {
+    String name = unique().substring(0, 12) + "\uD840\uDC00".repeat(20);
+    String password = "Unicode account password";
+    try (var client = client()) {
+      client.token();
+      long count = accountCount();
+      var created = client.send("/auth/login", "POST", registration(name, password));
+      assertThat(created.statusCode()).isEqualTo(200);
+      assertThat(tree(created).path("account").path("username").asText()).isEqualTo(name);
+      String hash = passwordHash(name);
+      client.token();
+      assertThat(client.send("/auth/logout", "POST", null).statusCode()).isEqualTo(200);
+      client.token();
+      var reopened = client.send("/auth/login", "POST", registration(name, password));
+      assertThat(reopened.statusCode()).isEqualTo(200);
+      assertThat(tree(reopened)).isEqualTo(tree(created));
+      assertThat(accountCount()).isEqualTo(count + 1);
+      assertThat(passwordHash(name)).isEqualTo(hash);
+    }
+  }
+
+  @Test
+  void existingCredentialsNeverCreateAccountsOrChangeThePassword() throws Exception {
+    String name = unique(), password = "Existing account password";
+    try (var registered = client();
+        var login = client()) {
+      registered.token();
+      var original = registered.send("/auth/register", "POST", registration(name, password));
+      assertThat(original.statusCode()).isEqualTo(200);
+      long count = accountCount();
+      String hash = passwordHash(name);
+      login.token();
+      var invalid = login.send("/auth/login", "POST", registration(name, "wrong"));
+      assertThat(invalid.statusCode()).isEqualTo(401);
+      assertThat(tree(invalid).path("error").path("code").asText())
+          .isEqualTo("INVALID_CREDENTIALS");
+      assertThat(accountCount()).isEqualTo(count);
+      assertThat(passwordHash(name)).isEqualTo(hash);
+      assertThat(tree(login.send("/auth/me", "GET", null)).path("authenticated").asBoolean())
+          .isFalse();
+      var valid = login.send("/auth/login", "POST", registration(name, password));
+      assertThat(valid.statusCode()).isEqualTo(200);
+      assertThat(tree(valid)).isEqualTo(tree(original));
+      assertThat(accountCount()).isEqualTo(count);
+      assertThat(passwordHash(name)).isEqualTo(hash);
+    }
+  }
+
+  @Test
+  void newCredentialsCreateOneAccountAndRotateTheNormalSessionAndCsrf() throws Exception {
+    try (var client = client()) {
+      client.token();
+      String previous = client.cookie("JSESSIONID"), oldCsrf = client.csrf;
+      String name = unique(), password = "New account password";
+      long count = accountCount();
+      var response = client.send("/auth/login", "POST", registration(name, password));
+      assertThat(response.statusCode()).isEqualTo(200);
+      assertThat(tree(response).propertyStream().map(java.util.Map.Entry::getKey))
+          .containsExactlyInAnyOrder("authenticated", "account");
+      assertThat(tree(response).path("authenticated").asBoolean()).isTrue();
+      assertThat(tree(response).path("account").path("username").asText()).isEqualTo(name);
+      assertThat(tree(client.send("/auth/me", "GET", null))).isEqualTo(tree(response));
+      assertThat(accountCount()).isEqualTo(count + 1);
+      assertThat(passwords.matches(password, passwordHash(name))).isTrue();
+      assertThat(client.cookie("JSESSIONID")).isNotEqualTo(previous);
+      assertThat(sessions.find(previous)).isNull();
+      client.csrf = oldCsrf;
+      assertThat(client.send("/auth/logout", "POST", null).statusCode()).isEqualTo(403);
+      client.token();
+      assertThat(client.send("/auth/logout", "POST", null).statusCode()).isEqualTo(200);
+    }
+  }
+
+  @Test
+  void newCredentialsUseRegistrationValidationWithoutCreatingAccounts() throws Exception {
+    try (var client = client()) {
+      client.token();
+      long count = accountCount();
+      for (String body :
+          java.util.List.of(
+              registration("ab", "password123"),
+              registration("invalid name", "password123"),
+              registration("a".repeat(33), "password123"),
+              registration("\uD840\uDC00".repeat(33), "password123"),
+              registration(unique(), "short"),
+              registration(unique(), "é".repeat(37)),
+              registration(unique(), ""),
+              registration(unique(), "password123").replace("}", ",\"admin\":true}"),
+              "{\"username\":null,\"password\":\"password123\"}",
+              "{\"username\":\"" + unique() + "\",\"password\":null}")) {
+        var invalid = client.send("/auth/login", "POST", body);
+        assertThat(invalid.statusCode()).as(body).isEqualTo(400);
+        assertThat(tree(invalid).path("error").path("code").asText()).isEqualTo("VALIDATION");
+        assertThat(accountCount()).isEqualTo(count);
+      }
+    }
+  }
+
+  @Test
+  void signedInSessionCannotCreateAnotherAccountThroughLoginOrRegister() throws Exception {
+    try (var client = client()) {
+      client.token();
+      var original = client.send("/auth/login", "POST", registration(unique(), "password123"));
+      assertThat(original.statusCode()).isEqualTo(200);
+      client.token();
+      long count = accountCount();
+      String session = client.cookie("JSESSIONID");
+      for (String path : java.util.List.of("/auth/login", "/auth/register")) {
+        var conflict = client.send(path, "POST", registration(unique(), "password456"));
+        assertThat(conflict.statusCode()).isEqualTo(409);
+        assertThat(tree(conflict).path("error").path("code").asText()).isEqualTo("CONFLICT");
+        assertThat(tree(client.send("/auth/me", "GET", null))).isEqualTo(tree(original));
+        assertThat(client.cookie("JSESSIONID")).isEqualTo(session);
+        assertThat(accountCount()).isEqualTo(count);
+      }
+    }
+  }
+
+  @Test
+  void concurrentNewCredentialsWithTheSamePasswordShareOneAccount() throws Exception {
+    concurrentNewCredentials("Concurrent password", "Concurrent password");
+  }
+
+  @Test
+  void concurrentNewCredentialsWithDifferentPasswordsNeverOverwriteTheWinner() throws Exception {
+    concurrentNewCredentials("First concurrent password", "Second concurrent password");
+  }
+
+  private void concurrentNewCredentials(String firstPassword, String secondPassword)
+      throws Exception {
+    String name = unique();
+    long count = accountCount();
+    var encoded = new ConcurrentHashMap<String, String>();
+    var ready = new CyclicBarrier(2);
+    // Chặn sau hash để cả hai request chắc chắn đã lookup username chưa tồn tại.
+    doAnswer(
+            invocation -> {
+              String raw = invocation.getArgument(0).toString();
+              String hash = (String) invocation.callRealMethod();
+              encoded.put(raw, hash);
+              ready.await(10, TimeUnit.SECONDS);
+              return hash;
+            })
+        .when(passwords)
+        .encode(
+            argThat(raw -> firstPassword.contentEquals(raw) || secondPassword.contentEquals(raw)));
+    try (var first = client();
+        var second = client();
+        var executor = Executors.newFixedThreadPool(2)) {
+      first.token();
+      second.token();
+      var a =
+          executor.submit(
+              () -> first.send("/auth/login", "POST", registration(name, firstPassword)));
+      var b =
+          executor.submit(
+              () -> second.send("/auth/login", "POST", registration(name, secondPassword)));
+      var firstResponse = a.get(20, TimeUnit.SECONDS);
+      var secondResponse = b.get(20, TimeUnit.SECONDS);
+      String hash = passwordHash(name);
+      assertThat(accountCount()).isEqualTo(count + 1);
+      assertThat(
+              TestDatabase.get()
+                  .jdbc
+                  .queryForObject("SELECT COUNT(*) FROM users WHERE username=?", Long.class, name))
+          .isEqualTo(1L);
+      if (firstPassword.equals(secondPassword)) {
+        assertThat(firstResponse.statusCode()).isEqualTo(200);
+        assertThat(secondResponse.statusCode()).isEqualTo(200);
+        assertThat(tree(firstResponse)).isEqualTo(tree(secondResponse));
+        assertThat(passwords.matches(firstPassword, hash)).isTrue();
+        assertThat(tree(first.send("/auth/me", "GET", null))).isEqualTo(tree(firstResponse));
+        assertThat(tree(second.send("/auth/me", "GET", null))).isEqualTo(tree(secondResponse));
+      } else {
+        assertThat(java.util.List.of(firstResponse.statusCode(), secondResponse.statusCode()))
+            .containsExactlyInAnyOrder(200, 401);
+        boolean firstWon = firstResponse.statusCode() == 200;
+        String winner = firstWon ? firstPassword : secondPassword;
+        String loser = firstWon ? secondPassword : firstPassword;
+        var rejected = firstWon ? secondResponse : firstResponse;
+        assertThat(tree(rejected).path("error").path("code").asText())
+            .isEqualTo("INVALID_CREDENTIALS");
+        assertThat(hash).isEqualTo(encoded.get(winner));
+        assertThat(passwords.matches(winner, hash)).isTrue();
+        assertThat(passwords.matches(loser, hash)).isFalse();
+        var losingClient = firstWon ? second : first;
+        assertThat(
+                tree(losingClient.send("/auth/me", "GET", null)).path("authenticated").asBoolean())
+            .isFalse();
+      }
+    }
+    org.mockito.Mockito.verify(passwords, org.mockito.Mockito.times(2))
+        .encode(
+            argThat(raw -> firstPassword.contentEquals(raw) || secondPassword.contentEquals(raw)));
   }
 
   @Test
@@ -213,26 +427,18 @@ class IdentityIT {
               .build();
       assertThat(client.http.send(chunked, HttpResponse.BodyHandlers.ofString()).statusCode())
           .isEqualTo(400);
+      String name = "limited_" + unique();
+      assertThat(
+              client.send("/auth/register", "POST", registration(name, "password123")).statusCode())
+          .isEqualTo(200);
+      client.token();
+      String incorrect = registration(name, "incorrect");
       clock.advance(120_000);
       for (int index = 0; index < 20; index++)
-        assertThat(
-                client
-                    .send(
-                        "/auth/login",
-                        "POST",
-                        "{\"username\":\"missing\",\"password\":\"incorrect\"}")
-                    .statusCode())
-            .isEqualTo(401);
+        assertThat(client.send("/auth/login", "POST", incorrect).statusCode()).isEqualTo(401);
       client.cookies.getCookieStore().removeAll();
       client.token();
-      assertThat(
-              client
-                  .send(
-                      "/auth/login",
-                      "POST",
-                      "{\"username\":\"missing\",\"password\":\"incorrect\"}")
-                  .statusCode())
-          .isEqualTo(429);
+      assertThat(client.send("/auth/login", "POST", incorrect).statusCode()).isEqualTo(429);
     }
   }
 

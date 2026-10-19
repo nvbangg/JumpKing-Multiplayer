@@ -45,16 +45,12 @@ test("committed Community Finish plays only for its owner and New Game clears th
 		});
 		const name = `ending_peer_${crypto.randomUUID().replaceAll("-", "").slice(0, 10)}`;
 		await peer.goto("/");
-		await peer
-			.getByRole("button", { name: "Create Account", exact: true })
-			.click();
+		await peer.getByRole("button", { name: "Sign In", exact: true }).click();
 		await peer.getByLabel("Username", { exact: true }).fill(name);
 		await peer
 			.getByLabel("Password", { exact: true })
 			.fill("A secure ending peer password");
-		await peer
-			.getByRole("button", { name: "Create Account", exact: true })
-			.click();
+		await peer.getByRole("button", { name: "Sign In", exact: true }).click();
 		await expect(peer.getByRole("button", { name, exact: true })).toBeVisible();
 		await peer.getByRole("button", { name: "New Game", exact: true }).click();
 		await expect(

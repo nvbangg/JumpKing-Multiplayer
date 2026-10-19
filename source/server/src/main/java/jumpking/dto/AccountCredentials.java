@@ -2,9 +2,9 @@ package jumpking.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import java.nio.charset.StandardCharsets;
 import jumpking.exception.ApiException;
+import org.hibernate.validator.constraints.CodePointLength;
 
 public final class AccountCredentials {
   private AccountCredentials() {}
@@ -27,7 +27,8 @@ public final class AccountCredentials {
     }
   }
 
-  public record Login(@NotBlank @Size(max = 32) String username, @NotNull String password) {
+  public record Login(
+      @NotBlank @CodePointLength(max = 32) String username, @NotNull String password) {
     public Login {
       username = username == null ? null : username.strip();
     }

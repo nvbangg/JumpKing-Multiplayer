@@ -457,7 +457,7 @@ export function App() {
 							: (
 									{
 										"sign-in": "Sign In",
-										register: "Create Account",
+										register: "Sign In",
 										password: "Change Password",
 										rooms: "Room",
 										account: "Account",
@@ -520,14 +520,9 @@ export function App() {
 										{identity.account.username}
 									</button>
 								) : (
-									<>
-										<button type="button" onClick={() => setScreen("sign-in")}>
-											Sign In
-										</button>
-										<button type="button" onClick={() => setScreen("register")}>
-											Create Account
-										</button>
-									</>
+									<button type="button" onClick={() => setScreen("sign-in")}>
+										Sign In
+									</button>
 								)}
 							</div>
 						</>
@@ -535,14 +530,10 @@ export function App() {
 					{(screen === "sign-in" || screen === "register") && (
 						<AuthForm
 							key={screen}
-							register={screen === "register"}
 							onSuccess={(value) => {
 								setIdentity(value);
 								back();
 							}}
-							onSwitch={() =>
-								setScreen(screen === "register" ? "sign-in" : "register")
-							}
 						/>
 					)}
 					{screen === "account" && identity.account && (

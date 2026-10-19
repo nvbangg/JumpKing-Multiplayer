@@ -179,16 +179,12 @@ test("late home responses cannot restore the previous Account's save or statisti
 		).toHaveCount(0);
 		await expect(page.getByLabel("Total statistics")).toHaveCount(0);
 		const next = `next_${crypto.randomUUID().replaceAll("-", "").slice(0, 10)}`;
-		await page
-			.getByRole("button", { name: "Create Account", exact: true })
-			.click();
+		await page.getByRole("button", { name: "Sign In", exact: true }).click();
 		await page.getByLabel("Username", { exact: true }).fill(next);
 		await page
 			.getByLabel("Password", { exact: true })
 			.fill("A secure next account password");
-		await page
-			.getByRole("button", { name: "Create Account", exact: true })
-			.click();
+		await page.getByRole("button", { name: "Sign In", exact: true }).click();
 		await expect(
 			page.getByRole("button", { name: next, exact: true }),
 		).toBeVisible();

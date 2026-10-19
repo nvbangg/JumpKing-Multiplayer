@@ -12,15 +12,11 @@ async function register(page: Page, suffix: string) {
 		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false })),
 	);
 	await page.goto("/");
-	await page
-		.getByRole("button", { name: "Create Account", exact: true })
-		.click();
+	await page.getByRole("button", { name: "Sign In", exact: true }).click();
 	await expect(page.getByLabel("Email", { exact: true })).toHaveCount(0);
 	await page.getByLabel("Username", { exact: true }).fill(username);
 	await page.getByLabel("Password", { exact: true }).fill("123456");
-	await page
-		.getByRole("button", { name: "Create Account", exact: true })
-		.click();
+	await page.getByRole("button", { name: "Sign In", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: username, exact: true }),
 	).toBeVisible();

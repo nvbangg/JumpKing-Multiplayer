@@ -60,6 +60,19 @@ public class AccountService {
 
   public AccountDto.Account login(
       AccountCredentials.Login form, Long current, Consumer<AccountDto.Account> authenticated) {
+    if (users.findByUsername(form.username()).isEmpty()) {
+      if (current != null)
+        throw new ApiException(409, "CONFLICT", "Sign out before creating another account");
+      try {
+        return register(
+            new AccountCredentials.Registration(form.username(), form.password()), authenticated);
+      } catch (ApiException conflict) {
+        // Request khác có thể vừa tạo username; chỉ tiếp tục bằng xác thực mật khẩu hiện có.
+        if (conflict.status() != 409
+            || !"CONFLICT".equals(conflict.code())
+            || users.findByUsername(form.username()).isEmpty()) throw conflict;
+      }
+    }
     if (!AccountCredentials.passwordWithinBcrypt(form.password())) throw invalidCredentials();
     try {
       authentication.authenticate(

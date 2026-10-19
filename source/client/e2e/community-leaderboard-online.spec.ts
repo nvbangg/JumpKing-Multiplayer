@@ -45,16 +45,12 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 			}),
 		);
 		await page.goto("/");
-		await page
-			.getByRole("button", { name: "Create Account", exact: true })
-			.click();
+		await page.getByRole("button", { name: "Sign In", exact: true }).click();
 		await page.getByLabel("Username", { exact: true }).fill(name);
 		await page
 			.getByLabel("Password", { exact: true })
 			.fill("A secure leaderboard test password");
-		await page
-			.getByRole("button", { name: "Create Account", exact: true })
-			.click();
+		await page.getByRole("button", { name: "Sign In", exact: true }).click();
 		await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
 		await page.getByRole("button", { name: "New Game", exact: true }).click();
 		await expect(

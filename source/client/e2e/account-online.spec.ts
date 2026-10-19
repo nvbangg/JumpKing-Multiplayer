@@ -10,6 +10,26 @@ test.beforeEach(async ({ page }) => {
 	);
 });
 
+test("unified Sign In accepts thirty-two Unicode code points for creation and login", async ({
+	page,
+}) => {
+	const name =
+		crypto.randomUUID().replaceAll("-", "").slice(0, 12) +
+		"\u{20000}".repeat(20);
+	await page.goto("/");
+	for (let attempt = 0; attempt < 2; attempt++) {
+		await page.getByRole("button", { name: "Sign In", exact: true }).click();
+		await page.getByLabel("Username", { exact: true }).fill(name);
+		await page
+			.getByLabel("Password", { exact: true })
+			.fill("Unicode account password");
+		await page.getByRole("button", { name: "Sign In", exact: true }).click();
+		await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
+		await page.getByRole("button", { name, exact: true }).click();
+		await page.getByRole("button", { name: "Sign Out", exact: true }).click();
+	}
+});
+
 test("account forms persist the session and sign out clears private home data", async ({
 	page,
 	context,
@@ -17,14 +37,21 @@ test("account forms persist the session and sign out clears private home data", 
 	const name = `player_${Date.now()}`,
 		password = "A secure browser password";
 	await page.goto("/");
-	await page
-		.getByRole("button", { name: "Create Account", exact: true })
-		.click();
+	await page.getByRole("button", { name: "Sign In", exact: true }).click();
 	await page.getByLabel("Username", { exact: true }).fill(name);
 	await page.getByLabel("Password", { exact: true }).fill(password);
-	await page
-		.getByRole("button", { name: "Create Account", exact: true })
-		.click();
+	const signedIn = page.waitForResponse(
+		(response) => new URL(response.url()).pathname === "/api/auth/login",
+	);
+	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	const response = await signedIn;
+	expect(response.status()).toBe(200);
+	const identity = await response.json();
+	expect(identity.authenticated).toBe(true);
+	expect(identity.account.username).toBe(name);
+	expect(await (await page.request.get("/api/auth/me")).json()).toEqual(
+		identity,
+	);
 	await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
 	await expect(
 		page.getByRole("button", { name: "Continue", exact: true }),
@@ -62,7 +89,7 @@ test("account forms persist the session and sign out clears private home data", 
 	await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
 });
 
-test("two browser identities stay isolated and duplicate registration is a safe error", async ({
+test("two browser sessions sign in to the same account and sign out independently", async ({
 	browser,
 }) => {
 	const first = await browser.newContext(),
@@ -73,23 +100,18 @@ test("two browser identities stay isolated and duplicate registration is a safe 
 			name = `isolated_${Date.now()}`;
 		for (const page of [a, b]) {
 			await page.goto("/");
-			await page
-				.getByRole("button", { name: "Create Account", exact: true })
-				.click();
+			await page.getByRole("button", { name: "Sign In", exact: true }).click();
 			await page.getByLabel("Username", { exact: true }).fill(name);
 			await page
 				.getByLabel("Password", { exact: true })
 				.fill("A secure second password");
 		}
-		await a
-			.getByRole("button", { name: "Create Account", exact: true })
-			.click();
+		await a.getByRole("button", { name: "Sign In", exact: true }).click();
 		await expect(a.getByRole("button", { name, exact: true })).toBeVisible();
-		await b
-			.getByRole("button", { name: "Create Account", exact: true })
-			.click();
-		await expect(b.getByRole("alert")).toHaveText("Username is unavailable");
-		await b.getByRole("button", { name: "Back", exact: true }).click();
+		await b.getByRole("button", { name: "Sign In", exact: true }).click();
+		await expect(b.getByRole("button", { name, exact: true })).toBeVisible();
+		await b.getByRole("button", { name, exact: true }).click();
+		await b.getByRole("button", { name: "Sign Out", exact: true }).click();
 		await expect(
 			b.getByRole("button", { name: "Sign In", exact: true }),
 		).toBeVisible();

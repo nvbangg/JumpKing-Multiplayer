@@ -187,7 +187,6 @@ test("native audio unlocks, decodes and caches effects and stops old ambience", 
 		cacheRetained: true,
 	});
 	expect((await inspect()).errors).toEqual([]);
-	await leaveOnline(page);
 });
 
 test("blocked audio reports a limitation without blocking the game", async ({

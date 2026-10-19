@@ -105,16 +105,12 @@ test("server-enabled flight, double Space and movement save and Continue online 
 	);
 	const name = `flight_${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
 	await page.goto("/");
-	await page
-		.getByRole("button", { name: "Create Account", exact: true })
-		.click();
+	await page.getByRole("button", { name: "Sign In", exact: true }).click();
 	await page.getByLabel("Username", { exact: true }).fill(name);
 	await page
 		.getByLabel("Password", { exact: true })
 		.fill("A secure flight browser password");
-	await page
-		.getByRole("button", { name: "Create Account", exact: true })
-		.click();
+	await page.getByRole("button", { name: "Sign In", exact: true }).click();
 	await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
 	await expect(
