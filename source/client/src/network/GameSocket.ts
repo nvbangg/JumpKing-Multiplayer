@@ -241,10 +241,15 @@ export class GameSocket {
 			if (this.restoring === task) this.restoring = null;
 		}
 	}
-	reconnect(): Promise<void> {
-		return this.profile
-			? this.restore(this.profile)
-			: Promise.reject(new Error("Reconnect identity is unavailable"));
+	async reconnect(): Promise<void> {
+		if (!this.profile) throw new Error("Reconnect identity is unavailable");
+		await this.restore(this.profile);
+		// restore() xóa context hết hạn mà không báo lỗi; không có membership thì phải báo để UI rời phòng.
+		if (!this.selfId)
+			throw new ApiError(
+				"RECONNECT_EXPIRED",
+				"Reconnect is no longer available",
+			);
 	}
 	subscribe(
 		listener: (type: string, payload: Record<string, unknown>) => void,
@@ -266,7 +271,11 @@ export class GameSocket {
 		this.socket.send(JSON.stringify({ v: 1, type, payload }));
 	}
 	constructor(
-		private onMessage: (type: string, payload: Record<string, unknown>) => void,
+		private onMessage: (
+			type: string,
+			payload: Record<string, unknown>,
+			replied?: boolean,
+		) => void,
 		private onDisconnect: () => void,
 	) {}
 	connect(): Promise<void> {
@@ -468,7 +477,11 @@ export class GameSocket {
 					this.playContext = { playId, generation };
 				}
 			}
-			this.onMessage(message.type, message.payload);
+			this.onMessage(
+				message.type,
+				message.payload,
+				message.requestId !== undefined,
+			);
 			for (const listener of this.listeners)
 				listener(message.type, message.payload);
 		};

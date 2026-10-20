@@ -14,7 +14,7 @@ import { AudioBus } from "../../game/presentation/AudioBus";
 import { PRESENTATION } from "../../game/presentation/config";
 import { parseMap } from "../../game/simulation/map";
 import { PHYSICS } from "../../game/simulation/tuning";
-import { api } from "../../network/api";
+import { ApiError, api } from "../../network/api";
 import type {
 	GameConfig,
 	NetworkQuality,
@@ -102,6 +102,19 @@ export function OnlineGame({
 	}, [ending]);
 	const latestRoom = useRef(room);
 	latestRoom.current = room;
+	const removedNotice =
+		room.kind === "COMMUNITY"
+			? "Your room membership has ended. Continue will use the last server checkpoint."
+			: "Your room membership has ended.";
+	// Lệnh bị từ chối khi membership đã kết thúc ở server thì về trang chủ, không kẹt ở menu.
+	const reportFailure = async (cause: unknown, fallback: string) => {
+		const ended = await socket.command("GET_ROOM_STATE").then(
+			(reply) => !reply.payload.roomId,
+			() => false,
+		);
+		if (ended) onHome(removedNotice);
+		else setError(cause instanceof Error ? cause.message : fallback);
+	};
 	const pauseRef = useRef<() => void>(() => {});
 	const pause = () => {
 		if (endingActive.current) {
@@ -119,7 +132,7 @@ export function OnlineGame({
 			setSaveStatus("PENDING");
 			void socket
 				.command("SET_COMMUNITY_PAUSED", { paused: true })
-				.catch((cause) => setError(cause.message));
+				.catch((cause) => reportFailure(cause, "Pause failed"));
 		}
 	};
 	pauseRef.current = pause;
@@ -406,7 +419,7 @@ export function OnlineGame({
 			try {
 				await socket.command("SET_COMMUNITY_PAUSED", { paused: false });
 			} catch (cause) {
-				setError(cause instanceof Error ? cause.message : "Resume failed");
+				await reportFailure(cause, "Resume failed");
 				return;
 			} finally {
 				setPending(false);
@@ -614,7 +627,16 @@ export function OnlineGame({
 												setPending(true);
 												void socket
 													.reconnect()
-													.catch((cause) => setError(cause.message))
+													.catch((cause) => {
+														if (
+															cause instanceof ApiError &&
+															["RECONNECT_EXPIRED", "ROOM_NOT_FOUND"].includes(
+																cause.code,
+															)
+														)
+															onHome(removedNotice);
+														else setError(cause.message);
+													})
 													.finally(() => setPending(false));
 											}}
 										>
