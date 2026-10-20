@@ -157,6 +157,6 @@ Assets có manifest; `source/client/public/assets/ATTRIBUTION.md` ghi nguồn v�
 
 ## Chat và bảng trong trận
 
-Lobby luôn hiện chat và ô nhập. Trong trận, chat cố định ở góc dưới bên trái, hiển thị tối đa 10 tin gần nhất và tự cuộn xuống tin mới; không tự lấy focus. Enter focus ô nhập hoặc gửi; Esc hoặc gửi thành công trả input cho game, khung chat vẫn hiện. Không bắt phím từ form khác hoặc che nút cảm ứng. Chat không đi vào database.
+Lobby luôn hiện chat và ô nhập. Trong trận, chat cố định ở góc dưới bên trái, hiển thị tối đa 10 tin gần nhất và tự cuộn xuống tin mới; không tự lấy focus. Enter mở/focus ô nhập hoặc gửi; Esc hoặc gửi thành công trả input cho game, khung chat vẫn hiện. Không bắt phím từ form khác hoặc che nút cảm ứng. Chat không đi vào database.
 
-Players là thứ hạng hiện tại trong cùng phòng: Room theo comparator mode, Community theo độ cao hiện tại và đồng hạng khi bằng nhau. Server tính từ state RAM. Players và Leaderboard Community luôn hiển thị gọn, danh sách dài cuộn riêng và không che nút cảm ứng. Leaderboard dùng thành tích đã commit, tải khi vào trận hoặc nhấn Refresh; không polling. Community chỉ bắt đầu lượt mới từ menu sau Save & Exit.
+Players là thứ hạng hiện tại trong cùng phòng: Room theo comparator mode, Community theo độ cao hiện tại và đồng hạng khi bằng nhau. Server tính từ state RAM. Các bảng mặc định hiển thị gọn, danh sách dài cuộn riêng và không che nút cảm ứng. Mobile cho thu gọn Chat và Leaderboard, giữ nội dung/nháp; Players vẫn hiện. Leaderboard dùng thành tích đã commit, tải khi vào trận hoặc nhấn Refresh; không polling hoặc tải lại khi mở bảng đã thu gọn. Community chỉ bắt đầu lượt mới từ menu sau Save & Exit.

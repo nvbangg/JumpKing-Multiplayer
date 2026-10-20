@@ -97,6 +97,15 @@ test("persistent chat, ten-message limit, shortcuts and touch work without launc
 			await a.getByRole("button", { name: "Send", exact: true }).click();
 			await expect(history).toContainText(`Line ${index}`);
 		}
+		await b.getByRole("button", { name: "Collapse chat", exact: true }).tap();
+		await expect(b.locator(".chat-panel")).toBeHidden();
+		await a.waitForTimeout(1100);
+		const latest = `Latest message ${"message ".repeat(18)}`;
+		await a.getByLabel("Message", { exact: true }).fill(latest);
+		await a.getByRole("button", { name: "Send", exact: true }).click();
+		await expect(b.locator(".chat-messages")).toContainText(latest);
+		await b.getByRole("button", { name: "Show chat", exact: true }).tap();
+		await expect(history.locator("p").last()).toBeInViewport();
 		await expect(history.locator("p")).toHaveCount(10);
 		await expect(history).not.toContainText("Online hello");
 		expect(

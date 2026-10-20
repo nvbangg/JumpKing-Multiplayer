@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { leaveOnline } from "./support/online";
+import { leaveOnline, newCommunity, registerOnline } from "./support/online";
 
 test.use({ isMobile: true, hasTouch: true });
 
@@ -95,6 +95,19 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 				element.scrollTop = element.scrollHeight;
 			});
 			await expect(records.getByRole("listitem").last()).toBeInViewport();
+			const scrollTop = await records.evaluate((element) => element.scrollTop);
+			const loaded = requests.length;
+			await page
+				.getByRole("button", { name: "Collapse leaderboard", exact: true })
+				.tap();
+			await expect(records).toBeHidden();
+			await page
+				.getByRole("button", { name: "Show leaderboard", exact: true })
+				.tap();
+			expect(await records.evaluate((element) => element.scrollTop)).toBe(
+				scrollTop,
+			);
+			expect(requests).toHaveLength(loaded);
 			await expect(
 				page.getByRole("button", { name: "Refresh", exact: true }),
 			).toBeInViewport();
@@ -116,6 +129,65 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 			.getByRole("button", { name: "Save & Exit", exact: true })
 			.click();
 		expect(errors).toEqual([]);
+	} finally {
+		await leaveOnline(page);
+	}
+});
+
+test("mobile panels preserve drafts and keyboard chat can be collapsed again", async ({
+	page,
+}, info) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.addInitScript(() =>
+		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false })),
+	);
+	try {
+		await registerOnline(page, "panels");
+		await newCommunity(page);
+		const chat = page.getByRole("region", { name: "Room chat", exact: true });
+		const message = page.getByLabel("Message", { exact: true });
+		await message.fill("Unsent draft");
+		await page
+			.getByRole("button", { name: "Collapse chat", exact: true })
+			.tap();
+		await expect(chat).toBeHidden();
+		await page.locator("canvas").focus();
+		await page.keyboard.press("Enter");
+		await expect(message).toBeFocused();
+		await expect(message).toHaveValue("Unsent draft");
+		await page
+			.getByRole("button", { name: "Collapse chat", exact: true })
+			.tap();
+		await expect(chat).toBeHidden();
+		await page.getByRole("button", { name: "Show chat", exact: true }).tap();
+		await expect(message).toHaveValue("Unsent draft");
+		for (const viewport of [
+			{ width: 844, height: 390 },
+			{ width: 568, height: 320 },
+		]) {
+			await page.setViewportSize(viewport);
+			const records = page.getByRole("region", {
+				name: "Community leaderboard",
+				exact: true,
+			});
+			await page
+				.getByRole("button", { name: "Collapse leaderboard", exact: true })
+				.tap();
+			await expect(records).toBeHidden();
+			await expect(
+				page.getByRole("heading", { name: "Players" }),
+			).toBeVisible();
+			await page
+				.getByRole("button", { name: "Show leaderboard", exact: true })
+				.tap();
+			await expect(records).toBeVisible();
+			await expect(
+				page.getByRole("button", { name: "Refresh", exact: true }),
+			).toBeInViewport();
+			await page.screenshot({
+				path: info.outputPath(`panels-${viewport.width}.png`),
+			});
+		}
 	} finally {
 		await leaveOnline(page);
 	}

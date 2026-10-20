@@ -700,3 +700,170 @@ output.room-code {
 	background-color: #ef4444;
 	box-shadow: 0 0 6px #ef4444aa;
 }
+
+.mobile-panel-toggle {
+	display: none;
+}
+
+@media (max-width: 680px),
+	(orientation: landscape) and (pointer: coarse) and (max-height: 480px) and (
+		max-width: 1023px
+	) {
+	.play-page {
+		--mobile-panel-bottom: max(100px, calc(env(safe-area-inset-bottom) + 84px));
+	}
+
+	.play-page:has(.touch-controls [aria-label="Move Up"]) {
+		--mobile-panel-bottom: max(
+			164px,
+			calc(env(safe-area-inset-bottom) + 148px)
+		);
+	}
+
+	.play-page:has(.touch-controls [aria-label="Move Up"]) .in-game-panels {
+		max-height: calc(100dvh - 226px);
+	}
+
+	.play-page .game-viewport {
+		top: env(safe-area-inset-top);
+		right: env(safe-area-inset-right);
+		bottom: env(safe-area-inset-bottom);
+		left: env(safe-area-inset-left);
+	}
+
+	.play-page .touch-controls {
+		align-items: flex-end;
+	}
+
+	.play-page .touch-controls > div {
+		column-gap: 22px;
+		max-width: 130px;
+	}
+
+	.play-page .chat-panel {
+		left: max(36px, calc(env(safe-area-inset-left) + 36px));
+		max-width: calc(100% - 48px - env(safe-area-inset-left));
+		bottom: var(--mobile-panel-bottom);
+	}
+
+	.play-page .records-panel {
+		margin-right: 24px;
+	}
+
+	.play-page[data-chat-collapsed="true"] .chat-panel {
+		/* Giữ kích thước để chat vẫn cuộn tới tin mới khi đang thu gọn. */
+		visibility: hidden;
+	}
+
+	.play-page[data-leaderboard-collapsed="true"] .records-panel {
+		display: none;
+	}
+
+	.play-page .mobile-panel-toggle {
+		display: block;
+		position: absolute;
+		z-index: 5;
+		bottom: var(--mobile-panel-bottom);
+		width: 28px;
+		min-height: 44px;
+		padding: 4px;
+		border: 1px solid #6b6250;
+		background: #08090cef;
+		color: #e4bb68;
+		font-size: 24px;
+	}
+
+	.play-page .mobile-chat-toggle {
+		left: env(safe-area-inset-left);
+		border-radius: 0 6px 6px 0;
+	}
+
+	.play-page .mobile-leaderboard-toggle {
+		right: env(safe-area-inset-right);
+		border-radius: 6px 0 0 6px;
+	}
+}
+
+@media (orientation: landscape) and (pointer: coarse) and (
+		max-height: 480px
+	) and (max-width: 1023px) {
+	.play-page,
+	.play-page:has(.touch-controls [aria-label="Move Up"]) {
+		--mobile-panel-top: max(44px, calc(env(safe-area-inset-top) + 36px));
+		--mobile-panel-bottom: max(84px, calc(env(safe-area-inset-bottom) + 70px));
+	}
+
+	.play-page .game-hud {
+		left: max(12px, env(safe-area-inset-left));
+		right: max(12px, env(safe-area-inset-right));
+		font-size: 12px;
+	}
+
+	.play-page .game-hud .timer {
+		padding-left: 0;
+	}
+
+	.play-page .game-hud button {
+		padding: 6px 8px;
+	}
+
+	.play-page .touch-controls > div {
+		max-width: none;
+	}
+
+	.play-page .chat-panel {
+		width: min(260px, 36vw);
+	}
+
+	.play-page .chat-history-box .chat-messages {
+		max-height: max(
+			24px,
+			calc(
+				100dvh -
+				var(--mobile-panel-top) -
+				var(--mobile-panel-bottom) -
+				112px
+			)
+		);
+	}
+
+	.play-page .in-game-panels,
+	.play-page:has(.touch-controls [aria-label="Move Up"]) .in-game-panels {
+		top: var(--mobile-panel-top);
+		right: calc(env(safe-area-inset-right) + 36px);
+		width: min(210px, 32vw);
+		max-height: calc(
+			100dvh -
+			var(--mobile-panel-top) -
+			var(--mobile-panel-bottom)
+		);
+	}
+
+	.play-page .players-panel {
+		--players-game-height: calc(
+			100dvh -
+			env(safe-area-inset-top) -
+			env(safe-area-inset-bottom)
+		);
+		--players-letterbox: calc(
+			(
+				100vw -
+				env(safe-area-inset-left) -
+				env(safe-area-inset-right) -
+				var(--players-game-height) *
+				4 / 3
+			) /
+			2
+		);
+		width: clamp(60px, calc(var(--players-letterbox) - 8px), 210px);
+		align-self: flex-end;
+		position: relative;
+		/* Khung cha chừa 36px; dịch riêng Players để còn 8px sát mép phải. */
+		left: 28px;
+		max-height: 96px;
+	}
+
+	.play-page .records-panel {
+		margin-right: 0;
+	}
+}
