@@ -867,3 +867,23 @@ output.room-code {
 		margin-right: 0;
 	}
 }
+.update-notice {
+	position: fixed;
+	top: max(56px, calc(env(safe-area-inset-top) + 48px));
+	right: max(8px, env(safe-area-inset-right));
+	z-index: 1000;
+	width: min(300px, calc(100vw - 16px));
+	padding: 12px;
+	border: 2px solid #d9bc77;
+	background: #17141f;
+	color: #fff;
+	pointer-events: none;
+}
+
+.update-notice button {
+	pointer-events: auto;
+}
+
+.update-notice p {
+	margin: 0 0 8px;
+}

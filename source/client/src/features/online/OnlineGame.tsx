@@ -40,7 +40,7 @@ export function OnlineGame({
 	socket: GameSocket;
 	room: RoomState;
 	navigationError: string;
-	onHome: () => void;
+	onHome: (message: string) => void;
 	onResults: () => void;
 }) {
 	const container = useRef<HTMLDivElement>(null),
@@ -236,7 +236,11 @@ export function OnlineGame({
 					audio.current?.pause(true);
 					setDisconnected(true);
 					setMenu("pause");
-					setError("Disconnected from the game server");
+					setError(
+						typeof payload.message === "string"
+							? payload.message
+							: "Disconnected from the game server",
+					);
 				}
 				if (type === "RECONNECT_OK") {
 					setDisconnected(false);
@@ -616,7 +620,16 @@ export function OnlineGame({
 										>
 											Reconnect
 										</button>
-										<button type="button" onClick={onHome}>
+										<button
+											type="button"
+											onClick={() =>
+												onHome(
+													room.kind === "COMMUNITY"
+														? "Disconnected. Latest save could not be confirmed. Continue will use the last server checkpoint."
+														: "Disconnected. Your departure could not be confirmed by the server.",
+												)
+											}
+										>
 											Back to Menu
 										</button>
 									</>
@@ -655,11 +668,13 @@ export function OnlineGame({
 								</button>
 								{room.kind === "COMMUNITY" && (
 									<small role="status">
-										{saveStatus === "SAVED"
-											? "Saved"
-											: saveStatus === "FAILED"
-												? "Save failed"
-												: "Saving…"}
+										{disconnected
+											? "Latest save unconfirmed"
+											: saveStatus === "SAVED"
+												? "Saved"
+												: saveStatus === "FAILED"
+													? "Save failed"
+													: "Saving…"}
 									</small>
 								)}
 								<ControlsHelp />

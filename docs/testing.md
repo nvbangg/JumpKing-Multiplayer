@@ -72,6 +72,10 @@ Với `-Web` và `E2E_BROWSER_PATH`, `SchemaIT` còn chạy Chrome trực tiếp
 
 ## Scenarios và oracles
 
+Hồi quy cập nhật/lag: `npm run test:e2e -- e2e/updates.spec.ts` kiểm tra thông báo bản mới, chỉ reload khi bấm ở màn hình chính và lỗi tải chunk. Với backend/MySQL cô lập và `E2E_AUTH_ONLINE=true`, chạy thêm `e2e/lag-recovery-online.spec.ts`: chặn input để ACK không tiến, gây đầy hàng đợi trong Community/Room, reconnect/Resume hoặc Back to Menu khi API mất mạng. Không làm đầy hàng đợi bằng input giả trên server thật.
+
+`SessionAuthorityTest` kiểm tra idle/absolute không được gia hạn do khôi phục phiên. `SessionPersistenceIT` chạy Tomcat thật qua ba lần khởi động với cùng thư mục phiên và MySQL cô lập, giữ cookie/CSRF giữa các lần: đăng nhập được sau restart, registry chứa cả phiên chưa gửi HTTP mới, đổi mật khẩu thu hồi các thiết bị và logout không bị phục hồi sau restart. Sau đó nghiệm thu thêm JAR trên VPS qua `systemctl restart` theo [deployment](deployment.md#giữ-phiên-khi-deploy); test local không thay thế kiểm tra quyền thư mục và systemd thực tế.
+
 | Nhóm | Kiểm tra và kết quả mong đợi |
 | --- | --- |
 | Physics | Đi bộ, charge ngắn/full/auto, buffer/air grace, wall/ceiling/corner/slope, ice/snow/wind, splat/cancel; full state đúng expected mỗi tick |

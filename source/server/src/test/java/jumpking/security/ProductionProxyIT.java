@@ -20,7 +20,11 @@ import org.springframework.test.context.DynamicPropertySource;
 @SpringBootTest(
     classes = JumpKingApplication.class,
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = {"app.allowed-origins=https://game.example.com", "app.auth-rate-per-minute=1"})
+    properties = {
+      "app.allowed-origins=https://game.example.com",
+      "app.auth-rate-per-minute=1",
+      "server.servlet.session.persistent=false"
+    })
 class ProductionProxyIT {
   @DynamicPropertySource
   static void database(DynamicPropertyRegistry properties) {

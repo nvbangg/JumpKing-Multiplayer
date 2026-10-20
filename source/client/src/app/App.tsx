@@ -24,6 +24,7 @@ import {
 } from "../network/GameSocket";
 import { loadReconnect } from "../network/reconnect";
 import { required } from "../required";
+import { UpdateNotice } from "./UpdateNotice";
 
 type Screen =
 	| "home"
@@ -87,6 +88,7 @@ export function App() {
 	const socket = useRef<GameSocket | null>(null);
 	const exitScreen = useRef<Screen | null>(null);
 	const [navigationError, setNavigationError] = useState("");
+	const [connectionNotice, setConnectionNotice] = useState("");
 	const leaveOnline = useCallback(() => {
 		const connection = socket.current;
 		return connection?.selfId
@@ -366,6 +368,7 @@ export function App() {
 		});
 	};
 	const enterCommunity = (newRun: boolean) => {
+		setConnectionNotice("");
 		if (!identity.account) {
 			setScreen("sign-in");
 			return;
@@ -400,46 +403,61 @@ export function App() {
 	const displayedError = navigationError || error;
 	if (screen === "online" && room && socket.current)
 		return (
-			<OnlineGame
-				room={room}
-				socket={socket.current}
-				navigationError={navigationError}
-				onResults={() => {
-					viewedEnding.current = resultRef.current?.playId || null;
-					setScreen("results");
-				}}
-				onHome={() => {
-					setNavigationError("");
-					socket.current?.close();
-					socket.current = null;
-					setRoom(null);
-					setScreen("home");
-					clearCsrf();
-					const expectedIdentityRevision = identityRevision.current;
-					void api<Identity>("/auth/me")
-						.then((value) => {
-							if (identityRevision.current === expectedIdentityRevision)
-								setIdentity(value);
-						})
-						.catch((cause) => {
-							if (identityRevision.current !== expectedIdentityRevision) return;
-							if (
-								cause instanceof ApiError &&
-								["SESSION_EXPIRED", "UNAUTHENTICATED"].includes(cause.code)
-							)
-								setIdentity(initialIdentity);
-							else
-								setError(
-									cause instanceof Error
-										? cause.message
-										: "Identity could not be refreshed",
-								);
-						});
-				}}
-			/>
+			<>
+				<UpdateNotice canReload={false} />
+				<OnlineGame
+					room={room}
+					socket={socket.current}
+					navigationError={navigationError}
+					onResults={() => {
+						viewedEnding.current = resultRef.current?.playId || null;
+						setScreen("results");
+					}}
+					onHome={(message) => {
+						setNavigationError("");
+						socket.current?.close();
+						socket.current = null;
+						setRoom(null);
+						setResult(null);
+						resultRef.current = null;
+						exitScreen.current = null;
+						setError("");
+						setConnectionNotice(message);
+						setHomeRevision((value) => value + 1);
+						setScreen("home");
+						clearCsrf();
+						const expectedIdentityRevision = identityRevision.current;
+						void api<Identity>("/auth/me")
+							.then((value) => {
+								if (identityRevision.current === expectedIdentityRevision)
+									setIdentity(value);
+							})
+							.catch((cause) => {
+								if (identityRevision.current !== expectedIdentityRevision)
+									return;
+								if (
+									cause instanceof ApiError &&
+									["SESSION_EXPIRED", "UNAUTHENTICATED"].includes(cause.code)
+								)
+									setIdentity(initialIdentity);
+								else
+									setError(
+										cause instanceof Error
+											? cause.message
+											: "Identity could not be refreshed",
+									);
+							});
+					}}
+				/>
+			</>
 		);
 	return (
 		<main className={`home screen-${screen}`}>
+			<UpdateNotice
+				canReload={
+					screen === "home" && !room && !pending && !socket.current?.selfId
+				}
+			/>
 			{screen !== "detail" && (
 				<header className="brand">
 					<h1>
@@ -675,6 +693,9 @@ export function App() {
 						/>
 					)}
 
+					{screen === "home" && connectionNotice && (
+						<p role="status">{connectionNotice}</p>
+					)}
 					{displayedError && (
 						<p className="error" role="alert">
 							{displayedError}

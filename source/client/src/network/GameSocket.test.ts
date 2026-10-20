@@ -58,6 +58,31 @@ const open = async (game: GameSocket) => {
 	await ready;
 	return socket;
 };
+test("input failure notifies disconnect once and rejects commands without accepting stale packets", async () => {
+	const received = vi.fn(),
+		disconnected = vi.fn(),
+		listener = vi.fn();
+	const game = new GameSocket(received, disconnected);
+	game.subscribe(listener);
+	const socket = await open(game);
+	const command = game.command("GET_ROOM_STATE");
+	const rejected = expect(command).rejects.toMatchObject({
+		code: "CONNECTION_FAILED",
+	});
+	game.fail("Input acknowledgements are too far behind; reconnect to continue");
+	game.fail("Repeated failure");
+	await rejected;
+	expect(socket.closeCode).toBe(4000);
+	expect(disconnected).toHaveBeenCalledTimes(1);
+	expect(listener).toHaveBeenCalledExactlyOnceWith("CONNECTION_CLOSED", {
+		message: "Input acknowledgements are too far behind; reconnect to continue",
+	});
+	socket.receive({ v: 1, type: "ROOM_LEFT", payload: {} });
+	expect(received).not.toHaveBeenCalled();
+	await expect(game.command("LEAVE_ROOM")).rejects.toMatchObject({
+		code: "CONNECTION_FAILED",
+	});
+});
 test("WebSocket follows the browser origin and uses WSS for an explicitly configured HTTPS backend", async () => {
 	vi.stubGlobal("location", new URL("http://10.147.17.5:8080"));
 	const game = new GameSocket(vi.fn(), vi.fn());

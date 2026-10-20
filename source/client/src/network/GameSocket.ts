@@ -544,6 +544,9 @@ export class GameSocket {
 		this.clearPending();
 		socket?.close(code, reason);
 	}
+	fail(message: string): void {
+		if (this.socket) this.disconnect(this.socket, message, 4000);
+	}
 	private disconnect(socket: WebSocket, message: string, code?: number): void {
 		if (this.socket !== socket) return;
 		this.close(code ?? 1000, message);

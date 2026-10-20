@@ -8,8 +8,13 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 import jumpking.config.SecuritySettings;
+import org.apache.catalina.Context;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.boot.web.context.WebServerApplicationContext;
+import org.springframework.boot.web.embedded.tomcat.TomcatWebServer;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +23,9 @@ public class SessionAuthority implements HttpSessionListener, HttpSessionIdListe
   public record Revoked(String sessionId) {}
 
   private record Entry(HttpSession session, long created, long activity) {}
+
+  private static final String CREATED = "jumpking.session.created";
+  private static final String ACTIVITY = "jumpking.session.activity";
 
   private final ConcurrentHashMap<String, Entry> sessions = new ConcurrentHashMap<>();
   private final Clock clock;
@@ -44,7 +52,24 @@ public class SessionAuthority implements HttpSessionListener, HttpSessionIdListe
     long now = clock.millis();
     // Timeout container là dự phòng; HTTP và WS dùng cùng idle clock bên dưới.
     session.setMaxInactiveInterval((int) (absoluteMs / 1000 + 60));
+    session.setAttribute(CREATED, now);
+    session.setAttribute(ACTIVITY, now);
     sessions.put(session.getId(), new Entry(session, now, now));
+  }
+
+  @EventListener
+  public void restore(ApplicationReadyEvent event) {
+    if (event.getApplicationContext() instanceof WebServerApplicationContext application
+        && application.getWebServer() instanceof TomcatWebServer server) {
+      // Tomcat nạp phiên trước ApplicationReady; đăng ký cả phiên chưa có HTTP request mới.
+      for (var child : server.getTomcat().getHost().findChildren()) {
+        if (child instanceof Context context) {
+          for (var saved : context.getManager().findSessions()) {
+            if (saved.isValid()) valid(saved.getSession(), false);
+          }
+        }
+      }
+    }
   }
 
   @Override
@@ -67,12 +92,21 @@ public class SessionAuthority implements HttpSessionListener, HttpSessionIdListe
       try {
         String id = session.getId();
         Entry entry = sessions.get(id);
+        if (entry == null
+            && session.getAttribute(CREATED) instanceof Long created
+            && session.getAttribute(ACTIVITY) instanceof Long lastActivity) {
+          entry = new Entry(session, created, lastActivity);
+          sessions.put(id, entry);
+        }
         long now = clock.millis();
         if (entry == null || now - entry.created >= absoluteMs || now - entry.activity >= idleMs) {
           session.invalidate();
           return false;
         }
-        if (activity) sessions.put(id, new Entry(session, entry.created, now));
+        if (activity) {
+          session.setAttribute(ACTIVITY, now);
+          sessions.put(id, new Entry(session, entry.created, now));
+        }
         return true;
       } catch (IllegalStateException expired) {
         return false;
