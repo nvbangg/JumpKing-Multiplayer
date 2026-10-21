@@ -107,7 +107,7 @@ JPA tắt Open EntityManager in View, chỉ validate schema khi start. Repositor
 
 Lỗi command/connection không dừng scheduler; lỗi simulation chỉ cô lập sảnh/phòng bị ảnh hưởng. Khi mất MySQL, tạm dừng lượt Community bị ảnh hưởng, giữ state trong RAM để retry có giới hạn và không báo lưu thành công.
 
-Một backend instance giữ session/membership/gameplay Room trong RAM. Restart mất gameplay Room, chỉ khôi phục checkpoint Community và metrics đã commit; có thể mất tiến độ từ lần ghi cuối. Cách đóng match dở theo [data](data.md#kết-quả-room).
+Một backend instance giữ membership/gameplay Room trong RAM. Phiên đăng nhập còn hạn được giữ qua restart bình thường trong profile prod theo [protocol](protocol.md#identity-và-security), cấu hình lưu phiên theo [deployment](deployment.md#giữ-phiên-khi-deploy). Restart mất gameplay Room, chỉ khôi phục checkpoint Community và metrics đã commit; có thể mất tiến độ từ lần ghi cuối. Cách đóng match dở theo [data](data.md#kết-quả-room).
 
 Luật/Finish/comparator thuộc `game`, persistence thuộc `service`/`repository`, độc lập transport/UI.
 

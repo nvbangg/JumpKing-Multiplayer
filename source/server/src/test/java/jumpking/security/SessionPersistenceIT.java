@@ -11,21 +11,42 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import jumpking.JumpKingApplication;
 import jumpking.support.TestDatabase;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class SessionPersistenceIT {
   private final ObjectMapper json = new ObjectMapper();
 
   private ConfigurableApplicationContext start(int port, Path store) {
+    return start(port, store, Clock.systemUTC());
+  }
+
+  private ConfigurableApplicationContext start(int port, Path store, Clock clock) {
     var db = TestDatabase.get().dataSource;
     return new SpringApplicationBuilder(JumpKingApplication.class)
+        .initializers(
+            context ->
+                ((GenericApplicationContext) context)
+                    .registerBean(
+                        "restartTestClock",
+                        Clock.class,
+                        () -> clock,
+                        bean -> bean.setPrimary(true)))
         .run(
             "--spring.profiles.active=prod",
             "--server.port=" + port,
@@ -37,6 +58,15 @@ class SessionPersistenceIT {
             "--server.servlet.session.store-dir=" + store.toAbsolutePath(),
             "--server.servlet.session.cookie.secure=false",
             "--app.allowed-origins=http://127.0.0.1:" + port);
+  }
+
+  private void assertRegistered(
+      ConfigurableApplicationContext application, String sessionId, boolean expected) {
+    var registry =
+        (Map<?, ?>)
+            ReflectionTestUtils.getField(application.getBean(SessionAuthority.class), "sessions");
+    assertThat(registry).isNotNull();
+    assertThat(registry.containsKey(sessionId)).isEqualTo(expected);
   }
 
   private final class Client implements AutoCloseable {
@@ -118,6 +148,8 @@ class SessionPersistenceIT {
       try (var application = start(port, store)) {
         // Registry phải có cả phiên chưa gửi request sau restart để thu hồi đủ các thiết bị.
         var authority = application.getBean(SessionAuthority.class);
+        assertRegistered(application, a.sessionId(), true);
+        assertRegistered(application, b.sessionId(), true);
         assertThat(authority.find(a.sessionId())).isNotNull();
         assertThat(authority.find(b.sessionId())).isNotNull();
         assertThat(a.authenticated()).isTrue();
@@ -139,6 +171,68 @@ class SessionPersistenceIT {
         assertThat(a.authenticated()).isFalse();
         assertThat(b.authenticated()).isFalse();
         assertThat(c.authenticated()).isFalse();
+      }
+    }
+  }
+
+  @ParameterizedTest(name = "restart respects absolute timeout: {0}")
+  @ValueSource(booleans = {false, true})
+  void downtimeDoesNotRenewExpiredSessions(boolean absolute, @TempDir Path store) throws Exception {
+    int port;
+    try (var socket = new ServerSocket(0)) {
+      port = socket.getLocalPort();
+    }
+    var now = new AtomicLong(System.currentTimeMillis());
+    Clock clock =
+        new Clock() {
+          @Override
+          public java.time.ZoneId getZone() {
+            return ZoneOffset.UTC;
+          }
+
+          @Override
+          public Clock withZone(java.time.ZoneId zone) {
+            return Clock.fixed(instant(), zone);
+          }
+
+          @Override
+          public Instant instant() {
+            return Instant.ofEpochMilli(now.get());
+          }
+        };
+    String name = "expiry_" + UUID.randomUUID().toString().replace("-", "").substring(0, 15);
+    try (var client = new Client(port)) {
+      String sessionId;
+      try (var application = start(port, store, clock)) {
+        client.login(name);
+        sessionId = client.sessionId();
+        var authority = application.getBean(SessionAuthority.class);
+        var session = authority.find(sessionId);
+        assertThat(session).isNotNull();
+        if (absolute) {
+          // Duy trì hoạt động để chỉ hạn tuyệt đối hết trong thời gian server dừng.
+          for (int index = 0; index < 143; index++) {
+            now.addAndGet(Duration.ofMinutes(10).toMillis());
+            assertThat(authority.valid(session, true)).isTrue();
+          }
+        }
+        assertThat(client.authenticated()).isTrue();
+      }
+      // Tiến đồng hồ sau khi Tomcat đã ghi phiên còn hạn, trước khi nạp lại từ đĩa.
+      now.addAndGet(Duration.ofMinutes(absolute ? 10 : 30).toMillis() - 1);
+      try (var application = start(port, store, clock)) {
+        assertRegistered(application, sessionId, true);
+        assertThat(application.getBean(SessionAuthority.class).find(sessionId)).isNotNull();
+        // Không gửi HTTP/gia hạn activity ở mốc trước deadline.
+      }
+      now.incrementAndGet();
+      try (var application = start(port, store, clock)) {
+        // Kiểm tra trước find()/HTTP vì chính các thao tác đó cũng có thể loại phiên hết hạn.
+        assertRegistered(application, sessionId, false);
+        assertThat(application.getBean(SessionAuthority.class).find(sessionId)).isNull();
+        assertThat(client.authenticated()).isFalse();
+        assertThat(client.send("/profile/me", null).statusCode()).isEqualTo(401);
+        assertThat(client.send("/auth/logout", Map.of()).statusCode()).isEqualTo(403);
       }
     }
   }
