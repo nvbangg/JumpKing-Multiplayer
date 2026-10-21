@@ -50,6 +50,7 @@ IP/port trong file mẫu là mặc định local, không phải địa chỉ b�
 | SERVER_ADDRESS/PORT | server.address/port |
 | APP_ALLOWED_ORIGINS | app.allowed-origins; origins cụ thể cách nhau dấu phẩy |
 | SERVER_SERVLET_SESSION_COOKIE_SECURE | true khi HTTPS |
+| SERVER_SERVLET_SESSION_COOKIE_MAX_AGE | server.servlet.session.cookie.max-age; thời hạn cookie theo [protocol](protocol.md#identity-và-security) |
 | SERVER_SERVLET_SESSION_TIMEOUT | server.servlet.session.timeout; idle theo [protocol](protocol.md#identity-và-security) |
 | APP_SESSION_ABSOLUTE_TIMEOUT | app.session-absolute-timeout; hạn tối đa theo protocol |
 | APP_AUTH_RATE_PER_MINUTE / APP_HTTP_BODY_LIMIT | app.auth-rate-per-minute=20; app.http-body-limit=16384 bytes |

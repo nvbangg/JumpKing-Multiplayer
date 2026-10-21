@@ -210,16 +210,14 @@ class SessionPersistenceIT {
         var session = authority.find(sessionId);
         assertThat(session).isNotNull();
         if (absolute) {
-          // Duy trì hoạt động để chỉ hạn tuyệt đối hết trong thời gian server dừng.
-          for (int index = 0; index < 143; index++) {
-            now.addAndGet(Duration.ofMinutes(10).toMillis());
-            assertThat(authority.valid(session, true)).isTrue();
-          }
+          // Có hoạt động gần cuối hạn để chỉ hạn tuyệt đối hết khi server dừng.
+          now.addAndGet(Duration.ofDays(29).toMillis());
+          assertThat(authority.valid(session, true)).isTrue();
         }
         assertThat(client.authenticated()).isTrue();
       }
       // Tiến đồng hồ sau khi Tomcat đã ghi phiên còn hạn, trước khi nạp lại từ đĩa.
-      now.addAndGet(Duration.ofMinutes(absolute ? 10 : 30).toMillis() - 1);
+      now.addAndGet(Duration.ofDays(absolute ? 1 : 30).toMillis() - 1);
       try (var application = start(port, store, clock)) {
         assertRegistered(application, sessionId, true);
         assertThat(application.getBean(SessionAuthority.class).find(sessionId)).isNotNull();

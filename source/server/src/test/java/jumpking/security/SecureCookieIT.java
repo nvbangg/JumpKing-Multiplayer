@@ -40,7 +40,7 @@ class SecureCookieIT {
               HttpResponse.BodyHandlers.ofString());
       String cookie = csrf.headers().firstValue("set-cookie").orElseThrow();
       assertThat(cookie)
-          .contains("Secure", "HttpOnly", "SameSite=Lax", "Path=/")
+          .contains("Secure", "HttpOnly", "SameSite=Lax", "Path=/", "Max-Age=2592000")
           .doesNotContain("Domain=");
       String token = new ObjectMapper().readTree(csrf.body()).path("token").asText();
       // HTTP loopback chỉ dùng kiểm tra headers; gửi cookie thủ công vì browser sẽ đòi HTTPS.
@@ -64,7 +64,8 @@ class SecureCookieIT {
               HttpResponse.BodyHandlers.ofString());
       assertThat(account.statusCode()).isEqualTo(200);
       assertThat(account.headers().firstValue("set-cookie").orElseThrow())
-          .contains("JSESSIONID=", "Secure", "HttpOnly", "SameSite=Lax", "Path=/")
+          .contains(
+              "JSESSIONID=", "Secure", "HttpOnly", "SameSite=Lax", "Path=/", "Max-Age=2592000")
           .doesNotContain("Domain=");
     }
   }

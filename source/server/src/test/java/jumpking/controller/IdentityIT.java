@@ -13,6 +13,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -444,14 +445,15 @@ class IdentityIT {
 
   @Test
   void expiresIdleAndAbsoluteSessionsButValidActivityOnlyExtendsIdle() throws Exception {
+    long lifetime = Duration.ofDays(30).toMillis();
     try (var client = client()) {
       client.token();
       String sessionId = client.cookie("JSESSIONID");
       var session = sessions.find(sessionId);
       assertThat(session).isNotNull();
-      clock.advance(29 * 60_000);
+      clock.advance(lifetime - 1);
       assertThat(sessions.valid(session, false)).isTrue();
-      clock.advance(60_000);
+      clock.advance(1);
       var expired = client.send("/auth/me", "GET", null);
       assertThat(expired.statusCode()).isEqualTo(401);
       assertThat(tree(expired).path("error").path("code").asText()).isEqualTo("SESSION_EXPIRED");
@@ -460,13 +462,9 @@ class IdentityIT {
       client.token();
       sessionId = client.cookie("JSESSIONID");
       session = sessions.find(sessionId);
-      for (int index = 0; index < 47; index++) {
-        clock.advance(30 * 60_000 - 1);
-        assertThat(sessions.valid(session, true)).isTrue();
-      }
-      clock.advance(30 * 60_000 - 1);
+      clock.advance(lifetime - 1);
       assertThat(sessions.valid(session, true)).isTrue();
-      clock.advance(48);
+      clock.advance(1);
       assertThat(sessions.valid(session, true)).isFalse();
       assertThat(sessions.find(sessionId)).isNull();
     }

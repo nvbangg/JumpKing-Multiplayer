@@ -19,6 +19,7 @@ class SessionAuthorityTest {
   private final Clock clock = mock(Clock.class);
 
   private SessionAuthority authority() {
+    // Thời hạn test khác nhau để phân biệt idle và absolute, độc lập mặc định sản phẩm.
     when(clock.millis()).thenAnswer(call -> now.get());
     var server = new ServerProperties();
     server.getServlet().getSession().setTimeout(Duration.ofMinutes(30));
