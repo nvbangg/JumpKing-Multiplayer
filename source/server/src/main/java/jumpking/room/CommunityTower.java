@@ -32,7 +32,8 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
           "CANCEL_INPUT",
           "RECONNECT",
           "SET_COMMUNITY_PAUSED",
-          "CHAT_SEND");
+          "CHAT_SEND",
+          "SET_SPECTATE");
   private final GameWorkers workers;
   private final RoomDirectory directory;
   private final Memberships memberships;
@@ -97,6 +98,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
     final InputFrames input = new InputFrames(limits.inputFrames(), limits.inputTimeoutMs());
     final CheckpointWriter<CommunityRuns.Write> writer = database.writer(records::save);
     GameConnection connection;
+    String watching;
     GameSimulation game;
     CommunityRuns.Stored stored;
     long generation = 1,
@@ -250,9 +252,23 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
                   .put("kind", "WORLD")
                   .put("type", event.type())
                   .put("id", event.id());
-            player.connection.send(
-                "ADVENTURE_EVENTS",
-                Map.of("roomId", id, "playId", player.stored.id(), "events", cues));
+            for (Member receiver : players.values())
+              if (receiver.connection != null
+                  && !receiver.loading
+                  && (receiver.watching == null
+                      ? receiver == player
+                      : receiver.watching.equals(player.id)))
+                receiver.connection.send(
+                    "ADVENTURE_EVENTS",
+                    Map.of(
+                        "roomId",
+                        id,
+                        "playId",
+                        player.stored.id(),
+                        "sourcePlayerId",
+                        player.id,
+                        "events",
+                        cues));
           }
           var pose = player.game.physics().snapshot();
           boolean isLanded = pose.grounded && pose.splat == 0 && !pose.phasingFall;
@@ -305,7 +321,8 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
       if (!effects.isEmpty())
         for (Member receiver : players.values())
           if (receiver.connection != null && !receiver.loading) {
-            int screen = receiver.game.physics().snapshot().screen;
+            var target = receiver.watching == null ? receiver : players.get(receiver.watching);
+            int screen = (target == null ? receiver : target).game.physics().snapshot().screen;
             var visible =
                 effects.stream()
                     .filter(
@@ -400,9 +417,45 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
                         }
                       }
                     }
+                    case "SET_SPECTATE" -> {
+                      GameEnvelope.fields(command.payload(), Set.of("playerId"));
+                      if (!command.payload().has("playerId")) throw GameEnvelope.invalid();
+                      String targetId =
+                          command.payload().path("playerId").isNull()
+                              ? null
+                              : GameEnvelope.text(command.payload(), "playerId");
+                      var target = targetId == null ? null : tower.players.get(targetId);
+                      if (targetId != null
+                          && (target == null
+                              || target == player
+                              || target.loading
+                              || target.finished
+                              || target.leaving
+                              || target.connection == null
+                              || !target.connection.open()))
+                        throw new ApiException(
+                            409,
+                            "INVALID_SPECTATE_TARGET",
+                            "Player is no longer available to watch");
+                      if (targetId != null) {
+                        if (player.finished)
+                          throw new ApiException(409, "CONFLICT", "Your run has ended");
+                        pause(player);
+                        if (player.paused) save(tower, player, true, () -> runState(player));
+                      }
+                      player.watching = targetId;
+                      connection.reply(
+                          command,
+                          "SPECTATE_STATE",
+                          json.createObjectNode()
+                              .put("roomId", tower.id)
+                              .put("playerId", targetId));
+                      snapshots(tower);
+                    }
                     case "SET_COMMUNITY_PAUSED" -> {
                       GameEnvelope.fields(command.payload(), Set.of("paused"));
                       boolean paused = GameEnvelope.bool(command.payload(), "paused", false);
+                      if (!paused) player.watching = null;
                       if (!paused && player.saveStatus.equals("FAILED")) {
                         player.operation = true;
                         player.operationCommand = command;
@@ -552,6 +605,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
             && time.nanos() - player.disconnectedAt
                 >= rules.path("reconnectMs").asLong() * 1_000_000L))
       throw new ApiException(409, "RECONNECT_EXPIRED", "Reconnect is no longer available");
+    player.watching = null;
     var old = player.connection;
     player.connection = connection;
     player.generation++;
@@ -744,6 +798,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
   }
 
   private void dropConnection(Tower tower, Member player) {
+    player.watching = null;
     player.connection = null;
     player.disconnectedAt = time.nanos();
     pause(player);
@@ -958,8 +1013,28 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
               .put("paused", self.paused || self.pausePending);
       state.set("simulation", json.valueToTree(self.game.snapshot()));
       state.set("metrics", json.valueToTree(summary(self)));
+      var target = self.watching == null ? null : tower.players.get(self.watching);
+      if (target != null
+          && (self.finished
+              || target.loading
+              || target.finished
+              || target.leaving
+              || target.connection == null
+              || !target.connection.open())) target = null;
+      if (target == null) self.watching = null;
+      value.set(
+          "spectating",
+          target == null
+              ? json.nullNode()
+              : jumpking.dto.SpectatorView.of(
+                  json,
+                  publicStates.get(target.id),
+                  target.stored.id(),
+                  ms(target.game.physics().snapshot().ticks),
+                  target.paused || target.pausePending,
+                  target.game));
       var peers = value.putArray("peers");
-      int screen = state.path("simulation").path("physics").path("screen").asInt();
+      int screen = (target == null ? self : target).game.physics().snapshot().screen;
       publicStates.forEach(
           (id, view) -> {
             if (!id.equals(self.id)

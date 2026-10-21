@@ -22,7 +22,16 @@ import type { GameMap, PlayerInput, PlayerState } from "../simulation/types";
 import { PeerInterpolation } from "./PeerInterpolation";
 import { Prediction } from "./Prediction";
 
+export interface SpectatorView {
+	player: OnlineSnapshot["peers"][number];
+	playId: string;
+	elapsedTimeMs: number;
+	paused: boolean;
+	adventure: GameSnapshot["adventure"];
+	world: GameSnapshot["world"];
+}
 export interface OnlineSnapshot {
+	spectating?: SpectatorView | null;
 	players?: PlayerStanding[];
 	roomId: string;
 	serverTick: number;
@@ -163,10 +172,20 @@ export class OnlineRuntime implements GameRuntime {
 		if (!this.latest || value.playId !== this.latest.playId)
 			this.desiredFlight = value.self.simulation.physics.freeFlight;
 		if (value.self.paused) this.prediction.reset();
+		if (
+			value.spectating?.player.playerId !==
+			this.latest?.spectating?.player.playerId
+		) {
+			this.prediction.reset();
+			this.peers.reset();
+		}
 		this.prediction.reconcile(
 			value.self.simulation,
 			value.self.lastProcessedInputSeq,
-			!this.menu && !value.self.paused && value.self.status === "ACTIVE",
+			!this.menu &&
+				!value.spectating &&
+				!value.self.paused &&
+				value.self.status === "ACTIVE",
 		);
 		this.peers.receive(value, performance.now());
 		this.latest = value;
@@ -178,6 +197,7 @@ export class OnlineRuntime implements GameRuntime {
 			!this.latest ||
 			this.menu ||
 			this.latest.self.paused ||
+			this.latest.spectating ||
 			this.latest.self.status !== "ACTIVE"
 		) {
 			this.accumulatedMs = 0;
@@ -235,6 +255,12 @@ export class OnlineRuntime implements GameRuntime {
 			seq,
 		});
 	}
+	get viewPlayerId(): string {
+		return this.latest?.spectating?.player.playerId ?? this.socket.selfId ?? "";
+	}
+	get viewPlayId(): string {
+		return this.latest?.spectating?.playId ?? this.latest?.playId ?? "";
+	}
 	frame(): WorldFrame {
 		const saved = this.game.snapshot(),
 			self = this.room.members.find(
@@ -251,6 +277,31 @@ export class OnlineRuntime implements GameRuntime {
 				state: peer.state,
 				crowned: peer.crowned,
 			}));
+		// Chỉ đổi frame hiển thị; game/prediction và ACK luôn thuộc bản thân.
+		const watched = this.latest?.spectating;
+		if (watched) {
+			const target = peers.find((peer) => peer.id === watched.player.playerId);
+			return {
+				self: {
+					id: watched.player.playerId,
+					nickname: watched.player.nickname,
+					color: color(watched.player.colorSlot),
+					state: target?.state ?? watched.player.state,
+					crowned: watched.player.crowned,
+					adventure: watched.adventure,
+				},
+				peers: peers
+					.filter((peer) => peer.id !== watched.player.playerId)
+					.concat({
+						id: this.socket.selfId || "self",
+						nickname: self?.nickname || "Player",
+						color: color(self?.colorSlot || 0),
+						state: saved.physics,
+						crowned: this.game.adventure.completed,
+					}),
+				world: watched.world,
+			};
+		}
 		return {
 			self: {
 				id: this.socket.selfId || "self",

@@ -4,9 +4,17 @@ import type { PlayerStanding } from "../../network/contracts";
 export function PlayersPanel({
 	players,
 	selfId,
+	watchingId,
+	watchableIds,
+	disabled,
+	onWatch,
 }: {
 	players: PlayerStanding[];
 	selfId: string | null;
+	watchingId?: string;
+	watchableIds: string[];
+	disabled: boolean;
+	onWatch: (id: string) => void;
 }) {
 	return (
 		<section
@@ -20,9 +28,21 @@ export function PlayersPanel({
 						key={player.playerId}
 						className={player.playerId === selfId ? "self-result" : undefined}
 					>
-						<span style={{ color: rules.appearanceColors[player.colorSlot] }}>
+						<button
+							type="button"
+							className="watch-player"
+							aria-label={`Watch ${player.nickname}`}
+							aria-pressed={player.playerId === watchingId}
+							disabled={
+								disabled ||
+								player.playerId === selfId ||
+								!watchableIds.includes(player.playerId)
+							}
+							onClick={() => onWatch(player.playerId)}
+							style={{ color: rules.appearanceColors[player.colorSlot] }}
+						>
 							{player.rank}. {player.nickname}
-						</span>
+						</button>
 						<strong>{Math.floor(player.currentProgress)} px</strong>
 					</li>
 				))}

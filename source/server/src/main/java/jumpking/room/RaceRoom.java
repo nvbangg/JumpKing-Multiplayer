@@ -38,7 +38,8 @@ public class RaceRoom implements GameCommandHandler, AutoCloseable {
           "END_MATCH",
           "PLAY_AGAIN",
           "PLAYER_INPUT",
-          "CANCEL_INPUT");
+          "CANCEL_INPUT",
+          "SET_SPECTATE");
   private final RoomDirectory directory;
   private final Memberships memberships;
   private final GameWorkers workers;
@@ -100,6 +101,7 @@ public class RaceRoom implements GameCommandHandler, AutoCloseable {
     final String nickname;
     final long order;
     GameConnection connection;
+    String watching;
     boolean confirmed = true, crowned, ready;
     String endingNotifiedPlay;
     long disconnectedAt, generation;
@@ -304,13 +306,46 @@ public class RaceRoom implements GameCommandHandler, AutoCloseable {
                       finish(room);
                       connection.reply(command, "GAME_FINISHED", room.match.results());
                     }
+                    case "SET_SPECTATE" -> {
+                      GameEnvelope.fields(command.payload(), Set.of("playerId"));
+                      if (!command.payload().has("playerId")) throw GameEnvelope.invalid();
+                      String targetId =
+                          command.payload().path("playerId").isNull()
+                              ? null
+                              : GameEnvelope.text(command.payload(), "playerId");
+                      var target = targetId == null ? null : room.players.get(targetId);
+                      if (targetId != null
+                          && (!room.state.equals("PLAYING")
+                              || target == null
+                              || target == player
+                              || target.connection == null
+                              || !target.connection.open()
+                              || !room.match.players.containsKey(targetId)
+                              || !room.match.players.get(targetId).status.equals("ACTIVE")))
+                        throw new ApiException(
+                            409,
+                            "INVALID_SPECTATE_TARGET",
+                            "Player is no longer available to watch");
+                      var racer = room.match == null ? null : room.match.players.get(player.id);
+                      if (racer != null) {
+                        racer.input.clear();
+                        racer.game.physics().cancelInput();
+                      }
+                      player.watching = targetId;
+                      connection.reply(
+                          command,
+                          "SPECTATE_STATE",
+                          json.createObjectNode().put("roomId", room.id).put("playerId", targetId));
+                      snapshots(room);
+                    }
                     case "PLAYER_INPUT", "CANCEL_INPUT" -> {
                       var racer = room.match == null ? null : room.match.players.get(player.id);
                       if (racer == null)
                         throw new ApiException(409, "STALE_PLAY", "No current play context");
                       racer.input.offer(command, time.nanos(), flags.flyEnabled());
-                      if (!room.state.equals("PLAYING") || !racer.status.equals("ACTIVE"))
-                        racer.input.clear();
+                      if (!room.state.equals("PLAYING")
+                          || !racer.status.equals("ACTIVE")
+                          || player.watching != null) racer.input.clear();
                       else if (command.type().equals("CANCEL_INPUT"))
                         racer.game.physics().cancelInput();
                     }
@@ -417,6 +452,7 @@ public class RaceRoom implements GameCommandHandler, AutoCloseable {
     if (player.connection == null
         && time.nanos() - player.disconnectedAt >= rules.path("reconnectMs").asLong() * 1_000_000L)
       throw new ApiException(409, "RECONNECT_EXPIRED", "Reconnect is no longer available");
+    player.watching = null;
     var old = player.connection;
     player.connection = connection;
     player.generation++;
@@ -580,6 +616,7 @@ public class RaceRoom implements GameCommandHandler, AutoCloseable {
   }
 
   private void dropConnection(Room room, Member player) {
+    player.watching = null;
     if (room.state.equals("COUNTDOWN")) cancelCountdown(room);
     if (room.match != null && room.match.players.containsKey(player.id)) {
       var racer = room.match.players.get(player.id);
@@ -827,14 +864,34 @@ public class RaceRoom implements GameCommandHandler, AutoCloseable {
               .put("kind", "WORLD")
               .put("type", cue.type())
               .put("id", cue.id());
-        member.connection.send(
-            "ADVENTURE_EVENTS", Map.of("roomId", room.id, "playId", room.match.id, "events", cues));
+        for (var receiver : room.players.values())
+          if (receiver.connection != null
+              && (receiver.watching == null
+                  ? receiver == member
+                  : receiver.watching.equals(member.id)))
+            receiver.connection.send(
+                "ADVENTURE_EVENTS",
+                Map.of(
+                    "roomId",
+                    room.id,
+                    "playId",
+                    room.match.id,
+                    "sourcePlayerId",
+                    member.id,
+                    "events",
+                    cues));
       }
     }
     if (!effects.isEmpty())
       for (var member : room.players.values())
         if (member.connection != null && room.match.players.containsKey(member.id)) {
-          int screen = room.match.players.get(member.id).game.physics().snapshot().screen;
+          var target = member.watching == null ? null : room.match.players.get(member.watching);
+          int screen =
+              (target == null ? room.match.players.get(member.id) : target)
+                  .game
+                  .physics()
+                  .snapshot()
+                  .screen;
           var visible = json.createArrayNode();
           for (var effect : effects)
             if (effect.path("screen").asInt() == screen
@@ -907,8 +964,28 @@ public class RaceRoom implements GameCommandHandler, AutoCloseable {
       own.putObject("metrics")
           .put("currentProgress", self.currentProgress)
           .put("maxProgress", self.maximum);
+      var target = member.watching == null ? null : room.players.get(member.watching);
+      if (target != null
+          && (!room.state.equals("PLAYING")
+              || target.connection == null
+              || !target.connection.open()
+              || !match.players.containsKey(target.id)
+              || !match.players.get(target.id).status.equals("ACTIVE"))) target = null;
+      if (target == null) member.watching = null;
+      var watched = target == null ? null : match.players.get(target.id);
+      snapshot.set(
+          "spectating",
+          watched == null
+              ? json.nullNode()
+              : jumpking.dto.SpectatorView.of(
+                  json,
+                  publicStates.get(target.id),
+                  match.id,
+                  match.ms(match.ticks),
+                  false,
+                  watched.game));
       var peers = snapshot.putArray("peers");
-      int screen = own.path("simulation").path("physics").path("screen").asInt();
+      int screen = (watched == null ? self : watched).game.physics().snapshot().screen;
       publicStates.forEach(
           (id, view) -> {
             if (!id.equals(member.id)

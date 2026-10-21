@@ -72,6 +72,8 @@ Với `-Web` và `E2E_BROWSER_PATH`, `SchemaIT` còn chạy Chrome trực tiếp
 
 `ProductionProxyIT` kiểm tra profile prod: Secure cookies, HTTPS headers và rate-limit theo IP qua proxy tin cậy; forwarded headers từ peer khác không được đổi identity IP. `SchemaIT` kiểm tra static revalidation trả 304, API vẫn no-store.
 
+`SpectatorIT` kiểm tra bằng HTTP/WS/MySQL thật; khi có E2E_BROWSER_PATH còn chạy `spectating-online.spec.ts` với hai identities, camera xa nhiều screens, input, quay lại chơi và mobile. Chạy riêng bằng runner với `-IntegrationTest SpectatorIT`; output ở `.local/browser-spectating-tests`.
+
 ## Scenarios và oracles
 
 Hồi quy cập nhật/lag: `npm run test:e2e -- e2e/updates.spec.ts` kiểm tra thông báo bản mới, chỉ reload khi bấm ở màn hình chính và lỗi tải chunk. Với backend/MySQL cô lập và `E2E_AUTH_ONLINE=true`, chạy thêm `e2e/lag-recovery-online.spec.ts`: chặn input để ACK không tiến, gây đầy hàng đợi trong Community/Room, reconnect/Resume hoặc Back to Menu khi API mất mạng. Không làm đầy hàng đợi bằng input giả trên server thật.
@@ -89,6 +91,7 @@ Hồi quy cập nhật/lag: `npm run test:e2e -- e2e/updates.spec.ts` kiểm tra
 | Checkpoint | Restore đủ physics/adventure/world; metrics/snapshot/revision atomic; New Run đồng thời và rollback; writer đến muộn; Finish/Abandon không mất save hoặc bị writer cũ phục hồi |
 | Pause/AFK | Hidden/blur và biên AFK theo gameplay; neutral frames/giữ phím/heartbeat/chat không reset AFK, input thật reset; Community đang rơi phải settle, hết hạn lưu/release slot; Room mở menu lâu không tự out hoặc dừng trận; server đưa ra/membership hết hạn phải về trang chủ, giữ Account và Continue Community đúng lượt, không báo lưu thành công khi chưa xác nhận |
 | Room | Public/Private, danh sách chỉ có phòng WAITING còn chỗ; Join/Start đồng thời không vượt capacity, map không đổi giữa trận; 1/2/max clients Start được, countdown/permissions; Join mới chỉ WAITING, reconnect đúng roster; Leave/Host transfer/End; Play Again từng người giữ code/settings/History, không kéo người chưa xác nhận vào match mới |
+| Spectating | Cùng phòng mới được xem; target xa nhiều screens và tự chuyển khi leo/rơi, đổi/hủy mục tiêu, màu/opacity, NPC/quạ/âm thanh và mobile; input bị khóa, self/ACK/checkpoint độc lập; Room clock/physics tiếp tục, Community pause/giới hạn 15 phút giữ nguyên; target rời/disconnect/Finish, reconnect, ending và Results không bị lẫn |
 | Room lifecycle | Menu không dừng trận/Time Limit; không có Host Pause; all-offline giữ reconnect 5 phút rồi finalize một lần. Renderer sẵn sàng trước countdown 3 giây; load lỗi/timeout/rời quay lại Lobby |
 | Modes/rank | Race first Finish; Hardcore splat respawn giữ clock/peak/falls; Time Limit biên phút/deadline; No Walk không tạo vận tốc đi bộ; comparator, DNF và đồng hạng theo gameplay |
 | Leaderboard | Chỉ Community; best của một lượt/Account, không ghép peak/time khác lượt, không nhận Room hoặc client score |

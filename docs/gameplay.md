@@ -160,3 +160,9 @@ Assets có manifest; `source/client/public/assets/ATTRIBUTION.md` ghi nguồn v�
 Lobby luôn hiện chat và ô nhập. Trong trận, chat cố định ở góc dưới bên trái, hiển thị tối đa 10 tin gần nhất và tự cuộn xuống tin mới; không tự lấy focus. Enter mở/focus ô nhập hoặc gửi; Esc hoặc gửi thành công trả input cho game, khung chat vẫn hiện. Không bắt phím từ form khác hoặc che nút cảm ứng. Chat không đi vào database.
 
 Players là thứ hạng hiện tại trong cùng phòng: Room theo comparator mode, Community theo độ cao hiện tại và đồng hạng khi bằng nhau. Server tính từ state RAM. Các bảng mặc định hiển thị gọn, danh sách dài cuộn riêng và không che nút cảm ứng. Mobile cho thu gọn Chat và Leaderboard, giữ nội dung/nháp; Players vẫn hiện. Leaderboard dùng thành tích đã commit, tải khi vào trận hoặc nhấn Refresh; không polling hoặc tải lại khi mở bảng đã thu gọn. Community chỉ bắt đầu lượt mới từ menu sau Save & Exit.
+
+## Xem người chơi khác
+
+Nhấn tên trong bảng Players để xem người đang kết nối trong cùng sảnh Community hoặc Room đang PLAYING; không xem qua leaderboard toàn server. Camera tự chuyển theo screen của mục tiêu, cùng nhân vật, môi trường, NPC/hội thoại, quạ và âm thanh. Người được xem rõ 100%, các nhân vật khác 70%. Luôn theo nhân vật của mục tiêu, không theo lựa chọn xem của họ. Không điều khiển được khi đang xem; vẫn dùng chat/menu và chọn người khác.
+
+Back to My Game trở lại nhân vật của mình. Room vẫn mô phỏng nhân vật và đồng hồ trận; không đóng băng hoặc tránh cú rơi. Community yêu cầu Pause bản thân theo quy tắc hiện có, giữ giới hạn 15 phút; xem không tăng active time khi đã paused. Thoát chế độ xem chủ động tiếp tục lượt của mình; mục tiêu rời/mất kết nối/Finish thì trở về góc nhìn bản thân với menu Resume. Room kết thúc vẫn tới Results; không phát ending của mục tiêu. Reconnect không khôi phục mục tiêu đang xem. Thiếu input không tự mở menu khi đang xem; mất focus vẫn mở menu.

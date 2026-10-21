@@ -8,7 +8,10 @@ import { FlightToggle } from "../../game/input/FlightToggle";
 import { InputController } from "../../game/input/InputController";
 import { TouchControls } from "../../game/input/TouchControls";
 import { AdventureEffects } from "../../game/netcode/AdventureEffects";
-import { OnlineRuntime } from "../../game/netcode/OnlineRuntime";
+import {
+	OnlineRuntime,
+	type SpectatorView,
+} from "../../game/netcode/OnlineRuntime";
 import { PlayerEffects } from "../../game/netcode/PlayerEffects";
 import { AudioBus } from "../../game/presentation/AudioBus";
 import { PRESENTATION } from "../../game/presentation/config";
@@ -59,6 +62,10 @@ export function OnlineGame({
 		[saveStatus, setSaveStatus] = useState("SAVED");
 	const [remaining, setRemaining] = useState<number | null>(null);
 	const [players, setPlayers] = useState<PlayerStanding[]>([]);
+	const [watching, setWatching] = useState<SpectatorView | null>(null);
+	const viewedPlayer = useRef<string | null>(null);
+	// ACK hủy xem có thể tới trước snapshot; tránh nhầm với việc mất mục tiêu.
+	const returningToSelf = useRef(false);
 	const [caption, setCaption] = useState<{
 		id: string;
 		name: string;
@@ -88,7 +95,11 @@ export function OnlineGame({
 			input.current?.cancel();
 		},
 		() => {
-			if (!runtime.current?.menu && !endingActive.current)
+			if (
+				!runtime.current?.menu &&
+				!runtime.current?.latest?.spectating &&
+				!endingActive.current
+			)
 				input.current?.resume();
 		},
 	);
@@ -186,6 +197,7 @@ export function OnlineGame({
 				latestRoom.current.kind === "ROOM" &&
 				runtime.current &&
 				!runtime.current.menu &&
+				!runtime.current.latest?.spectating &&
 				performance.now() - lastActivity >= rules.afkMs
 			)
 				pauseRef.current();
@@ -203,12 +215,13 @@ export function OnlineGame({
 				if (
 					type === "ADVENTURE_EVENTS" &&
 					cueManifest &&
-					runtime.current?.latest
+					runtime.current?.latest &&
+					payload.sourcePlayerId === runtime.current.viewPlayerId
 				) {
 					for (const cue of adventureEffects.receive(
 						payload,
 						latestRoom.current.roomId,
-						runtime.current.latest.playId,
+						runtime.current.viewPlayId,
 					)) {
 						const key =
 							cue.kind === "WORLD"
@@ -227,9 +240,9 @@ export function OnlineGame({
 					for (const effect of effects.receive(
 						payload,
 						latestRoom.current.roomId,
-						socket.selfId || "",
-						required(session.latest).playId,
-						session.game.physics.snapshot().screen,
+						session.viewPlayerId,
+						session.viewPlayId,
+						session.frame().self.state.screen,
 					)) {
 						audio.current?.effect(
 							effect.effect,
@@ -237,7 +250,7 @@ export function OnlineGame({
 								snow: effect.terrain === "SNOW",
 								ice: effect.terrain === "ICE",
 							},
-							effect.playerId === socket.selfId
+							effect.playerId === session.viewPlayerId
 								? PRESENTATION.effectVolume
 								: PRESENTATION.peerEffectVolume,
 						);
@@ -291,11 +304,32 @@ export function OnlineGame({
 					setRemaining(snapshot.remainingTimeMs);
 					setFlying(state.freeFlight);
 					setPlayers(snapshot.players || []);
-					const intro = snapshot.self.simulation.world.regionIntro;
+					const view = snapshot.spectating;
+					if (
+						viewedPlayer.current &&
+						!view &&
+						!session.menu &&
+						!returningToSelf.current
+					) {
+						session.menu = true;
+						controls.cancel();
+						setMenu("pause");
+						setError("The player is no longer available to watch.");
+						audio.current?.pause(true);
+					}
+					if (!view) returningToSelf.current = false;
+					viewedPlayer.current = view?.player.playerId ?? null;
+					setWatching(view ?? null);
+					if (view) controls.cancel();
+					const intro = (view?.world ?? snapshot.self.simulation.world)
+						.regionIntro;
 					if (intro) {
-						const id = `${snapshot.playId}:${intro.screen}:${intro.tick}`;
+						const id = `${view?.playId ?? snapshot.playId}:${intro.screen}:${intro.tick}`;
 						const age =
-							((snapshot.self.simulation.physics.ticks - intro.tick) * 1000) /
+							(((view?.player.state.ticks ??
+								snapshot.self.simulation.physics.ticks) -
+								intro.tick) *
+								1000) /
 							PHYSICS.tickRate;
 						setCaption((previous) =>
 							age >= PRESENTATION.regionCaptionMs
@@ -309,8 +343,8 @@ export function OnlineGame({
 										},
 						);
 					}
-					audio.current?.setScreen(state.screen);
-					if (snapshot.self.paused && !session.menu) {
+					audio.current?.setScreen(view?.player.state.screen ?? state.screen);
+					if (snapshot.self.paused && !session.menu && !view) {
 						session.menu = true;
 						controls.cancel();
 						setMenu("pause");
@@ -413,12 +447,16 @@ export function OnlineGame({
 			setPending(false);
 		}
 	};
-	const resume = async () => {
-		if (room.kind === "COMMUNITY") {
+	const resume = async (ownGame = false) => {
+		if (
+			room.kind === "COMMUNITY" &&
+			(!runtime.current?.latest?.spectating || ownGame)
+		) {
 			setPending(true);
 			try {
 				await socket.command("SET_COMMUNITY_PAUSED", { paused: false });
 			} catch (cause) {
+				setMenu("pause");
 				await reportFailure(cause, "Resume failed");
 				return;
 			} finally {
@@ -427,9 +465,38 @@ export function OnlineGame({
 		}
 		socket.resumeRequired = false;
 		if (runtime.current) runtime.current.menu = false;
-		input.current?.resume();
+		if (ownGame || !runtime.current?.latest?.spectating)
+			input.current?.resume();
 		audio.current?.pause(false);
 		setMenu(null);
+	};
+	const watch = async (playerId: string | null) => {
+		const session = runtime.current;
+		if (!session || pending || disconnected) return;
+		setPending(true);
+		setError("");
+		session.menu = true;
+		session.cancel();
+		flight.current?.cancel();
+		input.current?.cancel();
+		chat.closeChat();
+		returningToSelf.current = playerId === null;
+		try {
+			await socket.command("SET_SPECTATE", { playerId });
+			if (playerId === null) await resume(true);
+			else {
+				session.menu = false;
+				setMenu(null);
+				audio.current?.pause(false);
+			}
+		} catch (cause) {
+			returningToSelf.current = false;
+			session.menu = true;
+			setMenu("pause");
+			await reportFailure(cause, "Unable to watch player");
+		} finally {
+			setPending(false);
+		}
 	};
 	const updateOptions = (key: keyof Options) => {
 		const next = { ...options, [key]: !options[key] };
@@ -496,7 +563,7 @@ export function OnlineGame({
 					<span>
 						{
 							<span className="timer" role="timer" aria-label="Play time">
-								{duration(elapsed)}
+								{duration(watching?.elapsedTimeMs ?? elapsed)}
 							</span>
 						}
 						{remaining !== null && (
@@ -525,8 +592,26 @@ export function OnlineGame({
 					</span>
 				</div>
 			)}
-			{ready && !ending && !menu && !chat.open && (
+			{ready && !ending && !menu && !chat.open && !watching && (
 				<TouchControls input={input} flying={flying} />
+			)}
+			{ready && watching && !ending && !menu && (
+				<div className="spectator-bar" role="status">
+					<span
+						className="spectator-label"
+						title={`Watching ${watching.player.nickname}`}
+					>
+						Watching {watching.player.nickname}
+						{watching.paused ? " (Paused)" : ""}
+					</span>
+					<button
+						type="button"
+						disabled={pending || disconnected}
+						onClick={() => void watch(null)}
+					>
+						Back to My Game
+					</button>
+				</div>
 			)}
 			{ending && (
 				<div className="ending-actions">
@@ -598,7 +683,21 @@ export function OnlineGame({
 			)}
 			{ready && !ending && (
 				<aside className="in-game-panels">
-					<PlayersPanel players={players} selfId={socket.selfId} />
+					<PlayersPanel
+						players={players}
+						selfId={socket.selfId}
+						watchingId={watching?.player.playerId}
+						watchableIds={room.members
+							.filter((member) => member.connected)
+							.map((member) => member.playerId)}
+						disabled={
+							pending ||
+							disconnected ||
+							!!menu ||
+							(room.kind === "ROOM" && room.state !== "PLAYING")
+						}
+						onWatch={(id) => void watch(id)}
+					/>
 					{room.kind === "COMMUNITY" && <InGameLeaderboard />}
 				</aside>
 			)}

@@ -887,3 +887,50 @@ output.room-code {
 .update-notice p {
 	margin: 0 0 8px;
 }
+
+.players-panel .watch-player {
+	padding: 0;
+	border: 0;
+	background: none;
+	text-align: left;
+	font: inherit;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.players-panel .watch-player:disabled {
+	opacity: 1;
+	cursor: default;
+}
+.players-panel .watch-player[aria-pressed="true"] {
+	text-decoration: underline;
+}
+.spectator-bar {
+	position: absolute;
+	top: 62px;
+	left: 12px;
+	z-index: 5;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 6px;
+	max-width: min(320px, calc(100% - min(210px, 44vw) - 36px));
+	padding: 6px 8px;
+	background: #000c;
+	font-size: 0.65rem;
+}
+.spectator-bar button {
+	background: #08090c;
+	color: inherit;
+	border: 1px solid #6b6250;
+	padding: 4px 8px;
+	font-size: inherit;
+	white-space: nowrap;
+}
+
+.spectator-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
