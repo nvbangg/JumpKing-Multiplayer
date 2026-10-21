@@ -66,6 +66,8 @@ Kết quả E2E độc lập ở source/client/test-results; harness online dùn
 
 Integration cũng chạy `IdentityRaceBrowserIT`: giữ phản hồi `/auth/me` ẩn danh thật đến sau khi đăng ký thành công; phản hồi cũ không được ghi đè Account mới. Output ở `.local/browser-identity-race-tests`.
 
+`community-ending-online.spec.ts` chủ động Pause người chơi còn lại qua UI và chờ snapshot server trước khi chuyển sang người Finish; hai browser contexts headless không bảo đảm phát blur/hidden như tab thật. Sau ending, kiểm tra socket của peer chưa đóng, Resume cùng run ID với generation mới và snapshot hết paused, focus canvas rồi giữ Jump đến khi server xác nhận charge trước khi thả. Không dùng thời gian ngủ để suy ra server đã nhận input; vẫn kiểm tra ending chỉ gửi cho owner, kết quả chỉ ghi một lần và peer nhảy được sau ending.
+
 Với `-Web` và `E2E_BROWSER_PATH`, `SchemaIT` còn chạy Chrome trực tiếp từ JAR: Account, Community save/Continue và Room hai người Start/End/Leave/History; không đi qua Vite. Output ở `.local/browser-packaged-tests`.
 
 `ProductionProxyIT` kiểm tra profile prod: Secure cookies, HTTPS headers và rate-limit theo IP qua proxy tin cậy; forwarded headers từ peer khác không được đổi identity IP. `SchemaIT` kiểm tra static revalidation trả 304, API vẫn no-store.

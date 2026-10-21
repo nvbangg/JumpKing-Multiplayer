@@ -27,6 +27,7 @@ test("committed Community Finish plays only for its owner and New Game clears th
 			errors: string[] = [],
 			finishEvents: Record<string, unknown>[] = [],
 			peerFinishes: unknown[] = [];
+		let peerDisconnected = false;
 		for (const page of [winner, peer])
 			page.on("pageerror", (error) => errors.push(error.message));
 		winner.on("websocket", (socket) => {
@@ -37,6 +38,10 @@ test("committed Community Finish plays only for its owner and New Game clears th
 			});
 		});
 		peer.on("websocket", (socket) => {
+			if (new URL(socket.url()).pathname !== "/ws/game") return;
+			socket.on("close", () => {
+				peerDisconnected = true;
+			});
 			socket.on("framereceived", (frame) => {
 				const message = JSON.parse(frame.payload.toString());
 				if (message.type === "PLAYER_FINISHED")
@@ -56,6 +61,11 @@ test("committed Community Finish plays only for its owner and New Game clears th
 		await expect(
 			peer.getByRole("button", { name: "Menu", exact: true }),
 		).toBeVisible({ timeout: 15_000 });
+		// Hai context headless không bảo đảm blur như hai tab thật; chốt Pause qua UI/server.
+		await peer.getByRole("button", { name: "Menu", exact: true }).click();
+		await expect.poll(() => peerState.snapshot?.self.paused).toBe(true);
+		const peerRun = required(peerState.snapshot).playId,
+			pausedGeneration = required(peerState.snapshot).generation;
 		await winner.goto("/");
 		await winner.getByRole("button", { name: "Sign In", exact: true }).click();
 		await winner
@@ -110,18 +120,37 @@ test("committed Community Finish plays only for its owner and New Game clears th
 			winner.getByRole("button", { name: "New Game", exact: true }),
 		).toBeVisible();
 		await peer.bringToFront();
-		if (
-			await peer
-				.getByRole("button", { name: "Resume", exact: true })
-				.isVisible()
-		)
-			await peer.getByRole("button", { name: "Resume", exact: true }).click();
+		expect(
+			peerDisconnected,
+			"Peer WebSocket must survive the owner's ending",
+		).toBe(false);
+		await expect(
+			peer.getByRole("heading", { name: "Paused", exact: true }),
+		).toBeVisible();
+		await peer.getByRole("button", { name: "Resume", exact: true }).click();
+		await expect
+			.poll(() => ({
+				playId: peerState.snapshot?.playId,
+				paused: peerState.snapshot?.self.paused,
+				generationAdvanced:
+					(peerState.snapshot?.generation ?? 0) > pausedGeneration,
+			}))
+			.toEqual({ playId: peerRun, paused: false, generationAdvanced: true });
+		await peer.locator("canvas").click();
+		await expect(peer.locator("canvas")).toBeFocused();
 		await peer.keyboard.down("Space");
-		await peer.waitForTimeout(220);
-		await peer.keyboard.up("Space");
+		try {
+			// Chỉ thả Jump sau khi server thực sự nhận cạnh nhấn, không dựa vào thời gian ngủ.
+			await expect
+				.poll(() => peerState.snapshot?.self.simulation.physics.charge)
+				.toBeGreaterThan(0);
+		} finally {
+			await peer.keyboard.up("Space");
+		}
 		await expect
 			.poll(() => peerState.snapshot?.self.simulation.physics.jumps)
 			.toBe(1);
+		expect(peerDisconnected).toBe(false);
 		await peer.getByRole("button", { name: "Menu", exact: true }).click();
 		await peer
 			.getByRole("button", { name: "Save & Exit", exact: true })
