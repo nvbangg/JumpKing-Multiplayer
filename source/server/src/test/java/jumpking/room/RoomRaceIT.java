@@ -53,7 +53,7 @@ class RoomRaceIT {
   }
 
   @Autowired TestTime time;
-  @Autowired RaceRoom server;
+  @Autowired RoomManager server;
   @Autowired jumpking.game.SharedData shared;
   @Autowired com.fasterxml.jackson.databind.ObjectMapper json;
   @LocalServerPort int port;
@@ -221,6 +221,7 @@ class RoomRaceIT {
                   "reconnectToken",
                   join.path("reconnectToken").asText()));
       assertThat(context.path("generation").asInt()).isEqualTo(2);
+      time.advance(50);
       var state =
           a.await(
                   message ->

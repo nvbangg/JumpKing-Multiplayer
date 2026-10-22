@@ -229,6 +229,48 @@ class CommunityRunsIT {
   }
 
   @Test
+  void confirmedNewGameCanReplaceAnUnreadableCheckpointWithoutLosingHistoryOrCrown() {
+    long owner = account();
+    var spawn = game().snapshot();
+    var initial = records.open(owner, true, null, spawn);
+    var write = progressed(initial, 2);
+    records.save(write);
+    jdbc.update("UPDATE users SET crown_unlocked=true WHERE id=?", owner);
+    jdbc.update(
+        "UPDATE play_runs SET snapshot=JSON_SET(snapshot,'$.codecVersion','invalid') WHERE id=?",
+        initial.id());
+    assertThatThrownBy(() -> records.open(owner, false, initial.id(), spawn))
+        .isInstanceOf(IllegalStateException.class);
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT status FROM play_runs WHERE id=?", String.class, initial.id()))
+        .isEqualTo("ACTIVE");
+    assertThatThrownBy(() -> records.open(owner, true, UUID.randomUUID().toString(), spawn))
+        .isInstanceOf(ApiException.class);
+    var next = records.open(owner, true, initial.id(), spawn);
+    assertThat(next.id()).isNotEqualTo(initial.id());
+    assertThat(next.revision()).isEqualTo(1);
+    game().restore(next.snapshot());
+    assertThat(
+            jdbc.queryForMap(
+                "SELECT status,snapshot,play_ticks,jumps,falls FROM play_runs WHERE id=?",
+                initial.id()))
+        .containsEntry("status", "ABANDONED")
+        .containsEntry("snapshot", null)
+        .containsEntry("play_ticks", write.snapshot().physics().ticks)
+        .containsEntry("jumps", write.snapshot().physics().jumps)
+        .containsEntry("falls", write.snapshot().physics().falls);
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT crown_unlocked FROM users WHERE id=?", Boolean.class, owner))
+        .isTrue();
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM play_runs WHERE user_id=?", Integer.class, owner))
+        .isEqualTo(2);
+  }
+
+  @Test
   void saveIsOwnerScopedRevisionedIdempotentAndCountersCannotDecrease() throws Exception {
     long owner = account();
     var initial = records.open(owner, true, null, game().snapshot());

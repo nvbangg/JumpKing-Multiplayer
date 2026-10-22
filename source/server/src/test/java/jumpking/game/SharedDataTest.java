@@ -15,16 +15,18 @@ class SharedDataTest {
         .isInstanceOf(UnsupportedOperationException.class);
     assertThatThrownBy(() -> map.screens().getFirst().tiles().clear())
         .isInstanceOf(UnsupportedOperationException.class);
-    var first = new Simulation(map, data.tuning(), false, false);
-    var second = new Simulation(map, data.tuning(), false, false);
+    var first = new GameSimulation(map, data.tuning(), data.adventure(), false, false);
+    var second = new GameSimulation(map, data.tuning(), data.adventure(), false, false);
     var unchanged = second.snapshot();
+    var definitions = data.adventure().deepCopy();
     first.tick(new PlayerInput(false, true, false));
     assertThat(second.snapshot()).usingRecursiveComparison().isEqualTo(unchanged);
-    assertThat(first.snapshot().ticks).isEqualTo(1);
+    assertThat(first.snapshot().physics().ticks).isEqualTo(1);
+    assertThat(data.adventure()).isEqualTo(definitions);
   }
 
   @Test
-  void loadsSharedFromClasspathAndDoesNotExposeMutableDefinitions() throws Exception {
+  void loadsSharedFromClasspathAndProtectsMapResponse() throws Exception {
     var data = new SharedData(new ObjectMapper());
     assertThat(data.map().path("screens").size()).isEqualTo(43);
     assertThat(data.physics().path("chargeTicks").asInt()).isEqualTo(36);

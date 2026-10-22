@@ -33,7 +33,7 @@ class RoomNoWalkIT {
   }
 
   @Autowired RoomRaceIT.TestTime time;
-  @Autowired RaceRoom server;
+  @Autowired RoomManager server;
   @LocalServerPort int port;
 
   private void step(GameClient client, String play, int seq, boolean jump) throws Exception {

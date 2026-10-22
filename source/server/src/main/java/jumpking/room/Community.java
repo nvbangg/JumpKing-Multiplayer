@@ -22,7 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CommunityTower implements GameCommandHandler, AutoCloseable {
+public class Community implements GameCommandHandler, AutoCloseable {
   private static final Set<String> COMMANDS =
       Set.of(
           "JOIN_COMMUNITY",
@@ -55,7 +55,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
   private final jumpking.service.CrownService crowns;
   private final long checkpointMs;
 
-  public CommunityTower(
+  public Community(
       GameWorkers workers,
       PersistenceWorkers database,
       RoomDirectory directory,
@@ -143,7 +143,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
             clock, time, limits.chatCodePoints(), limits.chatHistory(), limits.chatIntervalMs());
     final SerialExecutor actor;
     final AtomicBoolean tickQueued = new AtomicBoolean();
-    long serverTick, eventSeq, nextTick = time.nanos();
+    long serverTick, lastSnapshotTick, eventSeq, nextTick = time.nanos();
     final ScheduledFuture<?> timer;
 
     Tower(String id) {
@@ -214,19 +214,26 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
           else runState(player);
         }
       }
-      while (now >= nextTick && steps++ < 5) {
+      while (now >= nextTick && steps++ < 5 && needsSimulation()) {
         nextTick += 1_000_000_000L / physics.tickRate;
         tick(now);
       }
-      if (now >= nextTick) nextTick = now + 1_000_000_000L / physics.tickRate;
+      if (!needsSimulation() || now >= nextTick) nextTick = now + 1_000_000_000L / physics.tickRate;
       if (changed) {
         broadcast(this);
         snapshots(this);
       }
     }
 
+    boolean needsSimulation() {
+      return players.values().stream()
+          .anyMatch(
+              player -> !player.loading && !player.operation && !player.finished && !player.paused);
+    }
+
     void tick(long now) {
       serverTick++;
+      boolean changed = false;
       var effects = new ArrayList<ObjectNode>();
       for (Member player : List.copyOf(players.values())) {
         if (player.loading || player.operation) continue;
@@ -287,6 +294,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
             player.peakTicks = player.game.physics().snapshot().ticks;
           }
           if (player.game.finished()) {
+            changed = true;
             player.ending =
                 Map.of("screen", pose.screen, "ravenDone", player.game.adventure().ravenDone());
             player.finished = true;
@@ -296,6 +304,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
             player.pausePending = false;
             save(this, player, true, () -> finishNotice(player));
           } else if (player.pausePending && stable(player)) {
+            changed = true;
             player.paused = true;
             player.pausePending = false;
             player.pausedAt = now;
@@ -333,7 +342,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
             if (!visible.isEmpty())
               receiver.connection.send("PLAYER_EFFECTS", Map.of("roomId", id, "events", visible));
           }
-      if (serverTick % (physics.tickRate / rules.path("snapshotRate").asInt()) == 0)
+      if (changed || serverTick % (physics.tickRate / rules.path("snapshotRate").asInt()) == 0)
         snapshots(this);
     }
   }
@@ -511,7 +520,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
 
   private synchronized void join(GameConnection connection, GameEnvelope command) {
     if (!connection.identity().account())
-      throw new ApiException(403, "ACCOUNT_REQUIRED", "Sign in to play Community Tower");
+      throw new ApiException(403, "ACCOUNT_REQUIRED", "Sign in to play Community.");
     GameEnvelope.fields(command.payload(), Set.of("newRun", "expectedRunId"));
     boolean replace = GameEnvelope.bool(command.payload(), "newRun", false);
     if (!command.payload().has("expectedRunId")) throw GameEnvelope.invalid();
@@ -687,6 +696,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
                   () -> {
                     pause(player);
                     runState(player);
+                    snapshots(tower);
                   });
               return;
             }
@@ -740,6 +750,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
                       runState(player);
                     }
                     player.leaveCommand = null;
+                    snapshots(tower);
                   });
             }
           });
@@ -759,6 +770,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
               "ERROR", Map.of("code", "SAVE_FAILED", "message", "Save queue is full"));
       }
       player.operationCommand = player.leaveCommand = null;
+      snapshots(tower);
     }
   }
 
@@ -776,7 +788,10 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
     if (empty) {
       towers.remove(tower.id, tower);
       tower.timer.cancel(false);
-    } else broadcast(tower);
+    } else {
+      broadcast(tower);
+      snapshots(tower);
+    }
   }
 
   @Override
@@ -791,6 +806,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
             if (player == null || player.connection != connection) return;
             dropConnection(tower, player);
             broadcast(tower);
+            snapshots(tower);
           });
     } catch (RejectedExecutionException busy) {
       /* Deadline xử lý khi actor chạy lại. */
@@ -858,7 +874,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
   private void chatHistory(Tower tower, Member player) {
     if (player.connection != null)
       player.connection.send(
-          "CHAT_HISTORY", Map.of("roomId", tower.id, "messages", tower.chat.history()));
+          "CHAT_HISTORY", tower.chat.history(tower.id, json, limits.messageBytes()));
   }
 
   private void finishNotice(Member player) {
@@ -903,15 +919,18 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
   }
 
   private Map<String, Object> summary(Member player) {
-    var state = player.game.physics().snapshot();
+    return summary(player, player.game.physics().snapshot().ticks);
+  }
+
+  private Map<String, Object> summary(Member player, long ticks) {
     var result = new LinkedHashMap<String, Object>();
     result.put("id", player.stored.id());
     result.put("status", player.finished ? "FINISHED" : "ACTIVE");
     result.put("currentProgress", player.currentProgress);
     result.put("maxProgress", player.maximum);
-    result.put("elapsedTimeMs", ms(state.ticks));
+    result.put("elapsedTimeMs", ms(ticks));
     result.put("peakReachedTimeMs", ms(player.peakTicks));
-    result.put("finishTimeMs", player.finished ? ms(state.ticks) : null);
+    result.put("finishTimeMs", player.finished ? ms(ticks) : null);
     return result;
   }
 
@@ -935,6 +954,26 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
   }
 
   private void snapshots(Tower tower) {
+    if (tower.players.values().stream()
+        .noneMatch(
+            player -> !player.loading && player.connection != null && player.connection.open()))
+      return;
+    if (tower.needsSimulation()
+        && tower.lastSnapshotTick != 0
+        && tower.serverTick <= tower.lastSnapshotTick) return;
+    tower.serverTick = Math.max(tower.serverTick, tower.lastSnapshotTick + 1);
+    tower.lastSnapshotTick = tower.serverTick;
+    var captured = new HashMap<String, PlayerSnapshot>();
+    for (Member player : tower.players.values())
+      if (!player.loading)
+        captured.put(
+            player.id,
+            PlayerSnapshot.capture(
+                player.game,
+                player.id,
+                player.identity.username(),
+                player.slot.color(),
+                player.finished ? "FINISHED" : "ACTIVE"));
     var scores =
         tower.players.values().stream()
             .filter(player -> !player.loading)
@@ -946,54 +985,21 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
                         player.finished ? "FINISHED" : "ACTIVE",
                         player.currentProgress,
                         player.maximum,
-                        player.finished ? player.game.physics().snapshot().ticks : null))
+                        player.finished ? captured.get(player.id).ticks() : null))
             .toList();
     var standings =
-        json.valueToTree(
-            RoomRanking.currentHeight(scores).stream()
-                .map(
-                    row -> {
-                      var player = tower.players.get(row.score().playerId());
-                      return new jumpking.dto.PlayerStanding(
-                          player.id,
-                          player.identity.username(),
-                          player.slot.color(),
-                          row.rank(),
-                          row.score().currentProgress());
-                    })
-                .toList());
-    var publicStates = new HashMap<String, ObjectNode>();
-    for (Member peer : tower.players.values())
-      if (!peer.loading) {
-        var view =
-            json.createObjectNode()
-                .put("playerId", peer.id)
-                .put("nickname", peer.identity.username())
-                .put("colorSlot", peer.slot.color())
-                .put("status", peer.finished ? "FINISHED" : "ACTIVE");
-        ObjectNode pose = json.valueToTree(peer.game.physics().snapshot());
-        pose.retain(
-            List.of(
-                "x",
-                "y",
-                "vx",
-                "vy",
-                "grounded",
-                "charge",
-                "direction",
-                "splat",
-                "knocked",
-                "ice",
-                "snow",
-                "wind",
-                "screen",
-                "ticks",
-                "jumps",
-                "falls"));
-        view.set("state", pose);
-        view.put("crowned", peer.game.adventure().completed());
-        publicStates.put(peer.id, view);
-      }
+        RoomRanking.currentHeight(scores).stream()
+            .map(
+                row -> {
+                  var player = tower.players.get(row.score().playerId());
+                  return new jumpking.dto.PlayerStanding(
+                      player.id,
+                      player.identity.username(),
+                      player.slot.color(),
+                      row.rank(),
+                      row.score().currentProgress());
+                })
+            .toList();
     for (Member self : tower.players.values()) {
       if (self.loading || self.connection == null) continue;
       var value =
@@ -1002,17 +1008,17 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
               .put("serverTick", tower.serverTick)
               .put("playId", self.stored.id())
               .put("generation", self.generation)
-              .put("elapsedTimeMs", ms(self.game.physics().snapshot().ticks))
+              .put("elapsedTimeMs", ms(captured.get(self.id).ticks()))
               .putNull("remainingTimeMs");
-      value.set("players", standings);
+      value.putPOJO("players", standings);
       var state =
           value
               .putObject("self")
               .put("lastProcessedInputSeq", self.input.processed())
               .put("status", self.finished ? "FINISHED" : "ACTIVE")
               .put("paused", self.paused || self.pausePending);
-      state.set("simulation", json.valueToTree(self.game.snapshot()));
-      state.set("metrics", json.valueToTree(summary(self)));
+      state.putPOJO("simulation", captured.get(self.id).simulation());
+      state.putPOJO("metrics", summary(self, captured.get(self.id).ticks()));
       var target = self.watching == null ? null : tower.players.get(self.watching);
       if (target != null
           && (self.finished
@@ -1022,24 +1028,21 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
               || target.connection == null
               || !target.connection.open())) target = null;
       if (target == null) self.watching = null;
-      value.set(
+      value.putPOJO(
           "spectating",
           target == null
-              ? json.nullNode()
-              : jumpking.dto.SpectatorView.of(
-                  json,
-                  publicStates.get(target.id),
+              ? null
+              : SpectatorView.of(
+                  captured.get(target.id),
                   target.stored.id(),
-                  ms(target.game.physics().snapshot().ticks),
-                  target.paused || target.pausePending,
-                  target.game));
+                  ms(captured.get(target.id).ticks()),
+                  target.paused || target.pausePending));
       var peers = value.putArray("peers");
-      int screen = (target == null ? self : target).game.physics().snapshot().screen;
-      publicStates.forEach(
-          (id, view) -> {
-            if (!id.equals(self.id)
-                && Math.abs(view.path("state").path("screen").asInt() - screen) <= 1)
-              peers.add(view);
+      int screen = captured.get(target == null ? self.id : target.id).screen();
+      captured.forEach(
+          (id, saved) -> {
+            if (!id.equals(self.id) && Math.abs(saved.screen() - screen) <= 1)
+              peers.addPOJO(saved.player());
           });
       self.connection.snapshot(value);
     }
@@ -1094,7 +1097,7 @@ public class CommunityTower implements GameCommandHandler, AutoCloseable {
     try {
       CompletableFuture.allOf(pending.toArray(CompletableFuture[]::new)).get(10, TimeUnit.SECONDS);
     } catch (Exception incomplete) {
-      org.slf4j.LoggerFactory.getLogger(CommunityTower.class)
+      org.slf4j.LoggerFactory.getLogger(Community.class)
           .warn("Community shutdown flush did not complete within the deadline");
     }
   }

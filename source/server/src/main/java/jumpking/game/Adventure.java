@@ -18,7 +18,7 @@ public final class Adventure {
   private ObjectNode state;
 
   public Adventure(JsonNode definitions, GameMap map, Physics physics) {
-    data = definitions.deepCopy();
+    data = definitions;
     tuning = data.path("tuning");
     this.map = map;
     this.physics = physics;

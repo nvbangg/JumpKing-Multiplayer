@@ -48,7 +48,11 @@ class SecurityBoundsTest {
     for (int index = 0; index < 20; index++) limits.check("ip" + index, "account:42");
     assertThatThrownBy(() -> limits.check("another-ip", "account:42"))
         .isInstanceOfSatisfying(
-            ApiException.class, error -> assertThat(error.status()).isEqualTo(429));
+            ApiException.class,
+            error -> {
+              assertThat(error.status()).isEqualTo(429);
+              assertThat(error.code()).isEqualTo("RATE_LIMITED");
+            });
     var bounded =
         new AuthRateLimiter(
             clock,

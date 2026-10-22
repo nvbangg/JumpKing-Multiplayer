@@ -111,18 +111,14 @@ final class RoomMatch {
       if (isLanded) player.currentProgress = progress;
       if (progress > player.maximum) {
         player.maximum = progress;
-        player.peak = player.game.physics().snapshot().ticks;
+        player.peak = state.ticks;
       }
       if (player.game.finished()) {
         player.status = "FINISHED";
         player.finish = ticks;
         if (settings.mapLevel() == RoomSettings.FULL_MAP_LEVEL)
           player.ending =
-              Map.of(
-                  "screen",
-                  player.game.physics().snapshot().screen,
-                  "ravenDone",
-                  player.game.adventure().ravenDone());
+              Map.of("screen", state.screen, "ravenDone", player.game.adventure().ravenDone());
       }
     }
     if (players.values().stream().anyMatch(player -> player.finish != null))

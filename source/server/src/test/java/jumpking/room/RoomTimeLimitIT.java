@@ -38,7 +38,7 @@ class RoomTimeLimitIT {
   }
 
   @Autowired RoomRaceIT.TestTime time;
-  @Autowired RaceRoom server;
+  @Autowired RoomManager server;
   @Autowired SharedData shared;
   @Autowired ObjectMapper json;
   @LocalServerPort int port;

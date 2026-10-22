@@ -3,7 +3,6 @@ package jumpking.network;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -31,11 +30,11 @@ public final class GameConnection {
   private final NetworkSettings limits;
   private final Executor sends, closes;
   private final Runnable onClosed;
-  private final ArrayDeque<String> controls = new ArrayDeque<>();
+  private final ArrayDeque<ObjectNode> controls = new ArrayDeque<>();
   private final LinkedHashMap<String, Cached> replies = new LinkedHashMap<>();
   private final Map<String, GameEnvelope> inFlight = new LinkedHashMap<>();
   private final AtomicBoolean closed = new AtomicBoolean();
-  private String latestSnapshot;
+  private ObjectNode latestSnapshot;
   private boolean sending;
   private long oldestPendingNs, sendingSinceNs;
   private volatile long lastReceivedNs = System.nanoTime();
@@ -86,37 +85,45 @@ public final class GameConnection {
     return true;
   }
 
-  public synchronized boolean begin(GameEnvelope command) {
+  public boolean begin(GameEnvelope command) {
     if (command.requestId() == null) return true;
-    Cached previous = replies.get(command.requestId());
-    if (previous != null) {
-      if (!previous.type.equals(command.type()) || !previous.payload.equals(command.payload()))
-        throw new ApiException(409, "CONFLICT", "Request ID was already used");
-      enqueue(previous.reply, false);
-      return false;
+    ObjectNode replay;
+    synchronized (this) {
+      Cached previous = replies.get(command.requestId());
+      if (previous != null) {
+        if (!previous.type.equals(command.type()) || !previous.payload.equals(command.payload()))
+          throw new ApiException(409, "CONFLICT", "Request ID was already used");
+        replay = previous.reply;
+      } else {
+        var pending = inFlight.get(command.requestId());
+        if (pending != null) {
+          if (!pending.type().equals(command.type())
+              || !pending.payload().equals(command.payload()))
+            throw new ApiException(409, "CONFLICT", "Request ID is still in use");
+          return false;
+        }
+        if (inFlight.size() >= limits.controlMessages())
+          throw new ApiException(429, "RATE_LIMITED", "Too many pending commands");
+        inFlight.put(command.requestId(), command);
+        return true;
+      }
     }
-    var pending = inFlight.get(command.requestId());
-    if (pending != null) {
-      if (!pending.type().equals(command.type()) || !pending.payload().equals(command.payload()))
-        throw new ApiException(409, "CONFLICT", "Request ID is still in use");
-      return false;
-    }
-    if (inFlight.size() >= limits.controlMessages())
-      throw new ApiException(429, "RATE_LIMITED", "Too many pending commands");
-    inFlight.put(command.requestId(), command);
-    return true;
+    enqueue(replay, false);
+    return false;
   }
 
-  public synchronized void reply(GameEnvelope command, String type, Object payload) {
+  public void reply(GameEnvelope command, String type, Object payload) {
     ObjectNode envelope = envelope(type, payload);
     if (command.requestId() != null) {
       envelope.put("requestId", command.requestId());
-      inFlight.remove(command.requestId());
-      replies.put(
-          command.requestId(),
-          new Cached(command.type(), command.payload().deepCopy(), envelope.deepCopy()));
-      while (replies.size() > limits.controlMessages())
-        replies.remove(replies.keySet().iterator().next());
+      synchronized (this) {
+        inFlight.remove(command.requestId());
+        replies.put(
+            command.requestId(),
+            new Cached(command.type(), command.payload().deepCopy(), envelope));
+        while (replies.size() > limits.controlMessages())
+          replies.remove(replies.keySet().iterator().next());
+      }
     }
     enqueue(envelope, false);
   }
@@ -127,44 +134,49 @@ public final class GameConnection {
     else reply(command, "ERROR", payload);
   }
 
-  public synchronized void reject(GameEnvelope command, ApiException error) {
+  public void reject(GameEnvelope command, ApiException error) {
     var envelope = envelope("ERROR", Map.of("code", error.code(), "message", error.getMessage()));
     if (command.requestId() != null) envelope.put("requestId", command.requestId());
     enqueue(envelope, false);
   }
 
-  public synchronized void send(String type, Object payload) {
+  public void send(String type, Object payload) {
     enqueue(envelope(type, payload), false);
   }
 
-  public synchronized void snapshot(Object payload) {
-    enqueue(envelope("GAME_SNAPSHOT", payload), true);
+  /** Payload đã được phòng chụp riêng; không sửa lại sau khi enqueue. */
+  public void snapshot(Object payload) {
+    var envelope = json.createObjectNode().put("v", 1).put("type", "GAME_SNAPSHOT");
+    envelope.set("payload", json.getNodeFactory().pojoNode(payload));
+    enqueue(envelope, true);
   }
 
   private ObjectNode envelope(String type, Object payload) {
     var result = json.createObjectNode().put("v", 1).put("type", type);
-    result.set("payload", payload instanceof JsonNode node ? node : json.valueToTree(payload));
+    result.set(
+        "payload", payload instanceof JsonNode node ? node.deepCopy() : json.valueToTree(payload));
     return result;
   }
 
   private void enqueue(ObjectNode envelope, boolean snapshot) {
-    if (!open()) return;
-    String text = envelope.toString();
-    if (text.getBytes(StandardCharsets.UTF_8).length > limits.messageBytes()) {
-      close(CloseStatus.TOO_BIG_TO_PROCESS);
-      return;
-    }
-    if (snapshot) latestSnapshot = text;
-    else {
-      if (controls.size() >= limits.controlMessages()) {
-        close(CloseStatus.POLICY_VIOLATION);
-        return;
+    boolean schedule = false;
+    synchronized (this) {
+      if (!open()) return;
+      if (snapshot) latestSnapshot = envelope;
+      else {
+        if (controls.size() >= limits.controlMessages()) {
+          close(CloseStatus.POLICY_VIOLATION);
+          return;
+        }
+        controls.add(envelope);
       }
-      controls.add(text);
+      if (oldestPendingNs == 0) oldestPendingNs = System.nanoTime();
+      if (!sending) {
+        sending = true;
+        schedule = true;
+      }
     }
-    if (oldestPendingNs == 0) oldestPendingNs = System.nanoTime();
-    if (!sending) {
-      sending = true;
+    if (schedule) {
       try {
         sends.execute(this::drain);
       } catch (RejectedExecutionException error) {
@@ -175,7 +187,7 @@ public final class GameConnection {
 
   private void drain() {
     while (open()) {
-      String next;
+      ObjectNode next;
       synchronized (this) {
         next = controls.poll();
         if (next == null) {
@@ -190,7 +202,13 @@ public final class GameConnection {
         sendingSinceNs = System.nanoTime();
       }
       try {
-        socket.sendMessage(new TextMessage(next));
+        byte[] bytes = json.writeValueAsBytes(next);
+        if (bytes.length > limits.messageBytes()) {
+          close(CloseStatus.TOO_BIG_TO_PROCESS);
+          return;
+        }
+        if (!open()) return;
+        socket.sendMessage(new TextMessage(bytes));
       } catch (Exception error) {
         close(CloseStatus.SERVER_ERROR);
         return;

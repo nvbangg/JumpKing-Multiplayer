@@ -28,6 +28,7 @@
     "cooldownMinMinutes": 1,
     "cooldownMaxMinutes": 15,
     "cooldownDefaultMinutes": 3,
+    "maximumBananas": 64,
     "bananaWidth": 12,
     "rockEffectTicks": 18
   }

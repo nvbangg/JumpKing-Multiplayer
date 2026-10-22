@@ -86,23 +86,20 @@ public class CommunityRuns {
         account,
         owner -> {
           var active = runs.lockActiveCommunity(owner).orElse(null);
-          var old =
-              active == null
-                  ? null
-                  : new Stored(
-                      active.getId(),
-                      owner,
-                      active.getRevision(),
-                      decode(active.getSnapshot()),
-                      active.getCurrentProgress(),
-                      active.getMaxProgress(),
-                      active.getPeakReachedTicks(),
-                      active.getStartedAt());
-          if ((!replace && old == null)
-              || !java.util.Objects.equals(expected, old == null ? null : old.id()))
+          if ((!replace && active == null)
+              || !java.util.Objects.equals(expected, active == null ? null : active.getId()))
             throw new ApiException(
                 409, "CONFLICT", "Community save changed; refresh and try again");
-          if (!replace) return old;
+          if (!replace)
+            return new Stored(
+                active.getId(),
+                owner,
+                active.getRevision(),
+                decode(active.getSnapshot()),
+                active.getCurrentProgress(),
+                active.getMaxProgress(),
+                active.getPeakReachedTicks(),
+                active.getStartedAt());
           var now = clock.instant();
           if (active != null) {
             active.setStatus("ABANDONED");

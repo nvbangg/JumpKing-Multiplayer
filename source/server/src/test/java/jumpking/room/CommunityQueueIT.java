@@ -32,7 +32,7 @@ class CommunityQueueIT {
     properties.add("spring.datasource.password", db::getPassword);
   }
 
-  @Autowired CommunityTower server;
+  @Autowired Community server;
   @Autowired Memberships memberships;
   @LocalServerPort int port;
 

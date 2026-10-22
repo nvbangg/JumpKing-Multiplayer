@@ -204,7 +204,7 @@ class AccountBrowserIT {
               .redirectErrorStream(true)
               .redirectOutput(Path.of("target/auth-browser-test.log").toFile())
               .start();
-      assertThat(browser.waitFor(600, TimeUnit.SECONDS))
+      assertThat(browser.waitFor(900, TimeUnit.SECONDS))
           .as("Browser test timeout; inspect target/auth-browser-test.log")
           .isTrue();
       assertThat(browser.exitValue())

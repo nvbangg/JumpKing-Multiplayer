@@ -33,7 +33,7 @@ class RoomHardcoreIT {
   }
 
   @Autowired RoomRaceIT.TestTime time;
-  @Autowired RaceRoom server;
+  @Autowired RoomManager server;
   @LocalServerPort int port;
 
   @Test

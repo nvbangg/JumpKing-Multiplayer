@@ -28,7 +28,7 @@ public final class GameSimulation {
   public GameSimulation(GameMap map, Physics p, JsonNode data, boolean flyAllowed, boolean noWalk) {
     this.map = map;
     this.p = p;
-    this.data = data.deepCopy();
+    this.data = data;
     this.flyAllowed = flyAllowed;
     this.noWalk = noWalk;
     physics = new Simulation(map, p, flyAllowed, noWalk);

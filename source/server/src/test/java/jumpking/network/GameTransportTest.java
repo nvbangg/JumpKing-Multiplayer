@@ -255,6 +255,64 @@ class GameTransportTest {
   }
 
   @Test
+  void snapshotsCoalesceBeforeEncodingAndDoNotHoldTheConnectionLockDuringIo() throws Exception {
+    var socket = mock(WebSocketSession.class);
+    when(socket.isOpen()).thenReturn(true);
+    var scheduled = new ArrayDeque<Runnable>();
+    var closed = new AtomicInteger();
+    var connection =
+        new GameConnection(
+            socket,
+            new GameConnection.Identity(1, "player", "session", "ip"),
+            json,
+            limits(64),
+            Runnable::run,
+            scheduled::add,
+            Runnable::run,
+            closed::incrementAndGet);
+    var encodes = new AtomicInteger();
+    var payload =
+        new com.fasterxml.jackson.databind.JsonSerializable.Base() {
+          @Override
+          public void serialize(
+              com.fasterxml.jackson.core.JsonGenerator generator,
+              com.fasterxml.jackson.databind.SerializerProvider provider)
+              throws java.io.IOException {
+            assertThat(Thread.holdsLock(connection)).isFalse();
+            generator.writeNumber(encodes.incrementAndGet());
+          }
+
+          @Override
+          public void serializeWithType(
+              com.fasterxml.jackson.core.JsonGenerator generator,
+              com.fasterxml.jackson.databind.SerializerProvider provider,
+              com.fasterxml.jackson.databind.jsontype.TypeSerializer type)
+              throws java.io.IOException {
+            serialize(generator, provider);
+          }
+        };
+    connection.snapshot(payload);
+    connection.snapshot(payload);
+    assertThat(encodes.get()).isZero();
+    doAnswer(
+            call -> {
+              assertThat(Thread.holdsLock(connection)).isFalse();
+              return null;
+            })
+        .when(socket)
+        .sendMessage(any());
+    scheduled.remove().run();
+    assertThat(encodes.get()).isEqualTo(1);
+    verify(socket).sendMessage(any());
+    connection.snapshot(java.util.Map.of("large", "😀".repeat(limits(64).messageBytes() / 4)));
+    assertThat(connection.open()).isTrue();
+    scheduled.remove().run();
+    assertThat(connection.open()).isFalse();
+    assertThat(closed.get()).isEqualTo(1);
+    verify(socket, times(1)).sendMessage(any());
+  }
+
+  @Test
   void blockedSendAndOverflowCloseOnlyThatConnection() {
     var socket = mock(WebSocketSession.class);
     when(socket.isOpen()).thenReturn(true);

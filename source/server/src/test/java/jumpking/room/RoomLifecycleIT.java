@@ -1,6 +1,8 @@
 package jumpking.room;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.CookieManager;
@@ -36,9 +38,14 @@ class RoomLifecycleIT {
   }
 
   @Autowired RoomRaceIT.TestTime time;
-  @Autowired RaceRoom server;
+  @Autowired RoomManager server;
   @Autowired Memberships memberships;
+  @Autowired RoomDirectory directory;
   @Autowired SessionAuthority sessions;
+
+  @org.springframework.test.context.bean.override.mockito.MockitoSpyBean
+  jumpking.service.CrownService crowns;
+
   @LocalServerPort int port;
 
   private record Started(String room, String play, JsonNode first, JsonNode second) {}
@@ -89,6 +96,146 @@ class RoomLifecycleIT {
                     .path("saveStatus")
                     .asText()
                     .equals("SAVED"));
+  }
+
+  @Test
+  void delayedCrownReadsDoNotBlockExistingRoomsOrJoinAClosedConnection() throws Exception {
+    var release = new CountDownLatch(1);
+    var entered = new CountDownLatch(1);
+    var joining = new java.util.ArrayList<GameClient>();
+    try (var host = new GameClient(port);
+        var friend = new GameClient(port);
+        var requests = Executors.newFixedThreadPool(4)) {
+      try {
+        host.register();
+        friend.register();
+        start(host, friend);
+        for (int index = 0; index < 4; index++) {
+          var client = new GameClient(port);
+          joining.add(client);
+          client.register();
+          client.connect();
+        }
+        var owners =
+            joining.stream()
+                .map(client -> client.owner)
+                .collect(java.util.stream.Collectors.toSet());
+        doAnswer(
+                invocation -> {
+                  if (owners.contains(invocation.<Long>getArgument(0))) {
+                    entered.countDown();
+                    if (!release.await(20, TimeUnit.SECONDS))
+                      throw new IllegalStateException("Crown read fixture timeout");
+                  }
+                  return invocation.callRealMethod();
+                })
+            .when(crowns)
+            .unlocked(anyLong());
+        var replies = new java.util.ArrayList<Future<JsonNode>>();
+        for (var client : joining)
+          replies.add(requests.submit(() -> client.command("CREATE_ROOM", Map.of())));
+        assertThat(entered.await(3, TimeUnit.SECONDS)).isTrue();
+        GameClient.until(
+            () -> joining.stream().allMatch(client -> memberships.find(client.owner) != null));
+        var closed = joining.getLast();
+        closed.disconnect();
+        long before = host.snapshot().path("serverTick").asLong();
+        assertThat(host.ok("HEARTBEAT", Map.of("nonce", "database-pending")).path("nonce").asText())
+            .isEqualTo("database-pending");
+        time.advance(100);
+        host.await(
+            message ->
+                message.path("type").asText().equals("GAME_SNAPSHOT")
+                    && message.path("payload").path("serverTick").asLong() > before);
+        release.countDown();
+        for (int index = 0; index < joining.size() - 1; index++) {
+          assertThat(replies.get(index).get(8, TimeUnit.SECONDS).path("type").asText())
+              .isEqualTo("ROOM_JOINED");
+          joining.get(index).ok("LEAVE_ROOM", Map.of());
+        }
+        GameClient.until(() -> memberships.find(closed.owner) == null);
+        end(host);
+        host.ok("LEAVE_ROOM", Map.of());
+        friend.ok("LEAVE_ROOM", Map.of());
+      } finally {
+        release.countDown();
+        joining.forEach(GameClient::close);
+      }
+    }
+  }
+
+  @Test
+  void closingTheLastPendingJoinFinalizesAnAbandonedMatchAndReleasesItsSlot() throws Exception {
+    var release = new CountDownLatch(1);
+    var entered = new CountDownLatch(1);
+    try (var host = new GameClient(port);
+        var pending = new GameClient(port);
+        var request = Executors.newSingleThreadExecutor()) {
+      try {
+        host.register();
+        pending.register();
+        host.connect();
+        pending.connect();
+        String roomId = host.ok("CREATE_ROOM", Map.of()).path("roomId").asText();
+        doAnswer(
+                invocation -> {
+                  entered.countDown();
+                  if (!release.await(20, TimeUnit.SECONDS))
+                    throw new IllegalStateException("Pending Join fixture timeout");
+                  return invocation.callRealMethod();
+                })
+            .when(crowns)
+            .unlocked(pending.owner);
+        request.submit(() -> pending.command("JOIN_ROOM", Map.of("roomId", roomId)));
+        assertThat(entered.await(3, TimeUnit.SECONDS)).isTrue();
+        assertThat(memberships.find(pending.owner)).isNotNull();
+        assertThat(pending.command("LEAVE_ROOM", Map.of()).path("payload").path("code").asText())
+            .isEqualTo("CONFLICT");
+        assertThat(host.ok("GET_ROOM_STATE", Map.of()).path("members")).hasSize(1);
+        String playId = host.ok("START_GAME", Map.of()).path("currentPlay").path("id").asText();
+        GameClient.until(
+            () -> {
+              try {
+                return host.ok("GET_ROOM_STATE", Map.of())
+                        .path("currentPlay")
+                        .path("countdownRemainingMs")
+                        .asLong()
+                    == 3000;
+              } catch (Exception error) {
+                throw new CompletionException(error);
+              }
+            });
+        time.advance(3000);
+        host.await(
+            message ->
+                message.path("type").asText().equals("GAME_SNAPSHOT")
+                    && message.path("payload").path("playId").asText().equals(playId));
+        host.ok("LEAVE_ROOM", Map.of());
+        pending.disconnect();
+        release.countDown();
+        var jdbc = TestDatabase.get().jdbc;
+        GameClient.until(
+            () ->
+                jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM matches WHERE id=? AND end_reason='ALL_DISCONNECTED' AND ended_at IS NOT NULL",
+                        Integer.class,
+                        playId)
+                    == 1);
+        GameClient.until(
+            () -> memberships.find(pending.owner) == null && directory.find(roomId) == null);
+        assertThat(memberships.find(host.owner)).isNull();
+        assertThat(
+                jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM play_runs WHERE match_id=?", Integer.class, playId))
+            .isEqualTo(1);
+        assertThat(
+                jdbc.queryForObject(
+                    "SELECT user_id FROM play_runs WHERE match_id=?", Long.class, playId))
+            .isEqualTo(host.owner);
+      } finally {
+        release.countDown();
+      }
+    }
   }
 
   @Test

@@ -37,7 +37,7 @@ public class AuthRateLimiter {
     Integer old = buckets.get(key);
     if ((old == null && buckets.size() >= settings.rateBucketLimit())
         || (old != null && old >= limit)) {
-      throw new ApiException(429, "RATE_LIMIT", "Too many requests; try again later");
+      throw new ApiException(429, "RATE_LIMITED", "Too many requests; try again later");
     }
     buckets.put(key, old == null ? 1 : old + 1);
   }

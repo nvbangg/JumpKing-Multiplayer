@@ -29,7 +29,7 @@ class RoomEndingBrowserIT {
         "app.allowed-origins", () -> "http://allowed.test,http://127.0.0.1:" + VITE_PORT);
   }
 
-  @Autowired RaceRoom rooms;
+  @Autowired RoomManager rooms;
   @Autowired Memberships memberships;
   @Autowired SharedData shared;
   @Autowired ObjectMapper json;

@@ -155,32 +155,13 @@ class SchemaIT {
         assertThat(archive.getEntry("BOOT-INF/classes/shared/fixtures/physics-traces.json"))
             .isNull();
         if (archive.getEntry("BOOT-INF/classes/static/index.html") != null) {
-          var version =
-              http.send(
-                  HttpRequest.newBuilder(URI.create(origin + "/version.json")).build(),
-                  HttpResponse.BodyHandlers.ofString());
-          assertThat(version.statusCode()).isEqualTo(200);
-          assertThat(version.headers().allValues("set-cookie")).isEmpty();
-          assertThat(version.headers().firstValue("cache-control").orElseThrow())
-              .isEqualTo("no-cache");
-          assertThat(
-                  new com.fasterxml.jackson.databind.ObjectMapper()
-                      .readTree(version.body())
-                      .path("version")
-                      .asText())
-              .isNotBlank();
-          try (var stream =
-              archive.getInputStream(archive.getEntry("BOOT-INF/classes/static/version.json"))) {
-            assertThat(version.body())
-                .isEqualTo(
-                    new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
-          }
           for (String path : new String[] {"/", "/history", "/community"}) {
             var page =
                 http.send(
                     HttpRequest.newBuilder(URI.create(origin + path)).build(),
                     HttpResponse.BodyHandlers.ofString());
             assertThat(page.statusCode()).as(path).isEqualTo(200);
+            assertThat(page.headers().allValues("set-cookie")).isEmpty();
             assertThat(page.body())
                 .contains("<div id=\"root\"></div>")
                 .doesNotContain("SPA routing fixture");

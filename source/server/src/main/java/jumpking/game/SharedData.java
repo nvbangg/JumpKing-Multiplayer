@@ -124,11 +124,12 @@ public class SharedData {
     return physics.deepCopy();
   }
 
+  // Các node định nghĩa nội bộ chỉ đọc; state thay đổi nằm trong từng GameSimulation.
   public JsonNode rules() {
-    return rules.deepCopy();
+    return rules;
   }
 
   public JsonNode adventure() {
-    return adventure.deepCopy();
+    return adventure;
   }
 }

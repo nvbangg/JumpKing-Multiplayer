@@ -85,6 +85,38 @@ class RoomItemsTest {
   }
 
   @Test
+  void bananaLimitIsCheckedWhenPreparingAndAgainAtTakeoffWithoutConsumingTheItem() {
+    var rules = shared.rules().path("items").deepCopy();
+    ((com.fasterxml.jackson.databind.node.ObjectNode) rules).put("maximumBananas", 1);
+    var items = new RoomItems(p, rules, new Random(0));
+    items.start(List.of("a", "b"));
+    items.slots.get("b").held = RoomItems.Kind.BANANA;
+    var first = ground("#", false);
+    var second = ground("#", false);
+    var pose = second.snapshot();
+    pose.x = 200;
+    second.restore(pose);
+    items.use("a", first, Map.of(), 0, 3);
+    items.use("b", second, Map.of(), 0, 3);
+    items.takeoff("a", first, 0, 3);
+    items.takeoff("b", second, 0, 3);
+    var rejected = items.view("b", 0, 0, 360);
+    assertThat(rejected.bananas()).hasSize(1);
+    assertThat(rejected.held()).isEqualTo(RoomItems.Kind.BANANA);
+    assertThat(rejected.bananaArmed()).isFalse();
+    assertThat(rejected.cooldownMs()).isZero();
+    assertThatThrownBy(() -> items.use("b", second, Map.of(), 1, 3))
+        .isInstanceOfSatisfying(
+            jumpking.exception.ApiException.class,
+            error -> assertThat(error.code()).isEqualTo("ITEM_UNAVAILABLE"));
+    items.hit(first, 1);
+    items.use("b", second, Map.of(), 2, 3);
+    items.takeoff("b", second, 2, 3);
+    assertThat(items.view("b", 2, 0, 360).bananas()).hasSize(1);
+    assertThat(items.slots.get("b").held).isNull();
+  }
+
+  @Test
   void rockTargetsActualHighestOtherPlayerAndNeverStacksVelocity() {
     var items = items("a", "b");
     items.slots.get("a").held = RoomItems.Kind.ROCK;

@@ -18,7 +18,7 @@ public final class RoomBrowserFixture implements AutoCloseable {
   private static final String PASSWORD = "A secure server integration password";
 
   public RoomBrowserFixture(
-      int port, RaceRoom server, Memberships memberships, SharedData shared, ObjectMapper json)
+      int port, RoomManager server, Memberships memberships, SharedData shared, ObjectMapper json)
       throws Exception {
     this.memberships = memberships;
     first = new GameClient(port);
