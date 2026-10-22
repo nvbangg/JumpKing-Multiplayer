@@ -934,3 +934,58 @@ output.room-code {
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
+
+.screen-lobby > .chat-panel {
+	position: fixed;
+}
+@media (max-width: 1000px) {
+	.screen-lobby {
+		height: 100dvh;
+		overflow: hidden;
+		padding-bottom: calc(20dvh + 128px + env(safe-area-inset-bottom));
+	}
+	.screen-lobby .brand {
+		flex-shrink: 0;
+		margin-bottom: 16px;
+	}
+	.screen-lobby .single-panel {
+		flex: 1;
+		min-height: 0;
+	}
+	.screen-lobby .menu-panel {
+		max-height: 100%;
+		overflow-y: auto;
+	}
+	.screen-lobby .chat-messages {
+		max-height: 20dvh;
+	}
+}
+.item-control {
+	position: absolute;
+	z-index: 35;
+	right: max(16px, env(safe-area-inset-right));
+	bottom: max(100px, calc(env(safe-area-inset-bottom) + 88px));
+	font-size: 13px;
+	padding: 10px;
+	touch-action: manipulation;
+}
+.item-control[aria-pressed="true"] {
+	border-color: #d8be69;
+	color: #efdb99;
+}
+
+.mode-setting.item-toggle {
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 44px;
+	cursor: pointer;
+}
+.item-toggle input[type="checkbox"] {
+	flex: 0 0 20px;
+	width: 20px;
+	height: 20px;
+	margin: 0;
+	padding: 0;
+	accent-color: #d8be69;
+}

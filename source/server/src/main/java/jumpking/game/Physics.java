@@ -14,6 +14,7 @@ public final class Physics {
       collisionRecoveryLimit;
   public final double walkSpeed,
       jumpSpeed,
+      slipSpeedMultiplier,
       gravity,
       jumpVelocity,
       maxFall,
@@ -39,6 +40,7 @@ public final class Physics {
     bumpQuietTicks = integer(values, "bumpQuietTicks");
     collisionRecoveryLimit = integer(values, "collisionRecoveryLimit");
     walkSpeed = number(values, "walkSpeed");
+    slipSpeedMultiplier = number(values, "slipSpeedMultiplier");
     jumpSpeed = number(values, "jumpSpeed");
     maxFall = number(values, "maxFall");
     bounce = number(values, "bounce");

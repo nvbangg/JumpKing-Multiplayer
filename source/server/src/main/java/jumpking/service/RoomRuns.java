@@ -45,6 +45,8 @@ public class RoomRuns {
       String mode,
       Integer minutes,
       int mapLevel,
+      boolean itemsEnabled,
+      int itemCooldownMinutes,
       long revision,
       Instant startedAt,
       Instant endedAt,
@@ -63,6 +65,8 @@ public class RoomRuns {
       String mode,
       Integer minutes,
       int mapLevel,
+      boolean itemsEnabled,
+      int itemCooldownMinutes,
       Instant startedAt,
       Instant endedAt,
       long duration,
@@ -108,6 +112,8 @@ public class RoomRuns {
                   write.mode,
                   write.minutes,
                   write.mapLevel,
+                  write.itemsEnabled,
+                  write.itemCooldownMinutes,
                   write.startedAt,
                   write.endedAt,
                   write.duration,
@@ -117,6 +123,8 @@ public class RoomRuns {
                 || !previous.mode.equals(write.mode)
                 || !Objects.equals(previous.minutes, write.minutes)
                 || previous.mapLevel != write.mapLevel
+                || previous.itemsEnabled != write.itemsEnabled
+                || previous.itemCooldownMinutes != write.itemCooldownMinutes
                 || !previous.startedAt.equals(write.startedAt)
                 || old.size() != next.size()) throw conflict();
             var byId = new HashMap<String, Stored>();
@@ -154,6 +162,8 @@ public class RoomRuns {
             matchEntity.setRoomCode(write.roomCode);
             matchEntity.setMode(write.mode);
             matchEntity.setMapLevel(write.mapLevel);
+            matchEntity.setItemsEnabled(write.itemsEnabled);
+            matchEntity.setItemCooldownMinutes(write.itemCooldownMinutes);
             matchEntity.setTimeLimitMinutes(write.minutes);
             matchEntity.setStartedAt(write.startedAt);
             matchEntity = matchRepository.saveAndFlush(matchEntity);
@@ -252,6 +262,8 @@ public class RoomRuns {
               match.mode,
               match.minutes,
               match.mapLevel,
+              match.itemsEnabled,
+              match.itemCooldownMinutes,
               stored.stream().mapToLong(Stored::revision).max().orElseThrow() + 1,
               match.startedAt,
               deadline,
@@ -267,6 +279,8 @@ public class RoomRuns {
         match.getMode(),
         match.getTimeLimitMinutes(),
         match.getMapLevel(),
+        match.getItemsEnabled(),
+        match.getItemCooldownMinutes(),
         match.getStartedAt(),
         match.getEndedAt(),
         match.getDurationTicks(),
@@ -300,6 +314,8 @@ public class RoomRuns {
   private void validate(Write value) {
     if (value.mapLevel < 1
         || value.mapLevel > 10
+        || value.itemCooldownMinutes < 1
+        || value.itemCooldownMinutes > 15
         || value.revision < 1
         || value.duration < 0
         || value.startedAt == null

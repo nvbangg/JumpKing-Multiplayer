@@ -24,5 +24,6 @@
   "flyHorizontalSpeed": 3,
   "flyVerticalSpeed": 6,
   "flyDoubleTapMs": 300,
-  "collisionRecoveryLimit": 500
+  "collisionRecoveryLimit": 500,
+  "slipSpeedMultiplier": 4
 }

@@ -80,6 +80,12 @@ export function HistoryDetail({ item }: { item: HistoryItem }) {
 									?.name
 							}
 						</dd>
+						<dt>Items</dt>
+						<dd>
+							{detail.room.itemsEnabled
+								? `On · ${detail.room.itemCooldownMinutes} min cooldown`
+								: "Off"}
+						</dd>
 						<dt>Rank</dt>
 						<dd>{detail.room.rank}</dd>
 						<dt>End</dt>

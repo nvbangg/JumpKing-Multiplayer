@@ -9,7 +9,7 @@ Community dùng Main Babe hoàn chỉnh theo geometry, physics, camera và trả
 | Community Tower | Bắt buộc Account; tạo mới hoặc tiếp tục lượt cá nhân | Lưu tiến độ/History trên server; chỉ kiểu chơi này lên leaderboard |
 | Room | Account tạo Public/Private, Join Public hoặc bằng ID; chờ Host Start | Cuộc đua cùng xuất phát; lưu History, không lên leaderboard, không checkpoint dài hạn |
 
-Community chỉ có chế độ bình thường; Continue chỉ dành cho lượt chưa kết thúc. Room chọn `RACE`, `HARDCORE`, `TIME_LIMIT` hoặc `NO_WALK`. Tất cả players không va chạm và không dùng item tác động người khác.
+Community chỉ có chế độ bình thường; Continue chỉ dành cho lượt chưa kết thúc. Room chọn `RACE`, `HARDCORE`, `TIME_LIMIT` hoặc `NO_WALK`. Players không va chạm nhau. Community không có item; Room có tùy chọn [Items](#items-trong-room).
 
 ## Điều khiển và physics
 
@@ -112,6 +112,16 @@ Progress = max(0, originFeetY−feetY); peak là progress cao nhất từng đ�
 Có 10 mốc Finish tăng dần từ chân tháp; map 10 là Main Babe đầy đủ. `source/common/room-maps.json` xác định đích trong đúng vùng của từng map; dùng nguyên geometry/spawn. Map 1–9 yêu cầu đáp đúng mặt nền đã đánh dấu, xác định bởi screen, minCenterX và minProgress; maxCenterX giới hạn đoạn nền khi cần. Không tính nền khác dù cao hơn. Map 10 giữ đích gốc. Host chọn trước Start, settings giữ khi Play Again. Map 1–9 chỉ Results, map 10 giữ ending. History lưu map của trận; Best Finish Time chỉ tính full map. Kiểm chứng các mốc bằng replay input hợp lệ từ spawn chuẩn ở cả hai simulation.
 
 Room hiện cờ ca-rô và chữ FINISH tại một platform đủ điều kiện ở màn đích của map đã chọn. Dấu chỉ dẫn không đổi collision hoặc luật Finish; đang bay qua đích chưa tính hoàn thành.
+
+## Items trong Room
+
+Host chọn Items (mặc định Off) tại Lobby, cùng các settings của phòng; Item Cooldown là số phút nguyên 1–15, mặc định 3. Chỉ đổi trước Start, giữ settings qua Play Again. Áp dụng cho cả bốn mode; không Inventory hoặc chọn loại item.
+
+- Hết countdown, server cấp ngẫu nhiên Banana/Rock 50/50, mỗi người một ô. Click/chạm nút vật phẩm để dùng. Dùng thành công mới bắt đầu hồi chiêu; hết hồi cấp ngẫu nhiên tiếp, không tích trữ/cấp đè vật phẩm đang giữ. Không dùng trong menu/chat/spectating, khi charge/splat/trượt/Fly/phasing; Rock dùng được trên không.
+- Banana: click khi đứng trên nền để chuẩn bị, click lại hủy. Cú bật nhảy thật trên nền tiếp theo để lại vỏ chuối tại chân lúc nhảy và bắt đầu hồi chiêu. Air grace/đặt trùng bẫy không tiêu thụ vật phẩm, hủy chuẩn bị. Bẫy hoạt động từ tick tiếp theo, không trúng người đang bay lên. Không có TTL, rời phòng không xóa bẫy; một người giẫm thì bẫy mất, kể cả chủ. Nhiều người cùng chạm một tick chỉ một người trúng, theo thứ tự roster.
+- Rock: server nhắm người khác connected/ACTIVE có progress thực tế cao nhất (kể cả đang nhảy), không dùng peak hoặc currentProgress của lần tiếp đất; bằng nhau chọn theo roster. Loại mục tiêu Fly/phasing/splat. Không có mục tiêu thì giữ item. Hất ngang từ người ném tới mục tiêu, cùng x dùng hướng người ném; hủy lực đi lên để bắt đầu rơi. Đá đánh trúng trực tiếp, đường bay chỉ minh họa, không projectile/né/va tường.
+- Hai item gây cùng trạng thái trượt: vận tốc ngang ban đầu 4× walkSpeed, Banana dùng hướng vận tốc hiện tại hoặc hướng quay nếu đứng yên. Không ma sát/đổi hướng/charge trong khi trượt; không cộng dồn lực khi trúng thêm. Gravity/collision thật vẫn chạy; hết trượt khi va tường/biên hoặc rơi rồi đáp nền mới. Có thể bị tường chặn nên không bảo đảm mọi cú trượt đều làm rơi khỏi bệ. Trượt không tự tăng falls/respawn Hardcore; SPLAT thật vẫn áp dụng luật mode. Hình bẫy nhỏ, màu dịu nhưng nhìn được.
+- Item/hồi chiêu/bẫy giữ qua reconnect; menu/respawn không reset, all-offline ngừng tick thì hồi chiêu ngừng. Kết thúc ván xóa runtime item; ván mới cấp lại. State thuộc server trong RAM; tuning ở shared rules/physics, persistence theo [data](data.md#kết-quả-room).
 
 ## Leave và reconnect online
 

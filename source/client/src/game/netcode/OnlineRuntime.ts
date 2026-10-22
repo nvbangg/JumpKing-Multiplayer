@@ -3,6 +3,7 @@ import { NETWORK } from "../../network/config";
 import type { PlayerStanding } from "../../network/contracts";
 import type { GameSocket, RoomState } from "../../network/GameSocket";
 import { required } from "../../required";
+import type { RoomItemsView } from "../items";
 import { PRESENTATION } from "../presentation/config";
 import type {
 	EndingSignal,
@@ -31,6 +32,7 @@ export interface SpectatorView {
 	world: GameSnapshot["world"];
 }
 export interface OnlineSnapshot {
+	items?: RoomItemsView;
 	spectating?: SpectatorView | null;
 	players?: PlayerStanding[];
 	roomId: string;
@@ -300,6 +302,7 @@ export class OnlineRuntime implements GameRuntime {
 						crowned: this.game.adventure.completed,
 					}),
 				world: watched.world,
+				items: this.latest?.items,
 			};
 		}
 		return {
@@ -313,6 +316,7 @@ export class OnlineRuntime implements GameRuntime {
 			},
 			peers,
 			world: saved.world,
+			items: this.latest?.items,
 			...(this.ending?.id === this.latest?.playId &&
 			this.latest?.self.status === "FINISHED"
 				? { ending: this.ending }

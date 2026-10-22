@@ -23,5 +23,12 @@
     "#67d5df",
     "#c7cbd5"
   ],
-  "roomLoadTimeoutMs": 30000
+  "roomLoadTimeoutMs": 30000,
+  "items": {
+    "cooldownMinMinutes": 1,
+    "cooldownMaxMinutes": 15,
+    "cooldownDefaultMinutes": 3,
+    "bananaWidth": 12,
+    "rockEffectTicks": 18
+  }
 }

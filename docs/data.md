@@ -52,6 +52,8 @@ erDiagram
         CHAR(6) room_code
         VARCHAR(16) mode
         SMALLINT time_limit_minutes "nullable"
+        BOOLEAN items_enabled "default false"
+        SMALLINT item_cooldown_minutes "1–15; default 3"
         SMALLINT map_level "1–10; 10=full"
         DATETIME(3) started_at
         DATETIME(3) ended_at "nullable"
@@ -118,7 +120,7 @@ New Run khóa users rồi lượt bằng SELECT ... FOR UPDATE, kiểm tra expec
 
 ## Kết quả Room
 
-Room bắt đầu gameplay tạo match và lượt ROOM của roster trong một transaction bằng IDs chốt khi Start; Lobby/countdown hủy không ghi. started_at là hết countdown. Mode/settings/map_level nằm ở matches theo [gameplay](gameplay.md#room-và-xếp-hạng); time_limit_minutes chỉ khác NULL ở TIME_LIMIT. end_reason: FINISH/TIME_LIMIT/HOST_ENDED/ALL_DISCONNECTED/ABORTED.
+Room bắt đầu gameplay tạo match và lượt ROOM của roster trong một transaction bằng IDs chốt khi Start; Lobby/countdown hủy không ghi. started_at là hết countdown. Mode/settings/map_level nằm ở matches theo [gameplay](gameplay.md#room-và-xếp-hạng); time_limit_minutes chỉ khác NULL ở TIME_LIMIT. `items_enabled` và `item_cooldown_minutes` NOT NULL lưu settings bất biến của match, mặc định false/3; CHECK boolean và phút 1–15. Vật phẩm đang giữ, hồi chiêu, bẫy/cue đá chỉ ở RAM, không thêm bảng hoặc checkpoint Room. end_reason: FINISH/TIME_LIMIT/HOST_ENDED/ALL_DISCONNECTED/ABORTED.
 
 Writer lưu duration_ticks/metrics định kỳ theo deployment và flush khi kết thúc; không lưu snapshot Room. Leave/hết hạn reconnect chốt DNF; finalize chốt người còn lại UNFINISHED/FINISHED. play_ticks≤duration_ticks; xếp hạng dùng clock chung theo gameplay.
 

@@ -66,7 +66,8 @@ class RoomRunsIT {
                     ended));
         var write =
             new RoomRuns.Write(
-                match, "ABCDEF", "RACE", null, level, 1, started, ended, 600, "FINISH", runs);
+                match, "ABCDEF", "RACE", null, level, false, 3, 1, started, ended, 600, "FINISH",
+                runs);
         records.save(write);
         records.save(write);
         assertThat(
@@ -101,6 +102,8 @@ class RoomRunsIT {
                             "RACE",
                             null,
                             changedLevel,
+                            false,
+                            3,
                             2,
                             started,
                             ended,
@@ -144,7 +147,19 @@ class RoomRunsIT {
               b, users.get(1), "Player B", "ACTIVE", 0, 0, 0, 0, 0, 0, null, null, false, null);
       var start =
           new RoomRuns.Write(
-              match, "ABCDEF", "RACE", null, 10, 1, started, null, 0, null, List.of(first, second));
+              match,
+              "ABCDEF",
+              "RACE",
+              null,
+              10,
+              false,
+              3,
+              1,
+              started,
+              null,
+              0,
+              null,
+              List.of(first, second));
       records.save(start);
       records.save(start);
       var update =
@@ -154,6 +169,8 @@ class RoomRunsIT {
               "RACE",
               null,
               10,
+              false,
+              3,
               2,
               started,
               null,
@@ -199,6 +216,8 @@ class RoomRunsIT {
               "RACE",
               null,
               10,
+              false,
+              3,
               3,
               started,
               ended,
@@ -292,6 +311,8 @@ class RoomRunsIT {
                           "RACE",
                           null,
                           10,
+                          false,
+                          3,
                           4,
                           started,
                           null,

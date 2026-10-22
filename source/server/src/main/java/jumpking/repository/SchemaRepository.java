@@ -23,6 +23,7 @@ public class SchemaRepository {
                 Set.of(
                     "ck_matches_mode",
                     "ck_matches_map_level",
+                    "ck_matches_items",
                     "ck_matches_ticks",
                     "ck_matches_end",
                     "ck_runs_kind",

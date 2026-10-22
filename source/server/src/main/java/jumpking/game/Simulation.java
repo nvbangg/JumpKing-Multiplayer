@@ -87,6 +87,15 @@ public final class Simulation {
     state.jumpConsumed = true;
   }
 
+  public void slip(int direction, boolean drop) {
+    if (Math.abs(direction) != 1) throw new IllegalArgumentException("Invalid slip direction");
+    cancelInput();
+    state.slipping = true;
+    state.direction = direction;
+    state.vx = f(direction * p.walkSpeed * p.slipSpeedMultiplier);
+    if (drop) state.vy = Math.max(0, state.vy);
+  }
+
   public void respawn() {
     long ticks = state.ticks;
     int jumps = state.jumps, falls = state.falls;
@@ -105,6 +114,7 @@ public final class Simulation {
     state.grounded = false;
     state.phasingFall = !enabled && contact().solid;
     state.splat = 0;
+    state.slipping = false;
     state.knocked = false;
     state.ice = false;
     state.snow = false;
@@ -198,7 +208,7 @@ public final class Simulation {
     var info = contact();
     if (!map.screens().get(s.screen).wind()) s.wind = false;
     else if (s.grounded) s.wind = true;
-    if (s.wind && !s.snow) {
+    if (s.wind && !s.snow && !s.slipping) {
       double phase = (double) s.ticks / p.tickRate * p.windFrequency;
       s.vx =
           f(
@@ -276,7 +286,7 @@ public final class Simulation {
       }
     }
     s.vy = Math.min(f(s.vy + p.gravity), p.maxFall);
-    if (s.ice) s.vx = f(towards(s.vx, 0, p.iceFriction));
+    if (s.ice && !s.slipping) s.vx = f(towards(s.vx, 0, p.iceFriction));
     return bumped;
   }
 
@@ -311,11 +321,23 @@ public final class Simulation {
     int jumps = s.jumps, falls = s.falls;
     boolean grounded = s.grounded;
     boolean bumped = move();
+    boolean boundary =
+        s.x <= -p.bodyWidth / 2.0 && s.vx < 0 || s.x >= map.width() - p.bodyWidth / 2.0 && s.vx > 0;
+    if (s.slipping && (bumped || boundary || !grounded && s.grounded || s.splat > 0)) {
+      s.slipping = false;
+      if (s.grounded || boundary) s.vx = 0;
+      cancelInput();
+    }
     s.ticks++;
     int intent = (input.right() ? 1 : 0) - (input.left() ? 1 : 0);
     if (!input.jump()) s.jumpConsumed = false;
     s.prevJump = input.jump();
-    if (s.splat > 0) {
+    if (s.slipping) {
+      // Giữ quán tính không ma sát đến khi va tường/biên hoặc rơi và đáp nền mới.
+      s.charge = 0;
+      s.directions.clear();
+      s.jumpConsumed = true;
+    } else if (s.splat > 0) {
       if (!s.ice) s.vx = 0;
       if (s.grounded) s.splat--;
       if (s.splat == 0 && intent == 0 && !input.jump()) s.splat = 1;

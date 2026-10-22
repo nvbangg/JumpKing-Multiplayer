@@ -40,6 +40,28 @@ public class Match {
   @Column(name = "end_reason", length = 32)
   private String endReason;
 
+  @Column(name = "items_enabled", nullable = false)
+  private boolean itemsEnabled;
+
+  @Column(name = "item_cooldown_minutes", columnDefinition = "smallint", nullable = false)
+  private int itemCooldownMinutes = 3;
+
+  public boolean getItemsEnabled() {
+    return itemsEnabled;
+  }
+
+  public void setItemsEnabled(boolean value) {
+    itemsEnabled = value;
+  }
+
+  public int getItemCooldownMinutes() {
+    return itemCooldownMinutes;
+  }
+
+  public void setItemCooldownMinutes(int value) {
+    itemCooldownMinutes = value;
+  }
+
   public Match() {}
 
   public String getId() {

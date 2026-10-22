@@ -1,3 +1,4 @@
+import type { RoomItemSettings } from "../game/items";
 import { required } from "../required";
 import { ApiError, backendOrigin } from "./api";
 import { NETWORK } from "./config";
@@ -19,6 +20,7 @@ const SERVER_TYPES = new Set([
 	"GAME_SNAPSHOT",
 	"COMMUNITY_RUN_STATE",
 	"SPECTATE_STATE",
+	"ITEM_USED",
 	"PLAYER_EFFECTS",
 	"ADVENTURE_EVENTS",
 	"PLAYER_FINISHED",
@@ -32,6 +34,7 @@ const SERVER_TYPES = new Set([
 ]);
 const ROOM_PACKETS = new Set([
 	"SPECTATE_STATE",
+	"ITEM_USED",
 	"ROOM_STATE",
 	"ROOM_LEFT",
 	"GAME_SNAPSHOT",
@@ -98,11 +101,13 @@ export interface RoomState {
 	kind: "ROOM" | "COMMUNITY";
 	state: "WAITING" | "COUNTDOWN" | "PLAYING" | "FINISHED";
 	hostPlayerId: string | null;
-	settings: {
-		mode: string;
-		timeLimitMinutes: number | null;
-		mapLevel?: number;
-	} | null;
+	settings:
+		| (RoomItemSettings & {
+				mode: string;
+				timeLimitMinutes: number | null;
+				mapLevel?: number;
+		  })
+		| null;
 	members: RoomMember[];
 	currentPlay: Record<string, unknown> | null;
 	result: unknown;

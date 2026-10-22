@@ -28,11 +28,11 @@ public class RecordsRepository {
       """
         WITH history AS (
           SELECT id,kind,status,started_at,ended_at,play_ticks,jumps,falls,current_progress,max_progress,finish_ticks,
-            NULL AS mode,NULL AS map_level,NULL AS room_code,NULL AS duration_ticks,NULL AS `rank`,FALSE AS is_winner
+            NULL AS mode,NULL AS map_level,FALSE AS items_enabled,NULL AS item_cooldown_minutes,NULL AS room_code,NULL AS duration_ticks,NULL AS `rank`,FALSE AS is_winner
           FROM play_runs WHERE user_id=:owner AND kind='COMMUNITY' AND status<>'ACTIVE'
           UNION ALL
           SELECT m.id,'ROOM',p.status,m.started_at,m.ended_at,p.play_ticks,p.jumps,p.falls,p.current_progress,p.max_progress,p.finish_ticks,
-            m.mode,m.map_level,m.room_code,m.duration_ticks,p.`rank`,p.is_winner
+            m.mode,m.map_level,m.items_enabled,m.item_cooldown_minutes,m.room_code,m.duration_ticks,p.`rank`,p.is_winner
           FROM play_runs p JOIN matches m ON m.id=p.match_id
           WHERE p.user_id=:owner AND p.kind='ROOM' AND m.ended_at IS NOT NULL
         ) SELECT * FROM history
@@ -206,6 +206,8 @@ public class RecordsRepository {
             ? new Room(
                 text(row, "mode"),
                 integer(row, "map_level"),
+                bool(row, "items_enabled"),
+                integer(row, "item_cooldown_minutes"),
                 text(row, "room_code"),
                 ms(number(row, "duration_ticks")),
                 integer(row, "rank"),

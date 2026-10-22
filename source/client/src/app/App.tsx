@@ -11,6 +11,7 @@ import { roomFinishScreen } from "../features/rooms/ending";
 import { Lobby } from "../features/rooms/Lobby";
 import { PublicRooms } from "../features/rooms/PublicRooms";
 import { Results } from "../features/rooms/Results";
+import { RoomChat } from "../features/rooms/RoomChat";
 import { OptionsButtons } from "../features/settings/OptionsPanel";
 import { readOptions, saveOptions } from "../features/settings/options";
 import { loadManifest } from "../game/content/assets";
@@ -687,7 +688,6 @@ export function App() {
 							selfId={socket.current?.selfId || null}
 							pending={pending}
 							command={command}
-							socket={socket.current}
 						/>
 					)}
 					{screen === "results" && result && (
@@ -728,6 +728,9 @@ export function App() {
 					<StatisticsPanel statistics={home.statistics} />
 				)}
 			</div>
+			{screen === "lobby" && room && socket.current && (
+				<RoomChat socket={socket.current} />
+			)}
 		</main>
 	);
 }

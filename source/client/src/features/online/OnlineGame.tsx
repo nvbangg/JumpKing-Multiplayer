@@ -7,6 +7,7 @@ import { loadManifest } from "../../game/content/assets";
 import { FlightToggle } from "../../game/input/FlightToggle";
 import { InputController } from "../../game/input/InputController";
 import { TouchControls } from "../../game/input/TouchControls";
+import type { RoomItemsView } from "../../game/items";
 import { AdventureEffects } from "../../game/netcode/AdventureEffects";
 import {
 	OnlineRuntime,
@@ -60,6 +61,9 @@ export function OnlineGame({
 		[pending, setPending] = useState(false),
 		[elapsed, setElapsed] = useState(0),
 		[saveStatus, setSaveStatus] = useState("SAVED");
+	const [items, setItems] = useState<RoomItemsView | null>(null);
+	const [itemPending, setItemPending] = useState(false);
+	const placingItem = useRef(false);
 	const [remaining, setRemaining] = useState<number | null>(null);
 	const [players, setPlayers] = useState<PlayerStanding[]>([]);
 	const [watching, setWatching] = useState<SpectatorView | null>(null);
@@ -111,6 +115,35 @@ export function OnlineGame({
 		);
 		return () => clearTimeout(timer);
 	}, [ending]);
+	const useItem = () => {
+		const session = runtime.current,
+			snapshot = session?.latest;
+		if (
+			!session ||
+			!snapshot?.items?.held ||
+			session.menu ||
+			snapshot.spectating ||
+			snapshot.self.paused ||
+			snapshot.self.status !== "ACTIVE" ||
+			endingActive.current ||
+			placingItem.current ||
+			!socket.playContext ||
+			chat.open
+		)
+			return;
+		placingItem.current = true;
+		setItemPending(true);
+		setError("");
+		void socket
+			.command("USE_ITEM", socket.playContext)
+			.catch((cause) =>
+				setError(cause instanceof Error ? cause.message : "Could not use item"),
+			)
+			.finally(() => {
+				placingItem.current = false;
+				setItemPending(false);
+			});
+	};
 	const latestRoom = useRef(room);
 	latestRoom.current = room;
 	const removedNotice =
@@ -301,6 +334,7 @@ export function OnlineGame({
 				() => controls.read(),
 				(state, snapshot) => {
 					setElapsed(snapshot.elapsedTimeMs);
+					setItems(snapshot.items ?? null);
 					setRemaining(snapshot.remainingTimeMs);
 					setFlying(state.freeFlight);
 					setPlayers(snapshot.players || []);
@@ -592,6 +626,42 @@ export function OnlineGame({
 					</span>
 				</div>
 			)}
+			{ready &&
+				!ending &&
+				!menu &&
+				!chat.open &&
+				!watching &&
+				room.kind === "ROOM" &&
+				room.settings?.itemsEnabled && (
+					<button
+						className="item-control"
+						type="button"
+						aria-label="Use item"
+						aria-pressed={items?.bananaArmed ?? false}
+						title={
+							items?.held === "BANANA"
+								? "Click to prepare a banana, then jump; click again to cancel"
+								: "Throw at the highest other player"
+						}
+						disabled={
+							!items?.held ||
+							itemPending ||
+							disconnected ||
+							room.state !== "PLAYING" ||
+							flying
+						}
+						onPointerDown={(event) => event.preventDefault()}
+						onClick={useItem}
+					>
+						{items?.held === "BANANA"
+							? items.bananaArmed
+								? "Banana · Jump to drop"
+								: "Banana · Prepare"
+							: items?.held === "ROCK"
+								? "Rock · Throw"
+								: `Item ${duration(Math.ceil((items?.cooldownMs ?? 0) / 1000) * 1000)}`}
+					</button>
+				)}
 			{ready && !ending && !menu && !chat.open && !watching && (
 				<TouchControls input={input} flying={flying} />
 			)}

@@ -2,6 +2,7 @@ import type { RenderPose } from "./types";
 
 export function playerFrame(state: RenderPose): string {
 	if (state.splat > 0) return "splat";
+	if (state.slipping) return "bounce";
 	if (state.charge > 0) return "charge";
 	if (!state.grounded)
 		return state.knocked ? "bounce" : state.vy > 0 ? "fall" : "up";

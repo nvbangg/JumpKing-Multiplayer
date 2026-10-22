@@ -37,6 +37,7 @@ final class RoomMatch {
 
   final String id = UUID.randomUUID().toString(), roomId;
   final RoomSettings settings;
+  final RoomItems items;
   final LinkedHashMap<String, Player> players = new LinkedHashMap<>();
   final int tickRate;
   final long limitTicks;
@@ -64,6 +65,9 @@ final class RoomMatch {
     var map = shared.roomMap(settings.mapLevel());
     var physics = shared.tuning();
     tickRate = physics.tickRate;
+    items =
+        new RoomItems(
+            physics, shared.rules().path("items"), java.util.random.RandomGenerator.getDefault());
     limitTicks =
         settings.mode().equals("TIME_LIMIT") ? settings.timeLimitMinutes() * 60L * tickRate : 0;
     JsonNode adventure = shared.adventure();
@@ -83,17 +87,23 @@ final class RoomMatch {
   void start(Instant now) {
     if (startedAt != null) throw new IllegalStateException("Match has already started");
     startedAt = millis(now);
+    if (settings.itemsEnabled()) items.start(players.keySet());
   }
 
   List<Events> tick(long now, Instant instant) {
     if (startedAt == null || endedAt != null) return List.of();
     ticks++;
+    if (settings.itemsEnabled()) items.advance(ticks);
     var events = new ArrayList<Events>();
     for (var player : players.values()) {
       if (!player.status.equals("ACTIVE")) continue;
       var input = player.input.poll(now);
       if (input.cancel()) player.game.physics().cancelInput();
+      if (settings.itemsEnabled()) items.hit(player.game.physics(), ticks);
       var effect = player.game.tick(input.input(), settings.mode().equals("HARDCORE"));
+      if (settings.itemsEnabled() && effect.movement().contains("JUMP"))
+        items.takeoff(
+            player.spec.playerId, player.game.physics(), ticks, settings.itemCooldownMinutes());
       events.add(new Events(player, effect));
       double progress = player.game.physics().progress();
       var state = player.game.physics().snapshot();
@@ -121,6 +131,16 @@ final class RoomMatch {
     return events;
   }
 
+  void useItem(String id, Set<String> connected) {
+    var targets = new LinkedHashMap<String, Simulation>();
+    players.forEach(
+        (key, player) -> {
+          if (connected.contains(key) && player.status.equals("ACTIVE"))
+            targets.put(key, player.game.physics());
+        });
+    items.use(id, players.get(id).game.physics(), targets, ticks, settings.itemCooldownMinutes());
+  }
+
   void abandon(String id, Instant now) {
     var player = players.get(id);
     if (player == null || !player.status.equals("ACTIVE")) return;
@@ -133,6 +153,7 @@ final class RoomMatch {
   void finish(String reason, Instant now) {
     if (startedAt == null || endedAt != null) return;
     this.reason = reason;
+    items.clear();
     endedAt = millis(now);
     for (var player : players.values()) {
       player.input.clear();
@@ -188,6 +209,8 @@ final class RoomMatch {
         settings.mode(),
         settings.timeLimitMinutes(),
         settings.mapLevel(),
+        settings.itemsEnabled(),
+        settings.itemCooldownMinutes(),
         revision,
         startedAt,
         endedAt,

@@ -36,6 +36,7 @@ export interface PlayerState {
 	jumpConsumed: boolean;
 	directions: number[];
 	splat: number;
+	slipping?: boolean;
 	knocked: boolean;
 	ice: boolean;
 	snow: boolean;

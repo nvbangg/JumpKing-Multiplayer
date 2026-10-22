@@ -1,3 +1,4 @@
+import type { RoomItemsView } from "../items";
 import type { AdventureState } from "../simulation/Adventure";
 import type { FinishPlatform } from "../simulation/finishPlatform";
 import type { WorldState } from "../simulation/GameSimulation";
@@ -13,6 +14,7 @@ export type RenderPose = Pick<
 	| "charge"
 	| "direction"
 	| "splat"
+	| "slipping"
 	| "knocked"
 	| "ice"
 	| "snow"
@@ -44,6 +46,7 @@ export interface WorldFrame {
 	self: RenderPlayer;
 	peers: RenderPlayer[];
 	world?: WorldState;
+	items?: RoomItemsView;
 	ending?: EndingSignal;
 }
 export interface GameRuntime {

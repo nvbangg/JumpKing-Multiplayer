@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import rules from "../../../../common/rules.json";
 import { required } from "../../required";
 import {
 	type AssetManifest,
@@ -48,6 +49,7 @@ export class TowerScene extends Phaser.Scene {
 	private weatherWind = 0;
 	private screen = -1;
 	private ready = false;
+	private itemGraphics?: Phaser.GameObjects.Graphics;
 	private loadFailed = false;
 	private adventureVisuals?: AdventureVisuals;
 	private conversations?: ConversationVisuals;
@@ -89,6 +91,7 @@ export class TowerScene extends Phaser.Scene {
 					);
 			});
 		}
+		this.itemGraphics = this.add.graphics().setDepth(10);
 		this.adventureVisuals = new AdventureVisuals(this, this.manifest);
 		this.conversations = new ConversationVisuals(this, this.manifest);
 		this.ready = true;
@@ -219,6 +222,33 @@ export class TowerScene extends Phaser.Scene {
 	private render(frame: WorldFrame): void {
 		if (frame.self.state.screen !== this.screen)
 			this.drawScreen(frame.self.state.screen);
+		this.itemGraphics?.clear();
+		for (const b of frame.items?.bananas ?? []) {
+			const x = Math.round(b.x),
+				y = Math.round(b.y);
+			// Hình nhỏ, màu dịu; dùng world coordinates và không tải thêm asset ngoài.
+			this.itemGraphics?.fillStyle(0xb9a34d, 0.85).fillPoints(
+				[
+					{ x: x - 6, y: y - 1 },
+					{ x: x - 2, y: y - 3 },
+					{ x, y: y - 6 },
+					{ x: x + 2, y: y - 3 },
+					{ x: x + 6, y: y - 1 },
+					{ x: x + 1, y: y - 1 },
+					{ x, y: y - 3 },
+					{ x: x - 1, y: y - 1 },
+				],
+				true,
+			);
+		}
+		for (const r of frame.items?.rocks ?? []) {
+			const age = frame.self.state.ticks - r.tick;
+			if (age < 0 || age >= rules.items.rockEffectTicks) continue;
+			const offset = 24 * (1 - age / rules.items.rockEffectTicks);
+			this.itemGraphics
+				?.fillStyle(0xb4b4ae, 0.9)
+				.fillCircle(r.x - r.direction * offset, r.y, 3);
+		}
 		const present = new Set([
 			frame.self.id,
 			...frame.peers.map((peer) => peer.id),

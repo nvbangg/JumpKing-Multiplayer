@@ -62,7 +62,9 @@ export class Simulation {
 	}
 
 	snapshot(): PlayerState {
-		return { ...this.state, directions: [...this.state.directions] };
+		const result = { ...this.state, directions: [...this.state.directions] };
+		if (!result.slipping) delete result.slipping;
+		return result;
 	}
 
 	restore(state: PlayerState): void {
@@ -112,6 +114,7 @@ export class Simulation {
 			state.screen >= this.map.screens.length ||
 			state.charge > P.chargeTicks ||
 			state.splat > P.splatTicks ||
+			(state.slipping !== undefined && typeof state.slipping !== "boolean") ||
 			state.x < -P.bodyWidth / 2 ||
 			state.x > this.map.width - P.bodyWidth / 2 ||
 			state.y < -this.map.screenHeight * this.map.screens.length ||
@@ -149,6 +152,7 @@ export class Simulation {
 		s.grounded = false;
 		s.phasingFall = !enabled && this.contact().solid;
 		s.splat = 0;
+		delete s.slipping;
 		s.knocked = false;
 		s.ice = false;
 		s.snow = false;
@@ -259,7 +263,7 @@ export class Simulation {
 		let info = this.contact();
 		if (!required(this.map.screens[s.screen]).wind) s.wind = false;
 		else if (s.grounded) s.wind = true;
-		if (s.wind && !s.snow) {
+		if (s.wind && !s.snow && !s.slipping) {
 			const phase = (s.ticks / P.tickRate) * P.windFrequency;
 			s.vx = f(
 				s.vx +
@@ -343,7 +347,7 @@ export class Simulation {
 			}
 		}
 		s.vy = Math.min(f(s.vy + P.gravity), P.maxFall);
-		if (s.ice) s.vx = f(towards(s.vx, 0, P.iceFriction));
+		if (s.ice && !s.slipping) s.vx = f(towards(s.vx, 0, P.iceFriction));
 		return bumped;
 	}
 
@@ -379,11 +383,26 @@ export class Simulation {
 			falls = s.falls,
 			grounded = s.grounded;
 		const bumped = this.move();
+		const boundary =
+			(s.x <= -P.bodyWidth / 2 && s.vx < 0) ||
+			(s.x >= this.map.width - P.bodyWidth / 2 && s.vx > 0);
+		if (
+			s.slipping &&
+			(bumped || boundary || (!grounded && s.grounded) || s.splat > 0)
+		) {
+			delete s.slipping;
+			if (s.grounded || boundary) s.vx = 0;
+			this.cancelInput();
+		}
 		s.ticks++;
 		const intent = Number(input.right) - Number(input.left);
 		if (!input.jump) s.jumpConsumed = false;
 		s.prevJump = input.jump;
-		if (s.splat > 0) {
+		if (s.slipping) {
+			s.charge = 0;
+			s.directions = [];
+			s.jumpConsumed = true;
+		} else if (s.splat > 0) {
 			if (!s.ice) s.vx = 0;
 			if (s.grounded) s.splat--;
 			if (s.splat === 0 && !intent && !input.jump) s.splat = 1;

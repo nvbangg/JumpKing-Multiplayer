@@ -41,6 +41,8 @@ export interface HistoryItem {
 	room: null | {
 		mode: string;
 		mapLevel: number;
+		itemsEnabled: boolean;
+		itemCooldownMinutes: number;
 		roomCode: string;
 		durationMs: number;
 		rank: number;

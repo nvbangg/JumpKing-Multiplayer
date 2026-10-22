@@ -52,6 +52,73 @@ class RoomMatchTest {
   }
 
   @Test
+  void preparedBananaDropsOnlyOnJumpInEveryMode() {
+    for (var mode : List.of("RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK")) {
+      var match = match(new RoomSettings(mode, mode.equals("TIME_LIMIT") ? 5 : null, 10, true, 3));
+      var now = Instant.parse("2026-01-01T00:00:00Z");
+      match.start(now);
+      for (int i = 0; i < 30; i++) match.tick(1, now);
+      var first = match.players.get("first");
+      match.items.slots.get("first").held = RoomItems.Kind.BANANA;
+      match.useItem("first", java.util.Set.of("first", "second"));
+      assertThat(match.items.view("first", match.ticks, 0, 360).bananas()).isEmpty();
+      first.input.offer(
+          new GameEnvelope(
+              "PLAYER_INPUT",
+              null,
+              json.valueToTree(
+                  java.util.Map.of(
+                      "playId",
+                      match.id,
+                      "generation",
+                      1,
+                      "seq",
+                      1,
+                      "left",
+                      false,
+                      "right",
+                      false,
+                      "jump",
+                      true))),
+          1,
+          false);
+      for (int i = 0; i < 10; i++) match.tick(1, now);
+      first.input.offer(
+          new GameEnvelope(
+              "PLAYER_INPUT",
+              null,
+              json.valueToTree(
+                  java.util.Map.of(
+                      "playId",
+                      match.id,
+                      "generation",
+                      1,
+                      "seq",
+                      2,
+                      "left",
+                      false,
+                      "right",
+                      false,
+                      "jump",
+                      false))),
+          1,
+          false);
+      match.tick(1, now);
+      assertThat(first.game.physics().snapshot().jumps).isEqualTo(1);
+      assertThat(match.items.view("first", match.ticks, 0, 360).bananas()).hasSize(1);
+      assertThat(match.items.view("first", match.ticks, 0, 360).held()).isNull();
+      match.tick(1, now);
+      assertThat(first.game.physics().snapshot().slipping).isFalse();
+      assertThat(match.players.get("second").game.physics().snapshot().slipping).isTrue();
+      assertThat(match.players.get("second").game.physics().snapshot().falls).isZero();
+      first.game.physics().respawn();
+      assertThat(match.items.view("first", match.ticks, 0, 360).cooldownMs()).isGreaterThan(0);
+      match.finish("HOST_ENDED", now);
+      assertThat(match.items.view("first", match.ticks, 0, 360).bananas()).isEmpty();
+    }
+  }
+
+  @Test
   void eachWinnerKeepsTheirOwnRavenEndingAndANewMatchResetsProgress() throws Exception {
     var match = match();
     var now = Instant.parse("2026-01-01T00:00:00Z");
@@ -184,7 +251,7 @@ class RoomMatchTest {
 
   @Test
   void hardcoreSplatRespawnsCurrentProgressWithoutResettingPeakOrCounters() {
-    var match = match(new RoomSettings("HARDCORE", null, RoomSettings.FULL_MAP_LEVEL));
+    var match = match(new RoomSettings("HARDCORE", null, RoomSettings.FULL_MAP_LEVEL, false, 3));
     var start = Instant.parse("2026-01-01T00:00:00Z");
     var player = match.players.get("first");
     match.start(start);
@@ -208,7 +275,7 @@ class RoomMatchTest {
   void everyLengthFinalizesOnItsOwnLandingAndOnlyFullMapOffersAnEnding() throws Exception {
     for (var goal : shared.roomMaps()) {
       var point = landing(goal.level());
-      var match = match(new RoomSettings("RACE", null, goal.level()));
+      var match = match(new RoomSettings("RACE", null, goal.level(), false, 3));
       var now = Instant.parse("2026-01-01T00:00:00Z");
       match.start(now);
       for (var player : match.players.values()) player.game.physics().restore(point);

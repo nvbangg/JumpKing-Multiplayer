@@ -56,7 +56,7 @@ game-config trả tuning/rules từ shared; appearances=[{colorSlot,color}] ánh
 
 RunSummary={id,status,currentProgress,maxProgress,elapsedTimeMs,peakReachedTimeMs,finishTimeMs}; LeaderboardEntry thêm {rank,username}.
 
-History summary={id,kind,startedAt,endedAt,status,playTimeMs,jumps,falls,currentProgress,maxProgress,finishTimeMs,room}; room=null cho Community, Room có {mode,mapLevel,roomCode,durationMs,rank,isWinner}. Detail Room thêm {timeLimitMinutes,endReason,participants}; detail Community dùng summary. Participant={runId,nickname,status,rank,isWinner,currentProgress,maxProgress,finishTimeMs,playTimeMs,jumps,falls}. Ownership và thứ tự theo [data](data.md#history-và-leaderboard).
+History summary={id,kind,startedAt,endedAt,status,playTimeMs,jumps,falls,currentProgress,maxProgress,finishTimeMs,room}; room=null cho Community, Room có {mode,mapLevel,itemsEnabled,itemCooldownMinutes,roomCode,durationMs,rank,isWinner}. Detail Room thêm {timeLimitMinutes,endReason,participants}; detail Community dùng summary. Participant={runId,nickname,status,rank,isWinner,currentProgress,maxProgress,finishTimeMs,playTimeMs,jumps,falls}. Ownership và thứ tự theo [data](data.md#history-và-leaderboard).
 
 Statistics={totalPlayTimeMs,totalJumps,totalFalls,finishes,matchesPlayed,wins,bestFinishTimeMs}; matchesPlayed/wins chỉ đếm Room, bestFinishTimeMs=null nếu chưa Finish. Không nhận bộ lọc kind/mode.
 
@@ -103,10 +103,11 @@ Giới hạn mặc định tập trung tại cấu hình network của backend, 
 | JOIN_ROOM | {roomId} → vào đúng Room theo ID |
 | LEAVE_ROOM | {} → Community flush checkpoint; Room Leave/DNF |
 | GET_ROOM_STATE | {} → state hiện hành hoặc null khi đã rời |
-| UPDATE_ROOM_SETTINGS | {mode,timeLimitMinutes,mapLevel,visibility?}; Host/WAITING; có thể chỉ đổi visibility hoặc mapLevel |
+| UPDATE_ROOM_SETTINGS | Patch {mode?,timeLimitMinutes?,mapLevel?,visibility?,itemsEnabled?,itemCooldownMinutes?}; Host/WAITING; cặp mode/timeLimitMinutes phải hợp lệ theo gameplay |
 | GAME_READY | {playId,generation}; tự động khi renderer tải xong, chỉ roster COUNTDOWN; server bắt đầu countdown 3 giây khi tất cả sẵn sàng |
 | START_GAME / END_MATCH | {}; quyền, roster và lifecycle theo gameplay; kiểm tra khi xử lý command |
 | PLAY_AGAIN | {matchId}; mỗi thành viên xác nhận sau match vừa kết thúc, kể cả khi phòng đã về WAITING |
+| USE_ITEM | {playId,generation} → ITEM_USED {roomId,playId}; server quyết định loại/vị trí/mục tiêu, không nhận tọa độ hoặc target từ client |
 | SET_SPECTATE | {playerId:string hoặc null}; xem người cùng phòng hoặc hủy xem; server kiểm tra membership/trạng thái, không nhận vị trí hoặc screen từ client |
 | SET_COMMUNITY_PAUSED | {paused:boolean}; Pause/Resume cá nhân, server xác nhận theo gameplay |
 | CHAT_SEND | {text}; render plain text, lọc control characters |
@@ -178,3 +179,9 @@ Account/profile có `crownUnlocked`; public render state chỉ mang trạng thá
 Spectating=null hoặc {player,playId,elapsedTimeMs,paused,adventure,world}; player là public render state như peers, playId là lượt của mục tiêu. Self/playId/generation/ACK ở gốc snapshot luôn thuộc người nhận, không đổi thành của mục tiêu. Dữ liệu spectating chỉ dành cho renderer, không restore vào prediction hoặc checkpoint. Khi đổi mục tiêu xóa bộ đệm nội suy; không gửi lại animation/âm thanh từ snapshot. Effects/cues theo người và screen đang xem, không phát ending của mục tiêu.
 
 SET_SPECTATE chỉ tồn tại trong RAM của membership; hủy khi reconnect, mục tiêu mất kết nối/rời/kết thúc hoặc Room không còn PLAYING. Target không hợp lệ trả INVALID_SPECTATE_TARGET. Khi xem, input không điều khiển nhân vật; Room vẫn chạy physics và clock, Community dùng Pause hiện có. Không thay đổi quyền owner, kết quả, save hoặc luật xếp hạng.
+
+## Items Room
+
+Settings có `itemsEnabled` boolean mặc định false, `itemCooldownMinutes` số nguyên 1–15 mặc định 3. Luật dùng/cấp/trúng theo [gameplay](gameplay.md#items-trong-room). USE_ITEM dùng requestId/dedup hiện có; sai context STALE_PLAY, item tắt hoặc trạng thái không cho dùng ITEM_UNAVAILABLE, chưa hồi ITEM_COOLDOWN, Banana chưa đứng nền INVALID_ITEM_POSITION, Rock không có mục tiêu NO_ITEM_TARGET. Lỗi không tiêu thụ vật phẩm. Chỉ thành viên PLAYING/ACTIVE, không spectating, được dùng.
+
+GAME_SNAPSHOT của Room bật Items có `items={held:BANANA|ROCK|null,bananaArmed:boolean,cooldownMs,bananas:[{id,x,y,armedAtTick}],rocks:[{id,x,y,direction,tick}]}`. Held/hồi chiêu chỉ của người nhận; bẫy/cue đá chỉ screen đang xem và liền kề. Tọa độ world: Banana là tâm chân, Rock là tâm mục tiêu lúc trúng. Rocks là cue ngắn, không quyết định hit. `physics.slipping` chỉ gửi khi true trong self/peers; client replay trạng thái này để reconciliation đúng. Community không có items. Reconnect trả item state hiện tại, không random lại.

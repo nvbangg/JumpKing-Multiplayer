@@ -21,6 +21,8 @@ public final class RecordsDto {
   public record Room(
       String mode,
       int mapLevel,
+      boolean itemsEnabled,
+      int itemCooldownMinutes,
       String roomCode,
       long durationMs,
       Integer rank,

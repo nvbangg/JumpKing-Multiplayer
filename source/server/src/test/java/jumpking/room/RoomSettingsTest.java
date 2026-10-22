@@ -8,15 +8,47 @@ import org.junit.jupiter.api.Test;
 
 class RoomSettingsTest {
   @Test
+  void itemSettingsUseThreeMinutesAndRejectCoercion() throws Exception {
+    var json = new ObjectMapper();
+    var rules = new SharedData(json).rules();
+    assertThat(RoomSettings.defaults().itemsEnabled()).isFalse();
+    assertThat(RoomSettings.defaults().itemCooldownMinutes()).isEqualTo(3);
+    for (int minutes : java.util.List.of(1, 3, 15)) {
+      var input =
+          json.createObjectNode()
+              .put("mode", "RACE")
+              .putNull("timeLimitMinutes")
+              .put("itemsEnabled", true)
+              .put("itemCooldownMinutes", minutes);
+      var settings = RoomSettings.parse(input, rules);
+      assertThat(settings.itemsEnabled()).isTrue();
+      assertThat(settings.itemCooldownMinutes()).isEqualTo(minutes);
+    }
+    for (String invalid :
+        java.util.List.of("0", "16", "1.5", "null", "true", "\"3\"", "4294967297")) {
+      var input = json.createObjectNode().put("mode", "RACE").putNull("timeLimitMinutes");
+      input.set("itemCooldownMinutes", json.readTree(invalid));
+      assertThatThrownBy(() -> RoomSettings.parse(input, rules))
+          .isInstanceOf(jumpking.exception.ApiException.class);
+    }
+    for (String invalid : java.util.List.of("0", "null", "\"true\"")) {
+      var input = json.createObjectNode().put("mode", "RACE").putNull("timeLimitMinutes");
+      input.set("itemsEnabled", json.readTree(invalid));
+      assertThatThrownBy(() -> RoomSettings.parse(input, rules))
+          .isInstanceOf(jumpking.exception.ApiException.class);
+    }
+  }
+
+  @Test
   void validatesTheFourModesAndWholeMinuteBoundsWithoutCoercion() throws Exception {
     var json = new ObjectMapper();
     var rules = new SharedData(json).rules();
-    assertThat(RoomSettings.defaults()).isEqualTo(new RoomSettings("RACE", null, 10));
+    assertThat(RoomSettings.defaults()).isEqualTo(new RoomSettings("RACE", null, 10, false, 3));
     for (String mode : java.util.List.of("RACE", "HARDCORE", "NO_WALK"))
       assertThat(
               RoomSettings.parse(
                   json.readTree("{\"mode\":\"" + mode + "\",\"timeLimitMinutes\":null}"), rules))
-          .isEqualTo(new RoomSettings(mode, null, 10));
+          .isEqualTo(new RoomSettings(mode, null, 10, false, 3));
     for (int minutes : java.util.List.of(1, 30))
       assertThat(
               RoomSettings.parse(

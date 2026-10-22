@@ -1,0 +1,24 @@
+export interface RoomItemSettings {
+	itemsEnabled: boolean;
+	itemCooldownMinutes: number;
+}
+export interface BananaTrap {
+	id: number;
+	x: number;
+	y: number;
+	armedAtTick: number;
+}
+export interface RockEffect {
+	id: number;
+	x: number;
+	y: number;
+	direction: number;
+	tick: number;
+}
+export interface RoomItemsView {
+	held: "BANANA" | "ROCK" | null;
+	bananaArmed: boolean;
+	cooldownMs: number;
+	bananas: BananaTrap[];
+	rocks: RockEffect[];
+}

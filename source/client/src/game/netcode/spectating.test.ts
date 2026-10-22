@@ -11,7 +11,12 @@ const room: RoomState = {
 	kind: "ROOM",
 	state: "PLAYING",
 	hostPlayerId: "self",
-	settings: { mode: "RACE", timeLimitMinutes: null },
+	settings: {
+		mode: "RACE",
+		timeLimitMinutes: null,
+		itemsEnabled: false,
+		itemCooldownMinutes: 3,
+	},
 	members: [],
 	currentPlay: null,
 	result: null,

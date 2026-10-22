@@ -124,7 +124,7 @@ class RoomRestartIT {
           .getBean(jumpking.service.RoomRuns.class)
           .save(
               new jumpking.service.RoomRuns.Write(
-                  match, "ABCDEF", "RACE", null, 1, 1, started, null, 120, null, runs));
+                  match, "ABCDEF", "RACE", null, 1, false, 3, 1, started, null, 120, null, runs));
     }
     assertThat(
             jdbc.queryForObject("SELECT end_reason FROM matches WHERE id=?", String.class, match))

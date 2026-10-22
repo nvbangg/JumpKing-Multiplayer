@@ -39,7 +39,8 @@ public class RaceRoom implements GameCommandHandler, AutoCloseable {
           "PLAY_AGAIN",
           "PLAYER_INPUT",
           "CANCEL_INPUT",
-          "SET_SPECTATE");
+          "SET_SPECTATE",
+          "USE_ITEM");
   private final RoomDirectory directory;
   private final Memberships memberships;
   private final GameWorkers workers;
@@ -227,11 +228,22 @@ public class RaceRoom implements GameCommandHandler, AutoCloseable {
                             409, "CONFLICT", "Settings can only change in the Lobby");
                       GameEnvelope.fields(
                           command.payload(),
-                          Set.of("mode", "timeLimitMinutes", "mapLevel", "visibility"));
+                          Set.of(
+                              "mode",
+                              "timeLimitMinutes",
+                              "mapLevel",
+                              "visibility",
+                              "itemsEnabled",
+                              "itemCooldownMinutes"));
                       if (command.payload().isEmpty()) throw GameEnvelope.invalid();
                       var settingsInput = ((ObjectNode) command.payload()).deepCopy();
                       settingsInput.remove("visibility");
                       if (!settingsInput.isEmpty()) {
+                        if (!settingsInput.has("itemsEnabled"))
+                          settingsInput.put("itemsEnabled", room.settings.itemsEnabled());
+                        if (!settingsInput.has("itemCooldownMinutes"))
+                          settingsInput.put(
+                              "itemCooldownMinutes", room.settings.itemCooldownMinutes());
                         if (!settingsInput.has("mapLevel"))
                           settingsInput.put("mapLevel", room.settings.mapLevel());
                         if (!settingsInput.has("mode") && !settingsInput.has("timeLimitMinutes")) {
@@ -336,6 +348,30 @@ public class RaceRoom implements GameCommandHandler, AutoCloseable {
                           command,
                           "SPECTATE_STATE",
                           json.createObjectNode().put("roomId", room.id).put("playerId", targetId));
+                      snapshots(room);
+                    }
+                    case "USE_ITEM" -> {
+                      GameEnvelope.fields(command.payload(), Set.of("playId", "generation"));
+                      if (room.match == null
+                          || !room.match.id.equals(GameEnvelope.text(command.payload(), "playId"))
+                          || player.generation
+                              != GameEnvelope.integer(command.payload(), "generation"))
+                        throw new ApiException(409, "STALE_PLAY", "Item belongs to an old match");
+                      var racer = room.match.players.get(player.id);
+                      if (!room.state.equals("PLAYING")
+                          || racer == null
+                          || !racer.status.equals("ACTIVE")
+                          || player.watching != null
+                          || !room.match.settings.itemsEnabled())
+                        throw new ApiException(409, "ITEM_UNAVAILABLE", "Items are unavailable");
+                      var connected =
+                          room.players.values().stream()
+                              .filter(m -> m.connection != null && m.connection.open())
+                              .map(m -> m.id)
+                              .collect(java.util.stream.Collectors.toSet());
+                      room.match.useItem(player.id, connected);
+                      connection.reply(
+                          command, "ITEM_USED", Map.of("roomId", room.id, "playId", room.match.id));
                       snapshots(room);
                     }
                     case "PLAYER_INPUT", "CANCEL_INPUT" -> {
@@ -930,6 +966,7 @@ public class RaceRoom implements GameCommandHandler, AutoCloseable {
               "charge",
               "direction",
               "splat",
+              "slipping",
               "knocked",
               "ice",
               "snow",
@@ -992,6 +1029,12 @@ public class RaceRoom implements GameCommandHandler, AutoCloseable {
                 && Math.abs(view.path("state").path("screen").asInt() - screen) <= 1)
               peers.add(view);
           });
+      if (match.settings.itemsEnabled())
+        snapshot.set(
+            "items",
+            json.valueToTree(
+                match.items.view(
+                    member.id, match.ticks, screen, shared.geometry().screenHeight())));
       member.connection.snapshot(snapshot);
     }
   }
