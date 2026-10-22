@@ -78,7 +78,7 @@ Luật và giới hạn lấy từ [gameplay](gameplay.md), [protocol](protocol.
 | Persistence | Revision/transaction/retry/finalize không ghi trùng hoặc ghi đè state mới; lỗi MySQL không chặn tick hoặc báo Saved giả |
 | Bảo mật | Session/CSRF/Origin/ownership/validation/quota chặn request sai; logout/đổi mật khẩu thu hồi phiên; restart không gia hạn hạn dùng |
 | Dữ liệu hiển thị | Stats/History/leaderboard lấy đúng dữ liệu đã commit, owner và xếp hạng; phản hồi cũ không khôi phục trạng thái đã rời |
-| Browser và triển khai | Keyboard/touch/focus, chat và hiển thị dễ dùng; cấu hình mẫu chạy được; nghiệm thu JAR, HTTPS/WSS, cookies và restart |
+| Browser và triển khai | Keyboard/touch/focus, chat và hiển thị dễ dùng; lỗi tải tài nguyên có Reload thủ công; cấu hình mẫu chạy được; nghiệm thu JAR, HTTPS/WSS, cookies và restart |
 
 Dùng hai browser profiles hoặc normal/incognito để kiểm tra các phiên độc lập. Mobile giả lập không thay điện thoại thật; loopback không chứng minh chất lượng Internet. Không dùng mock hoặc Fly thay kiểm thử gameplay/kết nối cần nghiệm thu.
 

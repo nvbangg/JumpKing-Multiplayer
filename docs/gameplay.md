@@ -1,12 +1,12 @@
 # Luật chơi và hành vi chức năng
 
-Tái hiện trải nghiệm Main Babe của Jump King gốc, bổ sung Community Tower và Room nhiều người chơi. [Kiểm thử](testing.md#tiêu-chí-nghiệm-thu) xác nhận physics và tuyến chơi; không mở rộng campaign khác.
+Tái hiện trải nghiệm Main Babe của Jump King gốc, bổ sung Community và Room nhiều người chơi. [Kiểm thử](testing.md#tiêu-chí-nghiệm-thu) xác nhận physics và tuyến chơi; không mở rộng campaign khác.
 
 ## Kiểu chơi
 
 | Kiểu | Tham gia | Tiến độ và thành tích |
 | --- | --- | --- |
-| Community Tower | Account; New Game hoặc Continue; tự xếp sảnh | Checkpoint cá nhân và leaderboard |
+| Community | Account; New Game hoặc Continue; tự xếp sảnh | Checkpoint cá nhân và leaderboard |
 | Room | Account; tạo Public/Private, Join Public hoặc bằng ID; Host Start | Cùng xuất phát, Results và History; không checkpoint dài hạn hoặc leaderboard |
 
 Tối đa 10 người/sảnh, kể cả slot reconnect. Mỗi Account chỉ có một membership online; username là tên nhân vật. Join by ID chỉ dành cho Room. Người chơi không va chạm nhau; Items chỉ có trong Room khi Host bật.
@@ -33,7 +33,7 @@ Main Babe có 43 screens (0–42), mỗi screen 480×360 px. Camera chuyển ngu
 
 Một geometry dùng cho mọi kiểu chơi. `source/common/room-maps.json` quy định 10 độ dài Room cộng dồn từ spawn: map 1–9 kết thúc khi đáp đúng nền trong vùng Finish; đáp nền khác cao hơn hoặc bay qua không tính. Map 10 và Community dùng đích full. Cờ FINISH chỉ dẫn vị trí, không thay collision. Geometry, spawn, camera và điều kiện Finish được kiểm chứng bằng fixtures.
 
-## Community Tower
+## Community
 
 - Tự chọn sảnh còn chỗ, ưu tiên sảnh đông hơn; hết chỗ tạo sảnh mới. Save thuộc Account/lượt, không thuộc sảnh.
 - Continue khôi phục đúng lượt ACTIVE; save đã đổi thì báo conflict, không tự tạo lượt mới. New Game phải xác nhận thay lượt đang dở, giữ lịch sử/thành tích cũ. Save & Exit rồi Continue có thể vào sảnh khác.

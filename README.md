@@ -4,7 +4,7 @@ Game nhiều người chơi trên trình duyệt, tái hiện gameplay Jump King
 
 | Kiểu chơi | Phạm vi |
 | --- | --- |
-| Community Tower | Tự ghép sảnh, lưu tiến độ theo Account, Continue và leaderboard |
+| Community | Tự ghép sảnh, lưu tiến độ theo Account, Continue và leaderboard |
 | Room | Public/Private, Join Public hoặc ID; Race, Hardcore, Time Limit, No Walk; chọn độ dài map 1–10 |
 
 Cả hai yêu cầu đăng nhập. Username chưa có được tạo khi Sign In; có đổi mật khẩu bằng mật khẩu hiện tại. Luật đầy đủ tại [gameplay](docs/gameplay.md).
