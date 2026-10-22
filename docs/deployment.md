@@ -1,183 +1,87 @@
-# deployment.md
+# Cấu hình và triển khai
 
-## Runtime và workflow
+Phương án chính là một JAR chứa frontend/backend và MySQL nội bộ trên VPS. Cài mới, cấu hình local và chạy hai terminal theo [README](../README.md#cài-đặt-local).
 
-JDK 25, Node.js 24, MySQL Server 8.4; build dùng Maven Wrapper/npm lockfile. Workbench quản trị MySQL; Docker phục vụ [integration tests](testing.md).
+## Môi trường
 
-Community và Room đều cần frontend, backend và MySQL.
-
-| Thành phần | Development | Local/LAN/ZeroTier |
-| --- | --- | --- |
-| Frontend | Vite 127.0.0.1:5173 | Static files phục vụ từ backend:8080 |
-| Backend | 127.0.0.1:8080; Vite proxy /api và /ws | Bind IP host hoặc 0.0.0.0 |
-| MySQL | 127.0.0.1:3306 | Chỉ backend truy cập |
+- Build/development: JDK 25, Node.js 24, npm và Maven Wrapper.
+- Chạy JAR: Java 25 và MySQL 8.4; VPS không cần Node.js/Maven.
+- Local mặc định: Vite `5173`, backend `8080`, MySQL `3306` trên loopback. Đổi địa chỉ bằng cấu hình, không sửa code.
 
 ## Cấu hình
 
-| File mẫu trong Git | File riêng được ignore |
+| Mẫu trong Git | File riêng cần tạo |
 | --- | --- |
 | source/server/config/application-local.properties.example | source/server/config/application-local.properties |
 | source/server/config/application-prod.properties.example | source/server/config/application-prod.properties |
-| source/client/.env.example | source/client/.env.local |
+| source/client/.env.example | source/client/.env.local, chỉ cần khi đổi mặc định |
 
-Chạy backend từ `source/server/`; profile local/prod đọc file tương ứng trong `config/`. Spring không tự nạp `.env`; backend dùng properties hoặc process ENV. Ví dụ local:
+Backend nạp `config/application-<profile>.properties` theo working directory. Chạy từ `source/server/` với profile `local` hoặc `prod`; nơi khác dùng `--spring.config.additional-location=file:<thư-mục>/`. Spring không tự đọc `.env`.
 
-```properties
-spring.datasource.url=jdbc:mysql://127.0.0.1:3306/jumpking?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
-spring.datasource.username=jumpking_app
-spring.datasource.password=CHANGE_ME
-server.address=127.0.0.1
-server.port=8080
-app.allowed-origins=http://127.0.0.1:5173,http://127.0.0.1:8080
-server.servlet.session.cookie.secure=false
-```
-
-Dùng password thật chỉ trong file riêng/process ENV. Cấu hình frontend:
-
-```dotenv
-BACKEND_URL=http://127.0.0.1:8080
-VITE_BACKEND_ORIGIN=
-```
-
-BACKEND_URL chỉ dùng cho proxy Vite. VITE_BACKEND_ORIGIN trống nếu cùng origin, nếu tách thì điền origin backend không có path. Adapter nối /api và /ws/game, đổi http/https thành ws/wss. VITE_* công khai, cố định khi build; không chứa secrets. [Vite env](https://vite.dev/guide/env-and-mode)
-
-IP/port trong file mẫu là mặc định local, không phải địa chỉ bị khóa trong logic game. Với JAR cùng origin, frontend tự dùng URL đang mở; chuyển sang LAN/ZeroTier chỉ đổi cấu hình backend riêng, không sửa TypeScript/Java.
-
-| ENV tương ứng | Property / mặc định |
+| Cấu hình | Quyết định |
 | --- | --- |
-| SPRING_PROFILES_ACTIVE | local cho HTTP Local/LAN; prod cho HTTPS |
-| SPRING_DATASOURCE_URL/USERNAME/PASSWORD | spring.datasource.url/username/password |
-| SERVER_ADDRESS/PORT | server.address/port |
-| APP_ALLOWED_ORIGINS | app.allowed-origins; origins cụ thể cách nhau dấu phẩy |
-| SERVER_SERVLET_SESSION_COOKIE_SECURE | true khi HTTPS |
-| SERVER_SERVLET_SESSION_COOKIE_MAX_AGE | server.servlet.session.cookie.max-age; thời hạn cookie theo [protocol](protocol.md#identity-và-security) |
-| SERVER_SERVLET_SESSION_TIMEOUT | server.servlet.session.timeout; idle theo [protocol](protocol.md#identity-và-security) |
-| APP_SESSION_ABSOLUTE_TIMEOUT | app.session-absolute-timeout; hạn tối đa theo protocol |
-| APP_AUTH_RATE_PER_MINUTE / APP_HTTP_BODY_LIMIT | app.auth-rate-per-minute=20; app.http-body-limit=16384 bytes |
-| APP_CHECKPOINT_INTERVAL_MS | app.checkpoint-interval-ms=1000; chu kỳ checkpoint Community và metrics Room |
-| APP_PERSISTENCE_RETRY_COUNT | app.persistence-retry-count=3; tối đa 3 lần thử lại sau lần ghi đầu |
-| APP_PERSISTENCE_RETRY_DELAY_MS | app.persistence-retry-delay-ms=1000; khoảng chờ giữa các lần thử |
-| APP_PERSISTENCE_THREADS / QUEUE / RUN_QUEUE | app.persistence-threads=2, app.persistence-queue=256, app.persistence-run-queue=16; workers chung và hàng chờ từng lượt |
-| FLY_ENABLED | app.fly-enabled=${FLY_ENABLED:false}; mặc định false |
+| spring.datasource.url/username/password | Kết nối MySQL bằng user ứng dụng |
+| server.address / server.port | Địa chỉ bind và cổng backend |
+| app.allowed-origins | Origins được phép, phân cách bằng dấu phẩy; đủ scheme/host/port, không có path |
+| BACKEND_URL | Proxy Vite, mặc định http://127.0.0.1:8080 |
+| VITE_BACKEND_ORIGIN | Để trống khi cùng origin; chỉ đặt origin backend khi tách frontend |
 
-Ưu tiên config: command-line → process ENV → external properties → JAR. Backend validate datasource/allowlist. Gameplay/rules ở source/common, network bounds theo protocol, presentation ở frontend config. [Spring external config](https://docs.spring.io/spring-boot/reference/features/external-config.html)
-
-Root .gitignore chứa quy tắc chung; mỗi module ignore config riêng, dependencies, build/test output.
-
-`source/server/config/` chỉ đưa các mẫu `.properties.example` lên Git. File thực tế phải có quyền đọc giới hạn cho người chạy ứng dụng. Tài khoản MySQL chỉ có quyền DML trong database của game; không dùng root.
-
-## Fly Mode
-
-Đặt `$env:FLY_ENABLED='true'` trong terminal backend trước khi chạy Maven/JAR, hoặc đặt `app.fly-enabled=true` trong file `source/server/config/application-<profile>.properties` đang dùng. Spring Boot không đọc `source/client/.env.local`. Đổi cờ cần restart backend và vào lại màn chơi; không cần build lại frontend hoặc bật Options.
-
-Mặc định false. Cờ áp dụng cho mọi người trong Community và Room, ở localhost, LAN hoặc Internet, kể cả profile prod. Client đọc quyền qua `/api/game-config`. Điều khiển và save/thành tích theo [gameplay](gameplay.md#fly-mode).
+JAR dùng URL cùng origin cho HTTP/WS, không cần gắn địa chỉ backend vào frontend. `VITE_*` là dữ liệu công khai tại thời điểm build. Credentials, keystore, session, dumps và file cấu hình thật nằm ngoài Git; không đặt secrets trong frontend.
 
 ## MySQL
 
-1. Cài/chạy MySQL Server, kết nối bằng Workbench hoặc mysql CLI.
-2. Dừng backend, review rồi chạy `source/database/schema.sql` bằng tài khoản quản trị. Script DROP database `jumpking` nếu tồn tại rồi tạo mới ba bảng trong [data](data.md); mọi dữ liệu cũ sẽ mất.
-3. Tạo user ứng dụng một lần; thay password mẫu trong câu SQL trước khi chạy:
+**`source/database/schema.sql` xóa database `jumpking` nếu đã tồn tại.** Chỉ dùng để cài mới hoặc reset có chủ đích, không dùng để nâng cấp database cần giữ dữ liệu.
 
-```sql
-CREATE USER 'jumpking_app'@'127.0.0.1' IDENTIFIED BY 'CHANGE_ME';
-GRANT SELECT, INSERT, UPDATE, DELETE ON jumpking.* TO 'jumpking_app'@'127.0.0.1';
-```
+Khởi tạo schema và user ứng dụng theo [README](../README.md#cài-đặt-local). Backend chỉ có quyền SELECT/INSERT/UPDATE/DELETE; host của user phải khớp kết nối. MySQL chỉ nhận kết nối backend/quản trị, không mở cho người chơi.
 
-4. Điền datasource; backend dùng `spring.jpa.hibernate.ddl-auto=validate`, `spring.jpa.open-in-view=false`, không tự reset/update và không chạy bằng root.
+Hibernate dùng `ddl-auto=validate`; deploy không tự ALTER/reset schema. Khi đổi schema, sao lưu và áp dụng DDL đã review trước khi chạy backend tương ứng. Thiết kế bảng thuộc [data](data.md).
 
-mysql CLI: từ root project mở mysql client rồi chạy `SOURCE source/database/schema.sql;`. Workbench: File → Open SQL Script → schema.sql → Execute. Chỉ chạy khi cài mới hoặc chủ động reset, không chạy mỗi lần khởi động. Reset database không xóa user MySQL đã tạo; không cần tạo lại user nếu thông tin và quyền vẫn đúng.
+## Build và kiểm tra triển khai
 
-Backup bằng mysqldump/Workbench vào `.local/backups/`, dùng prompt nhập password hoặc cấu hình riêng. Thử restore vào instance cô lập, kiểm tra dữ liệu trước thay database thật; không commit dump. [MySQL CREATE USER](https://dev.mysql.com/doc/refman/8.4/en/create-user.html)
+Build frontend trước, rồi dùng Maven profile `web` để đóng `client/dist` vào JAR; lệnh tại [README](../README.md#build-và-chạy-một-jar). Không chép build output vào source.
 
-## Chạy development và build
-
-Lệnh PowerShell dưới đây; Linux/macOS thay `.\mvnw.cmd` bằng `sh mvnw` và dùng cú pháp copy của shell.
-
-Từ root, copy các file mẫu theo bảng cấu hình và điền datasource. Terminal backend:
-
-```powershell
-cd source/server
-.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
-```
-
-Terminal frontend:
-
-```powershell
-cd source/client
-npm ci
-npm run dev
-```
-
-Mở http://127.0.0.1:5173. Hai người cùng máy dùng hai browser profiles hoặc normal/incognito với một backend.
-
-Build frontend bằng `npm run build`. Từ backend chạy `.\mvnw.cmd -Pweb clean package`; profile web lấy source/client/dist làm static resources trong target, không chép generated files vào source. Chạy:
-
-```powershell
-java -jar target/jumpking-server.jar --spring.profiles.active=local
-```
-
-Mở http://127.0.0.1:8080. Backend độc lập bỏ profile web; frontend độc lập dùng static host và kết nối backend, không mở dist/index.html bằng file://.
+Sau khi chạy, kiểm tra health, đăng nhập, kết nối WebSocket, Room hai Account và Community Save & Exit/Continue. Hai browser profiles hoặc normal/incognito đủ kiểm tra nhiều phiên trên một máy; chất lượng Internet cần thử qua mạng thực.
 
 ## LAN và ZeroTier
 
-1. Host bind backend vào IP cần dùng hoặc 0.0.0.0; thêm `http://<host-ip>:8080` vào allowed origins.
-2. Cho phép inbound TCP 8080 từ LAN/overlay cần dùng, không tắt firewall hoặc mở MySQL cho players.
-3. Chạy JAR; người chơi LAN mở `http://<host-lan-ip>:8080`.
-4. Với ZeroTier, các máy join cùng private network, được chủ mạng authorize; dùng `http://<host-zerotier-ip>:8080`. [ZeroTier quickstart](https://docs.zerotier.com/quickstart/)
+Bind `server.address=0.0.0.0` hoặc IP cần nghe, thêm origin `http://<host-ip>:8080` và mở đúng cổng backend trên firewall. Người khác chỉ mở URL này trong trình duyệt. Với ZeroTier, các máy join cùng network đã authorize rồi dùng IP ZeroTier; ứng dụng không có logic riêng cho ZeroTier.
 
-Frontend/backend/MySQL chạy trên host; người chơi chỉ cần trình duyệt. Dùng cùng hostname/IP nhất quán để cookie đúng host.
+## VPS
 
-Windows host: mở PowerShell Administrator, thay IP/subnet ví dụ bằng mạng ZeroTier thực tế rồi tạo rule giới hạn trên mạng đó:
+Chạy một backend instance bằng user dịch vụ và MySQL nội bộ. Spring Boot phục vụ HTTPS/WSS trực tiếp; DNS chỉ trỏ tên miền. Keystore và cấu hình dịch vụ do VPS quản lý, lưu ngoài repository. Bổ sung vào file prod riêng, thay các giá trị ví dụ:
 
-```powershell
-New-NetFirewallRule -DisplayName 'JumpKing ZeroTier 8080' -Direction Inbound -Action Allow -Protocol TCP -LocalPort 8080 -LocalAddress 10.147.17.5 -RemoteAddress 10.147.17.0/24 -Profile Any
+```properties
+server.address=0.0.0.0
+server.port=8443
+server.ssl.enabled=true
+server.ssl.key-store=file:/etc/jumpking/tls.p12
+server.ssl.key-store-type=PKCS12
+server.ssl.key-store-password=CHANGE_ME
+app.allowed-origins=https://game.example.com:8443
+server.forward-headers-strategy=none
+server.servlet.session.store-dir=/var/lib/jumpking/sessions
 ```
 
-Máy người chơi kiểm tra `Test-NetConnection 10.147.17.5 -Port 8080`; `TcpTestSucceeded=True` mới xác nhận cổng tới được. Sau đó dùng trình duyệt thử đăng nhập, hai người Create/Join cùng Room, Start/nhảy/chat/End/Leave; Community thử Save & Exit/Continue. Không chạy lại schema hoặc cài backend/MySQL ở máy người chơi.
-
-| Lỗi | Kiểm tra |
-| --- | --- |
-| Host vào được, máy khác không | IP, authorization/route, bind và firewall |
-| HTTP được, WS lỗi | Origin allowlist, cookie và /ws/game |
-| Đăng nhập xong lại mất phiên | Dùng nhất quán một hostname/IP; HTTP Local/ZeroTier dùng profile local với cookie Secure=false, HTTPS dùng prod/Secure=true |
-| Backend không start | MySQL, schema, grants và datasource |
-| Community báo chưa lưu | Kết nối DB và save status; không khôi phục thủ công save cũ |
-
-## VPS và GitHub Actions
-
-VPS tự quản lý TLS, service và cấu hình riêng ngoài repository. Cần Java 25, MySQL trong mạng riêng và user chạy ứng dụng không có đặc quyền quản trị. Chạy profile `prod`, điền datasource và `app.allowed-origins` theo domain HTTPS thực tế; cookie Secure phải bật. Đường dẫn cấu hình do VPS quyết định và phải được service nạp khi khởi động. Không đưa credentials, chứng chỉ hoặc keystore lên Git.
-
-Workflow `.github/workflows/deploy-vps.yml` build frontend, chạy Maven `-Pweb clean verify`, rồi upload JAR và restart service. VPS không cần Node.js hoặc Maven. Workflow chạy khi push lên `main` có thay đổi trong `source/client/`, `source/common/`, `source/server/` hoặc chính file workflow; cũng có thể chạy thủ công từ tab **Actions**. Chỉ sửa tài liệu hoặc database không tự kích hoạt deploy.
-
-VPS cần service `jumpking.service` chạy `/opt/jumpking/current.jar`. Tài khoản SSH triển khai phải có quyền ghi JAR và chạy `sudo /usr/bin/systemctl restart jumpking.service` không cần mật khẩu; chỉ cấp sudo cho đúng lệnh này.
-
-### GitHub Actions secrets
-
-Các secrets được cấu hình trong GitHub Environment `production`:
-
-| Secret | Nội dung |
-| --- | --- |
-| `VPS_HOST` | Hostname hoặc IP của VPS |
-| `VPS_USER` | User SSH triển khai |
-| `VPS_SSH_PRIVATE_KEY` | Private key Ed25519 của user triển khai |
-| `VPS_SSH_KNOWN_HOSTS` | Host key đã xác minh của VPS |
-| `VPS_SSH_PORT` | Cổng SSH; mặc định `22` nếu bỏ trống |
-
-Workflow upload JAR trực tiếp đến `/opt/jumpking/current.jar`, sau đó restart dịch vụ. Workflow hiện chưa có bước health check tự động hoặc cơ chế rollback; nếu deploy gặp lỗi, kiểm tra trạng thái dịch vụ và log trên VPS:
+Nếu dùng cổng `443`, điều chỉnh quyền lắng nghe và bỏ port khỏi origin. Chứng chỉ phải hợp lệ với domain. Ví dụ nạp cấu hình ngoài JAR:
 
 ```bash
-sudo systemctl status jumpking.service
-sudo journalctl -u jumpking.service -n 100 --no-pager
+java -jar /opt/jumpking/current.jar --spring.profiles.active=prod --spring.config.additional-location=file:/etc/jumpking/
 ```
 
-Sau deploy, kiểm tra từ mạng ngoài: đăng ký/đăng nhập, WebSocket, Room hai Account, Community Save & Exit/Continue và reconnect.
+Service cần restart, log và graceful shutdown; không kill cưỡng bức khi cập nhật. Không cần proxy hoặc Node server cho phương án này. Nếu tách frontend/domain, cấu hình lại cookies/CORS/WS theo [protocol](protocol.md#xác-thực-và-bảo-mật).
 
-### Giữ phiên khi deploy
+## Giữ phiên đăng nhập
 
-Profile `prod` bật `server.servlet.session.persistent=true`. Đặt `APP_SESSION_STORE_DIR` hoặc `server.servlet.session.store-dir` thành đường dẫn tuyệt đối bền vững ngoài JAR/target/thư mục release. Mặc định `./.local/sessions` chỉ phù hợp khi working directory của dịch vụ ổn định; không dùng thư mục tạm. Tạo thư mục trước bằng user quản trị, cho user chạy `jumpking.service` quyền đọc/ghi, giới hạn quyền thư mục ở `0700`; không đưa file phiên lên Git hoặc phục vụ qua HTTP. Không đổi schema MySQL.
+Prod bật session persistence. Đặt `APP_SESSION_STORE_DIR` hoặc `server.servlet.session.store-dir` trỏ đến thư mục bền vững ngoài release, chỉ user dịch vụ được đọc/ghi. Tomcat lưu/nạp phiên khi shutdown/start bình thường; thời hạn phiên vẫn theo [protocol](protocol.md#xác-thực-và-bảo-mật). Thời gian dừng service phải dài hơn graceful shutdown của ứng dụng.
 
-Tomcat ghi phiên khi dừng bình thường rồi nạp lại khi khởi động. Giữ nguyên thư mục và cho systemd đủ thời gian dừng (khuyến nghị `TimeoutStopSec=60s`, lớn hơn thời gian graceful shutdown 20 giây); tránh kill cưỡng bức. Phiên còn hạn giữ đăng nhập, CSRF và mốc hết hạn; không khôi phục trận Room trong RAM. File mất/hỏng, process crash hoặc phiên từ bản cũ thiếu metadata có thể yêu cầu đăng nhập lại. Lần triển khai tính năng đầu tiên chưa giữ được phiên đang nằm trong RAM của bản cũ. [Spring Boot session](https://docs.spring.io/spring-boot/3.5/reference/web/servlet.html), [Tomcat persistence](https://tomcat.apache.org/tomcat-10.1-doc/config/manager.html#Persistence_Across_Restarts).
+Lưu session không lưu trạng thái Room. Crash hoặc phiên hết hạn có thể yêu cầu đăng nhập lại.
 
-Mỗi build frontend sinh `/version.json` và nhúng cùng mã vào bundle: CI dùng `GITHUB_SHA`, build ngoài CI dùng UUID. Trình duyệt báo có bản mới theo [protocol](protocol.md#identity-và-security); tab đang dùng bản chưa có cơ chế thông báo cần reload một lần. Reverse proxy/CDN phải revalidate HTML và version metadata, không giữ bản cũ bằng quy tắc cache riêng. Khi nghiệm thu, mở tab bản A, deploy bản B, xác nhận thông báo, thoát về màn hình chính rồi bấm Update now và kiểm tra vẫn đăng nhập nếu phiên còn hạn.
+## GitHub Actions
 
-Không chạy lại script khởi tạo schema database trong quá trình deploy. Cập nhật code không đồng nghĩa với việc reset dữ liệu người chơi.
+`.github/workflows/deploy-vps.yml` build frontend/JAR, upload `/opt/jumpking/current.jar` và restart `jumpking.service`. Workflow chạy thủ công hoặc khi push `main` thay đổi `source/client/`, `source/common/`, `source/server/` hay chính workflow. Chỉ sửa docs/database không tự deploy; workflow không cập nhật schema.
+
+GitHub Environment `production` cần `VPS_HOST`, `VPS_USER`, `VPS_SSH_PRIVATE_KEY`, `VPS_SSH_KNOWN_HOSTS`, `VPS_SSH_PORT` (mặc định `22`). Xác minh host key, giới hạn SSH user và quyền restart đúng service. Giữ JAR trước để rollback; upload/restart thành công chưa thay nghiệm thu URL thực.
+
+## Fly Mode
+
+Đặt `FLY_ENABLED=true` trong môi trường backend hoặc `app.fly-enabled=true` trong file properties riêng. Mặc định `false`; đổi cờ cần restart backend và vào lại màn chơi, không cần build frontend. Phạm vi và điều khiển theo [gameplay](gameplay.md#fly-mode).

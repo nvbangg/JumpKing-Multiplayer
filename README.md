@@ -1,41 +1,42 @@
 # JumpKing Multiplayer
 
-Website game Jump King với một map Main Babe đầy đủ, chơi qua mạng trong Community Tower hoặc Room. Thuộc Chủ đề 2 – Phát triển game mạng: đồng bộ trạng thái nhiều client, xử lý kết nối đồng thời và lưu tiến độ/kết quả nhất quán.
+Game nhiều người chơi trên trình duyệt, tái hiện gameplay Jump King trên map Main Babe. Server quyết định trạng thái/kết quả; client dự đoán input để phản hồi nhanh. Trọng tâm học phần là đồng bộ trạng thái, xử lý nhiều kết nối và lưu tiến độ nhất quán.
 
-| Kiểu chơi | Mục đích |
+| Kiểu chơi | Phạm vi |
 | --- | --- |
-| Community Tower | Account được tự xếp sảnh, lưu tiến độ trên server và tính leaderboard |
-| Room | Account tạo Public/Private, Join Public hoặc bằng ID, từ 1 người và Host Start; Race, Hardcore, Time Limit hoặc No Walk; Results và History |
+| Community Tower | Tự ghép sảnh, lưu tiến độ theo Account, Continue và leaderboard |
+| Room | Public/Private, Join Public hoặc ID; Race, Hardcore, Time Limit, No Walk; chọn độ dài map 1–10 |
 
-Frontend dùng React + TypeScript/Phaser; backend Spring Boot/Java quyết định trạng thái và kết quả online. Spring Data JPA/Hibernate truy cập MySQL để lưu identity, lượt chơi và trận Room. Thống kê tổng và History gồm Community và Room; chơi game yêu cầu Account. Sign In bằng username và password, tự tạo Account nếu username chưa tồn tại; có đổi mật khẩu bằng mật khẩu hiện tại; chưa có khôi phục mật khẩu. Luật chơi trong [gameplay](docs/gameplay.md).
+Cả hai yêu cầu đăng nhập. Username chưa có được tạo khi Sign In; có đổi mật khẩu bằng mật khẩu hiện tại. Luật đầy đủ tại [gameplay](docs/gameplay.md).
 
-## Kiến trúc
+## Kiến trúc và công nghệ
 
 ![Kiến trúc hệ thống](statics/architecture.svg)
 
-Client–Server, server-authoritative: client gửi input, server quyết định trạng thái và kết quả online. HTTP/REST phục vụ Account/Records; WebSocket trao đổi input/snapshot. Queue và workers nằm trong một backend, ghi MySQL ngoài vòng tick. [Chi tiết](docs/architecture.md)
+Client: React + TypeScript strict + Vite; Phaser hiển thị game, API trình duyệt phát âm thanh. Server: Spring Boot/Java, HTTP REST và WebSocket JSON; MySQL qua Spring Data JPA/Hibernate. Xác thực bằng Spring Security, session cookie, CSRF và BCrypt.
 
-## Cài đặt và chạy
+Java simulation chính thức, TypeScript prediction/reconciliation, dữ liệu JSON dùng chung. Mỗi phòng xử lý tuần tự trên worker pool; gửi mạng/ghi database ngoài tick. Thiết kế và cấu trúc tại [architecture](docs/architecture.md).
 
-Cần **JDK 25, Node.js 24 và MySQL Server 8.4**. Workbench là công cụ quản trị tùy chọn; không thay MySQL Server. Maven Wrapper được cung cấp sẵn.
+## Cài đặt local
 
-**1. Database.** Dừng backend nếu đang chạy, mở `source/database/schema.sql` bằng Workbench và Execute bằng tài khoản quản trị MySQL. Script xóa database `jumpking` nếu đã tồn tại rồi tạo mới toàn bộ bảng; mọi dữ liệu cũ sẽ mất. Trong SQL editor, tạo user ứng dụng một lần; thay password mẫu:
+Cần **JDK 25, Node.js 24 và MySQL Server 8.4**; Maven Wrapper có sẵn. Workbench là công cụ quản trị tùy chọn. Lệnh dưới dùng PowerShell, chạy từ root project; lần cài/build đầu cần Internet.
+
+**1. Tạo database.** Mở `source/database/schema.sql` trong Workbench và Execute bằng tài khoản quản trị. **Script xóa database `jumpking` nếu đã có; chỉ chạy khi cài mới hoặc chủ động reset.**
+
+Tạo user ứng dụng một lần, thay mật khẩu mẫu:
 
 ```sql
 CREATE USER 'jumpking_app'@'127.0.0.1' IDENTIFIED BY 'CHANGE_ME';
 GRANT SELECT, INSERT, UPDATE, DELETE ON jumpking.* TO 'jumpking_app'@'127.0.0.1';
 ```
 
-Chỉ chạy script khi cài mới hoặc chủ động reset dữ liệu; không chạy mỗi lần khởi động game. [Chi tiết MySQL](docs/deployment.md#mysql)
-
-**2. Cấu hình riêng.** Từ root project:
+**2. Tạo cấu hình riêng** nếu file chưa có:
 
 ```powershell
 Copy-Item source/server/config/application-local.properties.example source/server/config/application-local.properties
-Copy-Item source/client/.env.example source/client/.env.local
 ```
 
-Trong `source/server/config/application-local.properties`, điền:
+Điền kết nối MySQL trong file vừa tạo:
 
 ```properties
 spring.datasource.url=jdbc:mysql://127.0.0.1:3306/jumpking?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
@@ -43,9 +44,13 @@ spring.datasource.username=jumpking_app
 spring.datasource.password=CHANGE_ME
 ```
 
-Password phải trùng user vừa tạo; đổi host/port nếu MySQL chạy nơi khác. Giữ các giá trị còn lại trong file mẫu. `source/client/.env.local` dùng mặc định khi chạy local, không cần thêm secrets. Hai file riêng được Git ignore; chỉ commit các file `.example`. Backend không tự đọc file `.env`.
+Password trùng user MySQL; đổi host/port khi cần, giữ các giá trị còn lại trong mẫu. File thật được Git ignore. Backend đọc `.properties`, không tự đọc `.env`.
 
-**3. Chạy hai terminal** từ root project. Backend:
+Frontend không cần cấu hình riêng với mặc định local. Khi đổi backend, copy `source/client/.env.example` thành `.env.local` rồi sửa `BACKEND_URL`. Cấu hình và secrets theo [deployment](docs/deployment.md#cấu-hình).
+
+## Chạy development
+
+Mở hai terminal từ root. Backend:
 
 ```powershell
 cd source/server
@@ -60,46 +65,41 @@ npm ci
 npm run dev
 ```
 
-Mở **http://127.0.0.1:5173**. Backend dùng **8080**, MySQL **3306**. Linux/macOS thay `.\mvnw.cmd` bằng `sh mvnw`, `Copy-Item` bằng `cp`. Hai người trên cùng máy dùng hai browser profiles hoặc normal/incognito, chỉ chạy một backend; không cần hai máy hoặc hai backend.
+Mở [http://127.0.0.1:5173](http://127.0.0.1:5173); backend **8080**, MySQL **3306**. Những lần sau chỉ chạy hai lệnh khởi động; cài lại dependencies khi lockfile đổi. Linux/macOS thay `.\mvnw.cmd` bằng `sh mvnw`, `Copy-Item` bằng `cp`.
 
-**Build một ứng dụng:** tại `source/client/` chạy `npm run build`; tại `source/server/` chạy `.\mvnw.cmd -Pweb clean package`, rồi `java -jar target/jumpking-server.jar --spring.profiles.active=local`. Mở **http://127.0.0.1:8080**; JAR phục vụ cả frontend/backend, không cần Vite. Dừng backend development trước để giải phóng cổng 8080. Các lệnh cài dependencies/build lần đầu cần Internet.
+## Build và chạy một JAR
 
-## Demo nhanh
+Sau khi cài dependencies, từ root:
 
-- **Community Tower:** đăng ký/đăng nhập, chọn New Game hoặc Continue ngay tại trang chủ; tiến độ tự lưu và được tính leaderboard trong trận.
-- **Room:** đăng nhập hai Account ở hai browser profiles, một người Create Room; người còn lại Join by ID hoặc tìm phòng Public bằng Join Public; Host chọn mode, map 1–10 và Start (một người cũng chơi được).
-
-## Chơi qua LAN/ZeroTier
-
-Dùng JAR đã build. Trong cấu hình local của host, thay `10.147.17.5` bằng IP LAN/ZeroTier thực tế:
-
-```properties
-server.address=0.0.0.0
-app.allowed-origins=http://127.0.0.1:8080,http://10.147.17.5:8080
+```powershell
+cd source/client
+npm run build
+cd ../server
+.\mvnw.cmd -Pweb clean package
+java -jar target/jumpking-server.jar --spring.profiles.active=local
 ```
 
-Restart JAR, cho phép inbound TCP 8080 từ mạng cần dùng; players mở `http://10.147.17.5:8080`. ZeroTier cần cùng network và được authorize. Players chỉ cần trình duyệt; không mở MySQL ra mạng. [Chi tiết và xử lý lỗi](docs/deployment.md#lan-và-zerotier)
+Dừng backend development nếu đang chiếm cổng 8080. Chạy JAR từ `source/server/` để đọc cấu hình local, mở [http://127.0.0.1:8080](http://127.0.0.1:8080); không cần Vite.
 
-## VPS
+Người khác chỉ cần trình duyệt. [LAN/ZeroTier](docs/deployment.md#lan-và-zerotier) dùng IP host; triển khai chính dùng cùng JAR trên [VPS](docs/deployment.md#vps) với HTTPS/WSS. [GitHub Actions](docs/deployment.md#github-actions) cập nhật JAR, không tự cập nhật schema.
 
-Chạy cùng JAR và MySQL nội bộ; cấu hình domain, HTTPS/WSS, origins và cookie theo [deployment](docs/deployment.md#vps-và-github-actions). Không cần tách frontend sang dịch vụ hosting khác.
+## Demo
 
-## Tài liệu
+- Community: Sign In → New Game → Save & Exit → Continue; kiểm tra tiến độ và leaderboard.
+- Room: dùng hai Account trên hai browser profiles hoặc normal/incognito; Create/Join cùng phòng, Host Start, thử điều khiển/chat/Results/Play Again. Chỉ cần một backend.
 
-| Nội dung | Nguồn chính |
+## Tài liệu và kiểm chứng
+
+| Nguồn | Nội dung |
 | --- | --- |
-| Công nghệ, thành phần và cấu trúc code | [architecture](docs/architecture.md) |
-| Gameplay, map, kiểu chơi và nội dung game | [gameplay](docs/gameplay.md) |
-| HTTP/WebSocket và bảo mật | [protocol](docs/protocol.md) |
-| Database, checkpoint và thành tích | [data](docs/data.md) |
-| Cấu hình, MySQL, Local/LAN/ZeroTier/Internet | [deployment](docs/deployment.md) |
-| Lệnh kiểm thử và tiêu chí nghiệm thu | [testing](docs/testing.md) |
-| Báo cáo kỹ thuật học phần | [report.md](report/report.md) |
-| Quy trình agent | [AGENTS](AGENTS.md) |
-| Yêu cầu bài tập lớn | [Instruction](docs/final-project/Instruction.md) |
+| [AGENTS](AGENTS.md) | Quy tắc làm việc và nguồn quyết định |
+| [architecture](docs/architecture.md) | Công nghệ, cấu trúc và concurrency |
+| [gameplay](docs/gameplay.md) | Luật chức năng |
+| [protocol](docs/protocol.md) | HTTP/WS, xác thực và đồng bộ |
+| [data](docs/data.md) | Database, checkpoint và thành tích |
+| [deployment](docs/deployment.md) | Cấu hình và triển khai |
+| [testing](docs/testing.md) | Biome, Spotless, Vitest, JUnit, Playwright; lệnh và tiêu chí nghiệm thu |
 
-## Kiểm thử và giới hạn
+`docs/` là thiết kế đích. Báo cáo viết riêng theo [yêu cầu học phần](docs/final-project/Instruction.md), dùng lại sơ đồ/quyết định và bổ sung bằng chứng. [Thực nghiệm](docs/testing.md#phương-pháp-thực-nghiệm) so sánh snapshot-only với prediction/reconciliation; [kết quả và đóng góp](report/report.md) phải gắn với phiên bản đã đo.
 
-Lệnh kiểm thử, tiêu chí nghiệm thu và thực nghiệm theo [testing](docs/testing.md).
-
-Giới hạn: Room gameplay ở RAM, restart không phục hồi trận. Framework và nguồn nội dung theo [architecture](docs/architecture.md), [học phần](docs/final-project/Instruction.md) và [attribution](source/client/public/assets/ATTRIBUTION.md).
+Giới hạn: một backend; Room ở RAM, Community chỉ phục hồi tới checkpoint đã commit. Nguồn nội dung và tình trạng giấy phép tại [attribution](source/client/public/assets/ATTRIBUTION.md).
