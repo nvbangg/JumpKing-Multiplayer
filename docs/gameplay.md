@@ -65,7 +65,7 @@ Clock chung chạy từ hết countdown. Menu/chat/AFK không dừng physics/clo
 
 Finish đầu tiên kết thúc trận sau khi xử lý mọi người trong cùng tick; Finish cùng tick đồng thắng. Time Limit chốt tại deadline, xét Finish hợp lệ trước timeout. Host có thể End khi PLAYING.
 
-Finishers xếp trước theo finish time tăng dần. Người khác so current progress giảm dần, thêm peak giảm dần riêng Time Limit, rồi clock trận tăng dần; clock chung nên bằng khóa thì đồng hạng. ID chỉ ổn định thứ tự hiển thị. Chưa ai Finish thì không có winner; DNF không thắng.
+Finishers xếp trước theo finish time tăng dần. Người khác so current progress giảm dần, thêm peak giảm dần riêng Time Limit; bằng các khóa thì đồng hạng. Clock trận là đồng hồ chung, không tạo thêm khóa phân hạng. ID chỉ ổn định thứ tự hiển thị. Chưa ai Finish thì không có winner; DNF không thắng.
 
 - Current progress: độ cao tại lần đáp nền hợp lệ gần nhất, không tính splat/phasing; khi trên không giữ giá trị đó.
 - Peak: độ cao tức thời cao nhất từng đạt. Hardcore reset current về spawn, giữ peak/clock/falls.
@@ -76,6 +76,8 @@ Play Again giữ room code/settings và thành viên, nhưng reset trạng thái
 ## Items trong Room
 
 Host bật tại Lobby, mặc định Off; cooldown 1–15 phút nguyên, mặc định 3. Settings giữ qua Play Again, không đổi giữa trận.
+
+Tối đa 64 bẫy Banana/phòng, cấu hình trong rules. Chạm trần thì hủy chuẩn bị, không đặt thêm, giữ item và không bắt đầu cooldown; bẫy cũ vẫn tồn tại đến khi bị giẫm.
 
 | Item | Luật |
 | --- | --- |

@@ -67,7 +67,7 @@ Unit tests đặt cạnh code TypeScript và trong `server/src/test/java`; E2E �
 
 - Java chạy simulation chính thức; TypeScript prediction/reconciliation cho nhân vật bản thân và interpolation cho peers.
 - Hai phía dùng chung map/tuning/rules JSON, có mã thực thi riêng. Thứ tự tính toán và điểm ép float32 phải tương đương; kiểm chứng bằng fixtures/replay theo [testing](testing.md#tiêu-chí-nghiệm-thu).
-- Định nghĩa bất biến nạp một lần, mỗi lượt giữ state riêng. Common chứa geometry, trigger và ID adventure; lời thoại, đường dẫn assets, font và âm thanh thuộc client, tra bằng ID.
+- Định nghĩa bất biến nạp một lần và dùng chung, không deep-copy qua nhiều lớp; mỗi lượt giữ state riêng. Common chứa geometry, trigger và ID adventure; lời thoại, đường dẫn assets, font và âm thanh thuộc client, tra bằng ID.
 - Client/server dùng cùng bản phát hành dữ liệu. Địa chỉ và secrets theo [deployment](deployment.md#cấu-hình); luật chức năng theo [gameplay](gameplay.md).
 
 ## Xử lý đồng thời
@@ -75,7 +75,9 @@ Unit tests đặt cạnh code TypeScript và trong `server/src/test/java`; E2E �
 - Fixed-step **60 Hz**, snapshot **20 Hz**, dùng monotonic clock; số packet hoặc deltaTime của client không quyết định thời gian trận.
 - Mỗi phòng/sảnh xử lý commands và tick tuần tự trên worker pool chung; các phòng có thể chạy song song. Trong tick cập nhật mọi player, không chờ mạng của từng người.
 - Mọi thay đổi state, kể cả callback I/O, quay về executor sở hữu phòng. Queue có giới hạn, bảo đảm callback của công việc đã nhận vẫn được xử lý khi quá tải.
-- Gửi socket và ghi database ngoài vòng tick. Gộp snapshot chưa gửi thành bản mới nhất; control messages giữ thứ tự. Client chậm bị timeout/giới hạn riêng.
+- Chụp state bất biến một lần/player trong mỗi đợt snapshot, tái sử dụng cho owner/spectator theo đúng quyền. Gộp bản chưa gửi trước khi serialize JSON trên send worker; control messages giữ thứ tự. Không truyền state đang bị simulation sửa sang worker.
+- Community không còn lượt cần mô phỏng thì không dựng snapshot định kỳ; vẫn xử lý heartbeat/deadline/commands và gửi khi state đổi. Không dừng mô phỏng chỉ vì input đứng yên.
+- Gửi socket và ghi database ngoài vòng tick; client chậm bị timeout/giới hạn riêng.
 - Persistence nhận payload bất biến, xử lý theo [data](data.md#transaction-và-ghi-dữ-liệu). Không giữ transaction hoặc managed Entity trong gameplay.
 
 ## Triển khai và giới hạn

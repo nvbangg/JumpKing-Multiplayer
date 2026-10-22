@@ -22,8 +22,8 @@ Các path có prefix `/api`. Lỗi dạng `{error:{code,message}}`; không cache
 | GET /health | Trạng thái ứng dụng |
 | GET /auth/csrf | → {token,headerName} |
 | GET /auth/me | → {authenticated,account:null hoặc {id,username,crownUnlocked}} |
-| POST /auth/register | {username,password} → identity |
-| POST /auth/login | {username,password} → identity; Sign In như trên |
+| POST /auth/register | {username,password} → cùng response /auth/me, authenticated=true |
+| POST /auth/login | {username,password} → cùng response /auth/me, authenticated=true; Sign In như trên |
 | POST /auth/password | {currentPassword,newPassword} → {ok:true} |
 | POST /auth/logout | → {ok:true} |
 | GET /game-config | → {features:{flyEnabled:boolean}} |
@@ -143,8 +143,10 @@ Pagehide, grace, Pause và chuyển Host theo [gameplay](gameplay.md#leave-và-r
 | Input | 120 messages/giây/connection; queue server 120, client 180 frames; timeout 500 ms |
 | Outbound | 64 control messages/connection; deadline 5 giây; snapshot gộp bản mới nhất |
 | Heartbeat / client deadline | Mỗi 10 giây, hết liveness sau 30 giây; HTTP/handshake/command tối đa 8 giây |
-| Chat | 200 code points/tin, 1 tin/giây; giữ 50 tin/sảnh trong RAM |
+| Chat | 200 code points/tin, 1 tin/giây; giữ 10 tin gần nhất/sảnh trong RAM |
 
 Quota là chính sách cấu hình, không phải năng lực phục vụ đã đo. Validate trước cấp phát/enqueue; quá tải trả RATE_LIMITED hoặc đóng connection, không queue vô hạn hoặc chặn phòng khác.
+
+CHAT_HISTORY chỉ gửi các tin gần nhất vừa giới hạn bytes của message, bỏ tin cũ nếu cần; không chia trang/lô hoặc tăng trần WebSocket cho lịch sử chat. Quota bẫy theo [gameplay](gameplay.md#items-trong-room); đạt trần trả ITEM_UNAVAILABLE trước khi chuẩn bị, kiểm tra lại khi đặt để không tiêu thụ item.
 
 Các mã lỗi: INVALID_MESSAGE, INVALID_INPUT, INVALID_SETTINGS, AUTH_REQUIRED, ACCOUNT_REQUIRED, ROOM_NOT_FOUND, ROOM_FULL, ROOM_NOT_JOINABLE, ALREADY_IN_ROOM, HOST_ONLY, STALE_PLAY, STALE_INPUT, INVALID_RECONNECT, RECONNECT_EXPIRED, INVALID_SPECTATE_TARGET, ITEM_UNAVAILABLE, ITEM_COOLDOWN, INVALID_ITEM_POSITION, NO_ITEM_TARGET, SAVE_FAILED, CONFLICT, RATE_LIMITED, INTERNAL_ERROR. Không lộ thông tin riêng tư hoặc coi lỗi là save rỗng/thành công.
