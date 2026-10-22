@@ -888,6 +888,151 @@ output.room-code {
 	margin: 0 0 8px;
 }
 
+.tutorial-guide {
+	position: absolute;
+	top: max(52px, calc(env(safe-area-inset-top) + 44px));
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 25;
+	background: #08090cf2;
+	border: 2px solid #bfa15f;
+	outline: 3px solid #26231a;
+	padding: 16px 24px;
+	border-radius: 8px;
+	width: min(92vw, 600px);
+	box-shadow: 0 6px 24px #000c;
+	pointer-events: none;
+}
+
+.tutorial-guide button {
+	pointer-events: auto;
+}
+
+.tutorial-header {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: 20px;
+	margin-bottom: 8px;
+}
+.tutorial-title-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.tutorial-title {
+	display: inline-block;
+	text-align: center;
+	min-width: 0;
+	font-weight: bold;
+	color: #ede7d3;
+	font-size: 1.35rem;
+	letter-spacing: 0.8px;
+}
+
+.tutorial-nav-btn {
+	background: transparent;
+	border: 1.5px solid #72684d;
+	color: #e4bb68;
+	font-size: 1.35rem;
+	line-height: 1;
+	width: 32px;
+	height: 32px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 4px;
+	cursor: pointer;
+	padding: 0;
+	user-select: none;
+	transition:
+		background 0.15s,
+		color 0.15s,
+		border-color 0.15s;
+}
+
+.tutorial-nav-btn:hover:not(:disabled) {
+	background: #3a3222;
+	color: #fff;
+	border-color: #bfa15f;
+}
+
+.tutorial-nav-btn:disabled {
+	opacity: 0.3;
+	cursor: not-allowed;
+	border-color: #443e2e;
+	color: #6e6754;
+}
+
+.tutorial-dismiss {
+	background: transparent;
+	border: 1.5px solid #72684d;
+	color: #b2a484;
+	font-size: 0.95rem;
+	padding: 4px 12px;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.tutorial-dismiss:hover {
+	background: #3a3222;
+	color: #fff;
+	border-color: #bfa15f;
+}
+
+.tutorial-hint {
+	margin: 0;
+	color: #d1c7b7;
+	font-size: 1.1rem;
+	line-height: 1.45;
+	min-height: 2.9em;
+}
+
+.tutorial-hint.touch-only {
+	display: none;
+}
+
+.tutorial-hint.desktop-only {
+	display: block;
+}
+
+@media (pointer: coarse), (max-width: 680px) {
+	.tutorial-hint.desktop-only {
+		display: none;
+	}
+	.tutorial-hint.touch-only {
+		display: block;
+	}
+	.tutorial-guide {
+		top: 50%;
+		transform: translate(-50%, -50%);
+		padding: 12px 18px;
+		width: min(92vw, 440px);
+	}
+	.tutorial-title {
+		font-size: 1.05rem;
+		min-width: 136px;
+	}
+	.tutorial-hint {
+		font-size: 0.95rem;
+		min-height: 2.9em;
+	}
+	.tutorial-dismiss {
+		font-size: 0.85rem;
+		padding: 3px 8px;
+	}
+	.tutorial-title-row {
+		gap: 6px;
+	}
+	.tutorial-nav-btn {
+		width: 28px;
+		height: 28px;
+		font-size: 1.15rem;
+	}
+}
+
 .players-panel .watch-player {
 	padding: 0;
 	border: 0;

@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import rules from "../../../../common/rules.json";
 import { ControlsHelp } from "../../components/ControlsHelp";
 import { MenuPanel } from "../../components/MenuPanel";
 import { NetworkStatusBadge } from "../../components/NetworkStatusBadge";
+import { TutorialGuide } from "../../components/TutorialGuide";
 import { loadManifest } from "../../game/content/assets";
 import { FlightToggle } from "../../game/input/FlightToggle";
 import { InputController } from "../../game/input/InputController";
@@ -33,17 +34,27 @@ import { PlayersPanel } from "../rooms/PlayersPanel";
 import { useRoomChat } from "../rooms/useRoomChat";
 import { OptionsButtons } from "../settings/OptionsPanel";
 import { type Options, readOptions, saveOptions } from "../settings/options";
+import {
+	isTutorialCompleted,
+	nextTutorialStep,
+	saveTutorialCompleted,
+	type TutorialStep,
+} from "./tutorial";
 
 export function OnlineGame({
 	socket,
 	room,
 	navigationError,
+	accountId,
+	totalJumps,
 	onHome,
 	onResults,
 }: {
 	socket: GameSocket;
 	room: RoomState;
 	navigationError: string;
+	accountId?: string;
+	totalJumps?: number;
 	onHome: (message: string) => void;
 	onResults: () => void;
 }) {
@@ -87,6 +98,19 @@ export function OnlineGame({
 	}, [socket]);
 	const [ending, setEnding] = useState<"playing" | "picture" | null>(null),
 		[pictureReady, setPictureReady] = useState(false);
+	const [tutorialStep, setTutorialStep] = useState<TutorialStep | null>(() =>
+		room.kind === "ROOM" || isTutorialCompleted(accountId, totalJumps)
+			? null
+			: "move",
+	);
+	const tutorialRef = useRef<TutorialStep | null>(tutorialStep);
+	tutorialRef.current = tutorialStep;
+	const tutorialOrigin = useRef<{ x: number; jumps: number } | null>(null);
+	const dismissTutorial = useCallback(() => {
+		tutorialRef.current = null;
+		setTutorialStep(null);
+		saveTutorialCompleted(accountId);
+	}, [accountId]);
 	const endingActive = useRef(false),
 		skipEnding = useRef<(() => void) | null>(null);
 	const chat = useRoomChat(
@@ -384,6 +408,26 @@ export function OnlineGame({
 						setMenu("pause");
 						audio.current?.pause(true);
 					}
+					if (
+						tutorialRef.current &&
+						!view &&
+						!session.menu &&
+						!snapshot.self.paused
+					) {
+						const physics = snapshot.self.simulation.physics;
+						if (tutorialOrigin.current === null)
+							tutorialOrigin.current = { x: physics.x, jumps: physics.jumps };
+						const next = nextTutorialStep(
+							tutorialRef.current,
+							physics,
+							tutorialOrigin.current,
+						);
+						if (next !== tutorialRef.current) {
+							tutorialRef.current = next;
+							setTutorialStep(next);
+							if (next === "completed") saveTutorialCompleted(accountId);
+						}
+					}
 				},
 				config.features.flyEnabled,
 				(message) => {
@@ -665,6 +709,15 @@ export function OnlineGame({
 			{ready && !ending && !menu && !chat.open && !watching && (
 				<TouchControls input={input} flying={flying} />
 			)}
+			{ready &&
+				!ending &&
+				!menu &&
+				!chat.open &&
+				!watching &&
+				room.kind === "COMMUNITY" &&
+				tutorialStep && (
+					<TutorialGuide step={tutorialStep} onDismiss={dismissTutorial} />
+				)}
 			{ready && watching && !ending && !menu && (
 				<div className="spectator-bar" role="status">
 					<span
