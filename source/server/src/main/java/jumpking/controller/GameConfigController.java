@@ -14,8 +14,7 @@ public class GameConfigController {
   private final FeatureFlags flags;
   private final SecuritySettings settings;
 
-  public GameConfigController(
-      SharedData shared, FeatureFlags flags, SecuritySettings settings) {
+  public GameConfigController(SharedData shared, FeatureFlags flags, SecuritySettings settings) {
     this.shared = shared;
     this.flags = flags;
     this.settings = settings;
@@ -33,7 +32,6 @@ public class GameConfigController {
         Map.of("flyEnabled", flags.flyEnabled()),
         "auth",
         Map.of(
-            "googleClientId",
-            settings.googleClientId() == null ? "" : settings.googleClientId()));
+            "googleClientId", settings.googleClientId() == null ? "" : settings.googleClientId()));
   }
 }

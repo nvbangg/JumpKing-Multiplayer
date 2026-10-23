@@ -275,13 +275,13 @@ class IdentityIT {
       }
     }
   }
+
   @Test
   void googleLoginCreatesUserAndReusesOnSecondLogin() throws Exception {
     try (var client = client()) {
       client.token();
       long count = accountCount();
-      var response =
-          client.send("/auth/google", "POST", "{\"idToken\":\"valid-google-token\"}");
+      var response = client.send("/auth/google", "POST", "{\"idToken\":\"valid-google-token\"}");
       assertThat(response.statusCode()).isEqualTo(200);
       var json = tree(response);
       assertThat(json.path("authenticated").asBoolean()).isTrue();
@@ -289,8 +289,7 @@ class IdentityIT {
       assertThat(accountCount()).isEqualTo(count + 1);
 
       client.token();
-      var second =
-          client.send("/auth/google", "POST", "{\"idToken\":\"valid-google-token\"}");
+      var second = client.send("/auth/google", "POST", "{\"idToken\":\"valid-google-token\"}");
       assertThat(second.statusCode()).isEqualTo(200);
       assertThat(tree(second).path("account").path("id").asText())
           .isEqualTo(json.path("account").path("id").asText());
@@ -302,8 +301,7 @@ class IdentityIT {
   void googleLoginRejectsInvalidToken() throws Exception {
     try (var client = client()) {
       client.token();
-      var response =
-          client.send("/auth/google", "POST", "{\"idToken\":\"invalid-token\"}");
+      var response = client.send("/auth/google", "POST", "{\"idToken\":\"invalid-token\"}");
       assertThat(response.statusCode()).isEqualTo(401);
       assertThat(tree(response).path("error").path("code").asText())
           .isEqualTo("INVALID_CREDENTIALS");
@@ -314,8 +312,7 @@ class IdentityIT {
   void googleAccountRejectsPasswordChange() throws Exception {
     try (var client = client()) {
       client.token();
-      var login =
-          client.send("/auth/google", "POST", "{\"idToken\":\"valid-google-token\"}");
+      var login = client.send("/auth/google", "POST", "{\"idToken\":\"valid-google-token\"}");
       assertThat(login.statusCode()).isEqualTo(200);
 
       client.token();
@@ -328,7 +325,6 @@ class IdentityIT {
       assertThat(tree(change).path("error").path("code").asText()).isEqualTo("CONFLICT");
     }
   }
-
 
   @Test
   void signedInSessionCannotCreateAnotherAccountThroughLoginOrRegister() throws Exception {

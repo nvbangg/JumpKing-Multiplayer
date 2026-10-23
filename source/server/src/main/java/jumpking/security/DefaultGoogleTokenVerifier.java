@@ -15,6 +15,7 @@ import jumpking.config.SecuritySettings;
 import jumpking.exception.ApiException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
 @Component
 public class DefaultGoogleTokenVerifier implements GoogleTokenVerifier {
   private final SecuritySettings settings;

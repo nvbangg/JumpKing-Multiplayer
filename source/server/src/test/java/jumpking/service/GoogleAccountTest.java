@@ -19,14 +19,12 @@ class GoogleAccountTest {
 
   @Test
   void handlesEmptyNameFallingBackToEmail() {
-    assertThat(AccountService.sanitizeGoogleUsername("", "gamer99@gmail.com"))
-        .isEqualTo("gamer99");
+    assertThat(AccountService.sanitizeGoogleUsername("", "gamer99@gmail.com")).isEqualTo("gamer99");
   }
 
   @Test
   void prefixesShortNames() {
-    assertThat(AccountService.sanitizeGoogleUsername("AB", "ab@gmail.com"))
-        .isEqualTo("Player_AB");
+    assertThat(AccountService.sanitizeGoogleUsername("AB", "ab@gmail.com")).isEqualTo("Player_AB");
   }
 
   @Test

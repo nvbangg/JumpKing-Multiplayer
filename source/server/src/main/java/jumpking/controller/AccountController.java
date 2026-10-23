@@ -69,6 +69,7 @@ public class AccountController {
     var account = accounts.login(form, identity.owner(), value -> signIn(value, request, response));
     return new AccountDto.Me(true, account);
   }
+
   @PostMapping("/google")
   public AccountDto.Me google(
       @Valid @RequestBody AccountCredentials.GoogleLogin form,
@@ -79,7 +80,6 @@ public class AccountController {
             form.idToken(), identity.owner(), value -> signIn(value, request, response));
     return new AccountDto.Me(true, account);
   }
-
 
   @PostMapping("/password")
   public Map<String, Boolean> password(@Valid @RequestBody AccountCredentials.PasswordChange form) {

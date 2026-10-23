@@ -8,9 +8,9 @@ import jumpking.entity.User;
 import jumpking.exception.ApiException;
 import jumpking.repository.UserRepository;
 import jumpking.room.Memberships;
-import org.springframework.dao.DataIntegrityViolationException;
 import jumpking.security.GoogleTokenVerifier;
 import jumpking.security.IdentityContext;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
@@ -27,6 +27,7 @@ public class AccountService {
   private final Memberships memberships;
   private final Clock clock;
   private final GoogleTokenVerifier googleVerifier;
+
   public AccountService(
       UserRepository users,
       PasswordEncoder passwords,
@@ -43,6 +44,7 @@ public class AccountService {
     this.clock = clock;
     this.googleVerifier = googleVerifier;
   }
+
   public AccountDto.Account register(
       AccountCredentials.Registration form, Consumer<AccountDto.Account> authenticated) {
     form.validate();
@@ -95,6 +97,7 @@ public class AccountService {
           return account;
         });
   }
+
   public AccountDto.Account loginWithGoogle(
       String idToken, Long current, Consumer<AccountDto.Account> authenticated) {
     if (idToken == null || idToken.isBlank()) throw invalidCredentials();
@@ -155,9 +158,7 @@ public class AccountService {
     String base = name;
     if (base == null || base.isBlank()) {
       base =
-          email != null && email.contains("@")
-              ? email.substring(0, email.indexOf('@'))
-              : "Player";
+          email != null && email.contains("@") ? email.substring(0, email.indexOf('@')) : "Player";
     }
     base = base.trim().replaceAll("\\s+", "_");
     base = base.replaceAll("[^\\p{L}\\p{N}_-]", "");
@@ -169,7 +170,6 @@ public class AccountService {
     }
     return base;
   }
-
 
   public void changePassword(long owner, AccountCredentials.PasswordChange form) {
     AccountCredentials.validatePassword(form.newPassword());
