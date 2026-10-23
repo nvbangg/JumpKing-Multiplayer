@@ -21,7 +21,7 @@ public class Match {
   private String mode;
 
   @Column(name = "map_level", columnDefinition = "smallint", nullable = false)
-  private int mapLevel = 10;
+  private int mapLevel = 1;
 
   @Column(name = "time_limit_minutes", columnDefinition = "smallint")
   private Integer timeLimitMinutes;

@@ -38,6 +38,12 @@ test("Account totals come from committed Community data and survive reload", asy
 	await expect(
 		panel
 			.locator("div")
+			.filter({ has: page.locator("dt", { hasText: /^Total Play Time$/ }) })
+			.locator("dd"),
+	).toHaveText(/^(?:\d+:)?\d{2}:\d{2}s$/);
+	await expect(
+		panel
+			.locator("div")
 			.filter({ has: page.locator("dt", { hasText: /^Jumps$/ }) })
 			.locator("dd"),
 	).toHaveText("1");

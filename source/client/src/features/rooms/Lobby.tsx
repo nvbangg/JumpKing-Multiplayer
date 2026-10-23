@@ -19,23 +19,47 @@ export function Lobby({
 	const limit =
 		room.settings?.timeLimitMinutes ?? rules.timeLimitDefaultMinutes;
 	return (
-		<>
-			<RoomCode roomId={room.roomId} />
-			{room.state === "COUNTDOWN" && <p role="status">Starting…</p>}
-			<ul className="players">
-				{room.members.map((member) => (
-					<li key={member.playerId}>
-						<span>{member.nickname}</span>
-						<span>
-							{member.playerId === room.hostPlayerId ? "Host" : ""}
-							{!member.connected ? " · Offline" : ""}
-							{member.nextMatchConfirmed ? " · Confirmed" : ""}
-						</span>
-					</li>
-				))}
-			</ul>
+		<div className="lobby-layout">
+			<section className="lobby-roster" aria-label="Room players">
+				<RoomCode roomId={room.roomId} />
+				{room.state === "COUNTDOWN" && <p role="status">Starting…</p>}
+				<ul className="players">
+					{room.members.map((member) => (
+						<li key={member.playerId}>
+							<span>{member.nickname}</span>
+							<span>
+								{member.playerId === room.hostPlayerId ? "Host" : ""}
+								{!member.connected ? " · Offline" : ""}
+								{member.nextMatchConfirmed ? " · Confirmed" : ""}
+							</span>
+						</li>
+					))}
+				</ul>
+				{host && room.state === "WAITING" && (
+					<button
+						type="button"
+						disabled={
+							pending ||
+							room.members.filter(
+								(member) =>
+									member.connected && member.nextMatchConfirmed !== false,
+							).length < rules.minimumRoomPlayers
+						}
+						onClick={() => command("START_GAME")}
+					>
+						Start
+					</button>
+				)}
+				<button
+					type="button"
+					disabled={pending}
+					onClick={() => command("LEAVE_ROOM")}
+				>
+					Leave
+				</button>
+			</section>
 			{room.settings && (
-				<>
+				<section className="lobby-settings" aria-label="Room settings">
 					<label className="mode-setting">
 						Map
 						<select
@@ -93,11 +117,6 @@ export function Lobby({
 							<option value="NO_WALK">No Walk</option>
 						</select>
 					</label>
-					<ItemSettings
-						value={room.settings}
-						disabled={!host || room.state !== "WAITING" || pending}
-						onChange={(patch) => command("UPDATE_ROOM_SETTINGS", patch)}
-					/>
 					{room.settings.mode === "TIME_LIMIT" && (
 						<label className="mode-setting">
 							Minutes
@@ -126,30 +145,13 @@ export function Lobby({
 							</select>
 						</label>
 					)}
-				</>
+					<ItemSettings
+						value={room.settings}
+						disabled={!host || room.state !== "WAITING" || pending}
+						onChange={(patch) => command("UPDATE_ROOM_SETTINGS", patch)}
+					/>
+				</section>
 			)}
-			{host && room.state === "WAITING" && (
-				<button
-					type="button"
-					disabled={
-						pending ||
-						room.members.filter(
-							(member) =>
-								member.connected && member.nextMatchConfirmed !== false,
-						).length < rules.minimumRoomPlayers
-					}
-					onClick={() => command("START_GAME")}
-				>
-					Start
-				</button>
-			)}
-			<button
-				type="button"
-				disabled={pending}
-				onClick={() => command("LEAVE_ROOM")}
-			>
-				Leave
-			</button>
-		</>
+		</div>
 	);
 }

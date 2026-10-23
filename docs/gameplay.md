@@ -44,7 +44,7 @@ Leaderboard chỉ xét Community đã commit, lấy một best run/Account. Fini
 
 ## Room và xếp hạng
 
-Room ID là chuỗi 6 chữ số, giữ số 0 đầu, ví dụ `001234`. Room mặc định Private; biết ID thì Join được. Public chỉ xuất hiện khi WAITING và còn chỗ. Host đổi visibility, mode, map và Items tại Lobby; chỉ WAITING cho Join mới/đổi settings, không Ready thủ công.
+Room ID là chuỗi 6 chữ số, giữ số 0 đầu, ví dụ `001234`. Room mặc định Private, Race và map 1; biết ID thì Join được. Public chỉ xuất hiện khi WAITING và còn chỗ. Lobby tách ID/danh sách người chơi và settings thành hai phần, màn hẹp xếp dọc. Host đổi settings khi WAITING; Minutes nằm ngay dưới Mode khi chọn Time Limit. Không Ready thủ công.
 
 ```text
 WAITING → COUNTDOWN → PLAYING → FINISHED
@@ -113,7 +113,7 @@ Tutorial Community: thực hiện tuần tự di chuyển → charge → nhảy 
 
 ## Thống kê và History
 
-Stats tổng Community/Room: active time, jumps, falls, finishes, số trận/thắng Room và best finish time full map; không lọc kiểu chơi. Jump tính khi launch, fall khi splat; New Game/respawn không xóa tổng. Chưa Finish thì finish time=null.
+Stats tổng Community/Room: active time, jumps, falls, finishes, số trận/thắng Room và best finish time full map; không lọc kiểu chơi. Jump tính khi launch, fall khi splat; New Game/respawn không xóa tổng. Chưa Finish thì finish time=null. Thời lượng hiển thị theo đồng hồ kèm `s`, ví dụ `01:30s`; chưa có thành tích hiện `—`.
 
 History mở từ Account khi nhấn username, gồm lượt Community kết thúc và Room finalize, chỉ chủ lượt/thành viên trận xem; mỗi lượt/trận một mục, Room có chi tiết roster. Pause/Continue/Save & Exit không tạo mục mới. Ownership và chống cộng trùng theo [data](data.md#history-stats-và-leaderboard).
 

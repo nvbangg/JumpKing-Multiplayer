@@ -42,7 +42,7 @@ test("region caption appears once per region and fades without blocking mobile c
 		await page.getByLabel("Map", { exact: true }).selectOption("10");
 		await page.getByRole("button", { name: "Start", exact: true }).click();
 		await expect(page.getByLabel("Play time", { exact: true })).not.toHaveText(
-			"00:00",
+			"00:00s",
 			{ timeout: 15000 },
 		);
 		await page.locator("canvas").click();

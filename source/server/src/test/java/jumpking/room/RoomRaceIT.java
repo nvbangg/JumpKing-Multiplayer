@@ -449,6 +449,7 @@ class RoomRaceIT {
       a.connect();
       b.connect();
       String id = a.ok("CREATE_ROOM", Map.of()).path("roomId").asText();
+      a.ok("UPDATE_ROOM_SETTINGS", Map.of("mapLevel", RoomSettings.FULL_MAP_LEVEL));
       b.ok("JOIN_ROOM", Map.of("roomId", id));
       a.ok("START_GAME", Map.of());
       time.advance(3000);
@@ -554,6 +555,7 @@ class RoomRaceIT {
               .orElseThrow();
       assertThat(entry.path("playerCount").asInt()).isEqualTo(2);
       assertThat(entry.path("mode").asText()).isEqualTo("RACE");
+      assertThat(entry.path("mapLevel").asInt()).isEqualTo(1);
       for (String secret : List.of("members", "reconnectToken", "username"))
         assertThat(entry.has(secret)).isFalse();
       try (var pool = java.util.concurrent.Executors.newFixedThreadPool(2)) {

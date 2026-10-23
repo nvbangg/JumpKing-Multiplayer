@@ -311,6 +311,25 @@ button {
 .single-panel {
 	width: min(100%, 500px);
 }
+.lobby-panel {
+	width: min(100%, 820px);
+}
+.lobby-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: 24px;
+}
+.lobby-roster,
+.lobby-settings {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	min-width: 0;
+}
+.lobby-settings {
+	border-left: 1px solid #302c20;
+	padding-left: 24px;
+}
 .menu-panel {
 	border: 2px solid #72684d;
 	outline: 4px solid #26231a;
@@ -493,6 +512,13 @@ button {
 	padding: 10px;
 	font-size: 20px;
 }
+.menu-panel select:hover,
+.menu-panel select:focus-visible {
+	background: #161616;
+}
+.menu-panel select:focus-visible {
+	outline: none;
+}
 .menu-panel p {
 	font-size: 17px;
 	line-height: 1.5;
@@ -550,6 +576,10 @@ button {
 	list-style: none;
 	max-height: 50dvh;
 	overflow-y: auto;
+}
+.lobby-roster .players {
+	margin-bottom: 0;
+	max-height: 35dvh;
 }
 .leaderboard li,
 .players li {
@@ -812,11 +842,12 @@ button {
 	padding: 8px 10px;
 	font-size: 18px;
 }
-.room-join-form input:hover {
+.room-join-form input:hover,
+.room-join-form input:focus-visible {
 	background: #161616;
 }
 .room-join-form input:focus-visible {
-	outline-color: #aaa28b;
+	outline: none;
 }
 .room-join-form button {
 	flex: 0 0 auto;
@@ -1177,6 +1208,11 @@ button {
 .screen-lobby > .chat-panel {
 	position: fixed;
 }
+@media (min-width: 1001px) {
+	.screen-lobby {
+		padding-left: 344px;
+	}
+}
 @media (max-width: 1000px) {
 	.screen-lobby {
 		height: 100dvh;
@@ -1187,7 +1223,7 @@ button {
 		flex-shrink: 0;
 		margin-bottom: 16px;
 	}
-	.screen-lobby .single-panel {
+	.screen-lobby .lobby-panel {
 		flex: 1;
 		min-height: 0;
 	}
@@ -1197,6 +1233,26 @@ button {
 	}
 	.screen-lobby .chat-messages {
 		max-height: 20dvh;
+	}
+}
+@media (max-width: 1000px) and (max-height: 600px) {
+	.screen-lobby {
+		padding-top: 12px;
+	}
+	.screen-lobby .brand {
+		display: none;
+	}
+}
+@media (max-width: 680px) {
+	.lobby-layout {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 16px;
+	}
+	.lobby-settings {
+		border-left: 0;
+		border-top: 1px solid #302c20;
+		padding-left: 0;
+		padding-top: 16px;
 	}
 }
 .item-control {

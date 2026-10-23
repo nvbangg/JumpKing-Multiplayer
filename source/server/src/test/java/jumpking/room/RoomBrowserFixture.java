@@ -30,6 +30,7 @@ public final class RoomBrowserFixture implements AutoCloseable {
       second.connect();
       var host = first.ok("CREATE_ROOM", Map.of());
       roomId = host.path("roomId").asText();
+      first.ok("UPDATE_ROOM_SETTINGS", Map.of("mapLevel", RoomSettings.FULL_MAP_LEVEL));
       var other = second.ok("JOIN_ROOM", Map.of("roomId", roomId));
       first.ok("START_GAME", Map.of());
       playId =

@@ -443,7 +443,13 @@ export function App() {
 				</header>
 			)}
 			<div
-				className={screen === "home" && home ? "home-layout" : "single-panel"}
+				className={
+					screen === "home" && home
+						? "home-layout"
+						: screen === "lobby"
+							? "lobby-panel"
+							: "single-panel"
+				}
 			>
 				<MenuPanel
 					title={

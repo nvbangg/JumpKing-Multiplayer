@@ -53,7 +53,15 @@ class RoomTimeLimitIT {
     String room =
         a.ok(
                 "CREATE_ROOM",
-                Map.of("settings", Map.of("mode", "TIME_LIMIT", "timeLimitMinutes", minutes)))
+                Map.of(
+                    "settings",
+                    Map.of(
+                        "mode",
+                        "TIME_LIMIT",
+                        "timeLimitMinutes",
+                        minutes,
+                        "mapLevel",
+                        RoomSettings.FULL_MAP_LEVEL)))
             .path("roomId")
             .asText();
     b.ok("JOIN_ROOM", Map.of("roomId", room));

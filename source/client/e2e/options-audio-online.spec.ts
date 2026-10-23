@@ -26,6 +26,9 @@ test("Sound moves into the game menu, controls remain visible and the timer is a
 	await expect(page.getByRole("switch", { name: /Fullscreen/ })).toHaveCount(0);
 	await newCommunity(page);
 	await expect(page.getByLabel("Play time", { exact: true })).toBeVisible();
+	await expect(page.getByLabel("Play time", { exact: true })).toHaveText(
+		/^\d{2}:\d{2}s$/,
+	);
 	await expect(page.getByRole("switch", { name: /^Sound:/ })).toHaveCount(0);
 	const region = page.getByLabel("Current region", { exact: true });
 	await expect(region).toHaveText("REDCROWN WOODS");
@@ -52,6 +55,10 @@ test("Sound moves into the game menu, controls remain visible and the timer is a
 	).toBeVisible();
 	await page.screenshot({ path: info.outputPath("pause-desktop.png") });
 	await expect(page.locator(".controls-help dt")).toHaveText(["Move", "Jump"]);
+	await expect(page.locator(".controls-help dd")).toHaveText([
+		"A / D or ← / →",
+		"Space / W / ↑",
+	]);
 	await expect(region).toBeHidden();
 	await expect(region).toHaveCSS("animation-play-state", "paused");
 	await expect(region).toHaveAttribute("data-same-region", "retained");

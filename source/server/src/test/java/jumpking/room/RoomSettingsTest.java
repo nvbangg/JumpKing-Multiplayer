@@ -43,12 +43,12 @@ class RoomSettingsTest {
   void validatesTheFourModesAndWholeMinuteBoundsWithoutCoercion() throws Exception {
     var json = new ObjectMapper();
     var rules = new SharedData(json).rules();
-    assertThat(RoomSettings.defaults()).isEqualTo(new RoomSettings("RACE", null, 10, false, 3));
+    assertThat(RoomSettings.defaults()).isEqualTo(new RoomSettings("RACE", null, 1, false, 3));
     for (String mode : java.util.List.of("RACE", "HARDCORE", "NO_WALK"))
       assertThat(
               RoomSettings.parse(
                   json.readTree("{\"mode\":\"" + mode + "\",\"timeLimitMinutes\":null}"), rules))
-          .isEqualTo(new RoomSettings(mode, null, 10, false, 3));
+          .isEqualTo(new RoomSettings(mode, null, 1, false, 3));
     for (int minutes : java.util.List.of(1, 30))
       assertThat(
               RoomSettings.parse(

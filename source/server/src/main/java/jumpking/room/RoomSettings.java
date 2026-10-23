@@ -14,7 +14,7 @@ public record RoomSettings(
   private static final Set<String> MODES = Set.of("RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK");
 
   public static RoomSettings defaults() {
-    return new RoomSettings("RACE", null, FULL_MAP_LEVEL, false, 3);
+    return new RoomSettings("RACE", null, 1, false, 3);
   }
 
   public static RoomSettings parse(JsonNode input, JsonNode rules) {
@@ -33,7 +33,7 @@ public record RoomSettings(
         throw GameEnvelope.invalid();
       minutes = value.asInt();
     } else if (!input.path("timeLimitMinutes").isNull()) throw GameEnvelope.invalid();
-    int level = input.has("mapLevel") ? input.path("mapLevel").asInt(0) : FULL_MAP_LEVEL;
+    int level = input.has("mapLevel") ? input.path("mapLevel").asInt(0) : 1;
     if (input.has("mapLevel")
             && (!input.path("mapLevel").isIntegralNumber()
                 || !input.path("mapLevel").canConvertToInt())

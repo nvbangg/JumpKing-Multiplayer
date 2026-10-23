@@ -43,12 +43,12 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 						id: String(index),
 						rank: index + 1,
 						username: `player_with_a_long_name_${index}`,
-						status: "ACTIVE",
+						status: index === 0 ? "FINISHED" : "ACTIVE",
 						currentProgress: 100,
 						maxProgress: 100,
 						elapsedTimeMs: 1000,
 						peakReachedTimeMs: 1000,
-						finishTimeMs: null,
+						finishTimeMs: index === 0 ? 61000 : null,
 					})),
 				},
 			}),
@@ -72,6 +72,9 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 		await expect(
 			page.getByRole("list", { name: "Community records" }),
 		).toBeVisible();
+		await expect(page.locator(".records-panel li strong").first()).toHaveText(
+			"01:01s",
+		);
 		await expect(
 			page.getByRole("button", { name: "Refresh", exact: true }),
 		).toBeEnabled();

@@ -26,7 +26,7 @@ public class RoomDirectory {
     final BitSet slots = new BitSet();
     boolean joinable = true;
     String visibility = "PRIVATE", mode = "RACE";
-    int mapLevel = RoomSettings.FULL_MAP_LEVEL;
+    int mapLevel = 1;
 
     Entry(String kind) {
       this.kind = kind;

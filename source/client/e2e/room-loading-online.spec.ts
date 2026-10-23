@@ -75,7 +75,7 @@ test("slow renderer holds the whole roster before the single server countdown", 
 		await a.waitForTimeout(3500);
 		expect(observed.snapshot).toBeUndefined();
 		await expect(b.getByLabel("Play time", { exact: true })).toHaveText(
-			"00:00",
+			"00:00s",
 		);
 		release();
 		await expect(

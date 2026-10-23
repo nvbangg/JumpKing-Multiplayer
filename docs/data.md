@@ -49,7 +49,7 @@ erDiagram
         CHAR(36) id PK
         CHAR(6) room_code
         VARCHAR(16) mode
-        SMALLINT map_level "1–10; default 10"
+        SMALLINT map_level "1–10; default 1"
         SMALLINT time_limit_minutes "nullable; TIME_LIMIT"
         BOOLEAN items_enabled "default false"
         SMALLINT item_cooldown_minutes "1–15; default 3"

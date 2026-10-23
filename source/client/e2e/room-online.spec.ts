@@ -139,7 +139,8 @@ test("Back leaves the online context but blur and valid Room transitions do not"
 
 test("Account lobby, permanent chat, selected settings and Host transfer", async ({
 	browser,
-}) => {
+}, info) => {
+	test.setTimeout(60000);
 	const ca = await browser.newContext(),
 		cb = await browser.newContext();
 	const a = await ca.newPage(),
@@ -148,6 +149,7 @@ test("Account lobby, permanent chat, selected settings and Host transfer", async
 		const host = await registerOnline(a, "lobby_host"),
 			peer = await registerOnline(b, "lobby_peer");
 		const id = await createRoom(a);
+		await expect(a.getByLabel("Map", { exact: true })).toHaveValue("1");
 		await expect(
 			a.getByRole("button", { name: "Start", exact: true }),
 		).toBeEnabled();
@@ -165,12 +167,57 @@ test("Account lobby, permanent chat, selected settings and Host transfer", async
 			a.getByRole("button", { name: "Close chat", exact: true }),
 		).toHaveCount(0);
 		await a.getByLabel("Mode", { exact: true }).selectOption("TIME_LIMIT");
+		await a.getByLabel("Mode", { exact: true }).focus();
+		await expect(a.getByLabel("Mode", { exact: true })).toHaveCSS(
+			"outline-style",
+			"none",
+		);
+		await expect(a.getByLabel("Minutes", { exact: true })).toBeVisible();
+		const fields = await a
+			.locator(".lobby-settings select, .lobby-settings input")
+			.evaluateAll((inputs) =>
+				inputs.map((input) => input.getAttribute("aria-label")),
+			);
+		expect(fields.indexOf("Minutes")).toBe(fields.indexOf("Mode") + 1);
 		await expect(b.getByLabel("Minutes", { exact: true })).toHaveValue("5");
 		await expect(
 			a.getByLabel("Minutes", { exact: true }).locator("option"),
 		).toHaveCount(30);
 		await a.getByLabel("Minutes", { exact: true }).selectOption("12");
 		await expect(b.getByLabel("Minutes", { exact: true })).toHaveValue("12");
+		for (const viewport of [
+			{ width: 1280, height: 720 },
+			{ width: 844, height: 390 },
+			{ width: 390, height: 844 },
+		]) {
+			await a.setViewportSize(viewport);
+			const roster = await a
+					.getByRole("region", { name: "Room players" })
+					.boundingBox(),
+				settings = await a
+					.getByRole("region", { name: "Room settings" })
+					.boundingBox(),
+				menu = await a.locator(".menu-panel").boundingBox(),
+				chat = await a
+					.getByRole("region", { name: "Room chat", exact: true })
+					.boundingBox();
+			if (!roster || !settings || !menu || !chat)
+				throw new Error("Lobby layout is missing");
+			expect(menu.height).toBeGreaterThan(100);
+			if (viewport.width > 680)
+				expect(roster.x + roster.width).toBeLessThanOrEqual(settings.x);
+			else expect(roster.y + roster.height).toBeLessThanOrEqual(settings.y);
+			if (viewport.width > 1000)
+				expect(chat.x + chat.width).toBeLessThanOrEqual(menu.x);
+			else expect(menu.y + menu.height).toBeLessThanOrEqual(chat.y);
+			await a.getByLabel("Minutes", { exact: true }).scrollIntoViewIfNeeded();
+			await expect(a.getByLabel("Minutes", { exact: true })).toBeInViewport();
+			await a.screenshot({
+				path: info.outputPath(`lobby-${viewport.width}.png`),
+				fullPage: true,
+			});
+		}
+		await a.setViewportSize({ width: 1280, height: 720 });
 		await a.getByLabel("Mode", { exact: true }).selectOption("NO_WALK");
 		await expect(b.getByLabel("Mode", { exact: true })).toHaveValue("NO_WALK");
 		await a.getByRole("button", { name: "Leave", exact: true }).click();

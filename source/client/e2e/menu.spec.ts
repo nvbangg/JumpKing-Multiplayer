@@ -36,7 +36,7 @@ test("home keeps the required menu and one account form", async ({
 	const newGame = page.getByRole("button", { name: "New Game", exact: true });
 	const roomId = page.getByLabel("Room ID", { exact: true });
 	await roomId.focus();
-	await expect(roomId).toHaveCSS("outline-color", "rgb(170, 162, 139)");
+	await expect(roomId).toHaveCSS("outline-style", "none");
 	await roomId.hover();
 	await expect(roomId).toHaveCSS("background-color", "rgb(22, 22, 22)");
 	await page.mouse.move(0, 0);

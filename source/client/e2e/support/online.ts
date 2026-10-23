@@ -76,7 +76,7 @@ export async function startRoom(host: Page, peer: Page) {
 			page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible({ timeout: 30000 });
 	await expect(host.getByLabel("Play time", { exact: true })).not.toHaveText(
-		"00:00",
+		"00:00s",
 		{ timeout: 10000 },
 	);
 	await host.bringToFront();

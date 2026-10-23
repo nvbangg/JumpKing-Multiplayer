@@ -107,6 +107,7 @@ class RoomFlyIT {
         b.connect();
         var settings = new HashMap<String, Object>();
         settings.put("mode", mode);
+        settings.put("mapLevel", RoomSettings.FULL_MAP_LEVEL);
         settings.put("timeLimitMinutes", mode.equals("TIME_LIMIT") ? 30 : null);
         String room = a.ok("CREATE_ROOM", Map.of("settings", settings)).path("roomId").asText();
         b.ok("JOIN_ROOM", Map.of("roomId", room));

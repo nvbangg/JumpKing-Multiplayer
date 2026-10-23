@@ -4,7 +4,7 @@ export function ControlsHelp() {
 			<dt>Move</dt>
 			<dd>A / D or ← / →</dd>
 			<dt>Jump</dt>
-			<dd>Hold Space / W / ↑, then release</dd>
+			<dd>Space / W / ↑</dd>
 		</dl>
 	);
 }

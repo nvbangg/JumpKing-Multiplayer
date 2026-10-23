@@ -84,7 +84,7 @@ Page là integer 0–100000; size/limit 1–100. Status: 400 validation, 401 xá
 | CANCEL_INPUT | {playId,generation,seq}; hủy charge/input, không launch |
 | RECONNECT | {roomId,playerId,reconnectToken} |
 
-Room mặc định RACE/null/mapLevel=10, PRIVATE; Items theo [gameplay](gameplay.md#items-trong-room). ROOM_STATE của Room luôn trả settings đầy đủ, gồm mapLevel; giá trị mặc định chỉ áp dụng tại đầu vào. Chỉ Host/WAITING được sửa settings; patch atomic, mode/timeLimitMinutes phải hợp lệ cùng nhau. Join, Start, End và Play Again tuân thủ lifecycle gameplay.
+Room mặc định RACE/null/mapLevel=1, PRIVATE; Items theo [gameplay](gameplay.md#items-trong-room). ROOM_STATE của Room luôn trả settings đầy đủ, gồm mapLevel; giá trị mặc định chỉ áp dụng tại đầu vào. Chỉ Host/WAITING được sửa settings; patch atomic, mode/timeLimitMinutes phải hợp lệ cùng nhau. Join, Start, End và Play Again tuân thủ lifecycle gameplay.
 
 JOIN_COMMUNITY bắt buộc cả hai fields: Continue gửi false và đúng ID ACTIVE; New Game gửi true với ID ACTIVE hoặc null nếu chưa có. Sai ID/trạng thái trả CONFLICT; hết chỗ/lỗi DB giữ save cũ. Muốn thay lượt đang chơi phải Save & Exit trước.
 

@@ -19,7 +19,7 @@ CREATE TABLE matches (
     id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
     room_code CHAR(6) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
     mode VARCHAR(16) NOT NULL,
-    map_level SMALLINT NOT NULL DEFAULT 10,
+    map_level SMALLINT NOT NULL DEFAULT 1,
     time_limit_minutes SMALLINT NULL,
     items_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     item_cooldown_minutes SMALLINT NOT NULL DEFAULT 3,

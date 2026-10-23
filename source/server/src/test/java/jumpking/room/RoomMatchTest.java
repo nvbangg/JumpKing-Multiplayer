@@ -120,7 +120,7 @@ class RoomMatchTest {
 
   @Test
   void eachWinnerKeepsTheirOwnRavenEndingAndANewMatchResetsProgress() throws Exception {
-    var match = match();
+    var match = match(new RoomSettings("RACE", null, RoomSettings.FULL_MAP_LEVEL, false, 3));
     var now = Instant.parse("2026-01-01T00:00:00Z");
     match.start(now);
     var point = landing(10);
@@ -322,7 +322,7 @@ class RoomMatchTest {
 
   @Test
   void allPlayersOfTheFinishingTickAreProcessedBeforeResultsAndTies() throws Exception {
-    var match = match();
+    var match = match(new RoomSettings("RACE", null, RoomSettings.FULL_MAP_LEVEL, false, 3));
     var before = MainBabeRoute.beforeFinish(shared, json);
     var start = Instant.parse("2026-01-01T00:00:00Z");
     match.start(start);
