@@ -75,7 +75,7 @@ Service cần restart, log và graceful shutdown; không kill cưỡng bức khi
 
 ## Cloudflare Pages và VPS
 
-Pages chỉ phục vụ frontend; HTTP/WebSocket kết nối trực tiếp backend HTTPS/WSS trên VPS, không cần website trung gian hoặc domain riêng cho Pages.
+Frontend hiện tại: [jumpking-multiplayer.pages.dev](https://jumpking-multiplayer.pages.dev/). Pages chỉ phục vụ frontend; HTTP/WebSocket kết nối trực tiếp backend HTTPS/WSS trên VPS, không cần website trung gian hoặc domain riêng cho Pages.
 
 Trong Pages, chọn root `source/client`, build command `npm run build`, output `dist`. Đặt biến cho môi trường Production (Preview nếu dùng):
 
@@ -89,12 +89,12 @@ Thay bằng địa chỉ HTTPS backend thực tế, không có path. Deploy lạ
 Trong file prod thật đang được backend nạp, thêm origin frontend vào allowlist. Nếu Pages và backend khác site, cấu hình:
 
 ```properties
-app.allowed-origins=https://your-project.pages.dev,https://api.example.com
+app.allowed-origins=https://jumpking-multiplayer.pages.dev,https://api.example.com
 server.servlet.session.cookie.same-site=none
 server.servlet.session.cookie.secure=true
 ```
 
-Thay các origins bằng địa chỉ thực tế, không có dấu `/` cuối; giữ các origins khác còn sử dụng. Allowlist áp dụng cho cả HTTP và WebSocket. Giữ CSRF và cookie HttpOnly; không dùng wildcard với credentials. Cùng site giữ `SameSite=Lax`; local HTTP giữ `Secure=false`.
+Thay origin backend ví dụ bằng địa chỉ thực tế, không có dấu `/` cuối; giữ các origins khác còn sử dụng. Khi đổi tên miền Pages, cập nhật origin frontend trong allowlist; `VITE_BACKEND_ORIGIN` vẫn trỏ tới VPS. Allowlist áp dụng cho cả HTTP và WebSocket. Giữ CSRF và cookie HttpOnly; không dùng wildcard với credentials. Cùng site giữ `SameSite=Lax`; local HTTP giữ `Secure=false`.
 
 Restart backend sau khi sửa cấu hình. File `.example` chỉ là mẫu; workflow VPS không chép mẫu sang file cấu hình thật. Nếu trình duyệt chặn third-party cookies, đăng nhập cross-site vẫn có thể thất bại; dùng domain frontend/backend cùng site hoặc frontend đóng cùng JAR để tránh phụ thuộc này.
 

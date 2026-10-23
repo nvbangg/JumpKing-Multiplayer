@@ -2,6 +2,8 @@
 
 Game nhiều người chơi trên trình duyệt, tái hiện gameplay Jump King trên map Main Babe. Server quyết định trạng thái/kết quả; client dự đoán input để phản hồi nhanh. Trọng tâm học phần là đồng bộ trạng thái, xử lý nhiều kết nối và lưu tiến độ nhất quán.
 
+Chơi tại [jumpking-multiplayer.pages.dev](https://jumpking-multiplayer.pages.dev/).
+
 | Kiểu chơi | Phạm vi |
 | --- | --- |
 | Community | Tự ghép sảnh, lưu tiến độ theo Account, Continue và leaderboard |
