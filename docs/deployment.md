@@ -73,6 +73,33 @@ java -jar /opt/jumpking/current.jar --spring.profiles.active=prod --spring.confi
 
 Service cần restart, log và graceful shutdown; không kill cưỡng bức khi cập nhật. Không cần proxy hoặc Node server cho phương án này. Nếu tách frontend/domain, cấu hình lại cookies/CORS/WS theo [protocol](protocol.md#xác-thực-và-bảo-mật).
 
+## Cloudflare Pages và VPS
+
+Pages chỉ phục vụ frontend; HTTP/WebSocket kết nối trực tiếp backend HTTPS/WSS trên VPS, không cần website trung gian hoặc domain riêng cho Pages.
+
+Trong Pages, chọn root `source/client`, build command `npm run build`, output `dist`. Đặt biến cho môi trường Production (Preview nếu dùng):
+
+```text
+NODE_VERSION=24
+VITE_BACKEND_ORIGIN=https://api.example.com
+```
+
+Thay bằng địa chỉ HTTPS backend thực tế, không có path. Deploy lại sau khi đổi biến vì `VITE_*` được gắn vào bundle lúc build. `BACKEND_URL` chỉ dành cho proxy Vite local.
+
+Trong file prod thật đang được backend nạp, thêm origin frontend vào allowlist. Nếu Pages và backend khác site, cấu hình:
+
+```properties
+app.allowed-origins=https://your-project.pages.dev,https://api.example.com
+server.servlet.session.cookie.same-site=none
+server.servlet.session.cookie.secure=true
+```
+
+Thay các origins bằng địa chỉ thực tế, không có dấu `/` cuối; giữ các origins khác còn sử dụng. Allowlist áp dụng cho cả HTTP và WebSocket. Giữ CSRF và cookie HttpOnly; không dùng wildcard với credentials. Cùng site giữ `SameSite=Lax`; local HTTP giữ `Secure=false`.
+
+Restart backend sau khi sửa cấu hình. File `.example` chỉ là mẫu; workflow VPS không chép mẫu sang file cấu hình thật. Nếu trình duyệt chặn third-party cookies, đăng nhập cross-site vẫn có thể thất bại; dùng domain frontend/backend cùng site hoặc frontend đóng cùng JAR để tránh phụ thuộc này.
+
+Mở game trên Pages, kiểm tra trong Network: request tới backend `/api/auth/csrf` và preflight không bị `ORIGIN_DENIED`, đăng nhập giữ được phiên, WebSocket kết nối và vào Room/Community được. Nếu dùng Google Sign-In, thêm origin frontend vào Authorized JavaScript origins theo [hướng dẫn Google](google-oauth-setup.md).
+
 ## Giữ phiên đăng nhập
 
 Prod bật session persistence. Đặt `APP_SESSION_STORE_DIR` hoặc `server.servlet.session.store-dir` trỏ đến thư mục bền vững ngoài release, chỉ user dịch vụ được đọc/ghi. Tomcat lưu/nạp phiên khi shutdown/start bình thường; thời hạn phiên vẫn theo [protocol](protocol.md#xác-thực-và-bảo-mật). Thời gian dừng service phải dài hơn graceful shutdown của ứng dụng.

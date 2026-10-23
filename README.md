@@ -81,7 +81,7 @@ java -jar target/jumpking-server.jar --spring.profiles.active=local
 
 Dừng backend development nếu đang chiếm cổng 8080. Chạy JAR từ `source/server/` để đọc cấu hình local, mở [http://127.0.0.1:8080](http://127.0.0.1:8080); không cần Vite.
 
-Người khác chỉ cần trình duyệt. [LAN/ZeroTier](docs/deployment.md#lan-và-zerotier) dùng IP host; triển khai chính dùng cùng JAR trên [VPS](docs/deployment.md#vps) với HTTPS/WSS. [GitHub Actions](docs/deployment.md#github-actions) cập nhật JAR, không tự cập nhật schema.
+Người khác chỉ cần trình duyệt. [LAN/ZeroTier](docs/deployment.md#lan-và-zerotier) dùng IP host; triển khai chính dùng cùng JAR trên [VPS](docs/deployment.md#vps) với HTTPS/WSS. Có thể tách frontend lên [Cloudflare Pages](docs/deployment.md#cloudflare-pages-và-vps). [GitHub Actions](docs/deployment.md#github-actions) cập nhật JAR, không tự cập nhật schema.
 
 ## Demo
 

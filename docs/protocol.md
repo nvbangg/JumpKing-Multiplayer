@@ -6,7 +6,7 @@ HTTP JSON tại `/api` phục vụ tài khoản/dữ liệu; WebSocket thuần t
 
 ## Xác thực và bảo mật
 
-- Spring Security quản lý session; cookie host-only, Path=/, HttpOnly, SameSite=Lax và Secure khi HTTPS. HTTP gửi credentials; mutation cần CSRF token. Đăng nhập đổi session ID/CSRF; password băm BCrypt. Rate limit 20 requests/phút/IP và identity.
+- Spring Security quản lý session; cookie host-only, Path=/, HttpOnly, SameSite=Lax mặc định và Secure khi HTTPS; frontend khác site theo [deployment](deployment.md#cloudflare-pages-và-vps). HTTP gửi credentials; mutation cần CSRF token. Đăng nhập đổi session ID/CSRF; password băm BCrypt. Rate limit 20 requests/phút/IP và identity.
 - Sign In nhận username/password: username chưa tồn tại thì tạo Account, đã có thì xác thực; sai password không tạo/sửa Account. Username 3–32 ký tự chữ/số/underscore/hyphen; password ít nhất 6 Unicode code points, tối đa 72 UTF-8 bytes. Khi tạo trùng username đồng thời, chỉ đăng nhập bằng mật khẩu của Account đã được tạo. Không đổi Account khi còn membership.
 - Google Sign-In qua POST /auth/google: gửi idToken từ Google, tự động xác thực và liên kết theo google_id; tên Google được chuẩn hóa thành username hợp lệ.
 - Logout hủy phiên. Đổi mật khẩu cần currentPassword, chỉ thành công sau commit và thu hồi mọi phiên/socket của Account; tài khoản chỉ dùng Google trả CONFLICT. Không có email hoặc khôi phục mật khẩu.
