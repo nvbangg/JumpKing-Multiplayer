@@ -18,7 +18,7 @@ Tối đa 10 người/sảnh, kể cả slot reconnect. Mỗi Account chỉ có 
 | A/D hoặc Left/Right | Đi bộ/chọn hướng nhảy; hai hướng cùng lúc là trung tính |
 | Space, W hoặc Up | Giữ để charge; thả hoặc đủ lực thì nhảy |
 | Escape / Menu | Mở menu |
-| Cảm ứng | Trái/phải và giữ/thả Jump; hỗ trợ nhiều ngón |
+| Cảm ứng | Chơi ngang; nút trái/phải và giữ/thả Jump ở hàng dưới, hỗ trợ nhiều ngón |
 | Tay cầm | D-pad/analog trái, A nhảy, Start mở menu |
 
 Giữ physics gốc: charge quyết định lực nhảy, đủ charge tự bật, phải thả Jump trước lần charge mới; không đổi hướng hoặc nhảy lần hai trên không. Hướng nhảy dùng input hiện tại hoặc hướng gần nhất trong buffer. Va tường bật ngược, va trần dừng lên; giải collision cả slopes và góc. Băng có quán tính; tuyết cấm đi bộ và giới hạn charge; gió chỉ tác động trong vùng quy định. Splat là tiếp đất ở tốc độ rơi tối đa, tính một fall và giữ tư thế ngã trước khi đứng dậy.
@@ -121,7 +121,7 @@ History gồm lượt Community kết thúc và Room finalize, chỉ chủ lư�
 
 Chat theo sảnh/phòng, text thuần, không lưu MySQL; Lobby/game dùng chung form, luôn hiện ô nhập và giữ tối đa 30 tin gần nhất. Trong trận, lịch sử ẩn sau 5 giây không có tin mới; hover vùng tin nhắn giữ lịch sử mở, rời vùng này 2 giây thì ẩn. Tin mới hoặc focus chat tự hiện lại; giữ focus ô nhập không ngăn tự ẩn. Lobby không tự ẩn. Chỉ tự cuộn khi đang gần cuối; khi đọc tin cũ giữ vị trí, có Latest để về cuối. Enter focus/gửi, Escape hoặc rời ô nhập trả điều khiển; không bắt phím form khác. Menu/pause không che hoặc ngắt chat.
 
-Players realtime gồm cả phòng: Room theo comparator mode, Community theo current progress. Leaderboard chỉ Community, tải khi vào trận hoặc Refresh, không polling. Hai bảng mặc định mở, có thể thu gọn; chiều cao giới hạn theo màn hình và danh sách dài cuộn. Desktop giữ game chính giữa, chat dưới trái, Players/Leaderboard trên phải; mobile xếp dọc. Timer luôn hiện góc trên trái game, jumps chỉ ở Stats/History. Sound bật/tắt trực tiếp, không màn Options hoặc nút Fullscreen; F11 do trình duyệt xử lý, không phóng game desktop theo chiều cao. Chỉ ô nhập/mã phòng cho chọn chữ. New Game Community chỉ tại menu sau Save & Exit.
+Players realtime gồm cả phòng: Room theo comparator mode, Community theo current progress. Leaderboard chỉ Community, tải khi vào trận hoặc Refresh, không polling. Hai bảng mặc định mở, có thể thu gọn; chiều cao giới hạn theo màn hình và danh sách dài cuộn. Game ở giữa, chat dưới trái, Players/Leaderboard trên phải; mobile ngang giữ bố cục này, dành hàng dưới cho nút cảm ứng và nâng chat tránh chồng nút. Mobile dọc mở Pause và yêu cầu xoay ngang; thử khóa hướng khi trình duyệt hỗ trợ, không chặn xoay thủ công nếu bị từ chối. Timer luôn hiện góc trên trái game, jumps chỉ ở Stats/History. Ping dưới 100 ms xanh, 100–150 ms vàng, trên 150 ms đỏ. Sound bật/tắt trực tiếp, không màn Options hoặc nút Fullscreen; F11 do trình duyệt xử lý, không phóng game desktop theo chiều cao. Chỉ ô nhập/mã phòng cho chọn chữ. New Game Community chỉ tại menu sau Save & Exit.
 
 ## Xem người chơi khác
 

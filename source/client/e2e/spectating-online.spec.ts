@@ -46,7 +46,7 @@ for (const kind of ["COMMUNITY", "ROOM"] as const)
 		test.setTimeout(60000);
 		const first = await browser.newContext(),
 			second = await browser.newContext({
-				viewport: { width: 390, height: 844 },
+				viewport: { width: 844, height: 390 },
 				isMobile: true,
 				hasTouch: true,
 			});

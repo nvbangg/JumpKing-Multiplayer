@@ -31,6 +31,7 @@ import { RoomCode } from "../rooms/RoomCode";
 import type { Options } from "../settings/options";
 import { SoundButton } from "../settings/SoundButton";
 import { createGameControls } from "./gameControls";
+import { LandscapeGate } from "./LandscapeGate";
 import { NetworkStatusBadge } from "./NetworkStatusBadge";
 import { PlayersPanel } from "./PlayersPanel";
 import { TouchControls } from "./TouchControls";
@@ -209,11 +210,13 @@ export function OnlineGame({
 		else setError(cause instanceof Error ? cause.message : fallback);
 	};
 	const pauseRef = useRef<() => void>(() => {});
+	const pauseRevision = useRef(0);
 	const pause = () => {
 		if (endingActive.current) {
 			skipEnding.current?.();
 			return;
 		}
+		pauseRevision.current++;
 		if (!runtime.current || runtime.current.menu) return;
 		runtime.current.menu = true;
 		runtime.current.cancel();
@@ -576,6 +579,7 @@ export function OnlineGame({
 		}
 	};
 	const resume = async (ownGame = false) => {
+		const revision = pauseRevision.current;
 		if (
 			room.kind === "COMMUNITY" &&
 			(!runtime.current?.latest?.spectating || ownGame)
@@ -590,6 +594,15 @@ export function OnlineGame({
 			} finally {
 				setPending(false);
 			}
+		}
+		// Pause mới khi đang chờ ACK phải được ưu tiên hơn Resume cũ.
+		if (revision !== pauseRevision.current) {
+			if (room.kind === "COMMUNITY") {
+				void socket
+					.command("SET_COMMUNITY_PAUSED", { paused: true })
+					.catch((cause) => reportFailure(cause, "Pause failed"));
+			}
+			return;
 		}
 		socket.resumeRequired = false;
 		if (runtime.current) runtime.current.menu = false;
@@ -740,9 +753,6 @@ export function OnlineGame({
 									: `Item ${duration(Math.ceil((items?.cooldownMs ?? 0) / 1000) * 1000)}`}
 						</button>
 					)}
-				{ready && !ending && !menu && !chat.open && !watching && (
-					<TouchControls input={input} flying={flying} />
-				)}
 				{ready &&
 					!ending &&
 					!menu &&
@@ -912,6 +922,12 @@ export function OnlineGame({
 				<aside className="game-chat" aria-label="Game chat">
 					<Chat chat={chat} socket={socket} dismissible />
 				</aside>
+			)}
+			{ready && !ending && !menu && !chat.open && !watching && (
+				<TouchControls input={input} flying={flying} />
+			)}
+			{ready && !ending && (
+				<LandscapeGate onPortrait={() => pauseRef.current()} />
 			)}
 		</main>
 	);

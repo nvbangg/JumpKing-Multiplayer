@@ -103,13 +103,12 @@ for (const mobile of [false, true])
 				menuBounds = await host.locator(".menu-panel").boundingBox();
 			if (!chatBounds || !menuBounds)
 				throw new Error("Lobby panels are missing");
-			const viewport = host.viewportSize();
-			if (!viewport) throw new Error("Viewport is missing");
-			expect(chatBounds.x).toBeLessThan(viewport.width / 4);
-			expect(viewport.height - chatBounds.y - chatBounds.height).toBeCloseTo(
-				12,
-				0,
-			);
+			const lobbyViewport = host.viewportSize();
+			if (!lobbyViewport) throw new Error("Viewport is missing");
+			expect(chatBounds.x).toBeLessThan(lobbyViewport.width / 4);
+			expect(
+				lobbyViewport.height - chatBounds.y - chatBounds.height,
+			).toBeCloseTo(12, 0);
 			expect(
 				mobile
 					? menuBounds.y + menuBounds.height <= chatBounds.y
@@ -120,7 +119,14 @@ for (const mobile of [false, true])
 					mobile ? "lobby-mobile.png" : "lobby-desktop.png",
 				),
 			});
+			if (mobile) {
+				await host.setViewportSize({ width: 844, height: 390 });
+				await host
+					.getByLabel("Mode", { exact: true })
+					.selectOption("TIME_LIMIT");
+			}
 			await startRoom(host, peer);
+			const viewport = host.viewportSize();
 			await expect.poll(() => own.snapshot?.items?.held).toMatch(/BANANA|ROCK/);
 			const kind = own.snapshot?.items?.held;
 			const button = host.getByRole("button", {
@@ -128,6 +134,20 @@ for (const mobile of [false, true])
 				exact: true,
 			});
 			await expect(button).toBeEnabled();
+			if (mobile) {
+				await host.setViewportSize({ width: 568, height: 320 });
+				const hud = await host.locator(".game-hud").boundingBox(),
+					item = await button.boundingBox(),
+					controls = await host.locator(".touch-controls").boundingBox();
+				if (!hud || !item || !controls)
+					throw new Error("Game controls are missing");
+				expect(hud.y + hud.height).toBeLessThanOrEqual(item.y);
+				expect(item.y + item.height).toBeLessThanOrEqual(controls.y);
+				await host.screenshot({
+					path: info.outputPath("items-mobile-small.png"),
+				});
+				await host.setViewportSize({ width: 844, height: 390 });
+			}
 			await host.keyboard.press("Enter");
 			await host.getByLabel("Message", { exact: true }).press("KeyE");
 			await expect(host.getByLabel("Message", { exact: true })).toHaveValue(

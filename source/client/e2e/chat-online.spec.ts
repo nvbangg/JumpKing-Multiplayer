@@ -19,7 +19,7 @@ test("persistent scrollable chat, shortcuts and touch work without launching a h
 	test.setTimeout(60_000);
 	const first = await browser.newContext(),
 		second = await browser.newContext({
-			viewport: { width: 390, height: 844 },
+			viewport: { width: 844, height: 390 },
 			isMobile: true,
 			hasTouch: true,
 		});
@@ -178,7 +178,7 @@ test("persistent scrollable chat, shortcuts and touch work without launching a h
 			.getByRole("button", { name: "Move Left", exact: true })
 			.boundingBox();
 		expect(
-			chatBox && controlsBox && controlsBox.y + controlsBox.height <= chatBox.y,
+			chatBox && controlsBox && chatBox.y + chatBox.height <= controlsBox.y,
 		).toBe(true);
 		await b.getByRole("button", { name: "Move Left", exact: true }).tap();
 		await b.screenshot({ path: info.outputPath("mobile-chat.png") });

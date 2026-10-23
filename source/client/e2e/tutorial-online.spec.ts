@@ -20,7 +20,7 @@ for (const mobile of [false, true])
 		const context = await browser.newContext(
 			mobile
 				? {
-						viewport: { width: 320, height: 740 },
+						viewport: { width: 740, height: 320 },
 						hasTouch: true,
 						isMobile: true,
 					}
@@ -45,7 +45,13 @@ for (const mobile of [false, true])
 					page.getByRole("button", { name: "Jump", exact: true }),
 				]) {
 					const box = await control.boundingBox();
-					expect(box && bounds.y + bounds.height <= box.y).toBeTruthy();
+					expect(
+						box &&
+							(bounds.y + bounds.height <= box.y ||
+								box.y + box.height <= bounds.y ||
+								bounds.x + bounds.width <= box.x ||
+								box.x + box.width <= bounds.x),
+					).toBeTruthy();
 				}
 			}
 			await page.screenshot({ path: info.outputPath("tutorial.png") });

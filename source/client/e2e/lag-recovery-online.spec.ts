@@ -24,7 +24,7 @@ for (const kind of ["COMMUNITY", "ROOM"] as const) {
 			page,
 		}) => {
 			if (kind === "COMMUNITY" && action === "reconnect") {
-				await page.setViewportSize({ width: 390, height: 844 });
+				await page.setViewportSize({ width: 844, height: 390 });
 			}
 			const name = await registerOnline(page, "lag");
 			if (kind === "COMMUNITY") await newCommunity(page);

@@ -225,7 +225,7 @@ button {
 }
 .touch-controls > div {
 	display: flex;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	gap: 10px;
 }
 .touch-controls button {
@@ -248,7 +248,13 @@ button {
 .touch-controls button:active {
 	background: #463a24cc;
 }
-@media (pointer: coarse), (max-width: 680px) {
+@media (pointer: coarse), (max-width: 900px) {
+	.play-page {
+		padding-bottom: calc(80px + env(safe-area-inset-bottom));
+	}
+	.game-sidebar {
+		max-height: calc(100dvh - 104px - env(safe-area-inset-bottom));
+	}
 	.touch-controls {
 		display: flex;
 	}
@@ -800,36 +806,19 @@ button {
 }
 @media (max-width: 900px) {
 	.play-page {
-		height: auto;
-		min-height: 100dvh;
-		display: flex;
-		flex-direction: column;
-		overflow: visible;
-		padding: 0;
-		gap: 0;
-	}
-	.game-stage {
-		width: 100%;
-		aspect-ratio: 4 / 3;
-		max-height: 100dvh;
-		flex: none;
-	}
-	.game-sidebar {
-		overflow: visible;
-		padding: 8px;
-		max-height: none;
-		max-width: none;
-	}
-	.game-chat {
-		max-width: none;
-		padding: 8px;
-	}
-	.in-game-panels {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+		--game-width: min(
+			480px,
+			max(180px, calc(100vw - 320px)),
+			calc((100dvh - 104px - env(safe-area-inset-bottom)) * 4 / 3)
+		);
+		min-height: 0;
+		padding-top: 8px;
+		padding-left: max(8px, env(safe-area-inset-left));
+		padding-right: max(8px, env(safe-area-inset-right));
 		gap: 8px;
 	}
-	.in-game-panels > :only-child {
-		grid-column: 1 / -1;
+	.game-sidebar {
+		max-height: calc(100dvh - 100px - env(safe-area-inset-bottom));
 	}
 	.in-game-panel li {
 		height: 30px;
@@ -838,10 +827,13 @@ button {
 		gap: 5px;
 	}
 	.in-game-panel ol {
-		max-height: 150px;
+		max-height: max(60px, calc((100dvh - 220px) / 2));
 	}
 	.game-chat .chat-messages {
-		max-height: 160px;
+		max-height: max(60px, calc(100dvh - 160px));
+	}
+	.game-chat .chat-input-box {
+		padding: 6px;
 	}
 	.game-hud {
 		left: max(6px, env(safe-area-inset-left));
@@ -863,14 +855,42 @@ button {
 	.touch-controls {
 		left: max(8px, env(safe-area-inset-left));
 		right: max(8px, env(safe-area-inset-right));
-		bottom: 8px;
+		bottom: max(8px, env(safe-area-inset-bottom));
 	}
 	.touch-controls > div {
-		max-width: 130px;
+		gap: 8px;
 	}
-	.item-control {
-		bottom: 72px;
+	.game-overlay {
+		padding-top: 56px;
 	}
+	.game-overlay .menu-panel {
+		max-height: calc(100% - 16px);
+	}
+	.game-chat .chat-input-box input,
+	.game-chat .chat-input-box button {
+		padding: 5px;
+		font-size: 12px;
+	}
+}
+.landscape-gate {
+	position: fixed;
+	inset: 0;
+	z-index: 1001;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	gap: 16px;
+	padding: 24px;
+	background: #080808;
+	text-align: center;
+}
+.landscape-gate button {
+	font: inherit;
+	color: #ede7d3;
+	background: #08090c;
+	border: 1px solid #6b6250;
+	padding: 10px 16px;
 }
 .load-error-notice {
 	position: fixed;
@@ -1067,7 +1087,7 @@ button {
 	position: absolute;
 	z-index: 35;
 	right: max(16px, env(safe-area-inset-right));
-	bottom: 80px;
+	bottom: 16px;
 	font-size: 13px;
 	padding: 10px;
 	touch-action: manipulation;

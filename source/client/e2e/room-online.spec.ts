@@ -338,7 +338,7 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 				page.getByRole("list", { name: "Current players" }).locator("li"),
 			).toHaveCount(1);
 			const id = required(observed.snapshot).playId;
-			await page.setViewportSize({ width: 390, height: 844 });
+			await page.setViewportSize({ width: 844, height: 390 });
 			await page.screenshot({ path: info.outputPath("players-mobile.png") });
 			await page
 				.getByRole("button", { name: "Menu (Esc)", exact: true })

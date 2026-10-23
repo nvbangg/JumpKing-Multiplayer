@@ -64,7 +64,7 @@ test("touch double Jump respects the gate and simultaneous Jump fingers are one 
 	page,
 	context,
 }) => {
-	await page.setViewportSize({ width: 390, height: 844 });
+	await page.setViewportSize({ width: 844, height: 390 });
 	await page.addInitScript(() =>
 		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false })),
 	);

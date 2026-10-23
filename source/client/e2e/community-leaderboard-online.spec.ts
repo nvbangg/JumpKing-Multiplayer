@@ -6,7 +6,11 @@ import {
 	registerOnline,
 } from "./support/online";
 
-test.use({ isMobile: true, hasTouch: true });
+test.use({
+	isMobile: true,
+	hasTouch: true,
+	viewport: { width: 844, height: 390 },
+});
 
 test.skip(
 	process.env.E2E_AUTH_ONLINE !== "true",
@@ -88,8 +92,8 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 			{ width: 1280, height: 900 },
 			{ width: 1280, height: 1080 },
 			{ width: 1024, height: 768 },
-			{ width: 390, height: 844 },
 			{ width: 844, height: 390 },
+			{ width: 568, height: 320 },
 		]) {
 			await page.setViewportSize(viewport);
 			if (
@@ -140,17 +144,15 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 				chat = await page.locator(".game-chat").boundingBox();
 			if (!stage || !sidebar || !players || !board || !chat)
 				throw new Error("Game layout is missing");
-			if (viewport.width > 900) {
-				expect(stage.x + stage.width).toBeLessThanOrEqual(sidebar.x);
-				expect(chat.x + chat.width).toBeLessThanOrEqual(stage.x);
-				expect(stage.x + stage.width / 2).toBeCloseTo(viewport.width / 2, 0);
-			} else {
-				expect(stage.y + stage.height).toBeLessThanOrEqual(sidebar.y);
-				expect(players.y).toBeCloseTo(board.y, 0);
-				expect(players.x + players.width).toBeLessThanOrEqual(board.x);
-				expect(chat.y).toBeGreaterThanOrEqual(
-					Math.max(players.y + players.height, board.y + board.height),
-				);
+			expect(stage.x + stage.width).toBeLessThanOrEqual(sidebar.x);
+			expect(chat.x + chat.width).toBeLessThanOrEqual(stage.x);
+			expect(stage.x + stage.width / 2).toBeCloseTo(viewport.width / 2, 0);
+			expect(players.y + players.height).toBeLessThanOrEqual(board.y);
+			if (viewport.width <= 900) {
+				const controls = await page.locator(".touch-controls").boundingBox();
+				if (!controls) throw new Error("Touch controls are missing");
+				expect(controls.y).toBeGreaterThanOrEqual(stage.y + stage.height);
+				expect(chat.y + chat.height).toBeLessThanOrEqual(controls.y);
 			}
 			const canvas = await page.locator("canvas").boundingBox();
 			expect(canvas && canvas.width / canvas.height).toBeCloseTo(4 / 3, 2);
@@ -189,7 +191,7 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 test("mobile panels preserve drafts and chat stays available while paused", async ({
 	page,
 }, info) => {
-	await page.setViewportSize({ width: 390, height: 844 });
+	await page.setViewportSize({ width: 844, height: 390 });
 	await page.addInitScript(() =>
 		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false })),
 	);
@@ -197,6 +199,60 @@ test("mobile panels preserve drafts and chat stays available while paused", asyn
 		const observed = observeOnline(page);
 		await registerOnline(page, "panels");
 		await newCommunity(page);
+		await page.setViewportSize({ width: 390, height: 844 });
+		const landscapeGate = page.getByRole("dialog", {
+			name: "Landscape required",
+		});
+		await expect(landscapeGate).toBeVisible();
+		await expect(
+			page.getByRole("button", { name: "Resume", exact: true }),
+		).toBeVisible();
+		const portraitJumps = observed.snapshot?.self.simulation.physics.jumps;
+		await page.keyboard.press("Space");
+		expect(observed.snapshot?.self.simulation.physics.jumps).toBe(
+			portraitJumps,
+		);
+		await page.setViewportSize({ width: 844, height: 390 });
+		await expect(landscapeGate).toBeHidden();
+		await page.evaluate(async () => {
+			const path = "/src/network/GameSocket.ts";
+			const { GameSocket } = await import(path);
+			const original = GameSocket.prototype.command;
+			// Giữ ACK Resume ở client để xoay máy đúng lúc lệnh đang chờ.
+			GameSocket.prototype.command = async function (
+				type: string,
+				payload: Record<string, unknown> = {},
+			) {
+				const reply = await original.call(this, type, payload);
+				if (type === "SET_COMMUNITY_PAUSED" && payload.paused === false) {
+					GameSocket.prototype.command = original;
+					await new Promise<void>((resolve) =>
+						Object.assign(window, { releaseResume: resolve }),
+					);
+				}
+				return reply;
+			};
+		});
+		await page.getByRole("button", { name: "Resume", exact: true }).click();
+		await expect
+			.poll(() =>
+				page.evaluate(
+					() =>
+						typeof (window as unknown as { releaseResume?: () => void })
+							.releaseResume === "function",
+				),
+			)
+			.toBe(true);
+		await expect.poll(() => observed.snapshot?.self.paused).toBe(false);
+		await page.setViewportSize({ width: 390, height: 844 });
+		await expect(landscapeGate).toBeVisible();
+		await page.evaluate(() =>
+			(window as unknown as { releaseResume: () => void }).releaseResume(),
+		);
+		await expect.poll(() => observed.snapshot?.self.paused).toBe(true);
+		await page.setViewportSize({ width: 844, height: 390 });
+		await expect(landscapeGate).toBeHidden();
+		await page.getByRole("button", { name: "Resume", exact: true }).click();
 		const message = page.getByLabel("Message", { exact: true });
 		await expect(message).toBeVisible();
 		await message.fill("Unsent draft");

@@ -376,6 +376,26 @@ test("network quality tracks ping, average, jitter, stalls, and notifies subscri
 	expect(qualities).toHaveLength(4);
 });
 
+test("ping below 100 ms is good even after jitter or earlier stalls", () => {
+	const game = new GameSocket(vi.fn(), vi.fn());
+	for (let index = 0; index < 3; index++)
+		game.recordPing(NETWORK.stallThresholdMs);
+	for (const [ping, status] of [
+		[99, "good"],
+		[100, "fair"],
+		[150, "fair"],
+		[151, "poor"],
+		[30, "good"],
+	] as const) {
+		game.recordPing(ping);
+		expect(game.getNetworkQuality()).toMatchObject({
+			pingMs: ping,
+			stalls: 3,
+			status,
+		});
+	}
+});
+
 test("Leave is shared until acknowledgement and clears membership before notifying the app", async () => {
 	let memberAtLeave: string | null = "unconfirmed";
 	const game = new GameSocket((type) => {

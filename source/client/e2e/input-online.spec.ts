@@ -11,7 +11,7 @@ test("touch holds direction and Jump simultaneously and cancellation never launc
 	page,
 	context,
 }) => {
-	await page.setViewportSize({ width: 390, height: 844 });
+	await page.setViewportSize({ width: 844, height: 390 });
 	test.skip(process.env.E2E_AUTH_ONLINE !== "true", "Requires backend/MySQL");
 	const observed = observeOnline(page);
 	await registerOnline(page, "touch");

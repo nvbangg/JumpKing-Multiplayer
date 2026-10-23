@@ -192,9 +192,9 @@ export class GameSocket {
 		}
 
 		let status: "good" | "fair" | "poor" = "good";
-		if (rtt > 150 || this.stallsCount > 2) {
+		if (rtt > 150) {
 			status = "poor";
-		} else if (rtt > 60 || jitter > 30) {
+		} else if (rtt >= 100) {
 			status = "fair";
 		}
 

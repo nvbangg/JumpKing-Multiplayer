@@ -22,7 +22,7 @@ test("region caption appears once per region and fades without blocking mobile c
 	page,
 }, info) => {
 	test.setTimeout(45000);
-	await page.setViewportSize({ width: 390, height: 844 });
+	await page.setViewportSize({ width: 844, height: 390 });
 	await page.addInitScript(() =>
 		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false })),
 	);
@@ -81,7 +81,7 @@ test("region caption appears once per region and fades without blocking mobile c
 			.toBeGreaterThan(0.1);
 		const bounds = required(await caption.boundingBox());
 		expect(bounds.x).toBeGreaterThanOrEqual(0);
-		expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+		expect(bounds.x + bounds.width).toBeLessThanOrEqual(844);
 		await page.screenshot({ path: info.outputPath("region-mobile.png") });
 		await caption.evaluate(async (element) => {
 			for (const animation of element.getAnimations()) animation.finish();
