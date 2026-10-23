@@ -243,10 +243,10 @@ button {
 }
 .home-layout {
 	display: grid;
-	grid-template-columns: minmax(300px, 400px) minmax(250px, 300px);
+	grid-template-columns: minmax(0, 4fr) minmax(0, 3fr);
 	gap: 42px;
 	width: min(100%, 800px);
-	align-items: start;
+	align-items: stretch;
 }
 .single-panel {
 	width: min(100%, 500px);
@@ -320,8 +320,14 @@ button {
 	font-size: 17px;
 	padding: 6px 8px;
 }
+.home-layout .account-actions {
+	margin-top: auto;
+}
 .statistics dl {
 	margin: 0;
+	height: 100%;
+	display: grid;
+	grid-auto-rows: 1fr;
 }
 .statistics dl > div {
 	display: flex;
