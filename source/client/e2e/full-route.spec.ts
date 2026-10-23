@@ -5,6 +5,7 @@ import checkpoints from "../../common/fixtures/main-babe-checkpoints.json" with 
 import route from "../../common/fixtures/main-babe-route.json" with {
 	type: "json",
 };
+import mainMap from "../../common/maps/main-babe.json" with { type: "json" };
 
 test("plays the complete Main Babe input route and renders every reached checkpoint without flight", async ({
 	page,
@@ -22,10 +23,8 @@ test("plays the complete Main Babe input route and renders every reached checkpo
 					simulation = "/src/game/simulation/GameSimulation.ts";
 				const { createGame } = await import(renderer),
 					{ GameSimulation } = await import(simulation);
-				const [manifest, map] = await Promise.all([
-					fetch("/assets/manifest.json").then((r) => r.json()),
-					fetch("/shared/maps/main-babe.json").then((r) => r.json()),
-				]);
+				const manifest = await (await fetch("/assets/manifest.json")).json(),
+					map = fixture.map;
 				const state = new GameSimulation(map),
 					parent = document.createElement("div");
 				parent.style.cssText =
@@ -130,7 +129,7 @@ test("plays the complete Main Babe input route and renders every reached checkpo
 					flight: pose.freeFlight,
 				};
 			},
-			{ route, checkpoints },
+			{ route, checkpoints, map: mainMap },
 		),
 	);
 	expect(result.failures).toEqual([]);

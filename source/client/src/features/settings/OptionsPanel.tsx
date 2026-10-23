@@ -24,7 +24,14 @@ export function OptionsButtons({
 				type="button"
 				role="switch"
 				aria-checked={options.sound}
-				onClick={() => onChange("sound")}
+				onClick={() => {
+					try {
+						onChange("sound");
+						onError("");
+					} catch {
+						onError("Options could not be saved on this device");
+					}
+				}}
 			>
 				Sound: {options.sound ? "On" : "Off"}
 			</button>

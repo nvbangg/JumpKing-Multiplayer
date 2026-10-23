@@ -45,8 +45,6 @@ export class TowerScene extends Phaser.Scene {
 		durations: number[];
 		duration: number;
 	}[] = [];
-	private lastTick = 0;
-	private weatherWind = 0;
 	private screen = -1;
 	private ready = false;
 	private itemGraphics?: Phaser.GameObjects.Graphics;
@@ -115,18 +113,6 @@ export class TowerScene extends Phaser.Scene {
 		this.render(frame);
 		const state = frame.self.state,
 			world = frame.world;
-		if (world) this.weatherWind = world.weatherWind;
-		else
-			for (let tick = this.lastTick + 1; tick <= state.ticks; tick++) {
-				const phase = (tick / PHYSICS.tickRate) * PHYSICS.windFrequency;
-				const force =
-					Math.max(
-						-1,
-						Math.min(1, 2 * Math.sin(phase) + (Math.cos(phase) > 0 ? 1 : -1)),
-					) * PHYSICS.windAcceleration;
-				this.weatherWind = state.wind ? this.weatherWind - (force * 2) / 3 : 0;
-			}
-		this.lastTick = state.ticks;
 		const seconds = state.ticks / PHYSICS.tickRate;
 		for (const layer of this.background)
 			layer.sprite.tilePositionX = layer.speed * seconds;
@@ -139,7 +125,7 @@ export class TowerScene extends Phaser.Scene {
 				),
 			);
 			weather.sprite.tilePositionX =
-				this.weatherWind *
+				world.weatherWind *
 				required(this.manifest.textures[required(weather.textures[0])]).width;
 		}
 		for (const { sprite, data, durations, duration } of this.props) {

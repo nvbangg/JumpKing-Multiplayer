@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ROOM_MAPS } from "../../game/simulation/roomMaps";
 import { api } from "../../network/api";
 import type { HistoryItem } from "../../network/contracts";
-import { duration } from "./format";
+import { displayLabel, duration } from "./format";
 
 interface Participant {
 	runId: string;
@@ -53,9 +53,9 @@ export function HistoryDetail({ item }: { item: HistoryItem }) {
 		<>
 			<dl className="record-detail">
 				<dt>Type</dt>
-				<dd>{detail.kind}</dd>
+				<dd>{displayLabel(detail.kind)}</dd>
 				<dt>Result</dt>
-				<dd>{detail.status}</dd>
+				<dd>{displayLabel(detail.status)}</dd>
 				<dt>Play Time</dt>
 				<dd>{duration(detail.playTimeMs)}</dd>
 				<dt>Finish Time</dt>
@@ -71,7 +71,7 @@ export function HistoryDetail({ item }: { item: HistoryItem }) {
 						<dt>Room</dt>
 						<dd>{detail.room.roomCode}</dd>
 						<dt>Mode</dt>
-						<dd>{detail.room.mode}</dd>
+						<dd>{displayLabel(detail.room.mode)}</dd>
 						<dt>Map</dt>
 						<dd>
 							{detail.room.mapLevel} ·{" "}
@@ -89,7 +89,7 @@ export function HistoryDetail({ item }: { item: HistoryItem }) {
 						<dt>Rank</dt>
 						<dd>{detail.room.rank}</dd>
 						<dt>End</dt>
-						<dd>{detail.endReason}</dd>
+						<dd>{detail.endReason && displayLabel(detail.endReason)}</dd>
 					</>
 				)}
 			</dl>
@@ -102,7 +102,7 @@ export function HistoryDetail({ item }: { item: HistoryItem }) {
 								{player.isWinner ? " · Winner" : ""}
 							</span>
 							<strong>
-								{player.status} ·{" "}
+								{displayLabel(player.status)} ·{" "}
 								{player.finishTimeMs === null
 									? `${Math.floor(player.currentProgress)} px`
 									: duration(player.finishTimeMs)}

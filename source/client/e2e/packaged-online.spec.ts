@@ -79,7 +79,7 @@ test("the production web JAR supports Community save and a two-player Room throu
 		await a
 			.getByLabel("Game history")
 			.getByRole("button")
-			.filter({ hasText: "ROOM" })
+			.filter({ hasText: "Room" })
 			.click();
 		await expect(a.getByLabel("Match participants")).toContainText(peerName);
 	} finally {

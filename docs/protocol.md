@@ -143,7 +143,7 @@ Pagehide, grace, Pause và chuyển Host theo [gameplay](gameplay.md#leave-và-r
 | Input | 120 messages/giây/connection; queue server 120, client 180 frames; timeout 500 ms |
 | Outbound | 64 control messages/connection; deadline 5 giây; snapshot gộp bản mới nhất |
 | Heartbeat / client deadline | Mỗi 10 giây, hết liveness sau 30 giây; HTTP/handshake/command tối đa 8 giây |
-| Chat | 200 code points/tin, 1 tin/giây; giữ 10 tin gần nhất/sảnh trong RAM |
+| Chat | 200 code points/tin, 1 tin/giây; giữ 50 tin gần nhất/sảnh trong RAM |
 
 Quota là chính sách cấu hình, không phải năng lực phục vụ đã đo. Validate trước cấp phát/enqueue; quá tải trả RATE_LIMITED hoặc đóng connection, không queue vô hạn hoặc chặn phòng khác.
 

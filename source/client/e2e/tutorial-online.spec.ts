@@ -49,14 +49,12 @@ for (const mobile of [false, true])
 				}
 			}
 			await page.screenshot({ path: info.outputPath("tutorial.png") });
-			await page
-				.getByRole("button", { name: "Next step", exact: true })
-				.click();
-			await expect(guide).toContainText("Step 2/3: Charge");
-			await page
-				.getByRole("button", { name: "Previous step", exact: true })
-				.click();
-			await expect(guide).toContainText("Step 1/3: Move");
+			await expect(
+				guide.getByRole("button", { name: "Next step" }),
+			).toHaveCount(0);
+			await expect(
+				guide.getByRole("button", { name: "Previous step" }),
+			).toHaveCount(0);
 			await page.locator("canvas").click();
 			await page.keyboard.down("KeyD");
 			await expect(guide).toContainText("Step 2/3: Charge");
@@ -90,9 +88,24 @@ for (const mobile of [false, true])
 			await expect(guide).toContainText("Ready to Climb!");
 			await expect(guide).toBeHidden({ timeout: 6500 });
 			await page.getByRole("button", { name: "Menu", exact: true }).click();
+			await page.getByRole("button", { name: "Options", exact: true }).click();
+			const sound = page.getByRole("switch", {
+				name: "Sound: On",
+				exact: true,
+			});
+			await sound.click();
+			await expect(
+				page.getByRole("switch", { name: "Sound: Off", exact: true }),
+			).toBeVisible();
+			await page.getByRole("button", { name: "Back", exact: true }).click();
 			await page
 				.getByRole("button", { name: "Save & Exit", exact: true })
 				.click();
+			await page.getByRole("button", { name: "Options", exact: true }).click();
+			await expect(
+				page.getByRole("switch", { name: "Sound: Off", exact: true }),
+			).toBeVisible();
+			await page.getByRole("button", { name: "Back", exact: true }).click();
 			await page.getByRole("button", { name: "Continue", exact: true }).click();
 			await expect(page.locator("canvas")).toBeVisible();
 			await expect(guide).toHaveCount(0);

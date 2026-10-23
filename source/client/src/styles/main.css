@@ -421,12 +421,12 @@ button {
 }
 .room-code {
 	display: flex;
-	flex-direction: column;
+	flex-wrap: wrap;
+	justify-content: center;
 	align-items: center;
-	gap: 10px;
+	gap: 8px;
 }
-.room-code code,
-output.room-code {
+.room-code code {
 	user-select: all;
 	-webkit-user-select: all;
 	-webkit-touch-callout: default;
@@ -916,11 +916,6 @@ output.room-code {
 	gap: 20px;
 	margin-bottom: 8px;
 }
-.tutorial-title-row {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-}
 
 .tutorial-title {
 	display: inline-block;
@@ -930,40 +925,6 @@ output.room-code {
 	color: #ede7d3;
 	font-size: 1.35rem;
 	letter-spacing: 0.8px;
-}
-
-.tutorial-nav-btn {
-	background: transparent;
-	border: 1.5px solid #72684d;
-	color: #e4bb68;
-	font-size: 1.35rem;
-	line-height: 1;
-	width: 32px;
-	height: 32px;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	border-radius: 4px;
-	cursor: pointer;
-	padding: 0;
-	user-select: none;
-	transition:
-		background 0.15s,
-		color 0.15s,
-		border-color 0.15s;
-}
-
-.tutorial-nav-btn:hover:not(:disabled) {
-	background: #3a3222;
-	color: #fff;
-	border-color: #bfa15f;
-}
-
-.tutorial-nav-btn:disabled {
-	opacity: 0.3;
-	cursor: not-allowed;
-	border-color: #443e2e;
-	color: #6e6754;
 }
 
 .tutorial-dismiss {
@@ -1022,14 +983,6 @@ output.room-code {
 	.tutorial-dismiss {
 		font-size: 0.85rem;
 		padding: 3px 8px;
-	}
-	.tutorial-title-row {
-		gap: 6px;
-	}
-	.tutorial-nav-btn {
-		width: 28px;
-		height: 28px;
-		font-size: 1.15rem;
 	}
 }
 
@@ -1133,4 +1086,25 @@ output.room-code {
 	margin: 0;
 	padding: 0;
 	accent-color: #d8be69;
+}
+
+.chat-latest {
+	margin-top: 4px;
+	font: inherit;
+}
+.room-code button {
+	min-width: 0;
+	width: auto;
+	padding: 4px 8px;
+	font-size: 0.75rem;
+}
+
+.game-hud .room-code {
+	gap: 4px;
+}
+.game-hud .room-code code {
+	font-size: inherit;
+}
+.game-hud .room-code-label {
+	display: none;
 }

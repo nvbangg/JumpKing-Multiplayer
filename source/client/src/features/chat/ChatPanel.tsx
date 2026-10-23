@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { NETWORK } from "../../network/config";
 import type { ChatMessage } from "../../network/contracts";
 
@@ -10,27 +10,77 @@ export function ChatMessages({
 	colors: readonly string[];
 }) {
 	const list = useRef<HTMLDivElement>(null);
-	// biome-ignore lint/correctness/useExhaustiveDependencies: Tin nhắn đổi cần cuộn DOM đã render xuống cuối.
-	useEffect(() => {
-		if (list.current) list.current.scrollTop = list.current.scrollHeight;
+	const follow = useRef(true);
+	const anchor = useRef<{ id: string; offset: number } | null>(null);
+	const [away, setAway] = useState(false);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Khôi phục vị trí đọc sau khi danh sách tin thay đổi.
+	useLayoutEffect(() => {
+		const element = list.current;
+		if (!element) return;
+		if (follow.current) element.scrollTop = element.scrollHeight;
+		else if (anchor.current) {
+			const saved = anchor.current;
+			const message = Array.from(element.children).find(
+				(child) => (child as HTMLElement).dataset.messageId === saved.id,
+			);
+			element.scrollTop = message
+				? element.scrollTop +
+					message.getBoundingClientRect().top -
+					element.getBoundingClientRect().top -
+					saved.offset
+				: 0;
+		}
 	}, [messages]);
 	return (
-		<div
-			ref={list}
-			className="chat-messages"
-			role="log"
-			aria-label="Messages"
-			aria-live="polite"
-		>
-			{messages.map((message) => (
-				<p key={message.id}>
-					<strong style={{ color: colors[message.colorSlot] || "#ffffff" }}>
-						{message.nickname}:{" "}
-					</strong>
-					{message.text}
-				</p>
-			))}
-		</div>
+		<>
+			<div
+				ref={list}
+				className="chat-messages"
+				role="log"
+				aria-label="Messages"
+				aria-live="polite"
+				onScroll={(event) => {
+					const element = event.currentTarget;
+					follow.current =
+						element.scrollHeight - element.clientHeight - element.scrollTop <=
+						24;
+					setAway(!follow.current);
+					const top = element.getBoundingClientRect().top;
+					const first = Array.from(element.children).find(
+						(child) => child.getBoundingClientRect().bottom > top,
+					);
+					anchor.current = first
+						? {
+								id: (first as HTMLElement).dataset.messageId || "",
+								offset: first.getBoundingClientRect().top - top,
+							}
+						: null;
+				}}
+			>
+				{messages.map((message) => (
+					<p key={message.id} data-message-id={message.id}>
+						<strong style={{ color: colors[message.colorSlot] || "#ffffff" }}>
+							{message.nickname}:{" "}
+						</strong>
+						{message.text}
+					</p>
+				))}
+			</div>
+			{away && (
+				<button
+					className="chat-latest"
+					type="button"
+					onClick={() => {
+						follow.current = true;
+						setAway(false);
+						if (list.current)
+							list.current.scrollTop = list.current.scrollHeight;
+					}}
+				>
+					Latest
+				</button>
+			)}
+		</>
 	);
 }
 export function ChatPanel({

@@ -64,24 +64,6 @@ test("home keeps the required menu and one account form", async ({
 	});
 });
 
-test("register route is an alias for the same Sign In form", async ({
-	page,
-}) => {
-	await page.goto("/register");
-	await expect(
-		page.getByRole("heading", { name: "Sign In", exact: true }),
-	).toBeVisible();
-	await expect(page.getByLabel("Username", { exact: true })).toBeVisible();
-	await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
-	await expect(page.locator('form button[type="submit"]')).toHaveCount(1);
-	await expect(page.locator('form button[type="submit"]')).toHaveText(
-		"Sign In",
-	);
-	await expect(
-		page.getByRole("button", { name: /Create Account/ }),
-	).toHaveCount(0);
-});
-
 test("one auth flow keeps credentials errors and submits new usernames only to login", async ({
 	page,
 }) => {

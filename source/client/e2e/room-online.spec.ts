@@ -293,7 +293,7 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			await a
 				.getByLabel("Game history")
 				.getByRole("button")
-				.filter({ hasText: "ROOM" })
+				.filter({ hasText: "Room" })
 				.first()
 				.click();
 			await expect(

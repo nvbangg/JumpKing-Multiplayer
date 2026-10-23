@@ -3,6 +3,7 @@ import rules from "../../../../common/rules.json";
 import { ROOM_MAPS } from "../../game/simulation/roomMaps";
 import type { RoomState } from "../../network/GameSocket";
 import { ItemSettings } from "./ItemSettings";
+import { RoomCode } from "./RoomCode";
 
 export function Lobby({
 	room,
@@ -43,9 +44,7 @@ export function Lobby({
 	};
 	return (
 		<>
-			<p className="room-code">
-				Room ID <code>{room.roomId}</code>
-			</p>
+			<RoomCode roomId={room.roomId} />
 			{room.state === "COUNTDOWN" && <p role="status">Starting…</p>}
 			<ul className="players">
 				{room.members.map((member) => (

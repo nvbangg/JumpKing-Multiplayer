@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import checkpoints from "../../common/fixtures/main-babe-checkpoints.json" with {
 	type: "json",
 };
+import mainMap from "../../common/maps/main-babe.json" with { type: "json" };
 import rules from "../../common/rules.json" with { type: "json" };
 import type { GameRuntime } from "../src/game/presentation/types";
 
@@ -16,7 +17,7 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 	});
 	await page.goto("/");
 	const output = await page.evaluate(
-		async ({ states, colors }) => {
+		async ({ states, colors, map }) => {
 			const requiredPath = "/src/required.ts";
 			const { required }: typeof import("../src/required") = await import(
 				requiredPath
@@ -27,7 +28,6 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 			const { createGame } = await import(modulePath),
 				{ findFinishPlatform } = await import(markerPath),
 				{ ROOM_MAPS, roomMap } = await import(roomMapsPath);
-			const map = await (await fetch("/shared/maps/main-babe.json")).json();
 			const manifest = await (await fetch("/assets/manifest.json")).json();
 			const parent = document.createElement("div");
 			parent.style.cssText =
@@ -53,6 +53,12 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 							color: colors[ownColor],
 							state,
 							crowned: state.screen % 2 === 0,
+						},
+						world: {
+							lastTick: state.ticks,
+							registeredScreens: [],
+							weatherWind: 0,
+							walls: {},
 						},
 						peers: [
 							{
@@ -218,7 +224,7 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 				parent.remove();
 			}
 		},
-		{ states: checkpoints, colors: rules.appearanceColors },
+		{ states: checkpoints, map: mainMap, colors: rules.appearanceColors },
 	);
 	expect(output.screens).toHaveLength(43);
 	expect(output.failures).toEqual([]);

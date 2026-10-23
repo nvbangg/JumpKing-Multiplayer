@@ -930,16 +930,18 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     var effects = json.createArrayNode();
     for (var event : events) {
       var player = event.player();
-      var pose = player.game.physics().snapshot();
-      for (var effect : event.effects().movement())
-        effects
-            .addObject()
-            .put("eventSeq", ++room.eventSeq)
-            .put("playerId", player.spec.playerId())
-            .put("playId", room.match.id)
-            .put("screen", pose.screen)
-            .put("effect", effect)
-            .put("terrain", pose.snow ? "SNOW" : pose.ice ? "ICE" : "NORMAL");
+      if (!event.effects().movement().isEmpty()) {
+        var pose = player.game.physics().snapshot();
+        for (var effect : event.effects().movement())
+          effects
+              .addObject()
+              .put("eventSeq", ++room.eventSeq)
+              .put("playerId", player.spec.playerId())
+              .put("playId", room.match.id)
+              .put("screen", pose.screen)
+              .put("effect", effect)
+              .put("terrain", pose.snow ? "SNOW" : pose.ice ? "ICE" : "NORMAL");
+      }
       var member = room.players.get(player.spec.playerId());
       if (member != null
           && member.connection != null

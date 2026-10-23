@@ -71,21 +71,21 @@ test("History paginates owned Community results without depending on local stora
 	await page.getByRole("button", { name: "History", exact: true }).click();
 	const list = page.getByLabel("Game history");
 	await expect(
-		list.getByRole("button").filter({ hasText: "ABANDONED" }),
+		list.getByRole("button").filter({ hasText: "Abandoned" }),
 	).toHaveCount(20);
 	await list.getByRole("button", { name: "Load More", exact: true }).click();
 	await expect(
-		list.getByRole("button").filter({ hasText: "ABANDONED" }),
+		list.getByRole("button").filter({ hasText: "Abandoned" }),
 	).toHaveCount(21);
 	await expect(
 		list.getByRole("button", { name: "Load More", exact: true }),
 	).toBeHidden();
 	await list
 		.getByRole("button")
-		.filter({ hasText: "ABANDONED" })
+		.filter({ hasText: "Abandoned" })
 		.first()
 		.click();
-	await expect(page.locator(".record-detail")).toContainText("COMMUNITY");
+	await expect(page.locator(".record-detail")).toContainText("Community");
 	await page.evaluate(() => {
 		indexedDB.open = () => {
 			throw new DOMException("Blocked by test", "SecurityError");
@@ -97,7 +97,7 @@ test("History paginates owned Community results without depending on local stora
 			page
 				.getByLabel("Game history")
 				.getByRole("button")
-				.filter({ hasText: "ABANDONED" }),
+				.filter({ hasText: "Abandoned" }),
 		).toHaveCount(20);
 	} finally {
 		await page.evaluate(() => Reflect.deleteProperty(indexedDB, "open"));

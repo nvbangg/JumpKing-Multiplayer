@@ -291,7 +291,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
                     .put("terrain", pose.snow ? "SNOW" : pose.ice ? "ICE" : "NORMAL"));
           if (progress > player.maximum) {
             player.maximum = progress;
-            player.peakTicks = player.game.physics().snapshot().ticks;
+            player.peakTicks = pose.ticks;
           }
           if (player.game.finished()) {
             changed = true;
@@ -403,22 +403,13 @@ public class Community implements GameCommandHandler, AutoCloseable {
                       requestLeave(tower, player, command);
                     }
                     case "PLAYER_INPUT", "CANCEL_INPUT" -> {
-                      player.input.offer(command, time.nanos(), flags.flyEnabled());
+                      var current = player.input.offer(command, time.nanos(), flags.flyEnabled());
                       if (player.paused || player.pausePending || player.finished)
                         player.input.clear();
                       else {
-                        var payload = command.payload();
                         if (command.type().equals("CANCEL_INPUT"))
                           player.game.physics().cancelInput();
                         else {
-                          var current =
-                              new PlayerInput(
-                                  payload.path("left").asBoolean(),
-                                  payload.path("right").asBoolean(),
-                                  payload.path("jump").asBoolean(),
-                                  payload.path("up").asBoolean(),
-                                  payload.path("down").asBoolean(),
-                                  payload.path("freeFlight").asBoolean());
                           if (!current.equals(player.lastPhysicalInput)) {
                             player.lastPhysical = time.nanos();
                             player.lastPhysicalInput = current;

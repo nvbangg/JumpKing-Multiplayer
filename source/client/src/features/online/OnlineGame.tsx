@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import rules from "../../../../common/rules.json";
 import { ControlsHelp } from "../../components/ControlsHelp";
 import { MenuPanel } from "../../components/MenuPanel";
 import { loadManifest } from "../../game/content/assets";
 import { FlightToggle } from "../../game/input/FlightToggle";
-import { InputController } from "../../game/input/InputController";
+import type { InputController } from "../../game/input/InputController";
 import type { RoomItemsView } from "../../game/items";
 import { AdventureEffects } from "../../game/netcode/AdventureEffects";
 import {
@@ -28,8 +27,10 @@ import { Chat } from "../chat/Chat";
 import { useChat } from "../chat/useChat";
 import { InGameLeaderboard } from "../community/InGameLeaderboard";
 import { duration } from "../records/format";
+import { RoomCode } from "../rooms/RoomCode";
 import { OptionsButtons } from "../settings/OptionsPanel";
-import { type Options, readOptions, saveOptions } from "../settings/options";
+import type { Options } from "../settings/options";
+import { createGameControls } from "./gameControls";
 import { NetworkStatusBadge } from "./NetworkStatusBadge";
 import { PlayersPanel } from "./PlayersPanel";
 import { TouchControls } from "./TouchControls";
@@ -45,6 +46,8 @@ export function OnlineGame({
 	socket,
 	room,
 	navigationError,
+	options,
+	onOptionsChange,
 	accountId,
 	totalJumps,
 	onHome,
@@ -53,6 +56,8 @@ export function OnlineGame({
 	socket: GameSocket;
 	room: RoomState;
 	navigationError: string;
+	options: Options;
+	onOptionsChange: (key: keyof Options) => void;
 	accountId?: string;
 	totalJumps?: number;
 	onHome: (message: string) => void;
@@ -67,7 +72,8 @@ export function OnlineGame({
 		[menu, setMenu] = useState<"pause" | "options" | null>(null);
 	const flight = useRef<FlightToggle | null>(null);
 	const [flying, setFlying] = useState(false);
-	const [options, setOptions] = useState(readOptions);
+	const sound = useRef(options.sound);
+	sound.current = options.sound;
 	const [error, setError] = useState(""),
 		[pending, setPending] = useState(false),
 		[elapsed, setElapsed] = useState(0),
@@ -233,38 +239,24 @@ export function OnlineGame({
 		let disposed = false,
 			game: { destroy(removeCanvas: boolean): void } | undefined;
 		const controller = new AbortController();
-		let lastActivity = performance.now();
 		const effects = new PlayerEffects(),
 			adventureEffects = new AdventureEffects();
 		let cueManifest: Awaited<ReturnType<typeof loadManifest>> | null = null;
-		const controls = new InputController(
-			() => {
-				lastActivity = performance.now();
-			},
-			() => pauseRef.current(),
-			() => {
+		const bindings = createGameControls({
+			pause: () => pauseRef.current(),
+			cancel: () => {
 				runtime.current?.cancel();
 				flight.current?.cancel();
 			},
-			(now) => flight.current?.press(now),
-		);
-		input.current = controls;
-		const afk = window.setInterval(() => {
-			if (
+			jump: (now) => flight.current?.press(now),
+			pauseWhenIdle: () =>
 				latestRoom.current.kind === "ROOM" &&
-				runtime.current &&
+				!!runtime.current &&
 				!runtime.current.menu &&
-				!runtime.current.latest?.spectating &&
-				performance.now() - lastActivity >= rules.afkMs
-			)
-				pauseRef.current();
-		}, PRESENTATION.afkPollMs);
-		const hidden = () => {
-			if (document.hidden) pauseRef.current();
-		};
-		const blur = () => pauseRef.current();
-		document.addEventListener("visibilitychange", hidden);
-		window.addEventListener("blur", blur);
+				!runtime.current.latest?.spectating,
+		});
+		const controls = bindings.input;
+		input.current = controls;
 		const unsubscribe = socket.subscribe((type, payload) => {
 			try {
 				if (type === "GAME_SNAPSHOT") runtime.current?.receive(payload);
@@ -350,7 +342,7 @@ export function OnlineGame({
 			]);
 			if (disposed) return;
 			cueManifest = manifest;
-			audio.current = new AudioBus(manifest, readOptions().sound, setError);
+			audio.current = new AudioBus(manifest, sound.current, setError);
 			const session = new OnlineRuntime(
 				parseMap(mapData),
 				socket,
@@ -496,9 +488,8 @@ export function OnlineGame({
 		return () => {
 			disposed = true;
 			controller.abort();
-			clearInterval(afk);
 			unsubscribe();
-			controls.dispose();
+			bindings.dispose();
 			runtime.current?.cancel();
 			runtime.current = null;
 			input.current = null;
@@ -506,8 +497,6 @@ export function OnlineGame({
 			game?.destroy(true);
 			audio.current?.dispose();
 			audio.current = null;
-			document.removeEventListener("visibilitychange", hidden);
-			window.removeEventListener("blur", blur);
 		};
 	}, [socket, room.roomId, chat.closeChat]);
 	const command = async (
@@ -576,16 +565,9 @@ export function OnlineGame({
 			setPending(false);
 		}
 	};
-	const updateOptions = (key: keyof Options) => {
-		const next = { ...options, [key]: !options[key] };
-		setOptions(next);
-		audio.current?.setEnabled(next.sound);
-		try {
-			saveOptions(next);
-		} catch {
-			setError("Options could not be saved on this device");
-		}
-	};
+	useEffect(() => {
+		audio.current?.setEnabled(options.sound);
+	}, [options.sound]);
 	const displayedError = navigationError || error;
 	const captionPaused =
 		!!menu || !!ending || disconnected || room.state === "COUNTDOWN";
@@ -650,11 +632,7 @@ export function OnlineGame({
 							</span>
 						)}
 					</span>
-					{room.kind === "ROOM" && (
-						<output className="room-code" aria-label="Room ID">
-							{room.roomId}
-						</output>
-					)}
+					{room.kind === "ROOM" && <RoomCode roomId={room.roomId} />}
 					<span>
 						<NetworkStatusBadge quality={networkQuality} />
 						<button
@@ -926,7 +904,7 @@ export function OnlineGame({
 						) : (
 							<OptionsButtons
 								options={options}
-								onChange={updateOptions}
+								onChange={onOptionsChange}
 								onError={setError}
 							/>
 						)}

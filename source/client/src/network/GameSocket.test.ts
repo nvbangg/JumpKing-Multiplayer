@@ -140,7 +140,7 @@ test("packets from a previous room or play cannot replace current chat, state or
 	game.close();
 });
 
-test("chat deduplicates messages and bounds its history to the latest ten", async () => {
+test("chat deduplicates messages and bounds its history to the latest fifty", async () => {
 	const game = new GameSocket(vi.fn(), vi.fn());
 	const socket = await open(game);
 	socket.receive({
@@ -148,7 +148,7 @@ test("chat deduplicates messages and bounds its history to the latest ten", asyn
 		type: "ROOM_JOINED",
 		payload: { roomId: "ABCDEF", playerId: "self" },
 	});
-	for (let index = 0; index < 12; index++) {
+	for (let index = 0; index < 52; index++) {
 		const packet = {
 			v: 1,
 			type: "CHAT_MESSAGE",
@@ -170,7 +170,7 @@ test("chat deduplicates messages and bounds its history to the latest ten", asyn
 		socket.receive(packet);
 	}
 	expect(game.chatHistory.map((message) => message.id)).toEqual(
-		Array.from({ length: 10 }, (_, index) => String(index + 2)),
+		Array.from({ length: 50 }, (_, index) => String(index + 2)),
 	);
 	game.close();
 });

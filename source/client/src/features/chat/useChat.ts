@@ -64,7 +64,7 @@ export function useChat(
 				event.key !== "Enter" ||
 				(event.target instanceof Element &&
 					event.target.closest(
-						'input,textarea,select,button,a,summary,[contenteditable="true"]',
+						'input,textarea,select,button,a,[contenteditable="true"]',
 					))
 			)
 				return;

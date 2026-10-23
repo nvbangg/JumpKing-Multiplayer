@@ -13,7 +13,7 @@ test.skip(
 	process.env.E2E_AUTH_ONLINE !== "true",
 	"Requires the isolated backend/MySQL integration harness",
 );
-test("persistent chat, ten-message limit, shortcuts and touch work without launching a held jump", async ({
+test("persistent scrollable chat, shortcuts and touch work without launching a held jump", async ({
 	browser,
 }, info) => {
 	test.setTimeout(60_000);
@@ -106,8 +106,8 @@ test("persistent chat, ten-message limit, shortcuts and touch work without launc
 		await expect(b.locator(".chat-messages")).toContainText(latest);
 		await b.getByRole("button", { name: "Show chat", exact: true }).tap();
 		await expect(history.locator("p").last()).toBeInViewport();
-		await expect(history.locator("p")).toHaveCount(10);
-		await expect(history).not.toContainText("Online hello");
+		await expect(history.locator("p")).toHaveCount(13);
+		await expect(history).toContainText("Online hello");
 		expect(
 			await history.evaluate(
 				(element) =>

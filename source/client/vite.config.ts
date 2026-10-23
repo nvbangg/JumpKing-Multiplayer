@@ -1,16 +1,6 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { loadEnv } from "vite";
 import { defineConfig } from "vitest/config";
-
-const sharedFiles = [
-	"maps/main-babe.json",
-	"physics.json",
-	"rules.json",
-	"adventure.json",
-];
-const sharedRoot = new URL("../common/", import.meta.url);
 
 export default defineConfig(({ mode }) => {
 	const env = { ...loadEnv(mode, process.cwd(), ""), ...process.env };
@@ -29,39 +19,7 @@ export default defineConfig(({ mode }) => {
 		);
 	}
 	return {
-		plugins: [
-			react(),
-			{
-				name: "shared-game-data",
-				configureServer(server) {
-					server.middlewares.use((req, res, next) => {
-						if (!req.url?.startsWith("/shared/")) return next();
-						const [file = ""] = req.url.slice("/shared/".length).split("?");
-						if (!sharedFiles.includes(file)) {
-							res.statusCode = 404;
-							res.end();
-							return;
-						}
-						try {
-							res.setHeader("Content-Type", "application/json");
-							res.end(readFileSync(new URL(file, sharedRoot)));
-						} catch {
-							res.statusCode = 503;
-							res.end("Game data is unavailable");
-						}
-					});
-				},
-				generateBundle() {
-					for (const file of sharedFiles) {
-						this.emitFile({
-							type: "asset",
-							fileName: `shared/${file}`,
-							source: readFileSync(fileURLToPath(new URL(file, sharedRoot))),
-						});
-					}
-				},
-			},
-		],
+		plugins: [react()],
 		server: {
 			host: true,
 			port: 5173,

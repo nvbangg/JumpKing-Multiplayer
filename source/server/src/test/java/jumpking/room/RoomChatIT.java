@@ -44,7 +44,7 @@ class RoomChatIT {
       peer.connect();
       String roomId = host.ok("CREATE_ROOM", Map.of()).path("roomId").asText();
       var sent = new ArrayList<JsonNode>();
-      for (int index = 0; index < 11; index++) {
+      for (int index = 0; index < 51; index++) {
         time.advance(1000);
         var reply = host.ok("CHAT_SEND", Map.of("text", "😀".repeat(199) + (char) ('A' + index)));
         sent.add(reply.path("messages").get(0));
@@ -52,15 +52,16 @@ class RoomChatIT {
       peer.ok("JOIN_ROOM", Map.of("roomId", roomId));
       var history = peer.await(message -> message.path("type").asText().equals("CHAT_HISTORY"));
       var messages = history.path("payload").path("messages");
-      assertThat(messages.size()).isBetween(1, 10);
+      assertThat(messages.size()).isBetween(1, 50);
       for (int index = 0; index < messages.size(); index++)
-        assertThat(messages.get(index)).isEqualTo(sent.get(11 - messages.size() + index));
-      assertThat(messages.get(messages.size() - 1).path("text").asText()).endsWith("K");
+        assertThat(messages.get(index)).isEqualTo(sent.get(51 - messages.size() + index));
+      assertThat(messages.get(messages.size() - 1).path("text").asText())
+          .endsWith(String.valueOf((char) ('A' + 50)));
       assertThat(json.writeValueAsBytes(history).length).isLessThanOrEqualTo(16384);
-      if (messages.size() < 10) {
+      if (messages.size() < 50) {
         var overflowing = history.deepCopy();
         ((ArrayNode) overflowing.path("payload").path("messages"))
-            .insert(0, sent.get(10 - messages.size()));
+            .insert(0, sent.get(50 - messages.size()));
         assertThat(json.writeValueAsBytes(overflowing).length).isGreaterThan(16384);
       }
       assertThat(peer.ok("GET_ROOM_STATE", Map.of()).path("state").asText()).isEqualTo("WAITING");

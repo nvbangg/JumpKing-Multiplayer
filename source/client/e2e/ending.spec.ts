@@ -43,6 +43,12 @@ for (const ravenDone of [false, true])
 							crowned: true,
 						},
 						peers: [],
+						world: {
+							lastTick: physics.ticks,
+							registeredScreens: [],
+							weatherWind: 0,
+							walls: {},
+						},
 						ending: signal,
 					}),
 				};

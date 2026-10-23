@@ -45,7 +45,7 @@ export interface PresentationHooks {
 export interface WorldFrame {
 	self: RenderPlayer;
 	peers: RenderPlayer[];
-	world?: WorldState;
+	world: WorldState;
 	items?: RoomItemsView;
 	ending?: EndingSignal;
 }

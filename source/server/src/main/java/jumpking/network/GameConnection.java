@@ -63,10 +63,6 @@ public final class GameConnection {
             workers, limits.commandQueue(), error -> close(CloseStatus.SERVER_ERROR));
   }
 
-  public String id() {
-    return socket.getId();
-  }
-
   public Identity identity() {
     return identity;
   }

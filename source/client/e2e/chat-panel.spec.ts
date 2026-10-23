@@ -30,3 +30,52 @@ test("a delayed chat acknowledgement preserves the next draft and input focus", 
 	await expect(message).toHaveValue("");
 	await expect(page.locator('[data-closed="true"]')).toHaveCount(1);
 });
+
+test("chat keeps the reading position when capped history advances and Latest returns to the end", async ({
+	page,
+}) => {
+	await page.goto("/");
+	await page.evaluate(async () => {
+		const path = "/e2e/support/chat-panel.tsx";
+		const { mountChatHistory } = await import(path);
+		Object.assign(window, { appendChat: mountChatHistory() });
+	});
+	const log = page.getByRole("log", { name: "Messages" });
+	await expect(log.locator("p")).toHaveCount(50);
+	await expect
+		.poll(() =>
+			log.evaluate((e) => e.scrollHeight - e.clientHeight - e.scrollTop),
+		)
+		.toBeLessThanOrEqual(1);
+	await log.evaluate((e) => {
+		e.scrollTop = 400;
+	});
+	await expect(
+		page.getByRole("button", { name: "Latest", exact: true }),
+	).toBeVisible();
+	const before = await log
+		.locator('[data-message-id="20"]')
+		.evaluate((e) => e.getBoundingClientRect().top);
+	await page.evaluate(() =>
+		(window as unknown as { appendChat: () => void }).appendChat(),
+	);
+	await expect(log.locator('[data-message-id="50"]')).toHaveCount(1);
+	await expect
+		.poll(async () =>
+			Math.abs(
+				(await log
+					.locator('[data-message-id="20"]')
+					.evaluate((e) => e.getBoundingClientRect().top)) - before,
+			),
+		)
+		.toBeLessThanOrEqual(1);
+	await page.getByRole("button", { name: "Latest", exact: true }).click();
+	await expect
+		.poll(() =>
+			log.evaluate((e) => e.scrollHeight - e.clientHeight - e.scrollTop),
+		)
+		.toBeLessThanOrEqual(1);
+	await expect(
+		page.getByRole("button", { name: "Latest", exact: true }),
+	).toHaveCount(0);
+});

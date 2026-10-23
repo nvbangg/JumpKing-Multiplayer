@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../../network/api";
 import type { HistoryItem } from "../../network/contracts";
-import { duration } from "./format";
+import { displayLabel, duration } from "./format";
 
 interface HistoryPage {
 	items: HistoryItem[];
@@ -78,11 +78,15 @@ export function HistoryList({
 					onClick={() => onSelect(item)}
 				>
 					<span className="kind-label">
-						{item.kind}
+						{displayLabel(item.kind)}
 						{item.room && ` · Map ${item.room.mapLevel}`}
 					</span>
 					<span>
-						{new Date(item.endedAt).toLocaleDateString()} · {item.status}
+						{new Date(item.endedAt).toLocaleString(undefined, {
+							dateStyle: "short",
+							timeStyle: "short",
+						})}{" "}
+						· {displayLabel(item.status)}
 					</span>
 					<span>{duration(item.finishTimeMs ?? item.playTimeMs)}</span>
 				</button>

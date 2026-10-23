@@ -119,7 +119,7 @@ History gồm lượt Community kết thúc và Room finalize, chỉ chủ lư�
 
 ## Chat và các bảng trong trận
 
-Chat theo sảnh/phòng, text thuần, không lưu MySQL; Lobby/game dùng chung form. Lobby luôn có ô nhập; trong trận luôn hiện tối đa 10 tin, cuộn tới tin mới. Enter mở/gửi, Escape hoặc gửi xong trả điều khiển; không tự focus/bắt phím form khác. Timer luôn hiện, jumps chỉ ở Stats/History.
+Chat theo sảnh/phòng, text thuần, không lưu MySQL; Lobby/game dùng chung form. Lobby luôn có ô nhập; giữ tối đa 50 tin gần nhất trong khung cuộn. Chỉ tự cuộn khi đang gần cuối; khi đọc tin cũ giữ vị trí, có Latest để về cuối. Enter mở/gửi, Escape hoặc gửi xong trả điều khiển; không tự focus/bắt phím form khác. Timer luôn hiện, jumps chỉ ở Stats/History.
 
 Players realtime gồm cả phòng: Room theo comparator mode, Community theo current progress. Leaderboard chỉ Community, tải khi vào trận hoặc Refresh, không polling. Danh sách dài cuộn; mobile được thu gọn Chat/Leaderboard nhưng giữ nội dung/nháp, Players luôn hiện. Chỉ ô nhập/mã phòng cho chọn chữ. New Game Community chỉ tại menu sau Save & Exit.
 

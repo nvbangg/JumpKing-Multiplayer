@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../network/api";
+import { displayLabel } from "../records/format";
 
 interface PublicRoom {
 	roomId: string;
@@ -9,7 +10,13 @@ interface PublicRoom {
 	capacity: number;
 }
 
-export function PublicRooms({ onJoin }: { onJoin: (roomId: string) => void }) {
+export function PublicRooms({
+	onJoin,
+	pending,
+}: {
+	onJoin: (roomId: string) => void;
+	pending: boolean;
+}) {
 	const [rooms, setRooms] = useState<PublicRoom[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
@@ -43,22 +50,18 @@ export function PublicRooms({ onJoin }: { onJoin: (roomId: string) => void }) {
 					<li key={room.roomId}>
 						<button
 							type="button"
-							disabled={loading}
+							disabled={loading || pending}
 							onClick={() => onJoin(room.roomId)}
 						>
-							{room.roomId} ·{" "}
-							{room.mode
-								.split("_")
-								.map((word) => word[0] + word.slice(1).toLowerCase())
-								.join(" ")}{" "}
-							· Map {room.mapLevel} · {room.playerCount}/{room.capacity}
+							{room.roomId} · {displayLabel(room.mode)} · Map {room.mapLevel} ·{" "}
+							{room.playerCount}/{room.capacity}
 						</button>
 					</li>
 				))}
 			</ul>
 			<button
 				type="button"
-				disabled={loading}
+				disabled={loading || pending}
 				onClick={() => setRevision((value) => value + 1)}
 			>
 				Refresh
