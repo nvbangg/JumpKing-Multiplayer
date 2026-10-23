@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatMessage } from "../../network/contracts";
 import type { GameSocket } from "../../network/GameSocket";
 
-export interface RoomChatState {
+export interface ChatState {
 	open: boolean;
 	messages: ChatMessage[];
 	focusRequest: number;
@@ -10,12 +10,12 @@ export interface RoomChatState {
 	closeChat: () => void;
 }
 
-export function useRoomChat(
+export function useChat(
 	socket: GameSocket,
 	enabled = true,
 	onOpen?: () => void,
 	onClose?: () => void,
-): RoomChatState {
+): ChatState {
 	const [open, setOpen] = useState(false);
 	const [focusRequest, setFocusRequest] = useState(0);
 	const [messages, setMessages] = useState(() => socket.chatHistory);

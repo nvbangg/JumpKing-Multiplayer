@@ -16,7 +16,7 @@ test.skip(
 
 async function captureScene(page: Page): Promise<void> {
 	await page.evaluate(async () => {
-		const path = "/src/game/scenes/TowerScene.ts";
+		const path = "/src/game/presentation/TowerScene.ts";
 		const { TowerScene } = await import(path);
 		const create = TowerScene.prototype.create;
 		TowerScene.prototype.create = function () {

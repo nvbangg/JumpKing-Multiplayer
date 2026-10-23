@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { TutorialStep } from "../features/online/tutorial";
+import type { TutorialStep } from "./tutorial";
 
 const STEP_CONTENT: Record<
 	TutorialStep,

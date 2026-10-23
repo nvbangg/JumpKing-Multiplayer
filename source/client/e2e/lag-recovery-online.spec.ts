@@ -46,19 +46,6 @@ for (const kind of ["COMMUNITY", "ROOM"] as const) {
 			) {
 				await page.getByRole("button", { name: "Resume", exact: true }).click();
 			}
-			if (kind === "COMMUNITY" && action === "reconnect") {
-				await page.route("**/version.json", (route) =>
-					route.fulfill({ json: { version: "next-release-during-play" } }),
-				);
-				await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-				await expect(
-					page.getByRole("status", { name: "Website update" }),
-				).toContainText("Return to the main menu");
-				await expect(
-					page.getByRole("button", { name: "Update now" }),
-				).toHaveCount(0);
-				await expect(page.locator("canvas")).toBeVisible();
-			}
 			await page.evaluate(async () => {
 				const path = "/src/network/GameSocket.ts";
 				const { GameSocket } = await import(path);

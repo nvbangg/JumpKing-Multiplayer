@@ -2,12 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import rules from "../../../../common/rules.json";
 import { ControlsHelp } from "../../components/ControlsHelp";
 import { MenuPanel } from "../../components/MenuPanel";
-import { NetworkStatusBadge } from "../../components/NetworkStatusBadge";
-import { TutorialGuide } from "../../components/TutorialGuide";
 import { loadManifest } from "../../game/content/assets";
 import { FlightToggle } from "../../game/input/FlightToggle";
 import { InputController } from "../../game/input/InputController";
-import { TouchControls } from "../../game/input/TouchControls";
 import type { RoomItemsView } from "../../game/items";
 import { AdventureEffects } from "../../game/netcode/AdventureEffects";
 import {
@@ -27,13 +24,16 @@ import type {
 } from "../../network/contracts";
 import type { GameSocket, RoomState } from "../../network/GameSocket";
 import { required } from "../../required";
+import { Chat } from "../chat/Chat";
+import { useChat } from "../chat/useChat";
 import { InGameLeaderboard } from "../community/InGameLeaderboard";
 import { duration } from "../records/format";
-import { ChatOverlay } from "../rooms/ChatOverlay";
-import { PlayersPanel } from "../rooms/PlayersPanel";
-import { useRoomChat } from "../rooms/useRoomChat";
 import { OptionsButtons } from "../settings/OptionsPanel";
 import { type Options, readOptions, saveOptions } from "../settings/options";
+import { NetworkStatusBadge } from "./NetworkStatusBadge";
+import { PlayersPanel } from "./PlayersPanel";
+import { TouchControls } from "./TouchControls";
+import { TutorialGuide } from "./TutorialGuide";
 import {
 	isTutorialCompleted,
 	nextTutorialStep,
@@ -113,7 +113,7 @@ export function OnlineGame({
 	}, [accountId]);
 	const endingActive = useRef(false),
 		skipEnding = useRef<(() => void) | null>(null);
-	const chat = useRoomChat(
+	const chat = useChat(
 		socket,
 		ready && !ending,
 		() => {
@@ -766,7 +766,7 @@ export function OnlineGame({
 					)}
 				</div>
 			)}
-			{ready && !ending && <ChatOverlay chat={chat} socket={socket} />}
+			{ready && !ending && <Chat chat={chat} socket={socket} dismissible />}
 			{ready && !ending && !menu && (
 				<>
 					<button

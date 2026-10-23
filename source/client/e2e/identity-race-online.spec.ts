@@ -56,7 +56,7 @@ test("a delayed anonymous me response cannot overwrite a subsequently registered
 			page.getByRole("button", { name: "New Game", exact: true }),
 		).toBeVisible();
 		await expect(
-			page.getByText("Sign in to play Community Tower.", { exact: true }),
+			page.getByText("Sign in to play Community.", { exact: true }),
 		).toBeHidden();
 		expect(
 			(await (await page.request.get("/api/auth/me")).json()).account.username,

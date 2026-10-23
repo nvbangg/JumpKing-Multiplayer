@@ -38,7 +38,7 @@ test("home keeps the required menu and one account form", async ({
 	).toHaveCount(0);
 	await page.getByRole("button", { name: "Back", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "Community Tower", exact: true }),
+		page.getByRole("button", { name: "Community", exact: true }),
 	).toHaveCount(0);
 	await expect(page.getByLabel("Total statistics")).toBeHidden();
 	await page.getByRole("button", { name: "New Game", exact: true }).click();

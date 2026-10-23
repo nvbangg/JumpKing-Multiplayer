@@ -1,5 +1,8 @@
 import type { RefObject } from "react";
-import type { InputController, TouchAction } from "./InputController";
+import type {
+	InputController,
+	TouchAction,
+} from "../../game/input/InputController";
 
 export function TouchControls({
 	input,

@@ -140,6 +140,41 @@ test("packets from a previous room or play cannot replace current chat, state or
 	game.close();
 });
 
+test("chat deduplicates messages and bounds its history to the latest ten", async () => {
+	const game = new GameSocket(vi.fn(), vi.fn());
+	const socket = await open(game);
+	socket.receive({
+		v: 1,
+		type: "ROOM_JOINED",
+		payload: { roomId: "ABCDEF", playerId: "self" },
+	});
+	for (let index = 0; index < 12; index++) {
+		const packet = {
+			v: 1,
+			type: "CHAT_MESSAGE",
+			payload: {
+				roomId: "ABCDEF",
+				messages: [
+					{
+						id: String(index),
+						playerId: "self",
+						nickname: "Player",
+						text: `message-${index}`,
+						sentAt: "2026-01-01T00:00:00Z",
+						colorSlot: 0,
+					},
+				],
+			},
+		};
+		socket.receive(packet);
+		socket.receive(packet);
+	}
+	expect(game.chatHistory.map((message) => message.id)).toEqual(
+		Array.from({ length: 10 }, (_, index) => String(index + 2)),
+	);
+	game.close();
+});
+
 test("parallel connects share one handshake and stale sockets cannot affect the new connection", async () => {
 	const message = vi.fn(),
 		disconnect = vi.fn(),

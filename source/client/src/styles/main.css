@@ -867,7 +867,7 @@ output.room-code {
 		margin-right: 0;
 	}
 }
-.update-notice {
+.load-error-notice {
 	position: fixed;
 	top: max(56px, calc(env(safe-area-inset-top) + 48px));
 	right: max(8px, env(safe-area-inset-right));
@@ -880,11 +880,11 @@ output.room-code {
 	pointer-events: none;
 }
 
-.update-notice button {
+.load-error-notice button {
 	pointer-events: auto;
 }
 
-.update-notice p {
+.load-error-notice p {
 	margin: 0 0 8px;
 }
 

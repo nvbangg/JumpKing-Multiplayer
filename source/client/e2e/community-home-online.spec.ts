@@ -51,7 +51,7 @@ test("home opens Community directly; cancel preserves save and Continue preserve
 		page.getByRole("button", { name: "Continue", exact: true }),
 	).toHaveCount(0);
 	await expect(
-		page.getByRole("button", { name: "Community Tower", exact: true }),
+		page.getByRole("button", { name: "Community", exact: true }),
 	).toHaveCount(0);
 	await expect(
 		page.getByRole("button", { name: "Leaderboard", exact: true }),

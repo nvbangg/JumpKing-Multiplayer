@@ -3,6 +3,7 @@ import { ControlsHelp } from "../components/ControlsHelp";
 import { MenuPanel } from "../components/MenuPanel";
 import { AuthForm } from "../features/account/AuthForm";
 import { ChangePassword } from "../features/account/ChangePassword";
+import { LobbyChat } from "../features/chat/Chat";
 import { OnlineGame } from "../features/online/OnlineGame";
 import { HistoryDetail } from "../features/records/HistoryDetail";
 import { HistoryList } from "../features/records/HistoryList";
@@ -11,7 +12,6 @@ import { roomFinishScreen } from "../features/rooms/ending";
 import { Lobby } from "../features/rooms/Lobby";
 import { PublicRooms } from "../features/rooms/PublicRooms";
 import { Results } from "../features/rooms/Results";
-import { RoomChat } from "../features/rooms/RoomChat";
 import { OptionsButtons } from "../features/settings/OptionsPanel";
 import { readOptions, saveOptions } from "../features/settings/options";
 import { loadManifest } from "../game/content/assets";
@@ -25,7 +25,7 @@ import {
 } from "../network/GameSocket";
 import { loadReconnect } from "../network/reconnect";
 import { required } from "../required";
-import { UpdateNotice } from "./UpdateNotice";
+import { LoadErrorNotice, usePreloadError } from "./LoadErrorNotice";
 
 type Screen =
 	| "home"
@@ -63,6 +63,7 @@ function locationScreen(): Screen {
 			)?.[0] as Screen | undefined) || "home";
 }
 export function App() {
+	const loadError = usePreloadError();
 	const [screen, setScreenState] = useState<Screen>(locationScreen);
 	const [identity, setIdentityState] = useState<Identity>(initialIdentity);
 	const identityRevision = useRef(0);
@@ -413,7 +414,7 @@ export function App() {
 	if (screen === "online" && room && socket.current)
 		return (
 			<>
-				<UpdateNotice canReload={false} />
+				<LoadErrorNotice failed={loadError} canReload={false} />
 				<OnlineGame
 					room={room}
 					socket={socket.current}
@@ -464,7 +465,8 @@ export function App() {
 		);
 	return (
 		<main className={`home screen-${screen}`}>
-			<UpdateNotice
+			<LoadErrorNotice
+				failed={loadError}
 				canReload={
 					screen === "home" && !room && !pending && !socket.current?.selfId
 				}
@@ -731,7 +733,7 @@ export function App() {
 				)}
 			</div>
 			{screen === "lobby" && room && socket.current && (
-				<RoomChat socket={socket.current} />
+				<LobbyChat socket={socket.current} />
 			)}
 		</main>
 	);

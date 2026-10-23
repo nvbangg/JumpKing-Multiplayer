@@ -127,7 +127,7 @@ test("Room 7 requires reaching the left brazier rather than the rest of the walk
 	}
 });
 
-test("Room 10 keeps the native Solo and Community Finish", () => {
+test("Room 10 keeps the full Main Babe Finish used by Community", () => {
 	expect(map.finish).toEqual({
 		screen: 42,
 		minCenterX: 336,

@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import type { AssetManifest } from "../content/assets";
-import { TowerScene } from "../scenes/TowerScene";
 import { PRESENTATION } from "./config";
+import { TowerScene } from "./TowerScene";
 import type { GameRuntime, PresentationHooks } from "./types";
 
 export function createGame(

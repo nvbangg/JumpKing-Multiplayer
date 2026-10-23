@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
@@ -15,7 +14,6 @@ const sharedRoot = new URL("../common/", import.meta.url);
 
 export default defineConfig(({ mode }) => {
 	const env = { ...loadEnv(mode, process.cwd(), ""), ...process.env };
-	const version = env.GITHUB_SHA || randomUUID();
 	const target = env.BACKEND_URL || "http://127.0.0.1:8080";
 	const url = new URL(target);
 	if (
@@ -31,27 +29,8 @@ export default defineConfig(({ mode }) => {
 		);
 	}
 	return {
-		define: { "import.meta.env.VITE_APP_VERSION": JSON.stringify(version) },
 		plugins: [
 			react(),
-			{
-				name: "release-version",
-				configureServer(server) {
-					server.middlewares.use((req, res, next) => {
-						if (req.url?.split("?")[0] !== "/version.json") return next();
-						res.setHeader("Content-Type", "application/json");
-						res.setHeader("Cache-Control", "no-store");
-						res.end(JSON.stringify({ version }));
-					});
-				},
-				generateBundle() {
-					this.emitFile({
-						type: "asset",
-						fileName: "version.json",
-						source: JSON.stringify({ version }),
-					});
-				},
-			},
 			{
 				name: "shared-game-data",
 				configureServer(server) {

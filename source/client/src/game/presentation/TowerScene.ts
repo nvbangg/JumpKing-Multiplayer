@@ -7,19 +7,19 @@ import {
 	type Npc,
 	type Prop,
 } from "../content/assets";
-import { AdventureVisuals } from "../presentation/AdventureVisuals";
-import { ConversationVisuals } from "../presentation/ConversationVisuals";
-import { PLAYER_FRAMES, PRESENTATION as V } from "../presentation/config";
-import { ENDING_FRAMES, endingFrameName } from "../presentation/endingFrames";
-import { MainBabeEnding } from "../presentation/MainBabeEnding";
-import { playerFrame } from "../presentation/playerFrame";
+import { PHYSICS } from "../simulation/tuning";
+import { AdventureVisuals } from "./AdventureVisuals";
+import { ConversationVisuals } from "./ConversationVisuals";
+import { PLAYER_FRAMES, PRESENTATION as V } from "./config";
+import { ENDING_FRAMES, endingFrameName } from "./endingFrames";
+import { MainBabeEnding } from "./MainBabeEnding";
+import { playerFrame } from "./playerFrame";
 import type {
 	GameRuntime,
 	PresentationHooks,
 	RenderPlayer,
 	WorldFrame,
-} from "../presentation/types";
-import { PHYSICS } from "../simulation/tuning";
+} from "./types";
 
 interface Avatar {
 	sprite: Phaser.GameObjects.Sprite;

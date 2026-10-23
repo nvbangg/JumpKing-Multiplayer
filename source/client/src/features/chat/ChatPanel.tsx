@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { NETWORK } from "../network/config";
-import type { ChatMessage } from "../network/contracts";
+import { useEffect, useRef, useState } from "react";
+import { NETWORK } from "../../network/config";
+import type { ChatMessage } from "../../network/contracts";
 
 export function ChatMessages({
 	messages,
@@ -40,7 +40,6 @@ export function ChatPanel({
 	onClose,
 	onFocus,
 	onBlur,
-	messageLimit,
 	focusRequest = 0,
 }: {
 	messages: ChatMessage[];
@@ -49,18 +48,12 @@ export function ChatPanel({
 	onClose?: () => void;
 	onFocus?: () => void;
 	onBlur?: () => void;
-	messageLimit?: number;
 	focusRequest?: number;
 }) {
 	const [text, setText] = useState(""),
 		[error, setError] = useState(""),
 		[sending, setSending] = useState(false);
 	const input = useRef<HTMLInputElement>(null);
-	const displayMessages = useMemo(
-		() =>
-			messageLimit === undefined ? messages : messages.slice(-messageLimit),
-		[messages, messageLimit],
-	);
 	useEffect(() => {
 		if (focusRequest > 0) input.current?.focus();
 	}, [focusRequest]);
@@ -80,9 +73,9 @@ export function ChatPanel({
 				}
 			}}
 		>
-			{displayMessages.length > 0 && (
+			{messages.length > 0 && (
 				<section className="chat-history-box" aria-label="Chat messages">
-					<ChatMessages messages={displayMessages} colors={colors} />
+					<ChatMessages messages={messages} colors={colors} />
 				</section>
 			)}
 			<section className="chat-input-box" aria-label="Chat input">
@@ -113,12 +106,16 @@ export function ChatPanel({
 							);
 							return;
 						}
+						const sentText = text;
 						setSending(true);
 						setError("");
-						void onSend(text)
+						void onSend(sentText)
 							.then(() => {
-								setText("");
-								if (onClose) {
+								// ACK chậm không được xóa draft mới hoặc đóng chat khi đang viết tiếp.
+								const hasNewDraft = input.current?.value !== sentText;
+								setText((current) => (current === sentText ? "" : current));
+								if (hasNewDraft) input.current?.focus();
+								else if (onClose) {
 									input.current?.form
 										?.querySelector<HTMLElement>(":focus")
 										?.blur();

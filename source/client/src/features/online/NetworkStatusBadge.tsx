@@ -1,4 +1,4 @@
-import type { NetworkQuality } from "../network/contracts";
+import type { NetworkQuality } from "../../network/contracts";
 
 export function NetworkStatusBadge({ quality }: { quality: NetworkQuality }) {
 	const { pingMs, avgPingMs, jitterMs, stalls, status } = quality;
