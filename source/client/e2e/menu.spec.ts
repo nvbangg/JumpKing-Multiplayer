@@ -10,14 +10,16 @@ test("home keeps the required menu and one account form", async ({
 	});
 	await page.goto("/");
 	await expect(
-		page.getByText("Hold Space / W / ↑, then release", { exact: true }),
+		page.getByRole("button", { name: "Options", exact: true }),
 	).toHaveCount(0);
-	await page.getByRole("button", { name: "Options", exact: true }).click();
+	await expect(
+		page.getByRole("switch", { name: "Sound: On", exact: true }),
+	).toBeVisible();
+	await expect(page.getByRole("switch", { name: /Fullscreen/ })).toHaveCount(0);
 	await expect(
 		page.getByText("Hold Space / W / ↑, then release", { exact: true }),
 	).toBeVisible();
 	await expect(page.locator(".controls-help dt")).toHaveText(["Move", "Jump"]);
-	await page.getByRole("button", { name: "Back", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "Continue", exact: true }),
 	).toBeHidden();

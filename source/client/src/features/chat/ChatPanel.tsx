@@ -17,9 +17,7 @@ export function ChatMessages({
 	useLayoutEffect(() => {
 		const element = list.current;
 		if (!element) return;
-		const panel = element.closest("details");
 		const restore = () => {
-			if (panel && !panel.open) return;
 			if (follow.current) element.scrollTop = element.scrollHeight;
 			else if (anchor.current) {
 				const saved = anchor.current;
@@ -35,8 +33,6 @@ export function ChatMessages({
 			}
 		};
 		restore();
-		panel?.addEventListener("toggle", restore);
-		return () => panel?.removeEventListener("toggle", restore);
 	}, [messages]);
 	return (
 		<>
@@ -98,6 +94,7 @@ export function ChatPanel({
 	onFocus,
 	onBlur,
 	focusRequest = 0,
+	autoHide = true,
 }: {
 	messages: ChatMessage[];
 	colors: readonly string[];
@@ -106,32 +103,50 @@ export function ChatPanel({
 	onFocus?: () => void;
 	onBlur?: () => void;
 	focusRequest?: number;
+	autoHide?: boolean;
 }) {
 	const [text, setText] = useState(""),
 		[error, setError] = useState(""),
 		[sending, setSending] = useState(false);
-	const panel = useRef<HTMLDetailsElement>(null);
+	const [historyVisible, setHistoryVisible] = useState(true);
+	const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+	const hovered = useRef(false);
+	const clearTimer = () => {
+		clearTimeout(timer.current);
+	};
+	const hideLater = (delay: number) => {
+		clearTimer();
+		if (autoHide && !hovered.current)
+			timer.current = setTimeout(() => setHistoryVisible(false), delay);
+	};
+	const latestMessage = messages.at(-1)?.id;
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Chỉ tin nhắn mới khởi động lại thời gian hiện lịch sử.
+	useEffect(() => {
+		setHistoryVisible(true);
+		clearTimeout(timer.current);
+		if (autoHide && !hovered.current)
+			timer.current = setTimeout(() => setHistoryVisible(false), 5000);
+		return () => clearTimeout(timer.current);
+	}, [latestMessage, autoHide]);
 	const input = useRef<HTMLInputElement>(null);
 	useEffect(() => {
 		if (focusRequest > 0) {
-			if (panel.current) panel.current.open = true;
 			input.current?.focus();
 		}
 	}, [focusRequest]);
 	return (
-		<details
-			ref={panel}
+		<section
 			className="chat-panel"
 			aria-label="Room chat"
-			open
-			onToggle={(event) => {
-				if (!event.currentTarget.open) {
-					input.current?.blur();
-					onClose?.();
-				}
+			onFocus={() => {
+				setHistoryVisible(true);
+				hideLater(5000);
 			}}
 			onBlur={(event) => {
-				if (!event.currentTarget.contains(event.relatedTarget)) onBlur?.();
+				if (!event.currentTarget.contains(event.relatedTarget)) {
+					hideLater(2000);
+					onBlur?.();
+				}
 			}}
 			onKeyDown={(event) => {
 				if (event.key === "Escape") {
@@ -142,9 +157,22 @@ export function ChatPanel({
 				}
 			}}
 		>
-			<summary>Chat</summary>
 			{messages.length > 0 && (
-				<section className="chat-history-box" aria-label="Chat messages">
+				<section
+					className="chat-history-box"
+					aria-label="Chat messages"
+					aria-hidden={!historyVisible}
+					data-hidden={!historyVisible}
+					onPointerEnter={() => {
+						hovered.current = true;
+						clearTimer();
+						setHistoryVisible(true);
+					}}
+					onPointerLeave={() => {
+						hovered.current = false;
+						hideLater(2000);
+					}}
+				>
 					<ChatMessages messages={messages} colors={colors} />
 				</section>
 			)}
@@ -198,6 +226,6 @@ export function ChatPanel({
 				</form>
 				{error && <p role="alert">{error}</p>}
 			</section>
-		</details>
+		</section>
 	);
 }

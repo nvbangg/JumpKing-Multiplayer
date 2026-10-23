@@ -57,31 +57,49 @@ button {
 	outline-offset: 4px;
 }
 .play-page {
+	--game-width: 720px;
 	width: 100%;
 	height: 100dvh;
+	min-height: calc(var(--game-width) * 3 / 4 + 24px);
 	display: grid;
-	grid-template-columns: clamp(240px, 24vw, 360px) minmax(0, 1fr);
+	grid-template-columns: minmax(0, 1fr) var(--game-width) minmax(0, 1fr);
+	gap: 12px;
+	padding: 12px;
 	position: relative;
-	overflow: hidden;
 	background: #000;
 }
 .game-stage {
 	grid-column: 2;
 	grid-row: 1;
+	align-self: center;
+	width: 100%;
+	aspect-ratio: 4 / 3;
 	position: relative;
 	min-width: 0;
 	min-height: 0;
 }
 .game-sidebar {
-	grid-column: 1;
+	grid-column: 3;
 	grid-row: 1;
+	align-self: start;
 	min-height: 0;
+	max-height: calc(100dvh - 24px);
 	overflow-y: auto;
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
-	padding: 12px;
-	background: #050505;
+	width: 100%;
+	max-width: 320px;
+	justify-self: start;
+}
+.game-chat {
+	grid-column: 1;
+	grid-row: 1;
+	align-self: end;
+	justify-self: end;
+	min-width: 0;
+	width: 100%;
+	max-width: 320px;
 }
 .game-viewport {
 	container-type: size;
@@ -129,10 +147,13 @@ button {
 }
 .game-hud {
 	position: absolute;
+	z-index: 61;
 	top: max(8px, env(safe-area-inset-top));
 	left: 12px;
 	right: 12px;
 	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
 	justify-content: space-between;
 	align-items: center;
 	font-size: 0.8rem;
@@ -154,7 +175,7 @@ button {
 	padding: 1rem;
 }
 .game-overlay {
-	position: fixed;
+	position: absolute;
 	z-index: 60;
 	inset: 0;
 	display: flex;
@@ -166,6 +187,9 @@ button {
 }
 .game-hud .timer {
 	white-space: nowrap;
+	padding: 4px 6px;
+	background: #08090ce6;
+	border: 1px solid #4a4436;
 }
 .ending-actions {
 	position: absolute;
@@ -262,8 +286,8 @@ button {
 	min-width: 0;
 }
 .game-overlay .menu-panel {
-	width: min(500px, 90vw);
-	max-height: 90dvh;
+	width: min(500px, calc(100% - 32px));
+	max-height: calc(100% - 88px);
 	overflow-y: auto;
 }
 .menu-panel h2 {
@@ -501,7 +525,15 @@ button {
 }
 .game-hud > span:last-child {
 	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	margin-left: auto;
 	gap: 8px;
+}
+.game-hud > span:first-child {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
 }
 .players li > span:last-child {
 	color: #aaa28b;
@@ -572,12 +604,13 @@ button {
 	border: 1px solid #6b6250;
 	font-size: 14px;
 }
-.game-sidebar .chat-panel {
+.game-chat .chat-panel {
 	position: static;
 	width: 100%;
 	max-width: none;
+	background: transparent;
+	border: 0;
 }
-.chat-panel > summary,
 .in-game-panel > summary {
 	cursor: pointer;
 	padding: 8px;
@@ -596,8 +629,14 @@ button {
 .chat-history-box {
 	overflow-wrap: anywhere;
 }
+.chat-history-box[data-hidden="true"] {
+	opacity: 0;
+}
+.chat-history-box[data-hidden="true"] > * {
+	visibility: hidden;
+}
 .chat-history-box .chat-messages {
-	max-height: 35dvh;
+	max-height: min(360px, 45dvh);
 	overflow-y: auto;
 	overflow-wrap: anywhere;
 }
@@ -620,6 +659,9 @@ button {
 .chat-input-box input {
 	min-width: 0;
 	flex: 1;
+}
+.game-chat .chat-input-box {
+	border: 1px solid #6b6250;
 }
 .visually-hidden {
 	position: absolute;
@@ -676,7 +718,7 @@ button {
 	list-style: none;
 	margin: 0;
 	padding: 0 8px;
-	max-height: 30dvh;
+	max-height: min(240px, calc((100dvh - 160px) / 2));
 	overflow-y: auto;
 	overscroll-behavior: contain;
 }
@@ -751,6 +793,11 @@ button {
 	box-shadow: 0 0 6px #ef4444aa;
 }
 
+@media (901px <= width < 1200px) {
+	.play-page {
+		--game-width: 480px;
+	}
+}
 @media (max-width: 900px) {
 	.play-page {
 		height: auto;
@@ -758,6 +805,8 @@ button {
 		display: flex;
 		flex-direction: column;
 		overflow: visible;
+		padding: 0;
+		gap: 0;
 	}
 	.game-stage {
 		width: 100%;
@@ -767,6 +816,12 @@ button {
 	}
 	.game-sidebar {
 		overflow: visible;
+		padding: 8px;
+		max-height: none;
+		max-width: none;
+	}
+	.game-chat {
+		max-width: none;
 		padding: 8px;
 	}
 	.in-game-panels {
@@ -785,7 +840,7 @@ button {
 	.in-game-panel ol {
 		max-height: 150px;
 	}
-	.game-sidebar .chat-messages {
+	.game-chat .chat-messages {
 		max-height: 160px;
 	}
 	.game-hud {

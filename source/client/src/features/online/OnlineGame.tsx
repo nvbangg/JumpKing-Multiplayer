@@ -28,8 +28,8 @@ import { useChat } from "../chat/useChat";
 import { InGameLeaderboard } from "../community/InGameLeaderboard";
 import { duration } from "../records/format";
 import { RoomCode } from "../rooms/RoomCode";
-import { OptionsButtons } from "../settings/OptionsPanel";
 import type { Options } from "../settings/options";
+import { SoundButton } from "../settings/SoundButton";
 import { createGameControls } from "./gameControls";
 import { NetworkStatusBadge } from "./NetworkStatusBadge";
 import { PlayersPanel } from "./PlayersPanel";
@@ -67,7 +67,7 @@ export function OnlineGame({
 		audio = useRef<AudioBus | null>(null);
 	const [countdown, setCountdown] = useState<number | null>(null);
 	const [ready, setReady] = useState(false),
-		[menu, setMenu] = useState<"pause" | "options" | null>(null);
+		[menu, setMenu] = useState(false);
 	const flight = useRef<FlightToggle | null>(null);
 	const [flying, setFlying] = useState(false);
 	const sound = useRef(options.sound);
@@ -220,7 +220,7 @@ export function OnlineGame({
 		flight.current?.cancel();
 		input.current?.cancel();
 		audio.current?.pause(true);
-		setMenu("pause");
+		setMenu(true);
 		if (room.kind === "COMMUNITY") {
 			void socket
 				.command("SET_COMMUNITY_PAUSED", { paused: true })
@@ -333,7 +333,7 @@ export function OnlineGame({
 					controls.cancel();
 					audio.current?.pause(true);
 					setDisconnected(true);
-					setMenu("pause");
+					setMenu(true);
 					setError(
 						typeof payload.message === "string"
 							? payload.message
@@ -345,7 +345,7 @@ export function OnlineGame({
 					setError("");
 					if (runtime.current) runtime.current.menu = true;
 					controls.cancel();
-					setMenu("pause");
+					setMenu(true);
 				}
 			} catch (cause) {
 				setError(cause instanceof Error ? cause.message : "Invalid game state");
@@ -411,7 +411,7 @@ export function OnlineGame({
 					) {
 						session.menu = true;
 						controls.cancel();
-						setMenu("pause");
+						setMenu(true);
 						setError("The player is no longer available to watch.");
 						audio.current?.pause(true);
 					}
@@ -454,7 +454,7 @@ export function OnlineGame({
 					if (snapshot.self.paused && !session.menu && !view) {
 						session.menu = true;
 						controls.cancel();
-						setMenu("pause");
+						setMenu(true);
 						audio.current?.pause(true);
 					}
 					if (
@@ -482,7 +482,7 @@ export function OnlineGame({
 				config.features.flyEnabled,
 				(message) => {
 					setError(message);
-					setMenu("pause");
+					setMenu(true);
 					controls.cancel();
 				},
 				(movement, state) => {
@@ -493,7 +493,7 @@ export function OnlineGame({
 			if (socket.resumeRequired) {
 				session.menu = true;
 				controls.cancel();
-				setMenu("pause");
+				setMenu(true);
 				audio.current?.pause(true);
 			}
 			flight.current = new FlightToggle(
@@ -530,7 +530,7 @@ export function OnlineGame({
 						endingActive.current = true;
 						controls.cancel();
 						session.cancel();
-						setMenu(null);
+						setMenu(false);
 						chat.closeChat();
 						setPictureReady(false);
 						setEnding("playing");
@@ -584,7 +584,7 @@ export function OnlineGame({
 			try {
 				await socket.command("SET_COMMUNITY_PAUSED", { paused: false });
 			} catch (cause) {
-				setMenu("pause");
+				setMenu(true);
 				await reportFailure(cause, "Resume failed");
 				return;
 			} finally {
@@ -596,7 +596,7 @@ export function OnlineGame({
 		if (ownGame || !runtime.current?.latest?.spectating)
 			input.current?.resume();
 		audio.current?.pause(false);
-		setMenu(null);
+		setMenu(false);
 	};
 	const watch = async (playerId: string | null) => {
 		const session = runtime.current;
@@ -614,13 +614,13 @@ export function OnlineGame({
 			if (playerId === null) await resume(true);
 			else {
 				session.menu = false;
-				setMenu(null);
+				setMenu(false);
 				audio.current?.pause(false);
 			}
 		} catch (cause) {
 			returningToSelf.current = false;
 			session.menu = true;
-			setMenu("pause");
+			setMenu(true);
 			await reportFailure(cause, "Unable to watch player");
 		} finally {
 			setPending(false);
@@ -691,6 +691,11 @@ export function OnlineGame({
 						{room.kind === "ROOM" && <RoomCode roomId={room.roomId} />}
 						<span>
 							<NetworkStatusBadge quality={networkQuality} />
+							<SoundButton
+								options={options}
+								onChange={onOptionsChange}
+								onError={setError}
+							/>
 							<button type="button" onClick={pause}>
 								Menu (Esc)
 							</button>
@@ -799,95 +804,78 @@ export function OnlineGame({
 					<section className="game-overlay" aria-label="Game menu">
 						<MenuPanel
 							title={
-								menu === "options"
-									? "Options"
-									: disconnected
-										? "Disconnected"
-										: room.kind === "ROOM"
-											? "Game Menu"
-											: "Paused"
+								disconnected
+									? "Disconnected"
+									: room.kind === "ROOM"
+										? "Game Menu"
+										: "Paused"
 							}
-							onBack={menu === "options" ? () => setMenu("pause") : undefined}
 						>
-							{menu === "pause" ? (
+							{disconnected ? (
 								<>
-									{disconnected ? (
-										<>
-											<button
-												type="button"
-												disabled={pending}
-												onClick={() => {
-													setPending(true);
-													void socket
-														.reconnect()
-														.catch((cause) => {
-															if (
-																cause instanceof ApiError &&
-																[
-																	"RECONNECT_EXPIRED",
-																	"ROOM_NOT_FOUND",
-																].includes(cause.code)
-															)
-																onHome(removedNotice);
-															else setError(cause.message);
-														})
-														.finally(() => setPending(false));
-												}}
-											>
-												Reconnect
-											</button>
-											<button
-												type="button"
-												onClick={() =>
-													onHome(
-														room.kind === "COMMUNITY"
-															? "Disconnected. Latest save could not be confirmed. Continue will use the last server checkpoint."
-															: "Disconnected. Your departure could not be confirmed by the server.",
+									<button
+										type="button"
+										disabled={pending}
+										onClick={() => {
+											setPending(true);
+											void socket
+												.reconnect()
+												.catch((cause) => {
+													if (
+														cause instanceof ApiError &&
+														["RECONNECT_EXPIRED", "ROOM_NOT_FOUND"].includes(
+															cause.code,
+														)
 													)
-												}
-											>
-												Back to Menu
-											</button>
-										</>
-									) : (
-										<button
-											type="button"
-											disabled={pending}
-											onClick={() => void resume()}
-										>
-											Resume
-										</button>
-									)}
-									<button type="button" onClick={() => setMenu("options")}>
-										Options
+														onHome(removedNotice);
+													else setError(cause.message);
+												})
+												.finally(() => setPending(false));
+										}}
+									>
+										Reconnect
 									</button>
-									{room.kind === "ROOM" &&
-										room.hostPlayerId === socket.selfId &&
-										room.state === "PLAYING" && (
-											<button
-												type="button"
-												disabled={pending || disconnected}
-												onClick={() => void command("END_MATCH")}
-											>
-												End Match
-											</button>
-										)}
+									<button
+										type="button"
+										onClick={() =>
+											onHome(
+												room.kind === "COMMUNITY"
+													? "Disconnected. Latest save could not be confirmed. Continue will use the last server checkpoint."
+													: "Disconnected. Your departure could not be confirmed by the server.",
+											)
+										}
+									>
+										Back to Menu
+									</button>
+								</>
+							) : (
+								<button
+									type="button"
+									disabled={pending}
+									onClick={() => void resume()}
+								>
+									Resume
+								</button>
+							)}
+							{room.kind === "ROOM" &&
+								room.hostPlayerId === socket.selfId &&
+								room.state === "PLAYING" && (
 									<button
 										type="button"
 										disabled={pending || disconnected}
-										onClick={() => void command("LEAVE_ROOM")}
+										onClick={() => void command("END_MATCH")}
 									>
-										{room.kind === "COMMUNITY" ? "Save & Exit" : "Leave Room"}
+										End Match
 									</button>
-									<ControlsHelp />
-								</>
-							) : (
-								<OptionsButtons
-									options={options}
-									onChange={onOptionsChange}
-									onError={setError}
-								/>
-							)}
+								)}
+							<button
+								type="button"
+								disabled={pending || disconnected}
+								onClick={() => void command("LEAVE_ROOM")}
+							>
+								{room.kind === "COMMUNITY" ? "Save & Exit" : "Leave Room"}
+							</button>
+							<ControlsHelp />
 							{displayedError && <p role="alert">{displayedError}</p>}
 						</MenuPanel>
 					</section>
@@ -918,6 +906,10 @@ export function OnlineGame({
 						/>
 						{room.kind === "COMMUNITY" && <InGameLeaderboard />}
 					</div>
+				</aside>
+			)}
+			{ready && !ending && (
+				<aside className="game-chat" aria-label="Game chat">
 					<Chat chat={chat} socket={socket} dismissible />
 				</aside>
 			)}

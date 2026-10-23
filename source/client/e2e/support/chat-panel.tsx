@@ -40,7 +40,7 @@ export function mountChatHistory() {
 	let append = () => {};
 	function History() {
 		const [messages, setMessages] = useState(
-			Array.from({ length: 50 }, (_, i) => ({
+			Array.from({ length: 30 }, (_, i) => ({
 				id: String(i),
 				playerId: "self",
 				nickname: "Player",

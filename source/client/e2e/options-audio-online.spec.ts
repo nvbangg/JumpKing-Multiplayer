@@ -7,15 +7,14 @@ import {
 	registerOnline,
 } from "./support/online";
 
-test("Options keep sound, show controls and the game timer is always visible", async ({
+test("Sound is available directly, controls remain visible and the game timer is always visible", async ({
 	page,
 }) => {
 	test.skip(process.env.E2E_AUTH_ONLINE !== "true", "Requires backend/MySQL");
 	await registerOnline(page, "options");
 	await expect(
-		page.getByText("Hold Space / W / ↑, then release", { exact: true }),
+		page.getByRole("button", { name: "Options", exact: true }),
 	).toHaveCount(0);
-	await page.getByRole("button", { name: "Options", exact: true }).click();
 	await expect(
 		page.getByText("Hold Space / W / ↑, then release", { exact: true }),
 	).toBeVisible();
@@ -27,22 +26,7 @@ test("Options keep sound, show controls and the game timer is always visible", a
 		0,
 	);
 	await page.getByRole("switch", { name: "Sound: On", exact: true }).click();
-	if (await page.evaluate(() => document.fullscreenEnabled)) {
-		await page
-			.getByRole("switch", { name: "Fullscreen: Off", exact: true })
-			.click();
-		await expect
-			.poll(() => page.evaluate(() => document.fullscreenElement !== null))
-			.toBe(true);
-		await expect(
-			page.getByRole("switch", { name: "Fullscreen: On", exact: true }),
-		).toBeChecked();
-		await page.evaluate(() => document.exitFullscreen());
-		await expect(
-			page.getByRole("switch", { name: "Fullscreen: Off", exact: true }),
-		).not.toBeChecked();
-	}
-	await page.getByRole("button", { name: "Back", exact: true }).click();
+	await expect(page.getByRole("switch", { name: /Fullscreen/ })).toHaveCount(0);
 	await newCommunity(page);
 	await expect(page.getByLabel("Play time", { exact: true })).toBeVisible();
 	const region = page.getByLabel("Current region", { exact: true });
@@ -102,7 +86,6 @@ test("Options keep sound, show controls and the game timer is always visible", a
 	).toBeGreaterThanOrEqual(captionTime);
 	await expect(region).toHaveAttribute("data-same-region", "retained");
 	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
-	await page.getByRole("button", { name: "Options", exact: true }).click();
 	await expect(
 		page.getByRole("switch", { name: "Sound: Off", exact: true }),
 	).toBeVisible();
@@ -223,7 +206,6 @@ test("blocked audio reports a limitation without blocking the game", async ({
 	await expect(page.getByRole("alert")).toContainText(
 		"Sound could not be played",
 	);
-	await page.getByRole("button", { name: "Options", exact: true }).click();
 	await page.getByRole("switch", { name: "Sound: On", exact: true }).click();
 	await expect(
 		page.getByRole("switch", { name: "Sound: Off", exact: true }),

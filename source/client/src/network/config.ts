@@ -6,7 +6,7 @@ export const NETWORK = Object.freeze({
 	maxMessageBytes: 16384,
 	maxInputFrames: 180,
 	maxChatCodePoints: 200,
-	chatHistory: 50,
+	chatHistory: 30,
 	interpolationDelayMs: 100,
 	interpolationSnapshots: 12,
 	interpolationResetMs: 1000,

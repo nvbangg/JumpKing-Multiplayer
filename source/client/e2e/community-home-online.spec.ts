@@ -166,7 +166,7 @@ test("late home responses cannot restore the previous Account's save or statisti
 		await delivery;
 	});
 	try {
-		await page.getByRole("button", { name: "Options", exact: true }).click();
+		await page.getByRole("button", { name: /^previous_/ }).click();
 		await page.getByRole("button", { name: "Back", exact: true }).click();
 		await requested;
 		await page.getByRole("button", { name: /^previous_/ }).click();

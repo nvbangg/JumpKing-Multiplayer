@@ -12,8 +12,8 @@ import { roomFinishScreen } from "../features/rooms/ending";
 import { Lobby } from "../features/rooms/Lobby";
 import { PublicRooms } from "../features/rooms/PublicRooms";
 import { Results } from "../features/rooms/Results";
-import { OptionsButtons } from "../features/settings/OptionsPanel";
 import { readOptions, saveOptions } from "../features/settings/options";
+import { SoundButton } from "../features/settings/SoundButton";
 import { ApiError, api, backendOrigin, clearCsrf } from "../network/api";
 import type { HistoryItem, Identity, Statistics } from "../network/contracts";
 import {
@@ -32,7 +32,6 @@ type Screen =
 	| "account"
 	| "history"
 	| "detail"
-	| "options"
 	| "rooms"
 	| "password"
 	| "public-rooms"
@@ -45,7 +44,6 @@ const initialIdentity: Identity = {
 const routes: Partial<Record<Screen, string>> = {
 	home: "/",
 	history: "/history",
-	options: "/options",
 	account: "/account",
 	"sign-in": "/sign-in",
 };
@@ -464,7 +462,6 @@ export function App() {
 										account: "Account",
 										history: "History",
 										detail: "Game Details",
-										options: "Options",
 
 										"public-rooms": "Join Public Room",
 										lobby: "Lobby",
@@ -512,9 +509,11 @@ export function App() {
 							>
 								History
 							</button>
-							<button type="button" onClick={() => setScreen("options")}>
-								Options
-							</button>
+							<SoundButton
+								options={options}
+								onChange={updateOptions}
+								onError={setError}
+							/>
 							<div className="account-actions">
 								{identity.account ? (
 									<button type="button" onClick={() => setScreen("account")}>
@@ -526,6 +525,7 @@ export function App() {
 									</button>
 								)}
 							</div>
+							<ControlsHelp />
 						</>
 					)}
 					{screen === "sign-in" && (
@@ -594,16 +594,6 @@ export function App() {
 							key={`${detail.item.kind}:${detail.item.id}`}
 							item={detail.item}
 						/>
-					)}
-					{screen === "options" && (
-						<>
-							<OptionsButtons
-								options={options}
-								onChange={updateOptions}
-								onError={setError}
-							/>
-							<ControlsHelp />
-						</>
 					)}
 					{screen === "rooms" && identity.authenticated && (
 						<>

@@ -124,7 +124,6 @@ for (const mobile of [false, true])
 			await page
 				.getByRole("button", { name: "Menu (Esc)", exact: true })
 				.click();
-			await page.getByRole("button", { name: "Options", exact: true }).click();
 			const sound = page.getByRole("switch", {
 				name: "Sound: On",
 				exact: true,
@@ -133,15 +132,12 @@ for (const mobile of [false, true])
 			await expect(
 				page.getByRole("switch", { name: "Sound: Off", exact: true }),
 			).toBeVisible();
-			await page.getByRole("button", { name: "Back", exact: true }).click();
 			await page
 				.getByRole("button", { name: "Save & Exit", exact: true })
 				.click();
-			await page.getByRole("button", { name: "Options", exact: true }).click();
 			await expect(
 				page.getByRole("switch", { name: "Sound: Off", exact: true }),
 			).toBeVisible();
-			await page.getByRole("button", { name: "Back", exact: true }).click();
 			await page.getByRole("button", { name: "Continue", exact: true }).click();
 			await expect(page.locator("canvas")).toBeVisible();
 			await expect(guide).toHaveCount(0);

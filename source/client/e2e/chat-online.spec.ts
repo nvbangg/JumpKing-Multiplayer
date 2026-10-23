@@ -59,7 +59,7 @@ test("persistent scrollable chat, shortcuts and touch work without launching a h
 		const history = b.getByRole("log");
 		await a.locator("canvas").click();
 		const jumps = required(snapshots.at(-1)).self.simulation.physics.jumps;
-		await expect(a.locator(".players-panel > summary")).toBeVisible();
+		await expect(a.locator(".players-panel")).toBeVisible();
 		await expect(
 			a.getByRole("list", { name: "Current players" }).locator("li"),
 		).toHaveCount(2);
@@ -95,14 +95,21 @@ test("persistent scrollable chat, shortcuts and touch work without launching a h
 			await a.getByRole("button", { name: "Send", exact: true }).click();
 			await expect(history).toContainText(`Line ${index}`);
 		}
-		await b.locator(".chat-panel > summary").tap();
-		await expect(b.getByLabel("Message", { exact: true })).toBeHidden();
+		await b.waitForTimeout(5100);
+		await expect(b.locator(".chat-history-box")).toHaveAttribute(
+			"data-hidden",
+			"true",
+		);
+		await expect(b.getByLabel("Message", { exact: true })).toBeVisible();
 		await a.waitForTimeout(1100);
 		const latest = `Latest message ${"message ".repeat(18)}`;
 		await a.getByLabel("Message", { exact: true }).fill(latest);
 		await a.getByRole("button", { name: "Send", exact: true }).click();
 		await expect(b.locator(".chat-messages")).toContainText(latest);
-		await b.locator(".chat-panel > summary").tap();
+		await expect(b.locator(".chat-history-box")).toHaveAttribute(
+			"data-hidden",
+			"false",
+		);
 		await expect(history.locator("p").last()).toBeInViewport();
 		await expect(history.locator("p")).toHaveCount(13);
 		await expect(history).toContainText("Online hello");
@@ -136,7 +143,7 @@ test("persistent scrollable chat, shortcuts and touch work without launching a h
 		await expect(
 			a.getByRole("button", { name: "Resume", exact: true }),
 		).toBeVisible();
-		await expect(a.locator(".chat-panel > summary")).toBeVisible();
+		await expect(a.getByLabel("Message", { exact: true })).toBeVisible();
 		await a.getByRole("button", { name: "Resume", exact: true }).click();
 		expect(required(snapshots.at(-1)).self.simulation.physics.jumps).toBe(
 			jumps,

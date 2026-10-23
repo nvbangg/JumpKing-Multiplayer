@@ -70,7 +70,6 @@ test("username account, change password and online authentication", async ({
 	await expect(
 		page.getByRole("button", { name: username, exact: true }),
 	).toBeVisible();
-	await page.getByRole("button", { name: "Options", exact: true }).click();
 	await expect(page.getByRole("switch", { name: /Display Timer/ })).toHaveCount(
 		0,
 	);

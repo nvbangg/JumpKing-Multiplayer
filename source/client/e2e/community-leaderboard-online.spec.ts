@@ -82,9 +82,12 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 		const panel = page.locator(".records-panel");
 		await expect(panel).toHaveAttribute("open", "");
 		await expect(page.locator(".players-panel")).toHaveAttribute("open", "");
-		await expect(page.locator(".chat-panel")).toHaveAttribute("open", "");
+		await expect(page.getByLabel("Message", { exact: true })).toBeVisible();
+		await expect(page.locator(".chat-panel > summary")).toHaveCount(0);
 		for (const viewport of [
 			{ width: 1280, height: 900 },
+			{ width: 1280, height: 1080 },
+			{ width: 1024, height: 768 },
 			{ width: 390, height: 844 },
 			{ width: 844, height: 390 },
 		]) {
@@ -134,11 +137,13 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 				sidebar = await page.locator(".game-sidebar").boundingBox(),
 				players = await page.locator(".players-panel").boundingBox(),
 				board = await panel.boundingBox(),
-				chat = await page.locator(".chat-panel").boundingBox();
+				chat = await page.locator(".game-chat").boundingBox();
 			if (!stage || !sidebar || !players || !board || !chat)
 				throw new Error("Game layout is missing");
-			if (viewport.width === 1280) {
-				expect(sidebar.x + sidebar.width).toBeLessThanOrEqual(stage.x);
+			if (viewport.width > 900) {
+				expect(stage.x + stage.width).toBeLessThanOrEqual(sidebar.x);
+				expect(chat.x + chat.width).toBeLessThanOrEqual(stage.x);
+				expect(stage.x + stage.width / 2).toBeCloseTo(viewport.width / 2, 0);
 			} else {
 				expect(stage.y + stage.height).toBeLessThanOrEqual(sidebar.y);
 				expect(players.y).toBeCloseTo(board.y, 0);
@@ -149,13 +154,25 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 			}
 			const canvas = await page.locator("canvas").boundingBox();
 			expect(canvas && canvas.width / canvas.height).toBeCloseTo(4 / 3, 2);
+			if (viewport.width > 900) {
+				expect(canvas?.width).toBeCloseTo(
+					viewport.width >= 1200 ? 720 : 480,
+					0,
+				);
+				expect(canvas?.height).toBeCloseTo(
+					viewport.width >= 1200 ? 540 : 360,
+					0,
+				);
+			}
 			expect(
 				await page.evaluate(
 					() => document.documentElement.scrollWidth <= innerWidth,
 				),
 			).toBe(true);
 			await page.screenshot({
-				path: info.outputPath(`community-${viewport.width}.png`),
+				path: info.outputPath(
+					`community-${viewport.width}-${viewport.height}.png`,
+				),
 				fullPage: true,
 			});
 		}
@@ -169,7 +186,7 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 	}
 });
 
-test("mobile panels preserve drafts and keyboard chat can be collapsed again", async ({
+test("mobile panels preserve drafts and chat stays available while paused", async ({
 	page,
 }, info) => {
 	await page.setViewportSize({ width: 390, height: 844 });
@@ -180,19 +197,15 @@ test("mobile panels preserve drafts and keyboard chat can be collapsed again", a
 		const observed = observeOnline(page);
 		await registerOnline(page, "panels");
 		await newCommunity(page);
-		const chat = page.locator(".chat-panel");
 		const message = page.getByLabel("Message", { exact: true });
-		await expect(chat).toHaveAttribute("open", "");
+		await expect(message).toBeVisible();
 		await message.fill("Unsent draft");
-		await chat.locator("summary").tap();
-		await expect(message).toBeHidden();
 		await page.locator("canvas").focus();
 		await page.keyboard.press("Enter");
 		await expect(message).toBeFocused();
 		await expect(message).toHaveValue("Unsent draft");
-		await chat.locator("summary").tap();
-		await expect(message).toBeHidden();
-		await chat.locator("summary").tap();
+		await page.keyboard.press("Escape");
+		await expect(message).toBeVisible();
 		await expect(message).toHaveValue("Unsent draft");
 		for (const viewport of [
 			{ width: 844, height: 390 },
@@ -208,6 +221,8 @@ test("mobile panels preserve drafts and keyboard chat can be collapsed again", a
 			await expect(
 				page.getByRole("button", { name: "Refresh", exact: true }),
 			).toBeVisible();
+			await expect(message).toBeVisible();
+			await expect(message).toHaveValue("Unsent draft");
 			await page.screenshot({
 				path: info.outputPath(`panels-${viewport.width}.png`),
 			});
@@ -225,6 +240,10 @@ test("mobile panels preserve drafts and keyboard chat can be collapsed again", a
 		await page.keyboard.press("Escape");
 		const menu = page.getByRole("region", { name: "Game menu", exact: true });
 		await expect(menu).toBeVisible();
+		await expect(message).toBeVisible();
+		await message.fill("Draft while paused");
+		await expect(message).toHaveValue("Draft while paused");
+		await menu.scrollIntoViewIfNeeded();
 		expect(
 			await menu.evaluate((element) => {
 				const box = element.getBoundingClientRect();

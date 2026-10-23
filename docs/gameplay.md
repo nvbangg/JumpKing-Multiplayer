@@ -119,9 +119,9 @@ History gồm lượt Community kết thúc và Room finalize, chỉ chủ lư�
 
 ## Chat và các bảng trong trận
 
-Chat theo sảnh/phòng, text thuần, không lưu MySQL; Lobby/game dùng chung form. Lobby luôn có ô nhập; giữ tối đa 50 tin gần nhất trong khung cuộn. Chỉ tự cuộn khi đang gần cuối; khi đọc tin cũ giữ vị trí, có Latest để về cuối. Enter mở/gửi và giữ focus để chat tiếp; Escape hoặc rời ô nhập trả điều khiển; không tự focus/bắt phím form khác. Timer luôn hiện, jumps chỉ ở Stats/History.
+Chat theo sảnh/phòng, text thuần, không lưu MySQL; Lobby/game dùng chung form, luôn hiện ô nhập và giữ tối đa 30 tin gần nhất. Trong trận, lịch sử ẩn sau 5 giây không có tin mới; hover vùng tin nhắn giữ lịch sử mở, rời vùng này 2 giây thì ẩn. Tin mới hoặc focus chat tự hiện lại; giữ focus ô nhập không ngăn tự ẩn. Lobby không tự ẩn. Chỉ tự cuộn khi đang gần cuối; khi đọc tin cũ giữ vị trí, có Latest để về cuối. Enter focus/gửi, Escape hoặc rời ô nhập trả điều khiển; không bắt phím form khác. Menu/pause không che hoặc ngắt chat.
 
-Players realtime gồm cả phòng: Room theo comparator mode, Community theo current progress. Leaderboard chỉ Community, tải khi vào trận hoặc Refresh, không polling. Danh sách dài cuộn; Chat, Players và Leaderboard mặc định mở, bấm tiêu đề để thu gọn trên mọi thiết bị; giữ nội dung/nháp khi thu gọn. Chỉ ô nhập/mã phòng cho chọn chữ. New Game Community chỉ tại menu sau Save & Exit.
+Players realtime gồm cả phòng: Room theo comparator mode, Community theo current progress. Leaderboard chỉ Community, tải khi vào trận hoặc Refresh, không polling. Hai bảng mặc định mở, có thể thu gọn; chiều cao giới hạn theo màn hình và danh sách dài cuộn. Desktop giữ game chính giữa, chat dưới trái, Players/Leaderboard trên phải; mobile xếp dọc. Timer luôn hiện góc trên trái game, jumps chỉ ở Stats/History. Sound bật/tắt trực tiếp, không màn Options hoặc nút Fullscreen; F11 do trình duyệt xử lý, không phóng game desktop theo chiều cao. Chỉ ô nhập/mã phòng cho chọn chữ. New Game Community chỉ tại menu sau Save & Exit.
 
 ## Xem người chơi khác
 

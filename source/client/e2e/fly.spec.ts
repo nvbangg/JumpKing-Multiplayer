@@ -22,9 +22,7 @@ test("Flight follows the server permission and double Space toggles real Communi
 	);
 	const observed = observeOnline(page);
 	await registerOnline(page, "fly");
-	await page.getByRole("button", { name: "Options", exact: true }).click();
 	await expect(page.getByRole("switch", { name: /Fly Mode/ })).toHaveCount(0);
-	await page.getByRole("button", { name: "Back", exact: true }).click();
 	await newCommunity(page);
 	await expect(
 		page.getByRole("button", { name: "Menu (Esc)", exact: true }),

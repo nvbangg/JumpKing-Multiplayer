@@ -10,7 +10,9 @@ test("asset errors offer a manual retry only at home and survive menu navigation
 	});
 	await page.goto("/");
 	await expect(page.getByRole("status", { name: "Game files" })).toHaveCount(0);
-	await page.getByRole("button", { name: "Options", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	const prevented = await page.evaluate(
 		() =>
 			!window.dispatchEvent(

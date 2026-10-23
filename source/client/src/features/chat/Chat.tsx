@@ -22,6 +22,7 @@ export function Chat({
 			messages={chat.messages}
 			colors={rules.appearanceColors}
 			focusRequest={chat.focusRequest}
+			autoHide={dismissible}
 			onSend={async (text) => {
 				await socket.command("CHAT_SEND", { text });
 			}}
