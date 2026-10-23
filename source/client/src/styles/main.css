@@ -58,8 +58,9 @@ button {
 }
 .play-page {
 	--game-width: 720px;
-	--side-min: 240px;
+	--side-min: 200px;
 	--edge: 12px;
+	--column-gap: 12px;
 	--touch-clearance: 0px;
 	--play-height: calc(
 		100dvh -
@@ -72,10 +73,10 @@ button {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) var(--game-width) minmax(0, 1fr);
 	grid-template-rows: minmax(0, 1fr);
-	gap: 12px;
+	gap: var(--column-gap);
 	padding: max(var(--edge), env(safe-area-inset-top))
 		max(var(--edge), env(safe-area-inset-right))
-		calc(max(var(--edge), env(safe-area-inset-bottom)) + var(--touch-clearance))
+		max(var(--edge), env(safe-area-inset-bottom))
 		max(var(--edge), env(safe-area-inset-left));
 	position: relative;
 	isolation: isolate;
@@ -101,7 +102,7 @@ button {
 	width: 100%;
 	max-width: 280px;
 	min-height: 0;
-	max-height: 100%;
+	max-height: var(--play-height);
 	overflow-y: auto;
 	overscroll-behavior: contain;
 	pointer-events: none;
@@ -115,6 +116,7 @@ button {
 	min-width: 0;
 	width: 100%;
 	max-width: 320px;
+	margin-bottom: var(--touch-clearance);
 	pointer-events: none;
 }
 .game-viewport {
@@ -238,16 +240,23 @@ button {
 	position: absolute;
 	z-index: 40;
 	bottom: max(8px, env(safe-area-inset-bottom));
-	left: max(8px, env(safe-area-inset-left));
-	right: max(8px, env(safe-area-inset-right));
-	justify-content: space-between;
-	gap: 16px;
+	left: max(var(--edge), env(safe-area-inset-left));
+	right: max(var(--edge), env(safe-area-inset-right));
+	grid-template-columns: minmax(0, 1fr) var(--game-width) minmax(0, 1fr);
+	gap: var(--column-gap);
+	align-items: end;
 	pointer-events: none;
 }
 .touch-controls > div {
-	display: flex;
-	flex-wrap: nowrap;
-	gap: 10px;
+	grid-column: 1;
+	justify-self: end;
+	display: grid;
+	grid-template-columns: repeat(2, 54px);
+	gap: 8px;
+}
+.touch-controls > button {
+	grid-column: 3;
+	justify-self: start;
 }
 .touch-controls button {
 	pointer-events: auto;
@@ -273,8 +282,11 @@ button {
 	.play-page {
 		--touch-clearance: 62px;
 	}
+	.play-page[data-flying="true"] {
+		--touch-clearance: 124px;
+	}
 	.touch-controls {
-		display: flex;
+		display: grid;
 	}
 }
 .brand {
@@ -693,6 +705,9 @@ button {
 .game-chat .chat-messages {
 	max-height: min(360px, calc(var(--play-height) - 60px));
 }
+.chat-history-toggle {
+	display: none;
+}
 .visually-hidden {
 	position: absolute;
 	width: 1px;
@@ -733,6 +748,15 @@ button {
 	gap: 8px;
 	font-size: 12px;
 	align-items: start;
+}
+.panel-tabs {
+	display: none;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+}
+.game-panel-pane {
+	min-width: 0;
 }
 .in-game-panel {
 	min-width: 0;
@@ -836,15 +860,21 @@ button {
 
 @media (max-width: 960px) {
 	.play-page {
-		--side-min: 150px;
+		--side-min: 120px;
 		--edge: 8px;
-		gap: 8px;
+		--column-gap: 8px;
 	}
 	.in-game-panel li {
-		height: 30px;
+		flex-wrap: wrap;
 		line-height: 20px;
 		padding: 5px 0;
-		gap: 5px;
+		gap: 0 5px;
+	}
+	.in-game-panel li > :first-child {
+		flex: 1 1 100%;
+	}
+	.in-game-panel li strong {
+		margin-left: auto;
 	}
 	.game-chat .chat-messages {
 		max-height: min(160px, calc(var(--play-height) - 60px));
@@ -869,9 +899,6 @@ button {
 		padding: 4px;
 		font-size: 11px;
 	}
-	.touch-controls > div {
-		gap: 8px;
-	}
 	.game-overlay .menu-panel {
 		width: min(360px, 100%);
 	}
@@ -889,6 +916,58 @@ button {
 	.game-chat .chat-input-box button {
 		padding: 5px;
 		font-size: 12px;
+	}
+}
+@media (max-width: 680px) {
+	.game-chat .chat-history-toggle {
+		display: block;
+		width: 100%;
+		pointer-events: auto;
+		padding: 6px;
+		background: #08090cef;
+		border: 1px solid #6b6250;
+		color: #ede7d3;
+		font-size: 12px;
+	}
+	.game-chat .chat-history-box[data-hidden="true"] {
+		display: none;
+	}
+	.game-chat .chat-messages {
+		max-height: min(160px, max(30px, calc(var(--play-height) - 100px)));
+	}
+	.panel-tabs {
+		display: flex;
+		flex-wrap: wrap;
+		pointer-events: auto;
+		border: 1px solid #6b6250;
+	}
+	.panel-tabs button {
+		flex: 1 1 auto;
+		min-width: 0;
+		padding: 7px 5px;
+		border: 0;
+		background: #08090c;
+		color: #ede7d3;
+		font-size: 12px;
+	}
+	.panel-tabs button[aria-pressed="true"],
+	.panel-tabs button:hover,
+	.panel-tabs button:focus-visible {
+		background: #1c1911;
+		color: #f6ca6d;
+	}
+	.in-game-panels[data-active-panel="players"]
+		.game-panel-pane[data-panel="leaderboard"],
+	.in-game-panels[data-active-panel="leaderboard"]
+		.game-panel-pane[data-panel="players"] {
+		display: none;
+	}
+	.in-game-panel ol {
+		max-height: min(240px, max(30px, calc(var(--play-height) - 100px)));
+	}
+	.panel-tabs ~ .game-panel-pane .in-game-panel ol {
+		/* Chừa hai hàng tab, tiêu đề và Refresh ngoài vùng danh sách cuộn. */
+		max-height: min(240px, max(30px, calc(var(--play-height) - 160px)));
 	}
 }
 .landscape-gate {

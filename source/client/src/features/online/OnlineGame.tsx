@@ -92,6 +92,7 @@ export function OnlineGame({
 	const placingItem = useRef(false);
 	const [remaining, setRemaining] = useState<number | null>(null);
 	const [players, setPlayers] = useState<PlayerStanding[]>([]);
+	const [panel, setPanel] = useState<"players" | "leaderboard">("players");
 	const [watching, setWatching] = useState<SpectatorView | null>(null);
 	const viewedPlayer = useRef<string | null>(null);
 	// ACK hủy xem có thể tới trước snapshot; tránh nhầm với việc mất mục tiêu.
@@ -657,6 +658,7 @@ export function OnlineGame({
 		<main
 			ref={layout}
 			className="play-page"
+			data-flying={flying}
 			style={
 				gameWidth
 					? ({ "--game-width": `${gameWidth}px` } as CSSProperties)
@@ -913,23 +915,53 @@ export function OnlineGame({
 			</div>
 			{ready && !ending && (
 				<aside className="game-sidebar" aria-label="Game panels">
-					<div className="in-game-panels">
-						<PlayersPanel
-							players={players}
-							selfId={socket.selfId}
-							watchingId={watching?.player.playerId}
-							watchableIds={room.members
-								.filter((member) => member.connected)
-								.map((member) => member.playerId)}
-							disabled={
-								pending ||
-								disconnected ||
-								!!menu ||
-								(room.kind === "ROOM" && room.state !== "PLAYING")
-							}
-							onWatch={(id) => void watch(id)}
-						/>
-						{room.kind === "COMMUNITY" && <InGameLeaderboard />}
+					<div
+						className="in-game-panels"
+						data-active-panel={room.kind === "COMMUNITY" ? panel : "players"}
+					>
+						{room.kind === "COMMUNITY" && (
+							<fieldset
+								className="panel-tabs"
+								aria-label="Game panel selection"
+							>
+								<button
+									type="button"
+									aria-pressed={panel === "players"}
+									onClick={() => setPanel("players")}
+								>
+									Players
+								</button>
+								<button
+									type="button"
+									aria-pressed={panel === "leaderboard"}
+									onClick={() => setPanel("leaderboard")}
+								>
+									Leaderboard
+								</button>
+							</fieldset>
+						)}
+						<div className="game-panel-pane" data-panel="players">
+							<PlayersPanel
+								players={players}
+								selfId={socket.selfId}
+								watchingId={watching?.player.playerId}
+								watchableIds={room.members
+									.filter((member) => member.connected)
+									.map((member) => member.playerId)}
+								disabled={
+									pending ||
+									disconnected ||
+									!!menu ||
+									(room.kind === "ROOM" && room.state !== "PLAYING")
+								}
+								onWatch={(id) => void watch(id)}
+							/>
+						</div>
+						{room.kind === "COMMUNITY" && (
+							<div className="game-panel-pane" data-panel="leaderboard">
+								<InGameLeaderboard />
+							</div>
+						)}
 					</div>
 				</aside>
 			)}

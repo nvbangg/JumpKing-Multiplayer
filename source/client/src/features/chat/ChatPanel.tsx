@@ -157,6 +157,20 @@ export function ChatPanel({
 				}
 			}}
 		>
+			{autoHide && messages.length > 0 && (
+				<button
+					className="chat-history-toggle"
+					type="button"
+					aria-label="Show chat history"
+					aria-expanded={historyVisible}
+					onClick={() => {
+						setHistoryVisible(true);
+						hideLater(5000);
+					}}
+				>
+					Chat
+				</button>
+			)}
 			{messages.length > 0 && (
 				<section
 					className="chat-history-box"

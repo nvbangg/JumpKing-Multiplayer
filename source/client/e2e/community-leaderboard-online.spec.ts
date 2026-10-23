@@ -16,7 +16,7 @@ test.skip(
 	process.env.E2E_AUTH_ONLINE !== "true",
 	"Requires the isolated backend/MySQL integration harness",
 );
-test("Community records stay visible, scroll on mobile and load only on entry or Refresh", async ({
+test("Community panels fit screens, scroll and load records only on entry or Refresh", async ({
 	page,
 }, info) => {
 	test.setTimeout(60_000);
@@ -154,7 +154,14 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 			{ width: 844, height: 390 },
 			{ width: 568, height: 320 },
 		]) {
+			await page.setViewportSize({ width: 390, height: 844 });
+			await expect(
+				page.getByRole("dialog", { name: "Landscape required" }),
+			).toBeVisible();
 			await page.setViewportSize(viewport);
+			await expect(
+				page.getByRole("dialog", { name: "Landscape required" }),
+			).toBeHidden();
 			await settleLayout();
 			if (
 				await page
@@ -162,6 +169,33 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 					.isVisible()
 			)
 				await page.getByRole("button", { name: "Resume", exact: true }).click();
+			const selection = page.getByRole("group", {
+				name: "Game panel selection",
+			});
+			const playersPane = page.locator(
+				'.game-panel-pane[data-panel="players"]',
+			);
+			if (viewport.width <= 680) {
+				await expect(selection).toBeVisible();
+				await expect(
+					selection.getByRole("button", { name: "Players", exact: true }),
+				).toHaveAttribute("aria-pressed", "true");
+				await expect(playersPane).toBeVisible();
+				await expect(panel).toBeHidden();
+				await selection
+					.getByRole("button", { name: "Leaderboard", exact: true })
+					.click();
+				await expect(
+					selection.getByRole("button", {
+						name: "Leaderboard",
+						exact: true,
+					}),
+				).toHaveAttribute("aria-pressed", "true");
+				await expect(playersPane).toBeHidden();
+			} else {
+				await expect(selection).toBeHidden();
+				await expect(playersPane).toBeVisible();
+			}
 			const records = page.getByRole("list", { name: "Community records" });
 			await expect(records.getByRole("listitem")).toHaveCount(10);
 			await records.scrollIntoViewIfNeeded();
@@ -187,9 +221,19 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 			await expect(records.getByRole("listitem").last()).toBeInViewport();
 			const scrollTop = await records.evaluate((element) => element.scrollTop);
 			const loaded = requests.length;
-			await panel.locator("summary").click();
-			await expect(records).toBeHidden();
-			await panel.locator("summary").click();
+			if (viewport.width <= 680) {
+				await selection
+					.getByRole("button", { name: "Players", exact: true })
+					.click();
+				await expect(records).toBeHidden();
+				await selection
+					.getByRole("button", { name: "Leaderboard", exact: true })
+					.click();
+			} else {
+				await panel.locator("summary").click();
+				await expect(records).toBeHidden();
+				await panel.locator("summary").click();
+			}
 			expect(await records.evaluate((element) => element.scrollTop)).toBe(
 				scrollTop,
 			);
@@ -211,10 +255,9 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 			const shell = await page.locator(".play-page").boundingBox(),
 				stage = await page.locator(".game-stage").boundingBox(),
 				sidebar = await page.locator(".game-sidebar").boundingBox(),
-				players = await page.locator(".players-panel").boundingBox(),
 				board = await panel.boundingBox(),
 				chat = await page.locator(".game-chat").boundingBox();
-			if (!shell || !stage || !sidebar || !players || !board || !chat)
+			if (!shell || !stage || !sidebar || !board || !chat)
 				throw new Error("Game layout is missing");
 			expect(shell.x).toBeCloseTo(0, 0);
 			expect(shell.y).toBeCloseTo(0, 0);
@@ -230,14 +273,31 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 			expect(chat.x).toBeGreaterThanOrEqual(0);
 			expect(chat.x + chat.width).toBeLessThanOrEqual(stage.x);
 			expect(chat.y + chat.height).toBeLessThanOrEqual(viewport.height);
-			expect(players.y + players.height).toBeLessThanOrEqual(board.y);
+			if (viewport.width > 680) {
+				const players = await page.locator(".players-panel").boundingBox();
+				if (!players) throw new Error("Players panel is missing");
+				expect(players.y + players.height).toBeLessThanOrEqual(board.y);
+			}
 			if (await page.locator(".touch-controls").isVisible()) {
-				const controls = await page.locator(".touch-controls").boundingBox();
-				if (!controls) throw new Error("Touch controls are missing");
-				expect(controls.y + controls.height).toBeLessThanOrEqual(
-					viewport.height,
-				);
-				expect(chat.y + chat.height).toBeLessThanOrEqual(controls.y);
+				for (const direction of ["Left", "Right", "Up", "Down"]) {
+					const control = page.getByRole("button", {
+						name: `Move ${direction}`,
+						exact: true,
+					});
+					if (!(await control.isVisible())) continue;
+					const bounds = await control.boundingBox();
+					if (!bounds) throw new Error("Move button is missing");
+					expect(bounds.x + bounds.width).toBeLessThanOrEqual(stage.x);
+					expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
+					expect(chat.y + chat.height).toBeLessThanOrEqual(bounds.y);
+				}
+				const jump = await page
+					.getByRole("button", { name: "Jump", exact: true })
+					.boundingBox();
+				if (!jump) throw new Error("Jump button is missing");
+				expect(jump.x).toBeGreaterThanOrEqual(stage.x + stage.width);
+				expect(jump.y + jump.height).toBeLessThanOrEqual(viewport.height);
+				expect(sidebar.y + sidebar.height).toBeLessThanOrEqual(jump.y);
 			}
 			const canvas = await canvasLocator.boundingBox();
 			if (!canvas) throw new Error("Game canvas is missing");
@@ -246,6 +306,11 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 			expect(canvas.height).toBeCloseTo(stage.height, 0);
 			expect(canvas.x + canvas.width / 2).toBeCloseTo(viewport.width / 2, 0);
 			expect(canvas.y).toBeCloseTo(stage.y, 0);
+			if (viewport.width === 844) expect(canvas.width).toBeCloseTo(498, 0);
+			if (viewport.width === 568) {
+				expect(canvas.width).toBeCloseTo(296, 0);
+				expect(canvas.height).toBeCloseTo(222, 0);
+			}
 			expect(
 				await page.evaluate(
 					() =>
@@ -359,10 +424,33 @@ test("mobile panels preserve drafts and chat stays available while paused", asyn
 			{ width: 568, height: 320 },
 		]) {
 			await page.setViewportSize(viewport);
+			const selection = page.getByRole("group", {
+				name: "Game panel selection",
+			});
+			if (viewport.width <= 680) {
+				await selection
+					.getByRole("button", { name: "Leaderboard", exact: true })
+					.tap();
+				const showHistory = page.getByRole("button", {
+					name: "Show chat history",
+					exact: true,
+				});
+				await expect(page.locator(".chat-history-box")).toHaveAttribute(
+					"aria-hidden",
+					"true",
+				);
+				await showHistory.tap();
+				await expect(page.locator(".chat-history-box")).toHaveAttribute(
+					"aria-hidden",
+					"false",
+				);
+				await expect(message).not.toBeFocused();
+			}
 			const records = page.locator(".records-panel");
 			await records.locator("summary").tap();
 			await expect(records.getByRole("list")).toBeHidden();
-			await expect(page.locator(".players-panel summary")).toBeVisible();
+			if (viewport.width > 680)
+				await expect(page.locator(".players-panel summary")).toBeVisible();
 			await records.locator("summary").tap();
 			await expect(records.getByRole("list")).toBeVisible();
 			await expect(
@@ -374,6 +462,10 @@ test("mobile panels preserve drafts and chat stays available while paused", asyn
 				path: info.outputPath(`panels-${viewport.width}.png`),
 			});
 		}
+		await page
+			.getByRole("group", { name: "Game panel selection" })
+			.getByRole("button", { name: "Players", exact: true })
+			.tap();
 		const players = page.locator(".players-panel"),
 			summary = players.locator("summary"),
 			jumps = observed.snapshot?.self.simulation.physics.jumps;

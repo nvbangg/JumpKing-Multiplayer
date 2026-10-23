@@ -136,12 +136,21 @@ for (const mobile of [false, true])
 			if (mobile) {
 				await host.setViewportSize({ width: 568, height: 320 });
 				const hud = await host.locator(".game-hud").boundingBox(),
-					item = await button.boundingBox(),
-					controls = await host.locator(".touch-controls").boundingBox();
-				if (!hud || !item || !controls)
-					throw new Error("Game controls are missing");
+					item = await button.boundingBox();
+				if (!hud || !item) throw new Error("Game controls are missing");
 				expect(hud.y + hud.height).toBeLessThanOrEqual(item.y);
-				expect(item.y + item.height).toBeLessThanOrEqual(controls.y);
+				for (const name of ["Move Left", "Move Right", "Jump"]) {
+					const control = await host
+						.getByRole("button", { name, exact: true })
+						.boundingBox();
+					if (!control) throw new Error(`${name} button is missing`);
+					expect(
+						item.x + item.width <= control.x ||
+							control.x + control.width <= item.x ||
+							item.y + item.height <= control.y ||
+							control.y + control.height <= item.y,
+					).toBe(true);
+				}
 				await host.screenshot({
 					path: info.outputPath("items-mobile-small.png"),
 				});
