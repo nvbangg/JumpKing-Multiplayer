@@ -24,7 +24,6 @@ import {
 import { loadReconnect } from "../network/reconnect";
 import { required } from "../required";
 import { LoadErrorNotice, usePreloadError } from "./LoadErrorNotice";
-import { useMenuMusic } from "./useMenuMusic";
 
 type Screen =
 	| "home"
@@ -128,8 +127,6 @@ export function App() {
 		? `${backendOrigin()}:account:${accountId}`
 		: "";
 	const home = homeData?.accountId === accountId ? homeData : null;
-	const playing = screen === "online";
-	useMenuMusic(playing, options.sound, setError);
 	const back = () => {
 		const next =
 			screen === "public-rooms"
@@ -395,7 +392,6 @@ export function App() {
 					options={options}
 					onOptionsChange={updateOptions}
 					accountId={accountId}
-					totalJumps={home?.statistics.totalJumps}
 					onResults={() => {
 						viewedEnding.current = resultRef.current?.playId || null;
 						setScreen("results");
@@ -462,7 +458,7 @@ export function App() {
 							? undefined
 							: (
 									{
-										"sign-in": "Sign In",
+										"sign-in": "Sign In / Log In",
 										password: "Change Password",
 										rooms: "Room",
 										account: "Account",
@@ -526,7 +522,7 @@ export function App() {
 									</button>
 								) : (
 									<button type="button" onClick={() => setScreen("sign-in")}>
-										Sign In
+										Sign In / Log In
 									</button>
 								)}
 							</div>
@@ -590,7 +586,7 @@ export function App() {
 							/>
 						) : (
 							<button type="button" onClick={() => setScreen("sign-in")}>
-								Sign In
+								Sign In / Log In
 							</button>
 						))}
 					{screen === "detail" && detail?.accountId === accountId && detail && (

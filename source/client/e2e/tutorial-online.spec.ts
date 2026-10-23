@@ -56,6 +56,18 @@ for (const mobile of [false, true])
 				guide.getByRole("button", { name: "Previous step" }),
 			).toHaveCount(0);
 			await page.locator("canvas").click();
+			await page.keyboard.down("Space");
+			await expect
+				.poll(() => observed.snapshot?.self.simulation.physics.charge ?? 0)
+				.toBeGreaterThanOrEqual(4);
+			await page.keyboard.up("Space");
+			await expect
+				.poll(() => observed.snapshot?.self.simulation.physics.jumps)
+				.toBe(1);
+			await expect(guide).toContainText("Step 1/3: Move");
+			await expect
+				.poll(() => observed.snapshot?.self.simulation.physics.grounded)
+				.toBe(true);
 			await page.keyboard.down("KeyD");
 			await expect(guide).toContainText("Step 2/3: Charge");
 			await page.keyboard.up("KeyD");
@@ -63,31 +75,55 @@ for (const mobile of [false, true])
 				const jump = await page
 					.getByRole("button", { name: "Jump", exact: true })
 					.boundingBox();
-				if (!jump) throw new Error("Missing touch jump");
+				const right = await page
+					.getByRole("button", { name: "Move Right", exact: true })
+					.boundingBox();
+				if (!jump || !right) throw new Error("Missing touch controls");
+				const jumpPoint = {
+					id: 1,
+					x: jump.x + jump.width / 2,
+					y: jump.y + jump.height / 2,
+				};
+				const rightPoint = {
+					id: 2,
+					x: right.x + right.width / 2,
+					y: right.y + right.height / 2,
+				};
 				const cdp = await context.newCDPSession(page);
 				await cdp.send("Input.dispatchTouchEvent", {
 					type: "touchStart",
-					touchPoints: [
-						{ x: jump.x + jump.width / 2, y: jump.y + jump.height / 2 },
-					],
+					touchPoints: [jumpPoint],
 				});
 				await expect(guide).toContainText("Step 3/3: Jump");
+				await cdp.send("Input.dispatchTouchEvent", {
+					type: "touchStart",
+					touchPoints: [jumpPoint, rightPoint],
+				});
+				await expect
+					.poll(() => observed.snapshot?.self.simulation.physics.directions[0])
+					.toBe(1);
 				await cdp.send("Input.dispatchTouchEvent", {
 					type: "touchEnd",
 					touchPoints: [],
 				});
+				await expect(guide).toContainText("Ready to Climb!");
 				await cdp.detach();
 			} else {
 				await page.keyboard.down("Space");
 				await expect(guide).toContainText("Step 3/3: Jump");
+				await page.keyboard.down("KeyD");
 				await page.keyboard.up("Space");
+				await expect(guide).toContainText("Ready to Climb!");
+				await page.keyboard.up("KeyD");
 			}
 			await expect
 				.poll(() => observed.snapshot?.self.simulation.physics.jumps)
-				.toBeGreaterThan(0);
+				.toBeGreaterThan(1);
 			await expect(guide).toContainText("Ready to Climb!");
 			await expect(guide).toBeHidden({ timeout: 6500 });
-			await page.getByRole("button", { name: "Menu", exact: true }).click();
+			await page
+				.getByRole("button", { name: "Menu (Esc)", exact: true })
+				.click();
 			await page.getByRole("button", { name: "Options", exact: true }).click();
 			const sound = page.getByRole("switch", {
 				name: "Sound: On",
@@ -131,7 +167,7 @@ test("Room never shows or completes the Community tutorial; Skip survives Contin
 			.toBeGreaterThan(240);
 		await page.keyboard.up("KeyD");
 		await expect(guide).toHaveCount(0);
-		await page.getByRole("button", { name: "Menu", exact: true }).click();
+		await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await page.getByRole("button", { name: "Leave Room", exact: true }).click();
 		await newCommunity(page);
 		await expect(guide).toBeVisible();
@@ -139,7 +175,7 @@ test("Room never shows or completes the Community tutorial; Skip survives Contin
 			.getByRole("button", { name: "Skip tutorial", exact: true })
 			.click();
 		await expect(guide).toHaveCount(0);
-		await page.getByRole("button", { name: "Menu", exact: true }).click();
+		await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await page
 			.getByRole("button", { name: "Save & Exit", exact: true })
 			.click();

@@ -18,12 +18,16 @@ test("unified Sign In accepts thirty-two Unicode code points for creation and lo
 		"\u{20000}".repeat(20);
 	await page.goto("/");
 	for (let attempt = 0; attempt < 2; attempt++) {
-		await page.getByRole("button", { name: "Sign In", exact: true }).click();
+		await page
+			.getByRole("button", { name: "Sign In / Log In", exact: true })
+			.click();
 		await page.getByLabel("Username", { exact: true }).fill(name);
 		await page
 			.getByLabel("Password", { exact: true })
 			.fill("Unicode account password");
-		await page.getByRole("button", { name: "Sign In", exact: true }).click();
+		await page
+			.getByRole("button", { name: "Sign In / Log In", exact: true })
+			.click();
 		await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
 		await page.getByRole("button", { name, exact: true }).click();
 		await page.getByRole("button", { name: "Sign Out", exact: true }).click();
@@ -37,13 +41,17 @@ test("account forms persist the session and sign out clears private home data", 
 	const name = `player_${Date.now()}`,
 		password = "A secure browser password";
 	await page.goto("/");
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await page.getByLabel("Username", { exact: true }).fill(name);
 	await page.getByLabel("Password", { exact: true }).fill(password);
 	const signedIn = page.waitForResponse(
 		(response) => new URL(response.url()).pathname === "/api/auth/login",
 	);
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	const response = await signedIn;
 	expect(response.status()).toBe(200);
 	const identity = await response.json();
@@ -72,20 +80,26 @@ test("account forms persist the session and sign out clears private home data", 
 	});
 	await page.getByRole("button", { name: "Sign Out", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "Sign In", exact: true }),
+		page.getByRole("button", { name: "Sign In / Log In", exact: true }),
 	).toBeVisible();
 	await expect(
 		page.getByRole("button", { name: "Continue", exact: true }),
 	).toBeHidden();
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await page.getByLabel("Username", { exact: true }).fill(name);
 	await page.getByLabel("Password", { exact: true }).fill("incorrect");
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await expect(page.getByRole("alert")).toHaveText(
 		"Username or password is incorrect",
 	);
 	await page.getByLabel("Password", { exact: true }).fill(password);
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
 });
 
@@ -100,20 +114,26 @@ test("two browser sessions sign in to the same account and sign out independentl
 			name = `isolated_${Date.now()}`;
 		for (const page of [a, b]) {
 			await page.goto("/");
-			await page.getByRole("button", { name: "Sign In", exact: true }).click();
+			await page
+				.getByRole("button", { name: "Sign In / Log In", exact: true })
+				.click();
 			await page.getByLabel("Username", { exact: true }).fill(name);
 			await page
 				.getByLabel("Password", { exact: true })
 				.fill("A secure second password");
 		}
-		await a.getByRole("button", { name: "Sign In", exact: true }).click();
+		await a
+			.getByRole("button", { name: "Sign In / Log In", exact: true })
+			.click();
 		await expect(a.getByRole("button", { name, exact: true })).toBeVisible();
-		await b.getByRole("button", { name: "Sign In", exact: true }).click();
+		await b
+			.getByRole("button", { name: "Sign In / Log In", exact: true })
+			.click();
 		await expect(b.getByRole("button", { name, exact: true })).toBeVisible();
 		await b.getByRole("button", { name, exact: true }).click();
 		await b.getByRole("button", { name: "Sign Out", exact: true }).click();
 		await expect(
-			b.getByRole("button", { name: "Sign In", exact: true }),
+			b.getByRole("button", { name: "Sign In / Log In", exact: true }),
 		).toBeVisible();
 		await a.reload();
 		await expect(a.getByRole("button", { name, exact: true })).toBeVisible();

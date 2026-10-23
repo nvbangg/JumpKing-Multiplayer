@@ -43,12 +43,16 @@ export function observeOnline(page: Page) {
 export async function registerOnline(page: Page, prefix: string) {
 	const username = `${prefix}_${crypto.randomUUID().replaceAll("-", "").slice(0, 10)}`;
 	await page.goto("/");
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await page.getByLabel("Username", { exact: true }).fill(username);
 	await page
 		.getByLabel("Password", { exact: true })
 		.fill("A secure browser test password");
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await expect(
 		page.getByRole("button", { name: username, exact: true }),
 	).toBeVisible();
@@ -71,7 +75,7 @@ export async function startRoom(host: Page, peer: Page) {
 	await host.getByRole("button", { name: "Start", exact: true }).click();
 	for (const page of [host, peer])
 		await expect(
-			page.getByRole("button", { name: "Menu", exact: true }),
+			page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible({ timeout: 30000 });
 	await expect(host.getByLabel("Play time", { exact: true })).not.toHaveText(
 		"00:00",
@@ -89,7 +93,7 @@ export async function startRoom(host: Page, peer: Page) {
 export async function newCommunity(page: Page) {
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "Menu", exact: true }),
+		page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 	).toBeVisible({ timeout: 30000 });
 	await page.locator("canvas").click();
 }

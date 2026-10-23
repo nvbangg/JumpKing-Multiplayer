@@ -17,19 +17,26 @@ export function ChatMessages({
 	useLayoutEffect(() => {
 		const element = list.current;
 		if (!element) return;
-		if (follow.current) element.scrollTop = element.scrollHeight;
-		else if (anchor.current) {
-			const saved = anchor.current;
-			const message = Array.from(element.children).find(
-				(child) => (child as HTMLElement).dataset.messageId === saved.id,
-			);
-			element.scrollTop = message
-				? element.scrollTop +
-					message.getBoundingClientRect().top -
-					element.getBoundingClientRect().top -
-					saved.offset
-				: 0;
-		}
+		const panel = element.closest("details");
+		const restore = () => {
+			if (panel && !panel.open) return;
+			if (follow.current) element.scrollTop = element.scrollHeight;
+			else if (anchor.current) {
+				const saved = anchor.current;
+				const message = Array.from(element.children).find(
+					(child) => (child as HTMLElement).dataset.messageId === saved.id,
+				);
+				element.scrollTop = message
+					? element.scrollTop +
+						message.getBoundingClientRect().top -
+						element.getBoundingClientRect().top -
+						saved.offset
+					: 0;
+			}
+		};
+		restore();
+		panel?.addEventListener("toggle", restore);
+		return () => panel?.removeEventListener("toggle", restore);
 	}, [messages]);
 	return (
 		<>
@@ -103,14 +110,26 @@ export function ChatPanel({
 	const [text, setText] = useState(""),
 		[error, setError] = useState(""),
 		[sending, setSending] = useState(false);
+	const panel = useRef<HTMLDetailsElement>(null);
 	const input = useRef<HTMLInputElement>(null);
 	useEffect(() => {
-		if (focusRequest > 0) input.current?.focus();
+		if (focusRequest > 0) {
+			if (panel.current) panel.current.open = true;
+			input.current?.focus();
+		}
 	}, [focusRequest]);
 	return (
-		<section
+		<details
+			ref={panel}
 			className="chat-panel"
 			aria-label="Room chat"
+			open
+			onToggle={(event) => {
+				if (!event.currentTarget.open) {
+					input.current?.blur();
+					onClose?.();
+				}
+			}}
 			onBlur={(event) => {
 				if (!event.currentTarget.contains(event.relatedTarget)) onBlur?.();
 			}}
@@ -123,27 +142,13 @@ export function ChatPanel({
 				}
 			}}
 		>
+			<summary>Chat</summary>
 			{messages.length > 0 && (
 				<section className="chat-history-box" aria-label="Chat messages">
 					<ChatMessages messages={messages} colors={colors} />
 				</section>
 			)}
 			<section className="chat-input-box" aria-label="Chat input">
-				<header>
-					<span>Chat</span>
-					{onClose && (
-						<button
-							type="button"
-							onClick={(event) => {
-								event.currentTarget.blur();
-								onClose();
-							}}
-							aria-label="Close chat"
-						>
-							×
-						</button>
-					)}
-				</header>
 				<form
 					onSubmit={(event) => {
 						event.preventDefault();
@@ -159,18 +164,11 @@ export function ChatPanel({
 						const sentText = text;
 						setSending(true);
 						setError("");
+						input.current?.focus();
 						void onSend(sentText)
 							.then(() => {
-								// ACK chậm không được xóa draft mới hoặc đóng chat khi đang viết tiếp.
-								const hasNewDraft = input.current?.value !== sentText;
+								// ACK chậm không được xóa draft mới hoặc giành lại focus sau Escape.
 								setText((current) => (current === sentText ? "" : current));
-								if (hasNewDraft) input.current?.focus();
-								else if (onClose) {
-									input.current?.form
-										?.querySelector<HTMLElement>(":focus")
-										?.blur();
-									onClose();
-								} else input.current?.focus();
 							})
 							.catch((cause) =>
 								setError(
@@ -189,6 +187,7 @@ export function ChatPanel({
 						ref={input}
 						id="chat-message"
 						value={text}
+						placeholder="Enter to chat"
 						onFocus={onFocus}
 						onChange={(event) => setText(event.currentTarget.value)}
 						autoComplete="off"
@@ -199,6 +198,6 @@ export function ChatPanel({
 				</form>
 				{error && <p role="alert">{error}</p>}
 			</section>
-		</section>
+		</details>
 	);
 }

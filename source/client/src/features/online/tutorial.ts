@@ -2,11 +2,7 @@ export type TutorialStep = "move" | "charge" | "jump" | "completed";
 
 const TUTORIAL_PREFIX = "jumpking.tutorial";
 
-export function isTutorialCompleted(
-	accountId?: string,
-	totalJumps?: number,
-): boolean {
-	if (typeof totalJumps === "number" && totalJumps > 0) return true;
+export function isTutorialCompleted(accountId?: string): boolean {
 	try {
 		const key = accountId ? `${TUTORIAL_PREFIX}.${accountId}` : TUTORIAL_PREFIX;
 		return localStorage.getItem(key) === "true";
@@ -28,6 +24,7 @@ export function nextTutorialStep(
 	current: TutorialStep,
 	state: {
 		x: number;
+		vx: number;
 		charge: number;
 		grounded: boolean;
 		jumps: number;
@@ -36,8 +33,6 @@ export function nextTutorialStep(
 	origin: { x: number; jumps: number },
 ): TutorialStep {
 	if (state.freeFlight) return current;
-	// Chỉ xác nhận cú nhảy thật từ counter server; rơi khỏi bệ không hoàn tất hướng dẫn.
-	if (state.jumps > origin.jumps) return "completed";
 	switch (current) {
 		case "move":
 			return state.grounded && Math.abs(state.x - origin.x) >= 8
@@ -46,7 +41,10 @@ export function nextTutorialStep(
 		case "charge":
 			return state.charge >= 4 ? "jump" : "charge";
 		case "jump":
-			return "jump";
+			// Counter server xác nhận cú nhảy mới; rơi hoặc nhảy thẳng chưa hoàn tất bước này.
+			return state.jumps > origin.jumps && !state.grounded && state.vx !== 0
+				? "completed"
+				: "jump";
 		case "completed":
 			return "completed";
 	}

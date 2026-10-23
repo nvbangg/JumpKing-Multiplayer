@@ -69,7 +69,7 @@ test("expired reconnect returns home and Continue restores the last server check
 	).not.toContainText(/was saved|being away too long/);
 	await page.getByRole("button", { name: "Continue", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "Menu", exact: true }),
+		page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 	).toBeVisible();
 	expect(
 		(await (await page.request.get("/api/community/current")).json()).run.id,
@@ -139,7 +139,7 @@ for (const scenario of [
 			await (await page.request.get("/api/community/current")).json()
 		).run.id;
 		armed = true;
-		await page.getByRole("button", { name: "Menu", exact: true }).click();
+		await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		if (scenario === "resume-rejected")
 			await page.getByRole("button", { name: "Resume", exact: true }).click();
 		await expect(
@@ -152,7 +152,7 @@ for (const scenario of [
 		await expect(notice).not.toContainText(/was saved|being away too long/);
 		await page.getByRole("button", { name: "Continue", exact: true }).click();
 		await expect(
-			page.getByRole("button", { name: "Menu", exact: true }),
+			page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible();
 		expect(
 			(await (await page.request.get("/api/community/current")).json()).run.id,

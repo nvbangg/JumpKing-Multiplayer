@@ -5,10 +5,6 @@ export function ControlsHelp() {
 			<dd>A / D or ← / →</dd>
 			<dt>Jump</dt>
 			<dd>Hold Space / W / ↑, then release</dd>
-			<dt>Menu</dt>
-			<dd>Escape</dd>
-			<dt>Chat Online</dt>
-			<dd>Enter to open/send, Escape to close</dd>
 		</dl>
 	);
 }

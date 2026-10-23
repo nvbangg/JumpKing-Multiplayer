@@ -21,7 +21,7 @@ test("Account totals come from committed Community data and survive reload", asy
 	await page.waitForTimeout(220);
 	await page.keyboard.up("Space");
 	await page.waitForTimeout(900);
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await page.getByRole("button", { name: "Save & Exit", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "Continue", exact: true }),
@@ -54,14 +54,18 @@ test("History paginates owned Community results without depending on local stora
 }) => {
 	test.setTimeout(90000);
 	await page.goto("/");
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await page
 		.getByLabel("Username", { exact: true })
 		.fill(required(process.env.E2E_HISTORY_USERNAME));
 	await page
 		.getByLabel("Password", { exact: true })
 		.fill(required(process.env.E2E_HISTORY_PASSWORD));
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await expect(
 		page.getByRole("button", {
 			name: required(process.env.E2E_HISTORY_USERNAME),

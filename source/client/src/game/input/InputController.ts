@@ -40,6 +40,11 @@ export class InputController {
 			this.onMenu();
 			return;
 		}
+		if (
+			event.target instanceof Element &&
+			event.target.closest("button,a,summary")
+		)
+			return;
 		if (!relevant.has(event.code)) return;
 		event.preventDefault();
 		if (!event.repeat && !this.keys.has(event.code)) {

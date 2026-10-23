@@ -42,14 +42,14 @@ test("region discovery persists through Community Continue and resets for New Ga
 			required(observed.snapshot).self.simulation.world.regionIntro,
 		);
 		const run = required(observed.snapshot).playId;
-		await page.getByRole("button", { name: "Menu", exact: true }).click();
-		await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+		await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
+		await expect.poll(() => observed.snapshot?.self.paused).toBe(true);
 		await page
 			.getByRole("button", { name: "Save & Exit", exact: true })
 			.click();
 		await page.getByRole("button", { name: "Continue", exact: true }).click();
 		await expect(
-			page.getByRole("button", { name: "Menu", exact: true }),
+			page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible();
 		await expect.poll(() => observed.snapshot?.playId).toBe(run);
 		expect(
@@ -69,7 +69,7 @@ test("region discovery persists through Community Continue and resets for New Ga
 			.toBeGreaterThanOrEqual(5);
 		await page.keyboard.up("ArrowUp");
 		await expect(caption).toHaveCount(0);
-		await page.getByRole("button", { name: "Menu", exact: true }).click();
+		await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await page
 			.getByRole("button", { name: "Save & Exit", exact: true })
 			.click();
@@ -105,18 +105,22 @@ test("server-enabled flight, double Space and movement save and Continue online 
 	);
 	const name = `flight_${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
 	await page.goto("/");
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await page.getByLabel("Username", { exact: true }).fill(name);
 	await page
 		.getByLabel("Password", { exact: true })
 		.fill("A secure flight browser password");
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "Menu", exact: true }),
+		page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 	).toBeVisible({ timeout: 15_000 });
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await page.getByRole("button", { name: "Resume", exact: true }).click();
 	await page.keyboard.press("Space");
 	await page.waitForTimeout(80);
@@ -151,7 +155,7 @@ test("server-enabled flight, double Space and movement save and Continue online 
 	await expect
 		.poll(() => snapshots.at(-1)?.self.simulation.physics.freeFlight)
 		.toBe(true);
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await page.getByRole("button", { name: "Save & Exit", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "New Game", exact: true }),
@@ -163,13 +167,13 @@ test("server-enabled flight, double Space and movement save and Continue online 
 	expect(best.maxProgress).toBeGreaterThan(40);
 	await page.getByRole("button", { name: "Continue", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "Menu", exact: true }),
+		page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 	).toBeVisible();
 	await expect.poll(() => snapshots.at(-1)?.playId).toBe(run);
 	await expect
 		.poll(() => snapshots.at(-1)?.self.simulation.physics.freeFlight)
 		.toBe(true);
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await page.getByRole("button", { name: "Resume", exact: true }).click();
 	await page.keyboard.press("Space");
 	await page.waitForTimeout(80);
@@ -177,7 +181,7 @@ test("server-enabled flight, double Space and movement save and Continue online 
 	await expect
 		.poll(() => snapshots.at(-1)?.self.simulation.physics.freeFlight)
 		.toBe(false);
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await page.getByRole("button", { name: "Save & Exit", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "New Game", exact: true }),

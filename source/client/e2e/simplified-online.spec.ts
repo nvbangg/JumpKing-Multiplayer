@@ -12,11 +12,15 @@ async function register(page: Page, suffix: string) {
 		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false })),
 	);
 	await page.goto("/");
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await expect(page.getByLabel("Email", { exact: true })).toHaveCount(0);
 	await page.getByLabel("Username", { exact: true }).fill(username);
 	await page.getByLabel("Password", { exact: true }).fill("123456");
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await expect(
 		page.getByRole("button", { name: username, exact: true }),
 	).toBeVisible();
@@ -29,7 +33,7 @@ test("username account, change password and online authentication", async ({
 	await page.goto("/");
 	await page.getByRole("button", { name: "Room", exact: true }).click();
 	await expect(
-		page.getByRole("heading", { name: "Sign In", exact: true }),
+		page.getByRole("heading", { name: "Sign In / Log In", exact: true }),
 	).toBeVisible();
 	await page.getByRole("button", { name: "Back", exact: true }).click();
 	const username = await register(page, "auth");
@@ -60,7 +64,9 @@ test("username account, change password and online authentication", async ({
 	await expect(page.getByLabel("Username", { exact: true })).toBeVisible();
 	await page.getByLabel("Username", { exact: true }).fill(username);
 	await page.getByLabel("Password", { exact: true }).fill("654321");
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await expect(
 		page.getByRole("button", { name: username, exact: true }),
 	).toBeVisible();
@@ -124,7 +130,7 @@ test("Room menu, public lobby chat, server countdown and end/leave", async ({
 			await a.getByRole("button", { name: "Resume", exact: true }).isVisible()
 		)
 			await a.getByRole("button", { name: "Resume", exact: true }).click();
-		await a.getByRole("button", { name: "Menu", exact: true }).click();
+		await a.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await expect(
 			a.getByRole("button", { name: /Pause Room|Resume Room/ }),
 		).toHaveCount(0);
@@ -177,7 +183,7 @@ test("Community autosave/continue, manual leaderboard and no ID or in-game New G
 		await page.getByRole("button", { name: "Resume", exact: true }).isVisible()
 	)
 		await page.getByRole("button", { name: "Resume", exact: true }).click();
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "New Game", exact: true }),
 	).toHaveCount(0);

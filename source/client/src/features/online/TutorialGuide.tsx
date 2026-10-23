@@ -17,8 +17,9 @@ const STEP_CONTENT: Record<
 	},
 	jump: {
 		title: "Step 3/3: Jump",
-		hint: "Release Space to leap! Hold a direction to jump diagonally.",
-		touchHint: "Release Jump! Hold a direction to leap diagonally.",
+		hint: "Hold Space / W / ↑, then release while holding A / D or ← / → to jump sideways.",
+		touchHint:
+			"Hold Jump, then release while holding an arrow to jump sideways.",
 	},
 	completed: {
 		title: "Ready to Climb!",

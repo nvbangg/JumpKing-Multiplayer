@@ -163,14 +163,14 @@ test("short Room finish shows Results and History without ending or full-map rew
 		await a.bringToFront();
 		await startRoom(a, b);
 		await expect(
-			a.getByRole("button", { name: "Menu", exact: true }),
+			a.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible({ timeout: 15_000 });
 		if (
 			!(await a
 				.getByRole("button", { name: "Resume", exact: true })
 				.isVisible())
 		)
-			await a.getByRole("button", { name: "Menu", exact: true }).click();
+			await a.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await a.getByRole("button", { name: "Resume", exact: true }).click();
 		await a.keyboard.press("Space");
 		await a.waitForTimeout(80);
@@ -308,14 +308,16 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"])
 			await a.bringToFront();
 			await startRoom(a, b);
 			await expect(
-				a.getByRole("button", { name: "Menu", exact: true }),
+				a.getByRole("button", { name: "Menu (Esc)", exact: true }),
 			).toBeVisible({ timeout: 15_000 });
 			if (
 				!(await a
 					.getByRole("button", { name: "Resume", exact: true })
 					.isVisible())
 			)
-				await a.getByRole("button", { name: "Menu", exact: true }).click();
+				await a
+					.getByRole("button", { name: "Menu (Esc)", exact: true })
+					.click();
 			await a.getByRole("button", { name: "Resume", exact: true }).click();
 			await a.keyboard.press("Space");
 			await a.waitForTimeout(80);
@@ -363,7 +365,9 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"])
 					.getByRole("button", { name: "End Match", exact: true })
 					.isVisible())
 			)
-				await a.getByRole("button", { name: "Menu", exact: true }).click();
+				await a
+					.getByRole("button", { name: "Menu (Esc)", exact: true })
+					.click();
 			await a.getByRole("button", { name: "End Match", exact: true }).click();
 			await expect(
 				a.getByRole("button", { name: "Play Again", exact: true }),

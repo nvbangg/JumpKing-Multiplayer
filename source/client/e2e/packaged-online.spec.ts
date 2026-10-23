@@ -32,9 +32,9 @@ test("the production web JAR supports Community save and a two-player Room throu
 		const peerName = await registerOnline(b, "jar_peer");
 		await a.getByRole("button", { name: "New Game", exact: true }).click();
 		await expect(
-			a.getByRole("button", { name: "Menu", exact: true }),
+			a.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible();
-		await a.getByRole("button", { name: "Menu", exact: true }).click();
+		await a.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await a.getByRole("button", { name: "Save & Exit", exact: true }).click();
 		await expect(
 			a.getByRole("button", { name: "New Game", exact: true }),
@@ -44,9 +44,9 @@ test("the production web JAR supports Community save and a two-player Room throu
 		).toBeVisible();
 		await a.getByRole("button", { name: "Continue", exact: true }).click();
 		await expect(
-			a.getByRole("button", { name: "Menu", exact: true }),
+			a.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible();
-		await a.getByRole("button", { name: "Menu", exact: true }).click();
+		await a.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await a.getByRole("button", { name: "Save & Exit", exact: true }).click();
 		await expect(
 			a.getByRole("button", { name: "Continue", exact: true }),
@@ -60,7 +60,7 @@ test("the production web JAR supports Community save and a two-player Room throu
 		await expect
 			.poll(() => observed.snapshot?.self.simulation.physics.jumps)
 			.toBe(1);
-		await a.getByRole("button", { name: "Menu", exact: true }).click();
+		await a.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await a.getByRole("button", { name: "End Match", exact: true }).click();
 		for (const page of [a, b]) {
 			await expect(

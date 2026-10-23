@@ -50,31 +50,39 @@ test("committed Community Finish plays only for its owner and New Game clears th
 		});
 		const name = `ending_peer_${crypto.randomUUID().replaceAll("-", "").slice(0, 10)}`;
 		await peer.goto("/");
-		await peer.getByRole("button", { name: "Sign In", exact: true }).click();
+		await peer
+			.getByRole("button", { name: "Sign In / Log In", exact: true })
+			.click();
 		await peer.getByLabel("Username", { exact: true }).fill(name);
 		await peer
 			.getByLabel("Password", { exact: true })
 			.fill("A secure ending peer password");
-		await peer.getByRole("button", { name: "Sign In", exact: true }).click();
+		await peer
+			.getByRole("button", { name: "Sign In / Log In", exact: true })
+			.click();
 		await expect(peer.getByRole("button", { name, exact: true })).toBeVisible();
 		await peer.getByRole("button", { name: "New Game", exact: true }).click();
 		await expect(
-			peer.getByRole("button", { name: "Menu", exact: true }),
+			peer.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible({ timeout: 15_000 });
 		// Hai context headless không bảo đảm blur như hai tab thật; chốt Pause qua UI/server.
-		await peer.getByRole("button", { name: "Menu", exact: true }).click();
+		await peer.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await expect.poll(() => peerState.snapshot?.self.paused).toBe(true);
 		const peerRun = required(peerState.snapshot).playId,
 			pausedGeneration = required(peerState.snapshot).generation;
 		await winner.goto("/");
-		await winner.getByRole("button", { name: "Sign In", exact: true }).click();
+		await winner
+			.getByRole("button", { name: "Sign In / Log In", exact: true })
+			.click();
 		await winner
 			.getByLabel("Username", { exact: true })
 			.fill(required(process.env.E2E_FINISH_USERNAME));
 		await winner
 			.getByLabel("Password", { exact: true })
 			.fill(required(process.env.E2E_FINISH_PASSWORD));
-		await winner.getByRole("button", { name: "Sign In", exact: true }).click();
+		await winner
+			.getByRole("button", { name: "Sign In / Log In", exact: true })
+			.click();
 		await winner.getByRole("button", { name: "Continue", exact: true }).click();
 		await expect(
 			winner.getByRole("button", { name: "Skip", exact: true }),
@@ -104,7 +112,7 @@ test("committed Community Finish plays only for its owner and New Game clears th
 			.click();
 		await winner.getByRole("button", { name: "New Game", exact: true }).click();
 		await expect(
-			winner.getByRole("button", { name: "Menu", exact: true }),
+			winner.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible();
 		await expect(
 			winner.getByRole("button", { name: "Skip", exact: true }),
@@ -112,7 +120,9 @@ test("committed Community Finish plays only for its owner and New Game clears th
 		await expect
 			.poll(() => winnerState.snapshot?.self.simulation.physics.jumps)
 			.toBe(0);
-		await winner.getByRole("button", { name: "Menu", exact: true }).click();
+		await winner
+			.getByRole("button", { name: "Menu (Esc)", exact: true })
+			.click();
 		await winner
 			.getByRole("button", { name: "Save & Exit", exact: true })
 			.click();
@@ -151,7 +161,7 @@ test("committed Community Finish plays only for its owner and New Game clears th
 			.poll(() => peerState.snapshot?.self.simulation.physics.jumps)
 			.toBe(1);
 		expect(peerDisconnected).toBe(false);
-		await peer.getByRole("button", { name: "Menu", exact: true }).click();
+		await peer.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await peer
 			.getByRole("button", { name: "Save & Exit", exact: true })
 			.click();

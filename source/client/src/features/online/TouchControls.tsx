@@ -1,8 +1,24 @@
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 import type {
 	InputController,
 	TouchAction,
 } from "../../game/input/InputController";
+
+function Arrow({ rotation = 0 }: { rotation?: number }) {
+	return (
+		<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+			<path
+				d="M19 12H5m7-7-7 7 7 7"
+				transform={`rotate(${rotation} 12 12)`}
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="2"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+			/>
+		</svg>
+	);
+}
 
 export function TouchControls({
 	input,
@@ -11,7 +27,7 @@ export function TouchControls({
 	input: RefObject<InputController | null>;
 	flying?: boolean;
 }) {
-	const button = (action: TouchAction, label: string, text: string) => (
+	const button = (action: TouchAction, label: string, content: ReactNode) => (
 		<button
 			type="button"
 			key={action}
@@ -32,18 +48,18 @@ export function TouchControls({
 				input.current?.cancelPointer(event.pointerId);
 			}}
 		>
-			{text}
+			{content}
 		</button>
 	);
 	return (
 		<section className="touch-controls" aria-label="Touch controls">
 			<div>
-				{button("left", "Move Left", "←")}
-				{button("right", "Move Right", "→")}
+				{button("left", "Move Left", <Arrow />)}
+				{button("right", "Move Right", <Arrow rotation={180} />)}
 				{flying && (
 					<>
-						{button("up", "Move Up", "↑")}
-						{button("down", "Move Down", "↓")}
+						{button("up", "Move Up", <Arrow rotation={90} />)}
+						{button("down", "Move Down", <Arrow rotation={270} />)}
 					</>
 				)}
 			</div>

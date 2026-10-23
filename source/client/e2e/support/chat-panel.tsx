@@ -8,19 +8,29 @@ export function mountChatPanel() {
 	parent.style.cssText = "position:fixed;inset:0;z-index:100;background:black";
 	document.body.append(parent);
 	const acknowledgements: (() => void)[] = [];
-	createRoot(parent).render(
-		<ChatPanel
-			messages={[]}
-			colors={[]}
-			onSend={() =>
-				new Promise<void>((resolve) => acknowledgements.push(resolve))
-			}
-			onClose={() => {
-				parent.dataset.closed = "true";
-			}}
-		/>,
-	);
-	return () => acknowledgements.shift()?.();
+	let requestFocus = () => {};
+	function Panel() {
+		const [focusRequest, setFocusRequest] = useState(0);
+		requestFocus = () => setFocusRequest((value) => value + 1);
+		return (
+			<ChatPanel
+				messages={[]}
+				colors={[]}
+				focusRequest={focusRequest}
+				onSend={() =>
+					new Promise<void>((resolve) => acknowledgements.push(resolve))
+				}
+				onClose={() => {
+					parent.dataset.closed = "true";
+				}}
+			/>
+		);
+	}
+	createRoot(parent).render(<Panel />);
+	return {
+		acknowledgeChat: () => acknowledgements.shift()?.(),
+		focusChat: () => requestFocus(),
+	};
 }
 
 export function mountChatHistory() {

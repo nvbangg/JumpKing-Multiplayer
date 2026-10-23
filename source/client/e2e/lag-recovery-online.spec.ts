@@ -32,7 +32,7 @@ for (const kind of ["COMMUNITY", "ROOM"] as const) {
 				await createRoom(page);
 				await page.getByRole("button", { name: "Start", exact: true }).click();
 				await expect(
-					page.getByRole("button", { name: "Menu", exact: true }),
+					page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 				).toBeVisible({ timeout: 30000 });
 				await expect(
 					page.getByLabel("Play time", { exact: true }),
@@ -67,10 +67,6 @@ for (const kind of ["COMMUNITY", "ROOM"] as const) {
 				page.getByRole("heading", { name: "Disconnected", exact: true }),
 			).toBeVisible({ timeout: 15000 });
 			await expect(page.getByRole("alert")).toContainText("too far behind");
-			if (kind === "COMMUNITY")
-				await expect(
-					page.getByText("Latest save unconfirmed", { exact: true }),
-				).toBeVisible();
 			await expect(
 				page.getByRole("button", { name: "Resume", exact: true }),
 			).toHaveCount(0);
@@ -107,12 +103,14 @@ for (const kind of ["COMMUNITY", "ROOM"] as const) {
 				).toBeVisible();
 				await page.getByRole("button", { name: "Resume", exact: true }).click();
 				await expect(
-					page.getByRole("button", { name: "Menu", exact: true }),
+					page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 				).toBeVisible();
 				await expect(
 					page.getByRole("heading", { name: "Disconnected", exact: true }),
 				).toHaveCount(0);
-				await page.getByRole("button", { name: "Menu", exact: true }).click();
+				await page
+					.getByRole("button", { name: "Menu (Esc)", exact: true })
+					.click();
 				await page
 					.getByRole("button", {
 						name: kind === "COMMUNITY" ? "Save & Exit" : "Leave Room",

@@ -84,7 +84,7 @@ Tối đa 64 bẫy Banana/phòng, cấu hình trong rules. Chạm trần thì h�
 | Banana | Click khi đứng nền để chuẩn bị, click lại hủy. Cú bật nhảy thật tiếp theo để lại bẫy dưới chân; air grace/đặt trùng hủy chuẩn bị, giữ item. Bẫy hoạt động từ tick sau, không trúng người đang bay lên; tồn tại đến khi một người giẫm, kể cả chủ, rồi mất |
 | Rock | Đánh trực tiếp người khác connected/ACTIVE cao nhất Room, bỏ người Fly/phasing/splat; hòa chọn theo roster. Hất ngang ra xa người ném và hủy vận tốc lên; cùng x dùng hướng quay người ném. Không mục tiêu thì giữ item. Đường bay chỉ là hiệu ứng, không projectile/né đá |
 
-- Hết countdown cấp ngẫu nhiên Banana/Rock 50/50, một ô không tích trữ. Click/chạm để dùng; tiêu thụ thành công mới tính cooldown, hết cooldown cấp ngẫu nhiên tiếp.
+- Hết countdown cấp ngẫu nhiên Banana/Rock 50/50, một ô không tích trữ. Click/chạm hoặc E để dùng; tiêu thụ thành công mới tính cooldown, hết cooldown cấp ngẫu nhiên tiếp.
 - Không dùng khi menu/chat/spectating, charge/splat/trượt/Fly/phasing; Rock dùng được trên không. Server quyết định item, vị trí, mục tiêu và người trúng; nhiều người giẫm cùng tick chọn theo roster. Chủ Leave không xóa Banana.
 - Trúng item gây trượt ngang 4× walkSpeed, không ma sát/gió/đổi hướng/charge, không cộng dồn lực. Banana theo hướng di chuyển, đứng yên dùng hướng quay. Gravity/collision vẫn chạy; hết trượt khi va tường/trần/biên, splat hoặc rơi rồi đáp nền mới. Không bảo đảm rơi khỏi bệ; chỉ splat thật tăng falls/kích hoạt Hardcore.
 - Item/cooldown/bẫy giữ qua reconnect/respawn, reset khi hết ván; all-offline cũng ngừng cooldown. State chỉ ở RAM; History lưu settings theo [data](data.md#room-và-kết-quả).
@@ -109,7 +109,7 @@ Full Finish mở crown Account vĩnh viễn. Community chỉ người Finish xem
 
 Server cấp 10 màu riêng theo membership, giữ qua reconnect và nhất quán giữa các client. Bản thân opacity=1, vẽ trên peers opacity=0.7; tên rõ, nằm dưới hội thoại. Ngoại hình không đổi hitbox.
 
-Tutorial Community: di chuyển → charge → nhảy, hoàn tất theo counter nhảy server, không tính rơi/Fly. Account đã có jumps hoặc đã hoàn tất/Skip trên thiết bị không hiện lại; lưu trạng thái local theo Account, không thêm bảng database.
+Tutorial Community: thực hiện tuần tự di chuyển → charge → nhảy có hướng; hành động ở bước sau không bỏ qua bước trước. Hoàn tất theo counter nhảy server, không tính rơi/Fly. Account đã hoàn tất/Skip trên thiết bị không hiện lại; lưu trạng thái local theo Account, không thêm bảng database.
 
 ## Thống kê và History
 
@@ -119,9 +119,9 @@ History gồm lượt Community kết thúc và Room finalize, chỉ chủ lư�
 
 ## Chat và các bảng trong trận
 
-Chat theo sảnh/phòng, text thuần, không lưu MySQL; Lobby/game dùng chung form. Lobby luôn có ô nhập; giữ tối đa 50 tin gần nhất trong khung cuộn. Chỉ tự cuộn khi đang gần cuối; khi đọc tin cũ giữ vị trí, có Latest để về cuối. Enter mở/gửi, Escape hoặc gửi xong trả điều khiển; không tự focus/bắt phím form khác. Timer luôn hiện, jumps chỉ ở Stats/History.
+Chat theo sảnh/phòng, text thuần, không lưu MySQL; Lobby/game dùng chung form. Lobby luôn có ô nhập; giữ tối đa 50 tin gần nhất trong khung cuộn. Chỉ tự cuộn khi đang gần cuối; khi đọc tin cũ giữ vị trí, có Latest để về cuối. Enter mở/gửi và giữ focus để chat tiếp; Escape hoặc rời ô nhập trả điều khiển; không tự focus/bắt phím form khác. Timer luôn hiện, jumps chỉ ở Stats/History.
 
-Players realtime gồm cả phòng: Room theo comparator mode, Community theo current progress. Leaderboard chỉ Community, tải khi vào trận hoặc Refresh, không polling. Danh sách dài cuộn; mobile được thu gọn Chat/Leaderboard nhưng giữ nội dung/nháp, Players luôn hiện. Chỉ ô nhập/mã phòng cho chọn chữ. New Game Community chỉ tại menu sau Save & Exit.
+Players realtime gồm cả phòng: Room theo comparator mode, Community theo current progress. Leaderboard chỉ Community, tải khi vào trận hoặc Refresh, không polling. Danh sách dài cuộn; Chat, Players và Leaderboard mặc định mở, bấm tiêu đề để thu gọn trên mọi thiết bị; giữ nội dung/nháp khi thu gọn. Chỉ ô nhập/mã phòng cho chọn chữ. New Game Community chỉ tại menu sau Save & Exit.
 
 ## Xem người chơi khác
 

@@ -27,7 +27,7 @@ test("Flight follows the server permission and double Space toggles real Communi
 	await page.getByRole("button", { name: "Back", exact: true }).click();
 	await newCommunity(page);
 	await expect(
-		page.getByRole("button", { name: "Menu", exact: true }),
+		page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 	).toBeVisible();
 	await page.keyboard.press("Space");
 	await page.keyboard.press("Space");
@@ -40,8 +40,8 @@ test("Flight follows the server permission and double Space toggles real Communi
 		await page.waitForTimeout(200);
 		await page.keyboard.up("KeyW");
 	}
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
-	await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
+	await expect.poll(() => observed.snapshot?.self.paused).toBe(true);
 	const first = required(observed.snapshot).self.simulation.physics;
 	expect(first.freeFlight).toBe(enabled);
 	if (!enabled) return;
@@ -50,12 +50,12 @@ test("Flight follows the server permission and double Space toggles real Communi
 	await page.getByRole("button", { name: "Save & Exit", exact: true }).click();
 	await page.getByRole("button", { name: "Continue", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "Menu", exact: true }),
+		page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 	).toBeVisible();
 	await page.keyboard.press("Space");
 	await page.keyboard.press("Space");
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
-	await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
+	await expect.poll(() => observed.snapshot?.self.paused).toBe(true);
 	const off = required(observed.snapshot).self.simulation.physics;
 	expect(off.freeFlight).toBe(false);
 	expect(off.jumps).toBe(first.jumps);
@@ -98,8 +98,8 @@ test("touch double Jump respects the gate and simultaneous Jump fingers are one 
 		type: "touchEnd",
 		touchPoints: [],
 	});
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
-	await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
+	await expect.poll(() => observed.snapshot?.self.paused).toBe(true);
 	expect(required(observed.snapshot).self.simulation.physics.freeFlight).toBe(
 		false,
 	);
@@ -123,8 +123,8 @@ test("touch double Jump respects the gate and simultaneous Jump fingers are one 
 		await expect(
 			page.getByRole("button", { name: "Move Up", exact: true }),
 		).toBeHidden();
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
-	await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
+	await expect.poll(() => observed.snapshot?.self.paused).toBe(true);
 	expect(required(observed.snapshot).self.simulation.physics.freeFlight).toBe(
 		enabled,
 	);

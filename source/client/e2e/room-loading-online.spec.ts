@@ -32,7 +32,7 @@ async function end(host: Page, peer: Page) {
 		await host.getByRole("button", { name: "Resume", exact: true }).isVisible()
 	)
 		await host.getByRole("button", { name: "Resume", exact: true }).click();
-	await host.getByRole("button", { name: "Menu", exact: true }).click();
+	await host.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await host.getByRole("button", { name: "End Match", exact: true }).click();
 	await expect(host.getByText("Results saved", { exact: true })).toBeVisible();
 	for (const page of [host, peer])

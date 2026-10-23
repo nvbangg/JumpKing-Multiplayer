@@ -41,14 +41,18 @@ test("only the committed Room winner sees ending while peers can confirm the nex
 		}
 		async function restore(page: Page, credential: typeof fixture.winner) {
 			await page.goto("/");
-			await page.getByRole("button", { name: "Sign In", exact: true }).click();
+			await page
+				.getByRole("button", { name: "Sign In / Log In", exact: true })
+				.click();
 			await page
 				.getByLabel("Username", { exact: true })
 				.fill(credential.username);
 			await page
 				.getByLabel("Password", { exact: true })
 				.fill(credential.password);
-			await page.getByRole("button", { name: "Sign In", exact: true }).click();
+			await page
+				.getByRole("button", { name: "Sign In / Log In", exact: true })
+				.click();
 			await expect(
 				page.getByRole("button", { name: "New Game", exact: true }),
 			).toBeVisible();
@@ -106,14 +110,16 @@ test("only the committed Room winner sees ending while peers can confirm the nex
 			.click();
 		await winner.getByRole("button", { name: "Start", exact: true }).click();
 		await expect(
-			winner.getByRole("button", { name: "Menu", exact: true }),
+			winner.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible({ timeout: 15_000 });
 		await expect(
 			winner.getByRole("button", { name: "Skip", exact: true }),
 		).toBeHidden();
 		await expect.poll(() => observed.snapshot?.playId).not.toBe(fixture.playId);
 		expect(required(observed.snapshot).self.simulation.physics.jumps).toBe(0);
-		await winner.getByRole("button", { name: "Menu", exact: true }).click();
+		await winner
+			.getByRole("button", { name: "Menu (Esc)", exact: true })
+			.click();
 		await winner
 			.getByRole("button", { name: "End Match", exact: true })
 			.click();

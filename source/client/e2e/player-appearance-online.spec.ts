@@ -115,7 +115,7 @@ test("player colors match across browsers while only the local player has full o
 		await startRoom(required(host), required(guest));
 		for (const [index, page] of [required(host), required(guest)].entries()) {
 			await expect(
-				page.getByRole("button", { name: "Menu", exact: true }),
+				page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 			).toBeVisible({ timeout: 15_000 });
 			const ownName = index === 0 ? hostName : peerName;
 			const otherName = index === 0 ? peerName : hostName;

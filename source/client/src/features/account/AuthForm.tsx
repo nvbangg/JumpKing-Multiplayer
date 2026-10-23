@@ -58,11 +58,10 @@ export function AuthForm({
 					/>
 				</label>
 				<button disabled={pending} type="submit">
-					{pending ? "Please wait…" : "Sign In"}
+					{pending ? "Please wait…" : "Sign In / Log In"}
 				</button>
 			</form>
 			{error && <p role="alert">{error}</p>}
-			<p>If the username does not exist, a new account will be created.</p>
 		</>
 	);
 }

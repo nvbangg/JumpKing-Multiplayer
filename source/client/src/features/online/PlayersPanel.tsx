@@ -17,11 +17,14 @@ export function PlayersPanel({
 	onWatch: (id: string) => void;
 }) {
 	return (
-		<section
+		<details
+			open
 			className="in-game-panel players-panel"
 			aria-label="Players ranking"
 		>
-			<h2>Players</h2>
+			<summary>
+				<h2>Players</h2>
+			</summary>
 			<ol aria-label="Current players">
 				{players.map((player) => (
 					<li
@@ -47,6 +50,6 @@ export function PlayersPanel({
 					</li>
 				))}
 			</ol>
-		</section>
+		</details>
 	);
 }

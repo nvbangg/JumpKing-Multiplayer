@@ -57,15 +57,37 @@ button {
 	outline-offset: 4px;
 }
 .play-page {
-	width: 100vw;
+	width: 100%;
 	height: 100dvh;
+	display: grid;
+	grid-template-columns: clamp(240px, 24vw, 360px) minmax(0, 1fr);
 	position: relative;
 	overflow: hidden;
 	background: #000;
 }
+.game-stage {
+	grid-column: 2;
+	grid-row: 1;
+	position: relative;
+	min-width: 0;
+	min-height: 0;
+}
+.game-sidebar {
+	grid-column: 1;
+	grid-row: 1;
+	min-height: 0;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 12px;
+	background: #050505;
+}
 .game-viewport {
+	container-type: size;
 	position: absolute;
 	inset: 0;
+	overflow: hidden;
 }
 .game-viewport canvas {
 	image-rendering: pixelated;
@@ -77,7 +99,7 @@ button {
 .region-caption {
 	position: absolute;
 	/* Căn theo vùng canvas 4:3 bên trong viewport, kể cả khi có viền đen. */
-	top: calc(50% - min(22.5vw, 30%));
+	top: calc(50% - min(22.5cqw, 30cqh));
 	left: 50%;
 	z-index: 1;
 	transform: translate(-50%, -50%);
@@ -132,7 +154,8 @@ button {
 	padding: 1rem;
 }
 .game-overlay {
-	position: absolute;
+	position: fixed;
+	z-index: 60;
 	inset: 0;
 	display: flex;
 	flex-direction: column;
@@ -142,7 +165,7 @@ button {
 	background: #000b;
 }
 .game-hud .timer {
-	padding-left: 20px;
+	white-space: nowrap;
 }
 .ending-actions {
 	position: absolute;
@@ -193,6 +216,10 @@ button {
 	height: 54px;
 	border-radius: 8px;
 	font-size: 22px;
+	display: grid;
+	place-items: center;
+	padding: 0;
+	line-height: 1;
 }
 .touch-controls button:active {
 	background: #463a24cc;
@@ -200,9 +227,6 @@ button {
 @media (pointer: coarse), (max-width: 680px) {
 	.touch-controls {
 		display: flex;
-	}
-	.game-viewport {
-		bottom: 84px;
 	}
 }
 .brand {
@@ -470,25 +494,35 @@ button {
 	color: #e4bb68;
 }
 .chat-panel {
-	position: absolute;
+	position: fixed;
 	z-index: 4;
-	--pillar: max(0px, calc((100vw - 100dvh * 4 / 3) / 2));
-	--chat-w: clamp(220px, calc(var(--pillar) - 24px), 320px);
-	left: max(12px, calc((var(--pillar) - var(--chat-w)) / 2));
+	left: 12px;
 	bottom: max(12px, env(safe-area-inset-bottom));
-	width: var(--chat-w);
+	width: 320px;
 	max-width: calc(100vw - 24px);
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	pointer-events: none;
+	background: #08090cef;
+	border: 1px solid #6b6250;
+	font-size: 14px;
+}
+.game-sidebar .chat-panel {
+	position: static;
+	width: 100%;
+	max-width: none;
+}
+.chat-panel > summary,
+.in-game-panel > summary {
+	cursor: pointer;
+	padding: 8px;
+	color: #e4bb68;
+	font-size: 14px;
+	line-height: 20px;
 }
 .chat-history-box,
 .chat-input-box {
 	pointer-events: auto;
 	padding: 8px 10px;
 	background: #08090cef;
-	border: 1px solid #6b6250;
+	border: 0;
 	font-size: 14px;
 }
 .chat-history-box {
@@ -502,14 +536,6 @@ button {
 .chat-history-box p {
 	margin: 4px 0;
 	line-height: 1.35;
-}
-.chat-input-box header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	color: #e4bb68;
-	font-size: 15px;
-	margin-bottom: 6px;
 }
 .chat-input-box button,
 .chat-input-box input {
@@ -562,64 +588,37 @@ button {
 	}
 }
 
-@media (pointer: coarse), (max-width: 680px) {
-	.play-page .chat-panel {
-		bottom: max(100px, env(safe-area-inset-bottom));
-	}
-}
 .in-game-panels {
-	position: absolute;
-	top: 62px;
-	right: 12px;
-	width: min(210px, 44vw);
-	z-index: 2;
-	font-size: 0.75rem;
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	max-height: calc(100dvh - 82px);
+	display: grid;
+	gap: 10px;
+	font-size: 12px;
+	align-items: start;
 }
 .in-game-panel {
-	min-height: 0;
-	display: flex;
-	flex-direction: column;
-	padding: 8px;
+	min-width: 0;
 	background: #08090cef;
 	border: 1px solid #6b6250;
 }
 .in-game-panel h2 {
+	display: inline;
 	margin: 0;
 	font-size: inherit;
 }
-.in-game-panel h2,
-.in-game-panel button {
-	flex-shrink: 0;
-}
 .in-game-panel ol {
 	list-style: none;
-	margin: 8px 0 0;
-	padding: 0;
-	max-height: 28dvh;
+	margin: 0;
+	padding: 0 8px;
+	max-height: 30dvh;
 	overflow-y: auto;
-	min-height: 0;
 	overscroll-behavior: contain;
 }
-.records-panel button {
-	margin-top: 6px;
+.records-panel > button {
+	margin: 6px 8px 8px;
 	font-size: inherit;
 	padding: 4px 8px;
 	color: inherit;
 	background: #08090c;
 	border: 1px solid #6b6250;
-}
-.records-panel ol {
-	max-height: 20dvh;
-}
-@media (pointer: coarse), (max-width: 680px) {
-	.in-game-panels {
-		max-height: calc(100dvh - 164px);
-		font-size: 0.65rem;
-	}
 }
 .in-game-panel li {
 	display: flex;
@@ -648,23 +647,6 @@ button {
 .room-join-form button {
 	flex: 0 0 auto;
 }
-.players-panel {
-	padding: 6px;
-	font-size: 0.65rem;
-}
-.players-panel h2 {
-	margin: 0;
-	font-size: inherit;
-}
-.players-panel ol {
-	margin-top: 4px;
-	max-height: 24dvh;
-}
-.players-panel li {
-	padding: 3px 0;
-	gap: 6px;
-}
-
 .home.screen-detail .leaderboard li {
 	flex-wrap: wrap;
 	overflow-wrap: anywhere;
@@ -701,170 +683,70 @@ button {
 	box-shadow: 0 0 6px #ef4444aa;
 }
 
-.mobile-panel-toggle {
-	display: none;
-}
-
-@media (max-width: 680px),
-	(orientation: landscape) and (pointer: coarse) and (max-height: 480px) and (
-		max-width: 1023px
-	) {
+@media (max-width: 900px) {
 	.play-page {
-		--mobile-panel-bottom: max(100px, calc(env(safe-area-inset-bottom) + 84px));
+		height: auto;
+		min-height: 100dvh;
+		display: flex;
+		flex-direction: column;
+		overflow: visible;
 	}
-
-	.play-page:has(.touch-controls [aria-label="Move Up"]) {
-		--mobile-panel-bottom: max(
-			164px,
-			calc(env(safe-area-inset-bottom) + 148px)
-		);
+	.game-stage {
+		width: 100%;
+		aspect-ratio: 4 / 3;
+		max-height: 100dvh;
+		flex: none;
 	}
-
-	.play-page:has(.touch-controls [aria-label="Move Up"]) .in-game-panels {
-		max-height: calc(100dvh - 226px);
+	.game-sidebar {
+		overflow: visible;
+		padding: 8px;
 	}
-
-	.play-page .game-viewport {
-		top: env(safe-area-inset-top);
-		right: env(safe-area-inset-right);
-		bottom: env(safe-area-inset-bottom);
-		left: env(safe-area-inset-left);
+	.in-game-panels {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 8px;
 	}
-
-	.play-page .touch-controls {
-		align-items: flex-end;
+	.in-game-panels > :only-child {
+		grid-column: 1 / -1;
 	}
-
-	.play-page .touch-controls > div {
-		column-gap: 22px;
-		max-width: 130px;
+	.in-game-panel li {
+		height: 30px;
+		line-height: 20px;
+		padding: 5px 0;
+		gap: 5px;
 	}
-
-	.play-page .chat-panel {
-		left: max(36px, calc(env(safe-area-inset-left) + 36px));
-		max-width: calc(100% - 48px - env(safe-area-inset-left));
-		bottom: var(--mobile-panel-bottom);
+	.in-game-panel ol {
+		max-height: 150px;
 	}
-
-	.play-page .records-panel {
-		margin-right: 24px;
+	.game-sidebar .chat-messages {
+		max-height: 160px;
 	}
-
-	.play-page[data-chat-collapsed="true"] .chat-panel {
-		/* Giữ kích thước để chat vẫn cuộn tới tin mới khi đang thu gọn. */
-		visibility: hidden;
+	.game-hud {
+		left: max(6px, env(safe-area-inset-left));
+		right: max(6px, env(safe-area-inset-right));
+		gap: 4px;
+		font-size: 11px;
 	}
-
-	.play-page[data-leaderboard-collapsed="true"] .records-panel {
-		display: none;
-	}
-
-	.play-page .mobile-panel-toggle {
-		display: block;
-		position: absolute;
-		z-index: 5;
-		bottom: var(--mobile-panel-bottom);
-		width: 28px;
-		min-height: 44px;
-		padding: 4px;
-		border: 1px solid #6b6250;
-		background: #08090cef;
-		color: #e4bb68;
-		font-size: 24px;
-	}
-
-	.play-page .mobile-chat-toggle {
-		left: env(safe-area-inset-left);
-		border-radius: 0 6px 6px 0;
-	}
-
-	.play-page .mobile-leaderboard-toggle {
-		right: env(safe-area-inset-right);
-		border-radius: 6px 0 0 6px;
-	}
-}
-
-@media (orientation: landscape) and (pointer: coarse) and (
-		max-height: 480px
-	) and (max-width: 1023px) {
-	.play-page,
-	.play-page:has(.touch-controls [aria-label="Move Up"]) {
-		--mobile-panel-top: max(44px, calc(env(safe-area-inset-top) + 36px));
-		--mobile-panel-bottom: max(84px, calc(env(safe-area-inset-bottom) + 70px));
-	}
-
-	.play-page .game-hud {
-		left: max(12px, env(safe-area-inset-left));
-		right: max(12px, env(safe-area-inset-right));
+	.game-hud button {
+		padding: 5px;
 		font-size: 12px;
 	}
-
-	.play-page .game-hud .timer {
-		padding-left: 0;
+	.game-hud > span:last-child {
+		gap: 4px;
 	}
-
-	.play-page .game-hud button {
-		padding: 6px 8px;
+	.network-badge {
+		padding: 4px;
+		font-size: 11px;
 	}
-
-	.play-page .touch-controls > div {
-		max-width: none;
+	.touch-controls {
+		left: max(8px, env(safe-area-inset-left));
+		right: max(8px, env(safe-area-inset-right));
+		bottom: 8px;
 	}
-
-	.play-page .chat-panel {
-		width: min(260px, 36vw);
+	.touch-controls > div {
+		max-width: 130px;
 	}
-
-	.play-page .chat-history-box .chat-messages {
-		max-height: max(
-			24px,
-			calc(
-				100dvh -
-				var(--mobile-panel-top) -
-				var(--mobile-panel-bottom) -
-				112px
-			)
-		);
-	}
-
-	.play-page .in-game-panels,
-	.play-page:has(.touch-controls [aria-label="Move Up"]) .in-game-panels {
-		top: var(--mobile-panel-top);
-		right: calc(env(safe-area-inset-right) + 36px);
-		width: min(210px, 32vw);
-		max-height: calc(
-			100dvh -
-			var(--mobile-panel-top) -
-			var(--mobile-panel-bottom)
-		);
-	}
-
-	.play-page .players-panel {
-		--players-game-height: calc(
-			100dvh -
-			env(safe-area-inset-top) -
-			env(safe-area-inset-bottom)
-		);
-		--players-letterbox: calc(
-			(
-				100vw -
-				env(safe-area-inset-left) -
-				env(safe-area-inset-right) -
-				var(--players-game-height) *
-				4 / 3
-			) /
-			2
-		);
-		width: clamp(60px, calc(var(--players-letterbox) - 8px), 210px);
-		align-self: flex-end;
-		position: relative;
-		/* Khung cha chừa 36px; dịch riêng Players để còn 8px sát mép phải. */
-		left: 28px;
-		max-height: 96px;
-	}
-
-	.play-page .records-panel {
-		margin-right: 0;
+	.item-control {
+		bottom: 72px;
 	}
 }
 .load-error-notice {
@@ -899,7 +781,7 @@ button {
 	outline: 3px solid #26231a;
 	padding: 16px 24px;
 	border-radius: 8px;
-	width: min(92vw, 600px);
+	width: min(92%, 600px);
 	box-shadow: 0 6px 24px #000c;
 	pointer-events: none;
 }
@@ -967,10 +849,10 @@ button {
 		display: block;
 	}
 	.tutorial-guide {
-		top: 50%;
-		transform: translate(-50%, -50%);
-		padding: 12px 18px;
-		width: min(92vw, 440px);
+		top: 44px;
+		transform: translateX(-50%);
+		padding: 8px 12px;
+		width: min(92%, 440px);
 	}
 	.tutorial-title {
 		font-size: 1.05rem;
@@ -1013,7 +895,7 @@ button {
 	flex-direction: column;
 	align-items: stretch;
 	gap: 6px;
-	max-width: min(320px, calc(100% - min(210px, 44vw) - 36px));
+	max-width: calc(100% - 24px);
 	padding: 6px 8px;
 	background: #000c;
 	font-size: 0.65rem;
@@ -1062,7 +944,7 @@ button {
 	position: absolute;
 	z-index: 35;
 	right: max(16px, env(safe-area-inset-right));
-	bottom: max(100px, calc(env(safe-area-inset-bottom) + 88px));
+	bottom: 80px;
 	font-size: 13px;
 	padding: 10px;
 	touch-action: manipulation;

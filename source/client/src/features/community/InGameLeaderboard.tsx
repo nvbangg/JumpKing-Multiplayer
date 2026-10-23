@@ -10,11 +10,14 @@ export function InGameLeaderboard() {
 	});
 	const entries = data.entries;
 	return (
-		<section
+		<details
+			open
 			className="in-game-panel records-panel"
 			aria-label="Community leaderboard"
 		>
-			<h2>Leaderboard</h2>
+			<summary>
+				<h2>Leaderboard</h2>
+			</summary>
 			<ol aria-label="Community records">
 				{entries.map((entry) => (
 					<li key={entry.id}>
@@ -35,6 +38,6 @@ export function InGameLeaderboard() {
 			<button type="button" disabled={loading} onClick={reload}>
 				Refresh
 			</button>
-		</section>
+		</details>
 	);
 }

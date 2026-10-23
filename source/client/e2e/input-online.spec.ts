@@ -56,7 +56,7 @@ test("touch holds direction and Jump simultaneously and cancellation never launc
 		type: "touchEnd",
 		touchPoints: [],
 	});
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await expect(
 		page.getByRole("heading", { name: "Paused", exact: true }),
 	).toBeVisible();

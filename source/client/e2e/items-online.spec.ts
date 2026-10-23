@@ -32,7 +32,8 @@ for (const mobile of [false, true])
 			other = observeOnline(peer);
 		const errors: string[] = [];
 		let seenSlip = false,
-			seenRock = false;
+			seenRock = false,
+			usedItems = 0;
 		for (const page of [host, peer]) {
 			page.on("pageerror", (e) => errors.push(e.message));
 			page.on("websocket", (socket) =>
@@ -45,6 +46,12 @@ for (const mobile of [false, true])
 				}),
 			);
 		}
+		host.on("websocket", (socket) =>
+			socket.on("framesent", (frame) => {
+				if (JSON.parse(frame.payload.toString()).type === "USE_ITEM")
+					usedItems++;
+			}),
+		);
 		try {
 			await registerOnline(host, "item_host");
 			await registerOnline(peer, "item_peer");
@@ -61,9 +68,7 @@ for (const mobile of [false, true])
 			await joinRoom(peer, id);
 			await expect(peer.getByLabel("Items", { exact: true })).toBeDisabled();
 			await expect(host.locator(".menu-panel .chat-panel")).toHaveCount(0);
-			await expect(
-				host.getByRole("region", { name: "Room chat", exact: true }),
-			).toBeVisible();
+			await expect(host.locator(".chat-panel")).toBeVisible();
 			await host.locator("body").click({ position: { x: 1, y: 1 } });
 			await host.keyboard.press("Enter");
 			await expect(host.getByLabel("Message", { exact: true })).toBeFocused();
@@ -123,8 +128,18 @@ for (const mobile of [false, true])
 				exact: true,
 			});
 			await expect(button).toBeEnabled();
+			await host.keyboard.press("Enter");
+			await host.getByLabel("Message", { exact: true }).press("KeyE");
+			await expect(host.getByLabel("Message", { exact: true })).toHaveValue(
+				"e",
+			);
+			expect(usedItems).toBe(0);
+			expect(own.snapshot?.items?.held).toBe(kind);
+			await host.keyboard.press("Escape");
+			await host.locator("canvas").click();
 			if (mobile) await button.tap();
-			else await button.click();
+			else await host.keyboard.press("KeyE");
+			await expect.poll(() => usedItems).toBe(1);
 			if (kind === "BANANA") {
 				await expect(button).toHaveAttribute("aria-pressed", "true");
 				expect(own.snapshot?.items?.held).toBe("BANANA");

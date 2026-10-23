@@ -19,6 +19,7 @@ test("Options keep sound, show controls and the game timer is always visible", a
 	await expect(
 		page.getByText("Hold Space / W / ↑, then release", { exact: true }),
 	).toBeVisible();
+	await expect(page.locator(".controls-help dt")).toHaveText(["Move", "Jump"]);
 	await expect(
 		page.getByRole("button", { name: "Controls", exact: true }),
 	).toHaveCount(0);
@@ -57,7 +58,8 @@ test("Options keep sound, show controls and the game timer is always visible", a
 		element.setAttribute("data-same-region", "retained");
 	});
 	await expect(page.getByText(/^Jumps:/)).toHaveCount(0);
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
+	await expect(page.locator(".controls-help dt")).toHaveText(["Move", "Jump"]);
 	await expect(region).toBeHidden();
 	await expect(region).toHaveCSS("animation-play-state", "paused");
 	await expect(region).toHaveAttribute("data-same-region", "retained");
@@ -99,7 +101,7 @@ test("Options keep sound, show controls and the game timer is always visible", a
 		),
 	).toBeGreaterThanOrEqual(captionTime);
 	await expect(region).toHaveAttribute("data-same-region", "retained");
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await page.getByRole("button", { name: "Options", exact: true }).click();
 	await expect(
 		page.getByRole("switch", { name: "Sound: Off", exact: true }),
@@ -208,7 +210,7 @@ test("blocked audio reports a limitation without blocking the game", async ({
 	await registerOnline(page, "blocked_audio");
 	await newCommunity(page);
 	await expect(
-		page.getByRole("button", { name: "Menu", exact: true }),
+		page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 	).toBeVisible();
 	await page.keyboard.down("Space");
 	await expect
@@ -217,7 +219,7 @@ test("blocked audio reports a limitation without blocking the game", async ({
 		)
 		.toBe(1);
 	await page.keyboard.up("Space");
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await expect(page.getByRole("alert")).toContainText(
 		"Sound could not be played",
 	);

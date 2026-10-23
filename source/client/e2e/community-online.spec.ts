@@ -14,12 +14,16 @@ test.afterEach(async ({ page }) => {
 async function account(page: Page, prefix: string) {
 	const name = `${prefix}_${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
 	await page.goto("/");
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await page.getByLabel("Username", { exact: true }).fill(name);
 	await page
 		.getByLabel("Password", { exact: true })
 		.fill("A secure Community test password");
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
 	return name;
 }
@@ -51,14 +55,16 @@ function observe(page: Page) {
 async function observeSound(page: Page) {
 	await page.evaluate(async () => {
 		const path = "/src/game/presentation/AudioBus.ts",
-			{ AudioBus } = await import(path);
+			configPath = "/src/game/presentation/config.ts",
+			{ AudioBus } = await import(path),
+			{ PRESENTATION } = await import(configPath);
 		const original = AudioBus.prototype.effect;
 		const calls: { effect: string; volume: number }[] = [];
 		Object.assign(window, { onlineSoundCalls: calls });
 		AudioBus.prototype.effect = function (
 			effect: string,
 			state: { snow: boolean; ice: boolean },
-			volume: number,
+			volume: number = PRESENTATION.effectVolume,
 		) {
 			calls.push({ effect, volume });
 			original.call(this, effect, state, volume);
@@ -82,7 +88,7 @@ async function leave(page: Page) {
 			.getByRole("button", { name: "Save & Exit", exact: true })
 			.isVisible())
 	)
-		await page.getByRole("button", { name: "Menu", exact: true }).click();
+		await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await page.getByRole("button", { name: "Save & Exit", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "New Game", exact: true }),
@@ -119,7 +125,7 @@ for (const failure of ["rejected", "timeout"] as const)
 		await account(page, `leave_${failure}`);
 		await page.getByRole("button", { name: "New Game", exact: true }).click();
 		await expect(
-			page.getByRole("button", { name: "Menu", exact: true }),
+			page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible();
 		await expect.poll(() => observed.snapshots.length).toBeGreaterThan(0);
 		const run = required(observed.snapshots.at(-1)).playId;
@@ -139,7 +145,7 @@ for (const failure of ["rejected", "timeout"] as const)
 		const count = observed.snapshots.length;
 		await page.getByRole("button", { name: "Continue", exact: true }).click();
 		await expect(
-			page.getByRole("button", { name: "Menu", exact: true }),
+			page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible();
 		await expect.poll(() => observed.snapshots.length).toBeGreaterThan(count);
 		expect(required(observed.snapshots.at(-1)).playId).toBe(run);
@@ -170,13 +176,13 @@ test("two Accounts share server simulation, see each other jump, leave and Conti
 		await a.bringToFront();
 		await a.getByRole("button", { name: "New Game", exact: true }).click();
 		await expect(
-			a.getByRole("button", { name: "Menu", exact: true }),
+			a.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible({ timeout: 15_000 });
 		await expect.poll(() => observedA.snapshots.length).toBeGreaterThan(0);
 		const runId = required(observedA.snapshots.at(-1)).playId;
 		await b.getByRole("button", { name: "New Game", exact: true }).click();
 		await expect(
-			b.getByRole("button", { name: "Menu", exact: true }),
+			b.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible({ timeout: 15_000 });
 		await expect.poll(() => observedA.rosters.at(-1)?.members.length).toBe(2);
 		await expect.poll(() => observedB.rosters.at(-1)?.members.length).toBe(2);
@@ -246,22 +252,22 @@ test("two Accounts share server simulation, see each other jump, leave and Conti
 		if (
 			await a.getByRole("button", { name: "Resume", exact: true }).isVisible()
 		)
-			await a.getByRole("button", { name: "Open Chat", exact: true }).click();
-		else await a.getByRole("button", { name: "Chat", exact: true }).click();
+			await a.getByRole("button", { name: "Resume", exact: true }).click();
+		await a.getByLabel("Message", { exact: true }).focus();
 		const text = '<img src=x onerror="window.chatInjected=true"> hello';
 		await a.getByLabel("Message", { exact: true }).fill(text);
 		await a.getByRole("button", { name: "Send", exact: true }).click();
 		await expect(a.getByRole("log")).toContainText(text);
 		expect(await a.evaluate(() => "chatInjected" in window)).toBe(false);
-		await a.getByRole("button", { name: "Close chat", exact: true }).click();
+		await a.getByLabel("Message", { exact: true }).press("Escape");
 		await b.bringToFront();
 		if (
 			await b.getByRole("button", { name: "Resume", exact: true }).isVisible()
 		)
-			await b.getByRole("button", { name: "Open Chat", exact: true }).click();
-		else await b.getByRole("button", { name: "Chat", exact: true }).click();
+			await b.getByRole("button", { name: "Resume", exact: true }).click();
+		await b.getByLabel("Message", { exact: true }).focus();
 		await expect(b.getByRole("log")).toContainText(text);
-		await b.getByRole("button", { name: "Close chat", exact: true }).click();
+		await b.getByLabel("Message", { exact: true }).press("Escape");
 		expect(observedA.errors).toEqual([]);
 		expect(observedB.errors).toEqual([]);
 		await a.screenshot({ path: info.outputPath("community-two-players.png") });
@@ -273,15 +279,15 @@ test("two Accounts share server simulation, see each other jump, leave and Conti
 		await expect.poll(() => observedB.rosters.at(-1)?.members.length).toBe(1);
 		await a.getByRole("button", { name: "Continue", exact: true }).click();
 		await expect(
-			a.getByRole("button", { name: "Menu", exact: true }),
+			a.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible();
 		await expect.poll(() => observedA.snapshots.at(-1)?.playId).toBe(runId);
 		expect(
 			required(observedA.snapshots.at(-1)).self.simulation.physics.jumps,
 		).toBeGreaterThan(0);
-		await a.getByRole("button", { name: "Chat", exact: true }).click();
+		await a.getByLabel("Message", { exact: true }).focus();
 		await expect(a.getByRole("log")).toContainText(text);
-		await a.getByRole("button", { name: "Close chat", exact: true }).click();
+		await a.getByLabel("Message", { exact: true }).press("Escape");
 		await leave(b);
 		await expect(
 			a.getByRole("heading", { name: "Leaderboard", exact: true }),
@@ -347,14 +353,14 @@ test("prediction stays usable with delayed and reordered snapshots across Pause 
 	await account(page, "latency");
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "Menu", exact: true }),
+		page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 	).toBeVisible();
 	await page.waitForTimeout(500);
 	await jump(page);
 	await expect
 		.poll(() => observed.snapshots.at(-1)?.self.simulation.physics.jumps)
 		.toBe(1);
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "Resume", exact: true }),
 	).toBeVisible();
@@ -382,7 +388,7 @@ test("Community New Game keeps old History and metrics while replacing only the 
 	await account(page, "new_run");
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "Menu", exact: true }),
+		page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 	).toBeVisible();
 	await expect.poll(() => observed.snapshots.length).toBeGreaterThan(0);
 	const first = required(observed.snapshots.at(-1)).playId;
@@ -423,7 +429,7 @@ test("window blur cancels charging and keeps Community time frozen until explici
 	await account(page, "pause_ui");
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "Menu", exact: true }),
+		page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 	).toBeVisible({ timeout: 15_000 });
 	await page.keyboard.down("Space");
 	await page.waitForTimeout(100);
@@ -470,7 +476,7 @@ test("transport disconnect reconnects the same identity and run while confirmed 
 	});
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "Menu", exact: true }),
+		page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 	).toBeVisible({ timeout: 15_000 });
 	await jump(page);
 	await expect
@@ -537,7 +543,7 @@ test("leaving a Community page saves the run, releases membership and reload nev
 		for (const page of [a, b]) {
 			await page.getByRole("button", { name: "New Game", exact: true }).click();
 			await expect(
-				page.getByRole("button", { name: "Menu", exact: true }),
+				page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 			).toBeVisible({ timeout: 15_000 });
 		}
 		await expect
@@ -551,7 +557,7 @@ test("leaving a Community page saves the run, releases membership and reload nev
 				.getByRole("button", { name: "Resume", exact: true })
 				.isVisible())
 		)
-			await a.getByRole("button", { name: "Menu", exact: true }).click();
+			await a.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await expect.poll(() => own.snapshots.at(-1)?.self.paused).toBe(true);
 		await a.getByRole("button", { name: "Resume", exact: true }).click();
 		await expect.poll(() => own.snapshots.at(-1)?.self.paused).toBe(false);
@@ -581,7 +587,7 @@ test("leaving a Community page saves the run, releases membership and reload nev
 		await expect(a.getByRole("button", { name, exact: true })).toBeVisible();
 		await a.getByRole("button", { name: "Continue", exact: true }).click();
 		await expect(
-			a.getByRole("button", { name: "Menu", exact: true }),
+			a.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible();
 		await expect.poll(() => own.snapshots.at(-1)?.playId).toBe(run);
 		expect(required(own.snapshots.at(-1)).self.simulation.physics.jumps).toBe(
@@ -607,7 +613,7 @@ test("leaving a Community page saves the run, releases membership and reload nev
 						.getByRole("button", { name: "Resume", exact: true })
 						.isVisible()) ||
 					(await a
-						.getByRole("button", { name: "Menu", exact: true })
+						.getByRole("button", { name: "Menu (Esc)", exact: true })
 						.isVisible()),
 			)
 			.toBe(true);

@@ -49,7 +49,6 @@ export function OnlineGame({
 	options,
 	onOptionsChange,
 	accountId,
-	totalJumps,
 	onHome,
 	onResults,
 }: {
@@ -59,7 +58,6 @@ export function OnlineGame({
 	options: Options;
 	onOptionsChange: (key: keyof Options) => void;
 	accountId?: string;
-	totalJumps?: number;
 	onHome: (message: string) => void;
 	onResults: () => void;
 }) {
@@ -76,8 +74,7 @@ export function OnlineGame({
 	sound.current = options.sound;
 	const [error, setError] = useState(""),
 		[pending, setPending] = useState(false),
-		[elapsed, setElapsed] = useState(0),
-		[saveStatus, setSaveStatus] = useState("SAVED");
+		[elapsed, setElapsed] = useState(0);
 	const [items, setItems] = useState<Pick<
 		RoomItemsView,
 		"held" | "bananaArmed" | "cooldownMs"
@@ -95,8 +92,6 @@ export function OnlineGame({
 		name: string;
 		delayMs: number;
 	} | null>(null);
-	const [chatCollapsed, setChatCollapsed] = useState(false),
-		[leaderboardCollapsed, setLeaderboardCollapsed] = useState(false);
 	const [disconnected, setDisconnected] = useState(false);
 	const [networkQuality, setNetworkQuality] = useState<NetworkQuality>(() =>
 		socket.getNetworkQuality(),
@@ -108,9 +103,7 @@ export function OnlineGame({
 	const [ending, setEnding] = useState<"playing" | "picture" | null>(null),
 		[pictureReady, setPictureReady] = useState(false);
 	const [tutorialStep, setTutorialStep] = useState<TutorialStep | null>(() =>
-		room.kind === "ROOM" || isTutorialCompleted(accountId, totalJumps)
-			? null
-			: "move",
+		room.kind === "ROOM" || isTutorialCompleted(accountId) ? null : "move",
 	);
 	const tutorialRef = useRef<TutorialStep | null>(tutorialStep);
 	tutorialRef.current = tutorialStep;
@@ -126,7 +119,6 @@ export function OnlineGame({
 		socket,
 		ready && !ending,
 		() => {
-			setChatCollapsed(false);
 			runtime.current?.cancel();
 			flight.current?.cancel();
 			input.current?.cancel();
@@ -153,6 +145,10 @@ export function OnlineGame({
 			snapshot = session?.latest;
 		if (
 			!session ||
+			room.kind !== "ROOM" ||
+			room.state !== "PLAYING" ||
+			disconnected ||
+			flying ||
 			!snapshot?.items?.held ||
 			session.menu ||
 			snapshot.spectating ||
@@ -177,6 +173,26 @@ export function OnlineGame({
 				setItemPending(false);
 			});
 	};
+	const useItemRef = useRef(useItem);
+	useItemRef.current = useItem;
+	useEffect(() => {
+		const key = (event: KeyboardEvent) => {
+			if (
+				event.defaultPrevented ||
+				event.repeat ||
+				event.code !== "KeyE" ||
+				(event.target instanceof Element &&
+					event.target.closest(
+						'input,textarea,select,button,a,summary,[contenteditable="true"]',
+					))
+			)
+				return;
+			event.preventDefault();
+			useItemRef.current();
+		};
+		window.addEventListener("keydown", key);
+		return () => window.removeEventListener("keydown", key);
+	}, []);
 	const latestRoom = useRef(room);
 	latestRoom.current = room;
 	const removedNotice =
@@ -206,7 +222,6 @@ export function OnlineGame({
 		audio.current?.pause(true);
 		setMenu("pause");
 		if (room.kind === "COMMUNITY") {
-			setSaveStatus("PENDING");
 			void socket
 				.command("SET_COMMUNITY_PAUSED", { paused: true })
 				.catch((cause) => reportFailure(cause, "Pause failed"));
@@ -262,6 +277,8 @@ export function OnlineGame({
 		input.current = controls;
 		const unsubscribe = socket.subscribe((type, payload) => {
 			try {
+				if (type === "ERROR" && payload.code === "SAVE_FAILED")
+					setError(String(payload.message));
 				if (type === "GAME_SNAPSHOT") runtime.current?.receive(payload);
 				if (type === "PLAYER_FINISHED") runtime.current?.finish(payload);
 				if (
@@ -329,10 +346,6 @@ export function OnlineGame({
 					if (runtime.current) runtime.current.menu = true;
 					controls.cancel();
 					setMenu("pause");
-				}
-				if (type === "COMMUNITY_RUN_STATE" || type === "SAVE_STATUS") {
-					if (typeof payload.saveStatus === "string")
-						setSaveStatus(payload.saveStatus);
 				}
 			} catch (cause) {
 				setError(cause instanceof Error ? cause.message : "Invalid game state");
@@ -459,6 +472,7 @@ export function OnlineGame({
 							tutorialOrigin.current,
 						);
 						if (next !== tutorialRef.current) {
+							tutorialOrigin.current = { x: physics.x, jumps: physics.jumps };
 							tutorialRef.current = next;
 							setTutorialStep(next);
 							if (next === "completed") saveTutorialCompleted(accountId);
@@ -619,348 +633,293 @@ export function OnlineGame({
 	const captionPaused =
 		!!menu || !!ending || disconnected || room.state === "COUNTDOWN";
 	return (
-		<main
-			className="play-page"
-			data-chat-collapsed={chatCollapsed}
-			data-leaderboard-collapsed={leaderboardCollapsed}
-		>
-			<section className="game-viewport" aria-label="Online Main Babe game">
-				{/* Phaser quản lý canvas; React giữ overlay ở phần tử anh em. */}
-				<div className="game-surface" ref={container} />
-				{ready && caption?.name && !ending && (
-					<output
-						key={caption.id}
-						className="region-caption"
-						aria-label="Current region"
-						style={{
-							visibility: captionPaused ? "hidden" : "visible",
-							animationPlayState: captionPaused ? "paused" : "running",
-							animationDuration: `${PRESENTATION.regionCaptionMs}ms`,
-							animationDelay: `${caption.delayMs}ms`,
-						}}
-					>
-						{caption.name}
-					</output>
+		<main className="play-page">
+			<div className="game-stage">
+				<section className="game-viewport" aria-label="Online Main Babe game">
+					{/* Phaser quản lý canvas; React giữ overlay ở phần tử anh em. */}
+					<div className="game-surface" ref={container} />
+					{ready && caption?.name && !ending && (
+						<output
+							key={caption.id}
+							className="region-caption"
+							aria-label="Current region"
+							style={{
+								visibility: captionPaused ? "hidden" : "visible",
+								animationPlayState: captionPaused ? "paused" : "running",
+								animationDuration: `${PRESENTATION.regionCaptionMs}ms`,
+								animationDelay: `${caption.delayMs}ms`,
+							}}
+						>
+							{caption.name}
+						</output>
+					)}
+				</section>
+				{!ready && !displayedError && (
+					<p className="game-message" role="status">
+						Loading…
+					</p>
 				)}
-			</section>
-			{!ready && !displayedError && (
-				<p className="game-message" role="status">
-					Loading…
-				</p>
-			)}
-			{!ready && displayedError && (
-				<div className="game-message">
-					<p role="alert">{displayedError}</p>
-					<button
-						type="button"
-						disabled={pending}
-						onClick={() => void command("LEAVE_ROOM")}
-					>
-						Leave
-					</button>
-				</div>
-			)}
-			{ready && room.kind === "ROOM" && room.state === "COUNTDOWN" && (
-				<p className="game-message" role="status">
-					{countdown ?? "Waiting for players…"}
-				</p>
-			)}
-			{ready && !ending && (
-				<div className="game-hud">
-					<span>
-						<span className="timer" role="timer" aria-label="Play time">
-							{duration(watching?.elapsedTimeMs ?? elapsed)}
-						</span>
-						{remaining !== null && (
-							<span className="timer" role="timer" aria-label="Time left">
-								Time Left: {duration(Math.ceil(remaining / 1000) * 1000)}
-							</span>
-						)}
-					</span>
-					{room.kind === "ROOM" && <RoomCode roomId={room.roomId} />}
-					<span>
-						<NetworkStatusBadge quality={networkQuality} />
+				{!ready && displayedError && (
+					<div className="game-message">
+						<p role="alert">{displayedError}</p>
 						<button
 							type="button"
-							aria-keyshortcuts="Enter"
-							onClick={chat.openChat}
+							disabled={pending}
+							onClick={() => void command("LEAVE_ROOM")}
 						>
-							Chat
+							Leave
 						</button>
-						<button type="button" onClick={pause}>
-							Menu
-						</button>
-					</span>
-				</div>
-			)}
-			{ready &&
-				!ending &&
-				!menu &&
-				!chat.open &&
-				!watching &&
-				room.kind === "ROOM" &&
-				room.settings?.itemsEnabled && (
-					<button
-						className="item-control"
-						type="button"
-						aria-label="Use item"
-						aria-pressed={items?.bananaArmed ?? false}
-						title={
-							items?.held === "BANANA"
-								? "Click to prepare a banana, then jump; click again to cancel"
-								: "Throw at the highest other player"
-						}
-						disabled={
-							!items?.held ||
-							itemPending ||
-							disconnected ||
-							room.state !== "PLAYING" ||
-							flying
-						}
-						onPointerDown={(event) => event.preventDefault()}
-						onClick={useItem}
-					>
-						{items?.held === "BANANA"
-							? items.bananaArmed
-								? "Banana · Jump to drop"
-								: "Banana · Prepare"
-							: items?.held === "ROCK"
-								? "Rock · Throw"
-								: `Item ${duration(Math.ceil((items?.cooldownMs ?? 0) / 1000) * 1000)}`}
-					</button>
+					</div>
 				)}
-			{ready && !ending && !menu && !chat.open && !watching && (
-				<TouchControls input={input} flying={flying} />
-			)}
-			{ready &&
-				!ending &&
-				!menu &&
-				!chat.open &&
-				!watching &&
-				room.kind === "COMMUNITY" &&
-				tutorialStep && (
-					<TutorialGuide step={tutorialStep} onDismiss={dismissTutorial} />
+				{ready && room.kind === "ROOM" && room.state === "COUNTDOWN" && (
+					<p className="game-message" role="status">
+						{countdown ?? "Waiting for players…"}
+					</p>
 				)}
-			{ready && watching && !ending && !menu && (
-				<div className="spectator-bar" role="status">
-					<span
-						className="spectator-label"
-						title={`Watching ${watching.player.nickname}`}
-					>
-						Watching {watching.player.nickname}
-						{watching.paused ? " (Paused)" : ""}
-					</span>
-					<button
-						type="button"
-						disabled={pending || disconnected}
-						onClick={() => void watch(null)}
-					>
-						Back to My Game
-					</button>
-				</div>
-			)}
-			{ending && (
-				<div className="ending-actions">
-					{ending === "playing" ? (
-						<button type="button" onClick={() => skipEnding.current?.()}>
-							Skip
+				{ready && !ending && (
+					<div className="game-hud">
+						<span>
+							<span className="timer" role="timer" aria-label="Play time">
+								{duration(watching?.elapsedTimeMs ?? elapsed)}
+							</span>
+							{remaining !== null && (
+								<span className="timer" role="timer" aria-label="Time left">
+									Time Left: {duration(Math.ceil(remaining / 1000) * 1000)}
+								</span>
+							)}
+						</span>
+						{room.kind === "ROOM" && <RoomCode roomId={room.roomId} />}
+						<span>
+							<NetworkStatusBadge quality={networkQuality} />
+							<button type="button" onClick={pause}>
+								Menu (Esc)
+							</button>
+						</span>
+					</div>
+				)}
+				{ready &&
+					!ending &&
+					!menu &&
+					!chat.open &&
+					!watching &&
+					room.kind === "ROOM" &&
+					room.settings?.itemsEnabled && (
+						<button
+							className="item-control"
+							type="button"
+							aria-label="Use item"
+							aria-keyshortcuts="E"
+							aria-pressed={items?.bananaArmed ?? false}
+							title={
+								items?.held === "BANANA"
+									? "Click to prepare a banana, then jump; click again to cancel"
+									: "Throw at the highest other player"
+							}
+							disabled={
+								!items?.held ||
+								itemPending ||
+								disconnected ||
+								room.state !== "PLAYING" ||
+								flying
+							}
+							onPointerDown={(event) => event.preventDefault()}
+							onClick={useItem}
+						>
+							<span>E / Click · </span>
+							{items?.held === "BANANA"
+								? items.bananaArmed
+									? "Banana · Jump to drop"
+									: "Banana · Prepare"
+								: items?.held === "ROCK"
+									? "Rock · Throw"
+									: `Item ${duration(Math.ceil((items?.cooldownMs ?? 0) / 1000) * 1000)}`}
 						</button>
-					) : (
-						<>
-							{room.kind === "ROOM" ? (
+					)}
+				{ready && !ending && !menu && !chat.open && !watching && (
+					<TouchControls input={input} flying={flying} />
+				)}
+				{ready &&
+					!ending &&
+					!menu &&
+					!chat.open &&
+					!watching &&
+					room.kind === "COMMUNITY" &&
+					tutorialStep && (
+						<TutorialGuide step={tutorialStep} onDismiss={dismissTutorial} />
+					)}
+				{ready && watching && !ending && !menu && (
+					<div className="spectator-bar" role="status">
+						<span
+							className="spectator-label"
+							title={`Watching ${watching.player.nickname}`}
+						>
+							Watching {watching.player.nickname}
+							{watching.paused ? " (Paused)" : ""}
+						</span>
+						<button
+							type="button"
+							disabled={pending || disconnected}
+							onClick={() => void watch(null)}
+						>
+							Back to My Game
+						</button>
+					</div>
+				)}
+				{ending && (
+					<div className="ending-actions">
+						{ending === "playing" ? (
+							<button type="button" onClick={() => skipEnding.current?.()}>
+								Skip
+							</button>
+						) : (
+							<>
+								{room.kind === "ROOM" ? (
+									<button
+										type="button"
+										disabled={!pictureReady}
+										onClick={onResults}
+									>
+										View Results
+									</button>
+								) : null}
 								<button
 									type="button"
-									disabled={!pictureReady}
-									onClick={onResults}
+									disabled={!pictureReady || pending || disconnected}
+									onClick={() => {
+										void command("LEAVE_ROOM");
+									}}
 								>
-									View Results
+									Back to Menu
 								</button>
-							) : null}
-							<button
-								type="button"
-								disabled={!pictureReady || pending || disconnected}
-								onClick={() => {
-									void command("LEAVE_ROOM");
-								}}
-							>
-								Back to Menu
-							</button>
-						</>
-					)}
-				</div>
-			)}
-			{ready && !ending && <Chat chat={chat} socket={socket} dismissible />}
-			{ready && !ending && !menu && (
-				<>
-					<button
-						type="button"
-						className="mobile-panel-toggle mobile-chat-toggle"
-						aria-label={chatCollapsed ? "Show chat" : "Collapse chat"}
-						title={chatCollapsed ? "Show chat" : "Collapse chat"}
-						aria-expanded={!chatCollapsed}
-						onClick={() => {
-							chat.closeChat();
-							setChatCollapsed((value) => !value);
-						}}
-					>
-						{chatCollapsed ? "›" : "‹"}
-					</button>
-					{room.kind === "COMMUNITY" && (
-						<button
-							type="button"
-							className="mobile-panel-toggle mobile-leaderboard-toggle"
-							aria-label={
-								leaderboardCollapsed
-									? "Show leaderboard"
-									: "Collapse leaderboard"
-							}
+							</>
+						)}
+					</div>
+				)}
+				{menu && (
+					<section className="game-overlay" aria-label="Game menu">
+						<MenuPanel
 							title={
-								leaderboardCollapsed
-									? "Show leaderboard"
-									: "Collapse leaderboard"
+								menu === "options"
+									? "Options"
+									: disconnected
+										? "Disconnected"
+										: room.kind === "ROOM"
+											? "Game Menu"
+											: "Paused"
 							}
-							aria-expanded={!leaderboardCollapsed}
-							onClick={() => setLeaderboardCollapsed((value) => !value)}
+							onBack={menu === "options" ? () => setMenu("pause") : undefined}
 						>
-							{leaderboardCollapsed ? "‹" : "›"}
-						</button>
-					)}
-				</>
-			)}
-			{ready && !ending && (
-				<aside className="in-game-panels">
-					<PlayersPanel
-						players={players}
-						selfId={socket.selfId}
-						watchingId={watching?.player.playerId}
-						watchableIds={room.members
-							.filter((member) => member.connected)
-							.map((member) => member.playerId)}
-						disabled={
-							pending ||
-							disconnected ||
-							!!menu ||
-							(room.kind === "ROOM" && room.state !== "PLAYING")
-						}
-						onWatch={(id) => void watch(id)}
-					/>
-					{room.kind === "COMMUNITY" && <InGameLeaderboard />}
-				</aside>
-			)}
-			{menu && (
-				<section className="game-overlay" aria-label="Game menu">
-					<MenuPanel
-						title={
-							menu === "options"
-								? "Options"
-								: disconnected
-									? "Disconnected"
-									: room.kind === "ROOM"
-										? "Game Menu"
-										: "Paused"
-						}
-						onBack={menu === "options" ? () => setMenu("pause") : undefined}
-					>
-						{menu === "pause" ? (
-							<>
-								{disconnected ? (
-									<>
+							{menu === "pause" ? (
+								<>
+									{disconnected ? (
+										<>
+											<button
+												type="button"
+												disabled={pending}
+												onClick={() => {
+													setPending(true);
+													void socket
+														.reconnect()
+														.catch((cause) => {
+															if (
+																cause instanceof ApiError &&
+																[
+																	"RECONNECT_EXPIRED",
+																	"ROOM_NOT_FOUND",
+																].includes(cause.code)
+															)
+																onHome(removedNotice);
+															else setError(cause.message);
+														})
+														.finally(() => setPending(false));
+												}}
+											>
+												Reconnect
+											</button>
+											<button
+												type="button"
+												onClick={() =>
+													onHome(
+														room.kind === "COMMUNITY"
+															? "Disconnected. Latest save could not be confirmed. Continue will use the last server checkpoint."
+															: "Disconnected. Your departure could not be confirmed by the server.",
+													)
+												}
+											>
+												Back to Menu
+											</button>
+										</>
+									) : (
 										<button
 											type="button"
 											disabled={pending}
-											onClick={() => {
-												setPending(true);
-												void socket
-													.reconnect()
-													.catch((cause) => {
-														if (
-															cause instanceof ApiError &&
-															["RECONNECT_EXPIRED", "ROOM_NOT_FOUND"].includes(
-																cause.code,
-															)
-														)
-															onHome(removedNotice);
-														else setError(cause.message);
-													})
-													.finally(() => setPending(false));
-											}}
+											onClick={() => void resume()}
 										>
-											Reconnect
-										</button>
-										<button
-											type="button"
-											onClick={() =>
-												onHome(
-													room.kind === "COMMUNITY"
-														? "Disconnected. Latest save could not be confirmed. Continue will use the last server checkpoint."
-														: "Disconnected. Your departure could not be confirmed by the server.",
-												)
-											}
-										>
-											Back to Menu
-										</button>
-									</>
-								) : (
-									<button
-										type="button"
-										disabled={pending}
-										onClick={() => void resume()}
-									>
-										Resume
-									</button>
-								)}
-								<button type="button" onClick={() => setMenu("options")}>
-									Options
-								</button>
-								<button type="button" onClick={chat.openChat}>
-									Open Chat
-								</button>
-								{room.kind === "ROOM" &&
-									room.hostPlayerId === socket.selfId &&
-									room.state === "PLAYING" && (
-										<button
-											type="button"
-											disabled={pending || disconnected}
-											onClick={() => void command("END_MATCH")}
-										>
-											End Match
+											Resume
 										</button>
 									)}
-								<button
-									type="button"
-									disabled={pending || disconnected}
-									onClick={() => void command("LEAVE_ROOM")}
-								>
-									{room.kind === "COMMUNITY" ? "Save & Exit" : "Leave Room"}
-								</button>
-								{room.kind === "COMMUNITY" && (
-									<small role="status">
-										{disconnected
-											? "Latest save unconfirmed"
-											: saveStatus === "SAVED"
-												? "Saved"
-												: saveStatus === "FAILED"
-													? "Save failed"
-													: "Saving…"}
-									</small>
-								)}
-								<ControlsHelp />
-							</>
-						) : (
-							<OptionsButtons
-								options={options}
-								onChange={onOptionsChange}
-								onError={setError}
-							/>
-						)}
-						{displayedError && <p role="alert">{displayedError}</p>}
-					</MenuPanel>
-				</section>
-			)}
-			{ready && displayedError && !menu && (
-				<p className="save-error" role="alert">
-					{displayedError}
-				</p>
+									<button type="button" onClick={() => setMenu("options")}>
+										Options
+									</button>
+									{room.kind === "ROOM" &&
+										room.hostPlayerId === socket.selfId &&
+										room.state === "PLAYING" && (
+											<button
+												type="button"
+												disabled={pending || disconnected}
+												onClick={() => void command("END_MATCH")}
+											>
+												End Match
+											</button>
+										)}
+									<button
+										type="button"
+										disabled={pending || disconnected}
+										onClick={() => void command("LEAVE_ROOM")}
+									>
+										{room.kind === "COMMUNITY" ? "Save & Exit" : "Leave Room"}
+									</button>
+									<ControlsHelp />
+								</>
+							) : (
+								<OptionsButtons
+									options={options}
+									onChange={onOptionsChange}
+									onError={setError}
+								/>
+							)}
+							{displayedError && <p role="alert">{displayedError}</p>}
+						</MenuPanel>
+					</section>
+				)}
+				{ready && displayedError && !menu && (
+					<p className="save-error" role="alert">
+						{displayedError}
+					</p>
+				)}
+			</div>
+			{ready && !ending && (
+				<aside className="game-sidebar" aria-label="Game panels">
+					<div className="in-game-panels">
+						<PlayersPanel
+							players={players}
+							selfId={socket.selfId}
+							watchingId={watching?.player.playerId}
+							watchableIds={room.members
+								.filter((member) => member.connected)
+								.map((member) => member.playerId)}
+							disabled={
+								pending ||
+								disconnected ||
+								!!menu ||
+								(room.kind === "ROOM" && room.state !== "PLAYING")
+							}
+							onWatch={(id) => void watch(id)}
+						/>
+						{room.kind === "COMMUNITY" && <InGameLeaderboard />}
+					</div>
+					<Chat chat={chat} socket={socket} dismissible />
+				</aside>
 			)}
 		</main>
 	);

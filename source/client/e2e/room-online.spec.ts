@@ -66,7 +66,7 @@ test("closing a Room page removes its avatar and releases membership through Lea
 			.toBe(false);
 		// Document đóng có thể mất event DevTools; membership phải được giải phóng ngay.
 		await expect(
-			b.getByRole("button", { name: "Menu", exact: true }),
+			b.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible();
 		returned = await first.newPage();
 		await returned.goto("/");
@@ -116,7 +116,7 @@ test("Back leaves the online context but blur and valid Room transitions do not"
 		await a.goto("/");
 		await joinRoom(a, room);
 		await startRoom(b, a);
-		await b.getByRole("button", { name: "Menu", exact: true }).click();
+		await b.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await b.getByRole("button", { name: "End Match", exact: true }).click();
 		await expect(a.getByText("Results saved", { exact: true })).toBeVisible();
 		expect(lifecycle.leaves).toBe(1);
@@ -234,7 +234,7 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			await expect
 				.poll(() => observed.snapshot?.self.simulation.physics.jumps)
 				.toBe(1);
-			await a.getByRole("button", { name: "Menu", exact: true }).click();
+			await a.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 			const before = required(observed.snapshot).elapsedTimeMs;
 			await expect
 				.poll(() => observed.snapshot?.elapsedTimeMs)
@@ -280,7 +280,7 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			await startRoom(a, b);
 			await expect.poll(() => observed.snapshot?.playId).not.toBe(first.id);
 			expect(required(observed.snapshot).self.simulation.physics.jumps).toBe(0);
-			await a.getByRole("button", { name: "Menu", exact: true }).click();
+			await a.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 			await a.getByRole("button", { name: "End Match", exact: true }).click();
 			await expect(a.getByText("Results saved", { exact: true })).toBeVisible();
 			for (const page of [a, b])
@@ -340,7 +340,9 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			const id = required(observed.snapshot).playId;
 			await page.setViewportSize({ width: 390, height: 844 });
 			await page.screenshot({ path: info.outputPath("players-mobile.png") });
-			await page.getByRole("button", { name: "Menu", exact: true }).click();
+			await page
+				.getByRole("button", { name: "Menu (Esc)", exact: true })
+				.click();
 			expect(
 				await page.locator(".controls-help").evaluate((help) => {
 					const button = Array.from(
@@ -372,7 +374,9 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			await expect(page.locator(".room-code code")).toHaveText(code);
 			await startRoom(page, page);
 			await expect.poll(() => observed.snapshot?.playId).not.toBe(id);
-			await page.getByRole("button", { name: "Menu", exact: true }).click();
+			await page
+				.getByRole("button", { name: "Menu (Esc)", exact: true })
+				.click();
 			await page
 				.getByRole("button", { name: "End Match", exact: true })
 				.click();

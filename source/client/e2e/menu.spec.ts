@@ -3,6 +3,11 @@ import { expect, test } from "@playwright/test";
 test("home keeps the required menu and one account form", async ({
 	page,
 }, info) => {
+	const menuAudioRequests: string[] = [];
+	page.on("request", (request) => {
+		if (request.url().includes("menu_loop"))
+			menuAudioRequests.push(request.url());
+	});
 	await page.goto("/");
 	await expect(
 		page.getByText("Hold Space / W / ↑, then release", { exact: true }),
@@ -11,7 +16,7 @@ test("home keeps the required menu and one account form", async ({
 	await expect(
 		page.getByText("Hold Space / W / ↑, then release", { exact: true }),
 	).toBeVisible();
-	await expect(page.getByText("Chat Online", { exact: true })).toBeVisible();
+	await expect(page.locator(".controls-help dt")).toHaveText(["Move", "Jump"]);
 	await page.getByRole("button", { name: "Back", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "Continue", exact: true }),
@@ -20,18 +25,22 @@ test("home keeps the required menu and one account form", async ({
 		page.getByRole("button", { name: "Leaderboard", exact: true }),
 	).toBeHidden();
 	await expect(
-		page.getByRole("button", { name: "Sign In", exact: true }),
+		page.getByRole("button", { name: "Sign In / Log In", exact: true }),
 	).toHaveCount(1);
 	await expect(
 		page.getByRole("button", { name: /Create Account/ }),
 	).toHaveCount(0);
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await expect(page.getByLabel("Username", { exact: true })).toBeVisible();
 	await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
 	await expect(page.getByLabel("Email", { exact: true })).toHaveCount(0);
 	await expect(page.locator('form button[type="submit"]')).toHaveCount(1);
+	await expect(page.getByText(/If the username does not exist/)).toHaveCount(0);
+	expect(menuAudioRequests).toEqual([]);
 	await expect(page.locator('form button[type="submit"]')).toHaveText(
-		"Sign In",
+		"Sign In / Log In",
 	);
 	await expect(
 		page.getByRole("button", { name: /Create Account/ }),
@@ -43,7 +52,7 @@ test("home keeps the required menu and one account form", async ({
 	await expect(page.getByLabel("Total statistics")).toBeHidden();
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
 	await expect(
-		page.getByRole("heading", { name: "Sign In", exact: true }),
+		page.getByRole("heading", { name: "Sign In / Log In", exact: true }),
 	).toBeVisible();
 	await page.getByRole("button", { name: "Back", exact: true }).click();
 	await page.screenshot({
@@ -112,7 +121,9 @@ test("one auth flow keeps credentials errors and submits new usernames only to l
 		await page.goto("/sign-in");
 		await page.getByLabel("Username", { exact: true }).fill("existing_player");
 		await page.getByLabel("Password", { exact: true }).fill("wrong");
-		await page.getByRole("button", { name: "Sign In", exact: true }).click();
+		await page
+			.getByRole("button", { name: "Sign In / Log In", exact: true })
+			.click();
 		await expect(
 			page.getByRole("button", { name: "Please wait…", exact: true }),
 		).toBeDisabled();
@@ -124,7 +135,7 @@ test("one auth flow keeps credentials errors and submits new usernames only to l
 			"existing_player",
 		);
 		await expect(
-			page.getByRole("button", { name: "Sign In", exact: true }),
+			page.getByRole("button", { name: "Sign In / Log In", exact: true }),
 		).toBeEnabled();
 		expect(mutations).toEqual([
 			{
@@ -134,7 +145,9 @@ test("one auth flow keeps credentials errors and submits new usernames only to l
 		]);
 		await page.getByLabel("Username", { exact: true }).fill("new_player");
 		await page.getByLabel("Password", { exact: true }).fill("password123");
-		await page.getByRole("button", { name: "Sign In", exact: true }).click();
+		await page
+			.getByRole("button", { name: "Sign In / Log In", exact: true })
+			.click();
 		await expect(
 			page.getByRole("button", { name: "new_player", exact: true }),
 		).toBeVisible();
@@ -167,12 +180,12 @@ test("keyboard navigation restores focus and offline actions report real errors"
 	).toBeFocused();
 	await page.keyboard.press("Enter");
 	await expect(
-		page.getByRole("heading", { name: "Sign In", exact: true }),
+		page.getByRole("heading", { name: "Sign In / Log In", exact: true }),
 	).toBeVisible();
 	await expect(page.getByText("Sign in to play online.")).toHaveCount(0);
 	expect(
 		await page
-			.getByRole("heading", { name: "Sign In", exact: true })
+			.getByRole("heading", { name: "Sign In / Log In", exact: true })
 			.evaluate((element) => getComputedStyle(element).userSelect),
 	).toBe("none");
 	expect(
@@ -182,7 +195,9 @@ test("keyboard navigation restores focus and offline actions report real errors"
 	).toBe("text");
 	await page.getByLabel("Username", { exact: true }).fill("Player");
 	await page.getByLabel("Password", { exact: true }).fill("A valid password");
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await expect(page.getByRole("alert")).toHaveText(
 		"Unable to connect to the server",
 	);

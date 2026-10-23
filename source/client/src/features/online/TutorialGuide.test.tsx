@@ -14,3 +14,12 @@ test.each(["move", "charge", "jump", "completed"] as const)(
 		expect(html).toContain(step === "completed" ? "Ready to Climb!" : "Step");
 	},
 );
+
+test("jump instructions combine charging and direction without hiding the earlier controls", () => {
+	const html = renderToStaticMarkup(
+		<TutorialGuide step="jump" onDismiss={() => {}} />,
+	);
+	expect(html).toContain("Hold Space / W / ↑");
+	expect(html).toContain("A / D or ← / →");
+	expect(html).toContain("release while holding an arrow");
+});
