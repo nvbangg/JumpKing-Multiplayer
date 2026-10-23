@@ -264,7 +264,7 @@ export class OnlineRuntime implements GameRuntime {
 		return this.latest?.spectating?.playId ?? this.latest?.playId ?? "";
 	}
 	frame(): WorldFrame {
-		const saved = this.game.snapshot(),
+		const saved = this.game.view(),
 			self = this.room.members.find(
 				(member) => member.playerId === this.socket.selfId,
 			);

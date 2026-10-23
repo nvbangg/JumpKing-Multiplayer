@@ -22,6 +22,7 @@ import type {
 } from "./types";
 
 interface Avatar {
+	color?: string;
 	sprite: Phaser.GameObjects.Sprite;
 	name: Phaser.GameObjects.Text;
 	crown: Phaser.GameObjects.Sprite;
@@ -170,6 +171,12 @@ export class TowerScene extends Phaser.Scene {
 			};
 			this.avatars.set(player.id, avatar);
 		}
+		if (avatar.color !== player.color) {
+			avatar.color = player.color;
+			avatar.sprite.setTint(
+				Phaser.Display.Color.HexStringToColor(player.color).color,
+			);
+		}
 		const s = player.state,
 			visible = s.screen === this.screen;
 		avatar.sprite
@@ -181,7 +188,6 @@ export class TowerScene extends Phaser.Scene {
 			.setFlipX(s.direction === -1)
 			.setAlpha(self ? 1 : V.peerOpacity)
 			.setDepth(self ? V.selfDepth : V.peerDepth)
-			.setTint(Phaser.Display.Color.HexStringToColor(player.color).color)
 			.setVisible(visible);
 		avatar.name.setText(player.nickname);
 		avatar.name

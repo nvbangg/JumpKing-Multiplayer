@@ -7,7 +7,7 @@ import {
 } from "./Adventure";
 import { Simulation } from "./Simulation";
 import { PHYSICS as P } from "./tuning";
-import type { GameMap, PlayerInput, PlayerState } from "./types";
+import type { GameMap, PlayerInput, PlayerState, ReadView } from "./types";
 
 export interface WorldState {
 	lastTick: number;
@@ -51,6 +51,13 @@ export class GameSimulation {
 					{ touching: false, canPlay: true, fadeTicks: 0 },
 				]),
 			),
+		};
+	}
+	view() {
+		return {
+			physics: this.physics.snapshot(),
+			adventure: this.adventure.view(),
+			world: this.world as ReadView<WorldState>,
 		};
 	}
 	snapshot(): GameSnapshot {

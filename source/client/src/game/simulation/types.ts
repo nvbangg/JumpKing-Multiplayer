@@ -1,3 +1,6 @@
+// View chỉ đọc trong frame hiện tại; snapshot riêng vẫn dùng cho restore/lưu dữ liệu.
+export type ReadView<T> = { readonly [K in keyof T]: ReadView<T[K]> };
+
 export interface GameMap {
 	width: number;
 	screenHeight: number;

@@ -1,7 +1,7 @@
 import data from "../../../../common/adventure.json";
 import { required } from "../../required";
 import { PHYSICS as P } from "./tuning";
-import type { GameMap, PlayerInput, PlayerState } from "./types";
+import type { GameMap, PlayerInput, PlayerState, ReadView } from "./types";
 
 export const ADVENTURE = data;
 type Rect = { x: number; y: number; width: number; height: number };
@@ -107,6 +107,9 @@ export class Adventure {
 			};
 		for (const readable of data.readables)
 			this.state.readables[readable.id] = freshReadable();
+	}
+	view(): ReadView<AdventureState> {
+		return this.state;
 	}
 	snapshot(): AdventureState {
 		return structuredClone(this.state);

@@ -78,7 +78,10 @@ export function OnlineGame({
 		[pending, setPending] = useState(false),
 		[elapsed, setElapsed] = useState(0),
 		[saveStatus, setSaveStatus] = useState("SAVED");
-	const [items, setItems] = useState<RoomItemsView | null>(null);
+	const [items, setItems] = useState<Pick<
+		RoomItemsView,
+		"held" | "bananaArmed" | "cooldownMs"
+	> | null>(null);
 	const [itemPending, setItemPending] = useState(false);
 	const placingItem = useRef(false);
 	const [remaining, setRemaining] = useState<number | null>(null);
@@ -349,11 +352,40 @@ export function OnlineGame({
 				latestRoom.current,
 				() => controls.read(),
 				(state, snapshot) => {
-					setElapsed(snapshot.elapsedTimeMs);
-					setItems(snapshot.items ?? null);
-					setRemaining(snapshot.remainingTimeMs);
+					setElapsed(Math.floor(snapshot.elapsedTimeMs / 1000) * 1000);
+					const item = snapshot.items;
+					setItems((previous) => {
+						if (!item) return null;
+						const cooldownMs = Math.ceil(item.cooldownMs / 1000) * 1000;
+						return previous?.held === item.held &&
+							previous.bananaArmed === item.bananaArmed &&
+							previous.cooldownMs === cooldownMs
+							? previous
+							: { held: item.held, bananaArmed: item.bananaArmed, cooldownMs };
+					});
+					setRemaining(
+						snapshot.remainingTimeMs === null
+							? null
+							: Math.ceil(snapshot.remainingTimeMs / 1000) * 1000,
+					);
 					setFlying(state.freeFlight);
-					setPlayers(snapshot.players || []);
+					setPlayers((previous) => {
+						const next = snapshot.players ?? [];
+						return previous.length === next.length &&
+							next.every((player, i) => {
+								const old = required(previous[i]);
+								return (
+									old.playerId === player.playerId &&
+									old.nickname === player.nickname &&
+									old.colorSlot === player.colorSlot &&
+									old.rank === player.rank &&
+									Math.floor(old.currentProgress) ===
+										Math.floor(player.currentProgress)
+								);
+							})
+							? previous
+							: next;
+					});
 					const view = snapshot.spectating;
 					if (
 						viewedPlayer.current &&
@@ -369,7 +401,16 @@ export function OnlineGame({
 					}
 					if (!view) returningToSelf.current = false;
 					viewedPlayer.current = view?.player.playerId ?? null;
-					setWatching(view ?? null);
+					setWatching((previous) => {
+						if (!view) return null;
+						return previous?.player.playerId === view.player.playerId &&
+							previous.player.nickname === view.player.nickname &&
+							previous.paused === view.paused &&
+							Math.floor(previous.elapsedTimeMs / 1000) ===
+								Math.floor(view.elapsedTimeMs / 1000)
+							? previous
+							: view;
+					});
 					if (view) controls.cancel();
 					const intro = (view?.world ?? snapshot.self.simulation.world)
 						.regionIntro;
@@ -621,11 +662,9 @@ export function OnlineGame({
 			{ready && !ending && (
 				<div className="game-hud">
 					<span>
-						{
-							<span className="timer" role="timer" aria-label="Play time">
-								{duration(watching?.elapsedTimeMs ?? elapsed)}
-							</span>
-						}
+						<span className="timer" role="timer" aria-label="Play time">
+							{duration(watching?.elapsedTimeMs ?? elapsed)}
+						</span>
 						{remaining !== null && (
 							<span className="timer" role="timer" aria-label="Time left">
 								Time Left: {duration(Math.ceil(remaining / 1000) * 1000)}

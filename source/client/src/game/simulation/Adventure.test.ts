@@ -327,3 +327,22 @@ test("full game restores adventure and environment without changing the legitima
 	).toThrow();
 	expect(game.snapshot()).toEqual(state);
 });
+
+test("render view follows simulation while saved snapshots remain independent", () => {
+	const game = new GameSimulation(map);
+	const saved = game.snapshot();
+	const view = game.view();
+	game.tick(NEUTRAL_INPUT);
+	const next = game.view();
+	expect(next.adventure).toBe(view.adventure);
+	expect(next.world).toBe(view.world);
+	expect(next).toEqual({
+		physics: game.snapshot().physics,
+		adventure: game.snapshot().adventure,
+		world: game.snapshot().world,
+	});
+	expect(saved.world.lastTick).toBe(0);
+	expect(next.world.lastTick).toBe(1);
+	saved.adventure.flags.push("saved-only");
+	expect(next.adventure.flags).not.toContain("saved-only");
+});
