@@ -22,13 +22,13 @@ export class Prediction {
 	reset(): void {
 		this.frames = [];
 	}
-	push(seq: number, input: PlayerInput): void {
+	push(seq: number, input: PlayerInput) {
 		if (this.frames.length >= this.maximum)
 			throw new Error(
 				"Input acknowledgements are too far behind; reconnect to continue",
 			);
 		this.frames.push({ seq, input: { ...input }, cancel: false });
-		this.game.tick(input, this.respawnOnSplat);
+		return this.game.tick(input, this.respawnOnSplat).movement;
 	}
 	cancel(seq: number): void {
 		this.frames = [

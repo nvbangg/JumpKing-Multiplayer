@@ -480,3 +480,38 @@ test("runtime ignores stale snapshots and clears sequence/prediction on generati
 	} as unknown as Record<string, unknown>);
 	expect(required(runtime.latest).serverTick).toBe(2);
 });
+
+test("self movement sounds follow prediction before ACK and never replay during reconciliation", () => {
+	const socket = new GameSocket(
+		() => {},
+		() => {},
+	);
+	socket.selfId = "self";
+	socket.input = vi.fn();
+	const server = new GameSimulation(map);
+	server.tick({ left: false, right: false, jump: false });
+	let jump = true;
+	const heard: string[] = [];
+	const runtime = new OnlineRuntime(
+		map,
+		socket,
+		room,
+		() => ({ left: false, right: false, jump }),
+		() => {},
+		false,
+		() => {},
+		(events) => heard.push(...events),
+	);
+	runtime.receive(snapshot(server, 1, 0) as unknown as Record<string, unknown>);
+	runtime.advance(1000 / 60);
+	jump = false;
+	runtime.advance(1000 / 60);
+	expect(heard.filter((e) => e === "JUMP")).toHaveLength(1);
+	const count = heard.length;
+	// Chưa ACK input nào: reconcile phải replay cả cú nhảy nhưng không phát lại tiếng.
+	runtime.receive(snapshot(server, 2, 0) as unknown as Record<string, unknown>);
+	expect(heard).toHaveLength(count);
+	runtime.menu = true;
+	runtime.advance(100);
+	expect(heard).toHaveLength(count);
+});

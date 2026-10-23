@@ -119,7 +119,7 @@ Snapshot tách rõ:
 
 Room bật Items có items={held:BANANA|ROCK|null,bananaArmed,cooldownMs,bananas:[{id,x,y,armedAtTick}],rocks:[{id,x,y,direction,tick}]}. Held/cooldown riêng owner; trap/cue lọc theo screen như peers. Banana dùng tâm chân, Rock dùng tâm mục tiêu lúc trúng. physics.slipping chỉ gửi khi true; Community không có items.
 
-Effects JUMP/LAND/SPLAT/BUMP, terrain NORMAL/ICE/SNOW. Adventure/world events có kind=ADVENTURE/WORLD, chỉ gửi owner hoặc người đang xem owner, nội dung tra bằng ID. Dedupe theo eventSeq/context, không phát lại effects khi replay.
+Effects JUMP/LAND/SPLAT/BUMP, terrain NORMAL/ICE/SNOW. Âm thanh chuyển động bản thân phát từ prediction, bỏ tiếng trùng từ server và không phát khi replay; peers/spectating dùng events server. Adventure/world events có kind=ADVENTURE/WORLD, chỉ gửi owner hoặc người đang xem owner, nội dung tra bằng ID. Dedupe theo eventSeq/context, không phát lại effects khi replay.
 
 ## Đồng bộ và khôi phục kết nối
 

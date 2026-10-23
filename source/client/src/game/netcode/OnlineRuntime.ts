@@ -19,7 +19,12 @@ import {
 } from "../simulation/GameSimulation";
 import { roomMap } from "../simulation/roomMaps";
 import { PHYSICS } from "../simulation/tuning";
-import type { GameMap, PlayerInput, PlayerState } from "../simulation/types";
+import type {
+	GameMap,
+	MovementEffect,
+	PlayerInput,
+	PlayerState,
+} from "../simulation/types";
 import { PeerInterpolation } from "./PeerInterpolation";
 import { Prediction } from "./Prediction";
 
@@ -76,6 +81,10 @@ export class OnlineRuntime implements GameRuntime {
 		private changed: (state: PlayerState, snapshot: OnlineSnapshot) => void,
 		flyAllowed: boolean,
 		private failed: (message: string) => void = () => {},
+		private onMovement: (
+			effects: MovementEffect[],
+			state: PlayerState,
+		) => void = () => {},
 	) {
 		this.game = new GameSimulation(
 			room.kind === "ROOM"
@@ -226,7 +235,9 @@ export class OnlineRuntime implements GameRuntime {
 			if (this.menu) break;
 			const seq = ++this.sequence;
 			try {
-				this.prediction.push(seq, input);
+				const movement = this.prediction.push(seq, input);
+				if (movement.length)
+					this.onMovement(movement, this.game.physics.snapshot());
 			} catch (cause) {
 				this.menu = true;
 				const message =

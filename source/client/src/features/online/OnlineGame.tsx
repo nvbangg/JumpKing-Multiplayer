@@ -295,6 +295,9 @@ export function OnlineGame({
 						session.viewPlayerId,
 						session.viewPlayId,
 						session.frame().self.state.screen,
+						session.latest?.spectating
+							? undefined
+							: (socket.selfId ?? undefined),
 					)) {
 						audio.current?.effect(
 							effect.effect,
@@ -467,6 +470,9 @@ export function OnlineGame({
 					setError(message);
 					setMenu("pause");
 					controls.cancel();
+				},
+				(movement, state) => {
+					for (const effect of movement) audio.current?.effect(effect, state);
 				},
 			);
 			runtime.current = session;

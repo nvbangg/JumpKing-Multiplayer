@@ -128,7 +128,6 @@ test("native audio unlocks, decodes and caches effects and stops old ambience", 
 		);
 		state.testAudio.setScreen(0);
 	});
-	await page.keyboard.press("KeyX");
 	const inspect = () =>
 		page.evaluate(() => {
 			const state = globalThis as unknown as {
@@ -149,7 +148,9 @@ test("native audio unlocks, decodes and caches effects and stops old ambience", 
 				errors: state.audioErrors,
 			};
 		});
+	// Effects đã giải mã trước thao tác mở khóa, cú nhảy đầu không phải chờ tải.
 	await expect.poll(async () => (await inspect()).cache).toBeGreaterThan(10);
+	await page.keyboard.press("KeyX");
 	await expect.poll(async () => (await inspect()).playing).toBe(true);
 	expect((await inspect()).context).toBe("running");
 	const result = await page.evaluate(() => {
