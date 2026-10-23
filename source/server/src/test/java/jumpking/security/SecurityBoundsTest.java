@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 class SecurityBoundsTest {
   private SecuritySettings settings(String origin) {
-    return new SecuritySettings(List.of(origin), Duration.ofHours(24), 20, 16384, 10000);
+    return new SecuritySettings(List.of(origin), Duration.ofHours(24), 20, 16384, 10000, null);
   }
 
   @Test
@@ -37,7 +37,7 @@ class SecurityBoundsTest {
     assertThatThrownBy(
             () ->
                 new SecuritySettings(
-                    List.of("https://example.com"), Duration.ZERO, 20, 16384, 10000))
+                    List.of("https://example.com"), Duration.ZERO, 20, 16384, 10000, null))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -57,7 +57,7 @@ class SecurityBoundsTest {
         new AuthRateLimiter(
             clock,
             new SecuritySettings(
-                List.of("https://example.com"), Duration.ofHours(24), 20, 16384, 1));
+                List.of("https://example.com"), Duration.ofHours(24), 20, 16384, 1, null));
     bounded.check("one", null);
     assertThatThrownBy(() -> bounded.check("two", null)).isInstanceOf(ApiException.class);
   }
@@ -71,7 +71,7 @@ class SecurityBoundsTest {
         new AuthRateLimiter(
             clock,
             new SecuritySettings(
-                List.of("https://example.com"), Duration.ofHours(24), 2, 16384, 2));
+                List.of("https://example.com"), Duration.ofHours(24), 2, 16384, 2, null));
     for (int index = 0; index < 2; index++) {
       limits.check("one", null);
     }

@@ -6,7 +6,7 @@ MySQL/InnoDB, utf8mb4, timestamps UTC. Hibernate chỉ validate; DDL tại `sour
 
 | Bảng | Trách nhiệm |
 | --- | --- |
-| users | Account, password hash và quyền vương miện |
+| users | Account, password hash, google_id và quyền vương miện |
 | play_runs | Một lượt của một Account: metrics, kết quả và checkpoint Community |
 | matches | Thông tin chung của trận Room, liên kết các lượt tham gia |
 
@@ -17,7 +17,8 @@ erDiagram
     users {
         BIGINT id PK
         VARCHAR(32) username UK
-        VARCHAR(255) password_hash
+        VARCHAR(255) password_hash "nullable; trống khi chỉ dùng Google"
+        VARCHAR(64) google_id UK "nullable; Google user ID"
         BOOLEAN crown_unlocked
         DATETIME(3) created_at
     }

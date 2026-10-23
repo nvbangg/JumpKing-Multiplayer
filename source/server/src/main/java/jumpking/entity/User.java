@@ -16,9 +16,11 @@ public class User {
   @Column(name = "username", length = 32, nullable = false)
   private String username;
 
-  @Column(name = "password_hash", length = 255, nullable = false)
+  @Column(name = "password_hash", length = 255)
   private String passwordHash;
 
+  @Column(name = "google_id", length = 64)
+  private String googleId;
   @Column(name = "crown_unlocked", nullable = false, columnDefinition = "boolean")
   private boolean crownUnlocked;
 
@@ -35,6 +37,14 @@ public class User {
     user.createdAt = created;
     return user;
   }
+  public static User googleAccount(String username, String googleId, Instant created) {
+    var user = new User();
+    user.username = username;
+    user.googleId = googleId;
+    user.createdAt = created;
+    return user;
+  }
+
 
   public Long getId() {
     return id;
@@ -55,6 +65,14 @@ public class User {
   public void setPasswordHash(String value) {
     passwordHash = value;
   }
+  public String getGoogleId() {
+    return googleId;
+  }
+
+  public void setGoogleId(String value) {
+    googleId = value;
+  }
+
 
   public Instant getCreatedAt() {
     return createdAt;

@@ -6,9 +6,10 @@ HTTP JSON tại `/api` phục vụ tài khoản/dữ liệu; WebSocket thuần t
 
 ## Xác thực và bảo mật
 
-- Spring Security quản lý session; cookie host-only, Path=/, HttpOnly, SameSite=Lax và Secure khi HTTPS. HTTP gửi credentials; mutation cần CSRF token. Đăng nhập đổi session ID/CSRF; password băm BCrypt.
+- Spring Security quản lý session; cookie host-only, Path=/, HttpOnly, SameSite=Lax và Secure khi HTTPS. HTTP gửi credentials; mutation cần CSRF token. Đăng nhập đổi session ID/CSRF; password băm BCrypt. Rate limit 20 requests/phút/IP và identity.
 - Sign In nhận username/password: username chưa tồn tại thì tạo Account, đã có thì xác thực; sai password không tạo/sửa Account. Username 3–32 ký tự chữ/số/underscore/hyphen; password ít nhất 6 Unicode code points, tối đa 72 UTF-8 bytes. Khi tạo trùng username đồng thời, chỉ đăng nhập bằng mật khẩu của Account đã được tạo. Không đổi Account khi còn membership.
-- Logout hủy phiên. Đổi mật khẩu cần currentPassword, chỉ thành công sau commit và thu hồi mọi phiên/socket của Account. Không có email hoặc khôi phục mật khẩu.
+- Google Sign-In qua POST /auth/google: gửi idToken từ Google, tự động xác thực và liên kết theo google_id; tên Google được chuẩn hóa thành username hợp lệ.
+- Logout hủy phiên. Đổi mật khẩu cần currentPassword, chỉ thành công sau commit và thu hồi mọi phiên/socket của Account; tài khoản chỉ dùng Google trả CONFLICT. Không có email hoặc khôi phục mật khẩu.
 - Session idle/absolute và cookie đều 30 ngày; heartbeat không gia hạn idle. Hết phiên xử lý như disconnect, giữ checkpoint. Restart giữ phiên còn hạn, không gia hạn deadline; cấu hình theo [deployment](deployment.md#giữ-phiên-đăng-nhập).
 - CORS/WS kiểm tra Origin trong allowlist; không wildcard với credentials, preflight trước authentication. WS bắt buộc Account, owner/tên lấy từ session. Kiểm tra lại quyền và state khi thực thi lệnh.
 - Reconnect token ngẫu nhiên 256 bit, so sánh constant-time, chỉ gửi owner, thu hồi khi membership kết thúc. Không đưa password/token/stack trace vào URL, broadcast hoặc log; không trả Entity/credentials/checkpoint qua API dữ liệu.
@@ -24,9 +25,10 @@ Các path có prefix `/api`. Lỗi dạng `{error:{code,message}}`; không cache
 | GET /auth/me | → {authenticated,account:null hoặc {id,username,crownUnlocked}} |
 | POST /auth/register | {username,password} → cùng response /auth/me, authenticated=true |
 | POST /auth/login | {username,password} → cùng response /auth/me, authenticated=true; Sign In như trên |
+| POST /auth/google | {idToken} → cùng response /auth/me, authenticated=true |
 | POST /auth/password | {currentPassword,newPassword} → {ok:true} |
 | POST /auth/logout | → {ok:true} |
-| GET /game-config | → {features:{flyEnabled:boolean}} |
+| GET /game-config | → {features:{flyEnabled:boolean},auth:{googleClientId:string|null}} |
 | GET /map | → geometry, spawn và Finish |
 | GET /rooms | → {rooms:[{roomId,mode,mapLevel,playerCount,capacity}]} |
 | GET /rooms/{roomId} | → {roomId,kind,joinable} |

@@ -23,10 +23,13 @@ Backend nạp `config/application-<profile>.properties` theo working directory. 
 | spring.datasource.url/username/password | Kết nối MySQL bằng user ứng dụng |
 | server.address / server.port | Địa chỉ bind và cổng backend |
 | app.allowed-origins | Origins được phép, phân cách bằng dấu phẩy; đủ scheme/host/port, không có path |
+| app.google-client-id | Client ID xác thực Google Sign-In |
 | BACKEND_URL | Proxy Vite, mặc định http://127.0.0.1:8080 |
 | VITE_BACKEND_ORIGIN | Để trống khi cùng origin; chỉ đặt origin backend khi tách frontend |
 
 JAR dùng URL cùng origin cho HTTP/WS, không cần gắn địa chỉ backend vào frontend. `VITE_*` là dữ liệu công khai tại thời điểm build. Credentials, keystore, session, dumps và file cấu hình thật nằm ngoài Git; không đặt secrets trong frontend.
+Chi tiết các bước đăng ký Client ID và xác minh tên miền trên Google Cloud Console xem tại [google-oauth-setup](google-oauth-setup.md).
+
 
 ## MySQL
 

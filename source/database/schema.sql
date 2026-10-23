@@ -6,11 +6,13 @@ USE jumpking;
 CREATE TABLE users (
     id BIGINT NOT NULL AUTO_INCREMENT,
     username VARCHAR(32) NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NULL,
+    google_id VARCHAR(64) NULL,
     crown_unlocked BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME(3) NOT NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_users_username (username)
+    UNIQUE KEY uq_users_username (username),
+    UNIQUE KEY uq_users_google_id (google_id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE matches (

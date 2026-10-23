@@ -25,7 +25,7 @@ class SessionAuthorityTest {
     server.getServlet().getSession().setTimeout(Duration.ofMinutes(30));
     return new SessionAuthority(
         clock,
-        new SecuritySettings(List.of("https://game.test"), Duration.ofHours(24), 20, 16384, 10000),
+        new SecuritySettings(List.of("https://game.test"), Duration.ofHours(24), 20, 16384, 10000, null),
         server,
         mock(ApplicationEventPublisher.class));
   }

@@ -1,5 +1,6 @@
 export interface GameConfig {
 	features: { flyEnabled: boolean };
+	auth?: { googleClientId?: string | null };
 }
 export interface NetworkQuality {
 	pingMs: number;

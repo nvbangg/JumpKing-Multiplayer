@@ -57,6 +57,23 @@ class IdentityIT {
     MutableClock testClock() {
       return new MutableClock();
     }
+
+    @Bean
+    @Primary
+    jumpking.security.GoogleTokenVerifier testGoogleVerifier() {
+      return idToken -> {
+        if ("valid-google-token".equals(idToken)) {
+          return new jumpking.security.GoogleTokenVerifier.Profile(
+              "google-test-id-123", "tester@gmail.com", "Google Tester");
+        }
+        if ("valid-google-token-2".equals(idToken)) {
+          return new jumpking.security.GoogleTokenVerifier.Profile(
+              "google-test-id-456", "another@gmail.com", "Google Tester");
+        }
+        throw new jumpking.exception.ApiException(
+            401, "INVALID_CREDENTIALS", "Google ID token is invalid");
+      };
+    }
   }
 
   static class MutableClock extends Clock {
@@ -258,6 +275,60 @@ class IdentityIT {
       }
     }
   }
+  @Test
+  void googleLoginCreatesUserAndReusesOnSecondLogin() throws Exception {
+    try (var client = client()) {
+      client.token();
+      long count = accountCount();
+      var response =
+          client.send("/auth/google", "POST", "{\"idToken\":\"valid-google-token\"}");
+      assertThat(response.statusCode()).isEqualTo(200);
+      var json = tree(response);
+      assertThat(json.path("authenticated").asBoolean()).isTrue();
+      assertThat(json.path("account").path("username").asText()).isEqualTo("Google_Tester");
+      assertThat(accountCount()).isEqualTo(count + 1);
+
+      client.token();
+      var second =
+          client.send("/auth/google", "POST", "{\"idToken\":\"valid-google-token\"}");
+      assertThat(second.statusCode()).isEqualTo(200);
+      assertThat(tree(second).path("account").path("id").asText())
+          .isEqualTo(json.path("account").path("id").asText());
+      assertThat(accountCount()).isEqualTo(count + 1);
+    }
+  }
+
+  @Test
+  void googleLoginRejectsInvalidToken() throws Exception {
+    try (var client = client()) {
+      client.token();
+      var response =
+          client.send("/auth/google", "POST", "{\"idToken\":\"invalid-token\"}");
+      assertThat(response.statusCode()).isEqualTo(401);
+      assertThat(tree(response).path("error").path("code").asText())
+          .isEqualTo("INVALID_CREDENTIALS");
+    }
+  }
+
+  @Test
+  void googleAccountRejectsPasswordChange() throws Exception {
+    try (var client = client()) {
+      client.token();
+      var login =
+          client.send("/auth/google", "POST", "{\"idToken\":\"valid-google-token\"}");
+      assertThat(login.statusCode()).isEqualTo(200);
+
+      client.token();
+      var change =
+          client.send(
+              "/auth/password",
+              "POST",
+              "{\"currentPassword\":\"anyPassword123\",\"newPassword\":\"newPassword123\"}");
+      assertThat(change.statusCode()).isEqualTo(409);
+      assertThat(tree(change).path("error").path("code").asText()).isEqualTo("CONFLICT");
+    }
+  }
+
 
   @Test
   void signedInSessionCannotCreateAnotherAccountThroughLoginOrRegister() throws Exception {

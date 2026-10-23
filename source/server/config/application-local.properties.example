@@ -6,3 +6,4 @@ server.port=8080
 app.allowed-origins=http://127.0.0.1:5173,http://127.0.0.1:8080
 server.servlet.session.cookie.secure=false
 app.fly-enabled=${FLY_ENABLED:false}
+app.google-client-id=${GOOGLE_CLIENT_ID:382899145958-avvs1eb671tkgpquv1c7tfg18ru4e298.apps.googleusercontent.com}

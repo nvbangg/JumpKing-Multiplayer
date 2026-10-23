@@ -35,6 +35,8 @@ public final class AccountCredentials {
   }
 
   public record PasswordChange(@NotNull String currentPassword, @NotNull String newPassword) {}
+  public record GoogleLogin(@NotBlank String idToken) {}
+
 
   public static void validatePassword(String password) {
     if (password == null
