@@ -57,49 +57,48 @@ button {
 	outline-offset: 4px;
 }
 .play-page {
-	--game-width: 720px;
+	--panel-width: clamp(240px, 20vw, 280px);
+	--chat-width: clamp(240px, 24vw, 320px);
+	--touch-clearance: 0px;
+	--game-top: max(0px, calc((100dvh - 100vw * 3 / 4) / 2));
+	--game-left: max(0px, calc((100vw - 100dvh * 4 / 3) / 2));
 	width: 100%;
 	height: 100dvh;
-	min-height: calc(var(--game-width) * 3 / 4 + 24px);
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) var(--game-width) minmax(0, 1fr);
-	gap: 12px;
-	padding: 12px;
+	place-items: center;
 	position: relative;
+	isolation: isolate;
+	overflow: hidden;
 	background: #000;
 }
 .game-stage {
-	grid-column: 2;
-	grid-row: 1;
-	align-self: center;
-	width: 100%;
+	width: min(100%, calc(100dvh * 4 / 3));
 	aspect-ratio: 4 / 3;
 	position: relative;
 	min-width: 0;
 	min-height: 0;
 }
 .game-sidebar {
-	grid-column: 3;
-	grid-row: 1;
-	align-self: start;
+	position: absolute;
+	z-index: 30;
+	top: calc(var(--game-top) + max(56px, env(safe-area-inset-top) + 48px));
+	right: max(12px, env(safe-area-inset-right));
+	width: var(--panel-width);
 	min-height: 0;
-	max-height: calc(100dvh - 24px);
+	max-height: calc(100dvh - var(--game-top) - 72px - var(--touch-clearance));
 	overflow-y: auto;
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	width: 100%;
-	max-width: 320px;
-	justify-self: start;
+	overscroll-behavior: contain;
+	pointer-events: none;
 }
 .game-chat {
-	grid-column: 1;
-	grid-row: 1;
-	align-self: end;
-	justify-self: end;
+	position: absolute;
+	z-index: 70;
+	left: max(12px, env(safe-area-inset-left));
+	bottom: calc(max(12px, env(safe-area-inset-bottom)) + var(--touch-clearance));
 	min-width: 0;
-	width: 100%;
-	max-width: 320px;
+	width: var(--chat-width);
+	max-width: calc(100% - 24px);
+	pointer-events: none;
 }
 .game-viewport {
 	container-type: size;
@@ -158,8 +157,10 @@ button {
 	align-items: center;
 	font-size: 0.8rem;
 	text-shadow: 1px 1px #000;
+	pointer-events: none;
 }
 .game-hud button {
+	pointer-events: auto;
 	background: #08090cdd;
 	color: #ede7d3;
 	border: 1px solid #6b6250;
@@ -167,6 +168,7 @@ button {
 }
 .game-message {
 	position: absolute;
+	z-index: 40;
 	left: 50%;
 	top: 45%;
 	transform: translate(-50%, -50%);
@@ -183,6 +185,7 @@ button {
 	justify-content: center;
 	align-items: center;
 	gap: 1rem;
+	padding: 56px 12px 16px;
 	background: #000b;
 }
 .game-hud .timer {
@@ -216,9 +219,10 @@ button {
 .touch-controls {
 	display: none;
 	position: absolute;
-	bottom: max(16px, env(safe-area-inset-bottom));
-	left: max(16px, env(safe-area-inset-left));
-	right: max(16px, env(safe-area-inset-right));
+	z-index: 40;
+	bottom: max(8px, env(safe-area-inset-bottom));
+	left: max(8px, env(safe-area-inset-left));
+	right: max(8px, env(safe-area-inset-right));
 	justify-content: space-between;
 	gap: 16px;
 	pointer-events: none;
@@ -250,10 +254,7 @@ button {
 }
 @media (pointer: coarse), (max-width: 900px) {
 	.play-page {
-		padding-bottom: calc(80px + env(safe-area-inset-bottom));
-	}
-	.game-sidebar {
-		max-height: calc(100dvh - 104px - env(safe-area-inset-bottom));
+		--touch-clearance: 62px;
 	}
 	.touch-controls {
 		display: flex;
@@ -292,9 +293,10 @@ button {
 	min-width: 0;
 }
 .game-overlay .menu-panel {
-	width: min(500px, calc(100% - 32px));
-	max-height: calc(100% - 88px);
+	width: min(440px, 100%);
+	max-height: 100%;
 	overflow-y: auto;
+	overscroll-behavior: contain;
 }
 .menu-panel h2 {
 	margin: 0 0 16px;
@@ -616,6 +618,7 @@ button {
 	max-width: none;
 	background: transparent;
 	border: 0;
+	pointer-events: none;
 }
 .in-game-panel > summary {
 	cursor: pointer;
@@ -644,6 +647,7 @@ button {
 .chat-history-box .chat-messages {
 	max-height: min(360px, 45dvh);
 	overflow-y: auto;
+	overscroll-behavior: contain;
 	overflow-wrap: anywhere;
 }
 .chat-history-box p {
@@ -706,14 +710,15 @@ button {
 
 .in-game-panels {
 	display: grid;
-	gap: 10px;
+	gap: 8px;
 	font-size: 12px;
 	align-items: start;
 }
 .in-game-panel {
 	min-width: 0;
-	background: #08090cef;
+	background: #08090cdd;
 	border: 1px solid #6b6250;
+	pointer-events: auto;
 }
 .in-game-panel h2 {
 	display: inline;
@@ -724,7 +729,13 @@ button {
 	list-style: none;
 	margin: 0;
 	padding: 0 8px;
-	max-height: min(240px, calc((100dvh - 160px) / 2));
+	max-height: min(
+		240px,
+		max(
+			30px,
+			calc((100dvh - var(--game-top) - 200px - var(--touch-clearance)) / 2)
+		)
+	);
 	overflow-y: auto;
 	overscroll-behavior: contain;
 }
@@ -768,6 +779,7 @@ button {
 	overflow-wrap: anywhere;
 }
 .network-badge {
+	pointer-events: auto;
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
@@ -799,26 +811,20 @@ button {
 	box-shadow: 0 0 6px #ef4444aa;
 }
 
-@media (901px <= width < 1200px) {
+@media (max-width: 960px) {
 	.play-page {
-		--game-width: 480px;
-	}
-}
-@media (max-width: 900px) {
-	.play-page {
-		--game-width: min(
-			480px,
-			max(180px, calc(100vw - 320px)),
-			calc((100dvh - 104px - env(safe-area-inset-bottom)) * 4 / 3)
-		);
-		min-height: 0;
-		padding-top: 8px;
-		padding-left: max(8px, env(safe-area-inset-left));
-		padding-right: max(8px, env(safe-area-inset-right));
-		gap: 8px;
+		--panel-width: clamp(160px, 24vw, 200px);
+		--chat-width: clamp(180px, 28vw, 240px);
 	}
 	.game-sidebar {
-		max-height: calc(100dvh - 100px - env(safe-area-inset-bottom));
+		right: max(8px, env(safe-area-inset-right));
+	}
+	.game-chat {
+		left: max(8px, env(safe-area-inset-left));
+		bottom: calc(
+			max(8px, env(safe-area-inset-bottom)) +
+			var(--touch-clearance)
+		);
 	}
 	.in-game-panel li {
 		height: 30px;
@@ -826,11 +832,8 @@ button {
 		padding: 5px 0;
 		gap: 5px;
 	}
-	.in-game-panel ol {
-		max-height: max(60px, calc((100dvh - 220px) / 2));
-	}
 	.game-chat .chat-messages {
-		max-height: max(60px, calc(100dvh - 160px));
+		max-height: min(160px, calc(100dvh - 180px));
 	}
 	.game-chat .chat-input-box {
 		padding: 6px;
@@ -852,19 +855,32 @@ button {
 		padding: 4px;
 		font-size: 11px;
 	}
-	.touch-controls {
-		left: max(8px, env(safe-area-inset-left));
-		right: max(8px, env(safe-area-inset-right));
-		bottom: max(8px, env(safe-area-inset-bottom));
-	}
 	.touch-controls > div {
 		gap: 8px;
 	}
 	.game-overlay {
-		padding-top: 56px;
+		padding-left: max(
+			12px,
+			calc(
+				var(--chat-width) +
+				max(8px, env(safe-area-inset-left)) -
+				var(--game-left) +
+				12px
+			)
+		);
 	}
 	.game-overlay .menu-panel {
-		max-height: calc(100% - 16px);
+		width: min(360px, 100%);
+	}
+	.game-overlay .menu-panel button {
+		min-width: 0;
+		font-size: 18px;
+		padding-top: 7px;
+		padding-bottom: 7px;
+	}
+	.game-overlay .controls-help {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 6px;
 	}
 	.game-chat .chat-input-box input,
 	.game-chat .chat-input-box button {
@@ -1010,6 +1026,26 @@ button {
 		padding: 3px 8px;
 	}
 }
+@media (max-width: 680px) {
+	.tutorial-guide {
+		left: 12px;
+		transform: none;
+		width: calc(100% - var(--panel-width) - 24px);
+	}
+	.tutorial-header {
+		flex-wrap: nowrap;
+		gap: 8px;
+	}
+	.tutorial-title {
+		min-width: 0;
+		font-size: 0.9rem;
+		letter-spacing: 0;
+	}
+	.tutorial-hint {
+		font-size: 0.9rem;
+		line-height: 1.35;
+	}
+}
 
 .players-panel .watch-player {
 	padding: 0;
@@ -1038,7 +1074,7 @@ button {
 	flex-direction: column;
 	align-items: stretch;
 	gap: 6px;
-	max-width: calc(100% - 24px);
+	max-width: min(320px, calc(100% - 24px));
 	padding: 6px 8px;
 	background: #000c;
 	font-size: 0.65rem;
@@ -1087,7 +1123,7 @@ button {
 	position: absolute;
 	z-index: 35;
 	right: max(16px, env(safe-area-inset-right));
-	bottom: 16px;
+	bottom: calc(12px + var(--touch-clearance));
 	font-size: 13px;
 	padding: 10px;
 	touch-action: manipulation;
@@ -1116,20 +1152,4 @@ button {
 .chat-latest {
 	margin-top: 4px;
 	font: inherit;
-}
-.room-code button {
-	min-width: 0;
-	width: auto;
-	padding: 4px 8px;
-	font-size: 0.75rem;
-}
-
-.game-hud .room-code {
-	gap: 4px;
-}
-.game-hud .room-code code {
-	font-size: inherit;
-}
-.game-hud .room-code-label {
-	display: none;
 }

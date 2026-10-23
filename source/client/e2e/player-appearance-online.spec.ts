@@ -99,24 +99,19 @@ test("player colors match across browsers while only the local player has full o
 			await (await required(guest).request.get("/api/auth/me")).json()
 		).account.username;
 		const id = await createRoom(required(host));
-		await required(host)
-			.context()
-			.grantPermissions(["clipboard-read", "clipboard-write"]);
-		await required(host)
-			.getByRole("button", { name: "Copy ID", exact: true })
-			.click();
+		const roomCode = required(host).locator(".room-code code");
+		await expect(roomCode).toHaveText(id);
+		await expect(roomCode).toHaveCSS("user-select", "all");
 		await expect(
-			required(host).getByRole("button", { name: "Copied", exact: true }),
-		).toBeVisible();
-		expect(
-			await required(host).evaluate(() => navigator.clipboard.readText()),
-		).toBe(id);
+			required(host).getByRole("button", { name: "Copy ID", exact: true }),
+		).toHaveCount(0);
 		await joinRoom(required(guest), id);
 		await startRoom(required(host), required(guest));
 		for (const [index, page] of [required(host), required(guest)].entries()) {
 			await expect(
 				page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 			).toBeVisible({ timeout: 15_000 });
+			await expect(page.getByLabel("Room ID", { exact: true })).toHaveCount(0);
 			const ownName = index === 0 ? hostName : peerName;
 			const otherName = index === 0 ? peerName : hostName;
 			const ownColor = required(rules.appearanceColors[index]);

@@ -89,6 +89,9 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 		await expect(page.getByLabel("Message", { exact: true })).toBeVisible();
 		await expect(page.locator(".chat-panel > summary")).toHaveCount(0);
 		for (const viewport of [
+			{ width: 2560, height: 1080 },
+			{ width: 1920, height: 1080 },
+			{ width: 1366, height: 768 },
 			{ width: 1280, height: 900 },
 			{ width: 1280, height: 1080 },
 			{ width: 1024, height: 768 },
@@ -137,38 +140,57 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 			await expect(
 				page.getByRole("button", { name: "Refresh", exact: true }),
 			).toBeInViewport();
-			const stage = await page.locator(".game-stage").boundingBox(),
+			const canvasLocator = page.locator("canvas");
+			const expectedWidth = Math.min(viewport.width, (viewport.height * 4) / 3);
+			await expect
+				.poll(async () =>
+					Math.round((await canvasLocator.boundingBox())?.width ?? 0),
+				)
+				.toBe(Math.round(expectedWidth));
+			const shell = await page.locator(".play-page").boundingBox(),
+				stage = await page.locator(".game-stage").boundingBox(),
+				hud = await page.locator(".game-hud").boundingBox(),
 				sidebar = await page.locator(".game-sidebar").boundingBox(),
 				players = await page.locator(".players-panel").boundingBox(),
 				board = await panel.boundingBox(),
 				chat = await page.locator(".game-chat").boundingBox();
-			if (!stage || !sidebar || !players || !board || !chat)
+			if (!shell || !stage || !hud || !sidebar || !players || !board || !chat)
 				throw new Error("Game layout is missing");
-			expect(stage.x + stage.width).toBeLessThanOrEqual(sidebar.x);
-			expect(chat.x + chat.width).toBeLessThanOrEqual(stage.x);
+			expect(shell.x).toBeCloseTo(0, 0);
+			expect(shell.y).toBeCloseTo(0, 0);
+			expect(shell.width).toBeCloseTo(viewport.width, 0);
+			expect(shell.height).toBeCloseTo(viewport.height, 0);
+			expect(stage.width).toBeCloseTo(expectedWidth, 0);
+			expect(stage.height).toBeCloseTo((expectedWidth * 3) / 4, 0);
 			expect(stage.x + stage.width / 2).toBeCloseTo(viewport.width / 2, 0);
+			expect(stage.y + stage.height / 2).toBeCloseTo(viewport.height / 2, 0);
+			expect(sidebar.x).toBeGreaterThan(viewport.width / 2);
+			expect(sidebar.y).toBeGreaterThanOrEqual(hud.y + hud.height);
+			expect(sidebar.x + sidebar.width).toBeLessThanOrEqual(viewport.width);
+			expect(sidebar.y + sidebar.height).toBeLessThanOrEqual(viewport.height);
+			expect(chat.x).toBeGreaterThanOrEqual(0);
+			expect(chat.x + chat.width).toBeLessThanOrEqual(viewport.width / 2);
+			expect(chat.y + chat.height).toBeLessThanOrEqual(viewport.height);
 			expect(players.y + players.height).toBeLessThanOrEqual(board.y);
-			if (viewport.width <= 900) {
+			if (await page.locator(".touch-controls").isVisible()) {
 				const controls = await page.locator(".touch-controls").boundingBox();
 				if (!controls) throw new Error("Touch controls are missing");
-				expect(controls.y).toBeGreaterThanOrEqual(stage.y + stage.height);
+				expect(controls.y + controls.height).toBeLessThanOrEqual(
+					viewport.height,
+				);
 				expect(chat.y + chat.height).toBeLessThanOrEqual(controls.y);
 			}
-			const canvas = await page.locator("canvas").boundingBox();
-			expect(canvas && canvas.width / canvas.height).toBeCloseTo(4 / 3, 2);
-			if (viewport.width > 900) {
-				expect(canvas?.width).toBeCloseTo(
-					viewport.width >= 1200 ? 720 : 480,
-					0,
-				);
-				expect(canvas?.height).toBeCloseTo(
-					viewport.width >= 1200 ? 540 : 360,
-					0,
-				);
-			}
+			const canvas = await canvasLocator.boundingBox();
+			if (!canvas) throw new Error("Game canvas is missing");
+			expect(canvas.width / canvas.height).toBeCloseTo(4 / 3, 2);
+			expect(canvas.height).toBeCloseTo((expectedWidth * 3) / 4, 0);
+			expect(canvas.x + canvas.width / 2).toBeCloseTo(viewport.width / 2, 0);
+			expect(canvas.y + canvas.height / 2).toBeCloseTo(viewport.height / 2, 0);
 			expect(
 				await page.evaluate(
-					() => document.documentElement.scrollWidth <= innerWidth,
+					() =>
+						document.documentElement.scrollWidth <= innerWidth &&
+						document.documentElement.scrollHeight <= innerHeight,
 				),
 			).toBe(true);
 			await page.screenshot({
@@ -178,6 +200,12 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 				fullPage: true,
 			});
 		}
+		await page
+			.getByRole("button", { name: "Skip tutorial", exact: true })
+			.tap();
+		await expect(
+			page.getByLabel("Tutorial guide", { exact: true }),
+		).toHaveCount(0);
 		await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await page
 			.getByRole("button", { name: "Save & Exit", exact: true })
@@ -255,6 +283,9 @@ test("mobile panels preserve drafts and chat stays available while paused", asyn
 		await page.getByRole("button", { name: "Resume", exact: true }).click();
 		const message = page.getByLabel("Message", { exact: true });
 		await expect(message).toBeVisible();
+		await message.fill("Visible chat history");
+		await page.getByRole("button", { name: "Send", exact: true }).click();
+		await expect(page.getByRole("log")).toContainText("Visible chat history");
 		await message.fill("Unsent draft");
 		await page.locator("canvas").focus();
 		await page.keyboard.press("Enter");
@@ -299,6 +330,11 @@ test("mobile panels preserve drafts and chat stays available while paused", asyn
 		await expect(message).toBeVisible();
 		await message.fill("Draft while paused");
 		await expect(message).toHaveValue("Draft while paused");
+		const menuBox = await menu.locator(".menu-panel").boundingBox(),
+			chatBox = await page.locator(".game-chat").boundingBox();
+		if (!menuBox || !chatBox) throw new Error("Pause panels are missing");
+		expect(menuBox.x).toBeGreaterThanOrEqual(chatBox.x + chatBox.width + 8);
+		await page.screenshot({ path: info.outputPath("pause-chat-mobile.png") });
 		await menu.scrollIntoViewIfNeeded();
 		expect(
 			await menu.evaluate((element) => {

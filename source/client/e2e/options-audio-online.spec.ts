@@ -7,9 +7,9 @@ import {
 	registerOnline,
 } from "./support/online";
 
-test("Sound is available directly, controls remain visible and the game timer is always visible", async ({
+test("Sound moves into the game menu, controls remain visible and the timer is always visible", async ({
 	page,
-}) => {
+}, info) => {
 	test.skip(process.env.E2E_AUTH_ONLINE !== "true", "Requires backend/MySQL");
 	await registerOnline(page, "options");
 	await expect(
@@ -29,6 +29,7 @@ test("Sound is available directly, controls remain visible and the game timer is
 	await expect(page.getByRole("switch", { name: /Fullscreen/ })).toHaveCount(0);
 	await newCommunity(page);
 	await expect(page.getByLabel("Play time", { exact: true })).toBeVisible();
+	await expect(page.getByRole("switch", { name: /^Sound:/ })).toHaveCount(0);
 	const region = page.getByLabel("Current region", { exact: true });
 	await expect(region).toHaveText("REDCROWN WOODS");
 	await expect(region).toHaveCSS("animation-duration", "6s");
@@ -43,6 +44,12 @@ test("Sound is available directly, controls remain visible and the game timer is
 	});
 	await expect(page.getByText(/^Jumps:/)).toHaveCount(0);
 	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
+	await expect(
+		page
+			.getByRole("region", { name: "Game menu", exact: true })
+			.getByRole("switch", { name: "Sound: Off", exact: true }),
+	).toBeVisible();
+	await page.screenshot({ path: info.outputPath("pause-desktop.png") });
 	await expect(page.locator(".controls-help dt")).toHaveText(["Move", "Jump"]);
 	await expect(region).toBeHidden();
 	await expect(region).toHaveCSS("animation-play-state", "paused");
@@ -77,6 +84,7 @@ test("Sound is available directly, controls remain visible and the game timer is
 		required(paused),
 	);
 	await page.getByRole("button", { name: "Resume", exact: true }).click();
+	await expect(page.getByRole("switch", { name: /^Sound:/ })).toHaveCount(0);
 	await expect(region).toBeVisible();
 	await expect(region).toHaveCSS("animation-play-state", "running");
 	expect(

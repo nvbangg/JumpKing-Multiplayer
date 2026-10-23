@@ -27,7 +27,6 @@ import { Chat } from "../chat/Chat";
 import { useChat } from "../chat/useChat";
 import { InGameLeaderboard } from "../community/InGameLeaderboard";
 import { duration } from "../records/format";
-import { RoomCode } from "../rooms/RoomCode";
 import type { Options } from "../settings/options";
 import { SoundButton } from "../settings/SoundButton";
 import { createGameControls } from "./gameControls";
@@ -701,14 +700,8 @@ export function OnlineGame({
 								</span>
 							)}
 						</span>
-						{room.kind === "ROOM" && <RoomCode roomId={room.roomId} />}
 						<span>
 							<NetworkStatusBadge quality={networkQuality} />
-							<SoundButton
-								options={options}
-								onChange={onOptionsChange}
-								onError={setError}
-							/>
 							<button type="button" onClick={pause}>
 								Menu (Esc)
 							</button>
@@ -867,6 +860,11 @@ export function OnlineGame({
 									Resume
 								</button>
 							)}
+							<SoundButton
+								options={options}
+								onChange={onOptionsChange}
+								onError={setError}
+							/>
 							{room.kind === "ROOM" &&
 								room.hostPlayerId === socket.selfId &&
 								room.state === "PLAYING" && (
