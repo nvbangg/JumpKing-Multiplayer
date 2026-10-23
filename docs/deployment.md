@@ -78,9 +78,9 @@ Lưu session không lưu trạng thái Room. Crash hoặc phiên hết hạn có
 
 ## GitHub Actions
 
-`.github/workflows/deploy-vps.yml` build frontend/JAR, upload `/opt/jumpking/current.jar` và restart `jumpking.service`. Workflow chạy thủ công hoặc khi push `main` thay đổi `source/client/`, `source/common/`, `source/server/` hay chính workflow. Chỉ sửa docs/database không tự deploy; workflow không cập nhật schema.
+`.github/workflows/deploy-vps.yml` build frontend/JAR, upload `/opt/jumpking/next.jar`, giữ `previous.jar`, thay `current.jar` sau khi upload thành công và restart `jumpking.service`. Workflow chạy thủ công hoặc khi push `main` thay đổi `source/client/`, `source/common/`, `source/server/` hay chính workflow. Chỉ sửa docs/database không tự deploy; workflow không cập nhật schema.
 
-GitHub Environment `production` cần `VPS_HOST`, `VPS_USER`, `VPS_SSH_PRIVATE_KEY`, `VPS_SSH_KNOWN_HOSTS`, `VPS_SSH_PORT` (mặc định `22`). Xác minh host key, giới hạn SSH user và quyền restart đúng service. Giữ JAR trước để rollback; upload/restart thành công chưa thay nghiệm thu URL thực.
+GitHub Environment `production` cần `VPS_HOST`, `VPS_USER`, `VPS_SSH_PRIVATE_KEY`, `VPS_SSH_KNOWN_HOSTS`, `VPS_SSH_PORT` (mặc định `22`). Xác minh host key; SSH user cần quyền ghi `/opt/jumpking/` để thay JAR và restart đúng service. Giữ JAR trước để rollback; upload/restart thành công chưa thay nghiệm thu URL thực.
 
 ## Fly Mode
 

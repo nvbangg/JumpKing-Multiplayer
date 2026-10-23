@@ -20,12 +20,11 @@ Client:
 
 ```powershell
 cd source/client
-npm run check
 npm test
 npm run build
 ```
 
-`check` chạy Biome và `tsc --noEmit`, không sửa file. `npm run check:fix` áp dụng format/imports và sửa lỗi an toàn; review diff rồi chạy lại checks. Biome không thay kiểm tra kiểu hoặc hành vi.
+`build` đã chạy `check` trước khi đóng gói. `check` chạy Biome và `tsc --noEmit`, không sửa file. `npm run check:fix` áp dụng format/imports và sửa lỗi an toàn; review diff rồi chạy lại checks. Biome không thay kiểm tra kiểu hoặc hành vi.
 
 Server:
 

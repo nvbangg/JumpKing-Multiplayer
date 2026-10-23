@@ -36,6 +36,7 @@ jobs:
         working-directory: source/client
         run: |
           npm ci
+          npm test
           npm run build
 
       - uses: actions/setup-java@v4
@@ -88,9 +89,9 @@ jobs:
           scp -i ~/.ssh/id_ed25519 \
             -P "${VPS_PORT:-22}" \
             release/jumpking-server.jar \
-            "$VPS_USER@$VPS_HOST:/opt/jumpking/current.jar"
+            "$VPS_USER@$VPS_HOST:/opt/jumpking/next.jar"
 
           ssh -i ~/.ssh/id_ed25519 \
             -p "${VPS_PORT:-22}" \
             "$VPS_USER@$VPS_HOST" \
-            "sudo /usr/bin/systemctl restart jumpking.service"
+            "set -eu; cd /opt/jumpking; test -s next.jar; if test -f current.jar; then cp current.jar previous.jar; fi; mv -f next.jar current.jar; sudo /usr/bin/systemctl restart jumpking.service"
