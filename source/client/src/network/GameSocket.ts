@@ -105,7 +105,7 @@ export interface RoomState {
 		| (RoomItemSettings & {
 				mode: string;
 				timeLimitMinutes: number | null;
-				mapLevel?: number;
+				mapLevel: number;
 		  })
 		| null;
 	members: RoomMember[];
@@ -123,7 +123,7 @@ export interface ResultRow {
 	finishTimeMs: number | null;
 }
 export interface MatchResult {
-	mapLevel?: number;
+	mapLevel: number;
 	playId: string;
 	reason: string;
 	durationMs: number;

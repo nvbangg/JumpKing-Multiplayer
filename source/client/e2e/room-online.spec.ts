@@ -137,7 +137,7 @@ test("Back leaves the online context but blur and valid Room transitions do not"
 	}
 });
 
-test("Account lobby, permanent chat, settings draft and Host transfer", async ({
+test("Account lobby, permanent chat, selected settings and Host transfer", async ({
 	browser,
 }) => {
 	const ca = await browser.newContext(),
@@ -165,11 +165,11 @@ test("Account lobby, permanent chat, settings draft and Host transfer", async ({
 			a.getByRole("button", { name: "Close chat", exact: true }),
 		).toHaveCount(0);
 		await a.getByLabel("Mode", { exact: true }).selectOption("TIME_LIMIT");
-		await a.getByLabel("Minutes", { exact: true }).fill("");
 		await expect(b.getByLabel("Minutes", { exact: true })).toHaveValue("5");
-		await a.getByLabel("Minutes", { exact: true }).fill("12");
-		await expect(b.getByLabel("Minutes", { exact: true })).toHaveValue("5");
-		await a.getByLabel("Minutes", { exact: true }).press("Tab");
+		await expect(
+			a.getByLabel("Minutes", { exact: true }).locator("option"),
+		).toHaveCount(30);
+		await a.getByLabel("Minutes", { exact: true }).selectOption("12");
 		await expect(b.getByLabel("Minutes", { exact: true })).toHaveValue("12");
 		await a.getByLabel("Mode", { exact: true }).selectOption("NO_WALK");
 		await expect(b.getByLabel("Mode", { exact: true })).toHaveValue("NO_WALK");
@@ -208,8 +208,7 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			await joinRoom(b, room);
 			await a.getByLabel("Mode", { exact: true }).selectOption(mode);
 			if (mode === "TIME_LIMIT") {
-				await a.getByLabel("Minutes", { exact: true }).fill("1");
-				await a.getByLabel("Minutes", { exact: true }).press("Tab");
+				await a.getByLabel("Minutes", { exact: true }).selectOption("1");
 			}
 			await startRoom(a, b);
 			await expect

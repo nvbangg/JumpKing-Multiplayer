@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
 import { ROOM_MAPS } from "../../game/simulation/roomMaps";
-import { api } from "../../network/api";
 import type { HistoryItem } from "../../network/contracts";
+import { useResource } from "../../network/useResource";
 import { displayLabel, duration } from "./format";
 
 interface Participant {
@@ -23,30 +22,14 @@ interface Detail extends HistoryItem {
 	participants?: Participant[];
 }
 export function HistoryDetail({ item }: { item: HistoryItem }) {
-	const [detail, setDetail] = useState<Detail>(item),
-		[loading, setLoading] = useState(true),
-		[error, setError] = useState("");
-	useEffect(() => {
-		let disposed = false;
-		void api<Detail>(`/history/${item.kind}/${encodeURIComponent(item.id)}`)
-			.then((value) => {
-				if (!disposed) setDetail(value);
-			})
-			.catch((cause) => {
-				if (!disposed)
-					setError(
-						cause instanceof Error
-							? cause.message
-							: "Game details could not be loaded",
-					);
-			})
-			.finally(() => {
-				if (!disposed) setLoading(false);
-			});
-		return () => {
-			disposed = true;
-		};
-	}, [item.kind, item.id]);
+	const {
+		data: detail,
+		loading,
+		error,
+	} = useResource<Detail>(
+		`/history/${item.kind}/${encodeURIComponent(item.id)}`,
+		item,
+	);
 	if (loading) return <p role="status">Loading…</p>;
 	if (error) return <p role="alert">{error}</p>;
 	return (

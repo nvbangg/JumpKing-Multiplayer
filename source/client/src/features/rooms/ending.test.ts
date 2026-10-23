@@ -3,6 +3,7 @@ import type { MatchResult } from "../../network/GameSocket";
 import { roomFinishScreen } from "./ending";
 
 const result: MatchResult = {
+	mapLevel: 10,
 	playId: "match",
 	reason: "FINISH",
 	durationMs: 1000,

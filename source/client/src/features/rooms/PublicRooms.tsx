@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { api } from "../../network/api";
+import { useResource } from "../../network/useResource";
 import { displayLabel } from "../records/format";
 
 interface PublicRoom {
@@ -17,29 +16,11 @@ export function PublicRooms({
 	onJoin: (roomId: string) => void;
 	pending: boolean;
 }) {
-	const [rooms, setRooms] = useState<PublicRoom[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState("");
-	const [revision, setRevision] = useState(0);
-	// biome-ignore lint/correctness/useExhaustiveDependencies: Revision là tín hiệu của nút Refresh.
-	useEffect(() => {
-		let active = true;
-		setLoading(true);
-		setError("");
-		void api<{ rooms: PublicRoom[] }>("/rooms")
-			.then((result) => {
-				if (active) setRooms(result.rooms);
-			})
-			.catch((cause) => {
-				if (active) setError(cause.message);
-			})
-			.finally(() => {
-				if (active) setLoading(false);
-			});
-		return () => {
-			active = false;
-		};
-	}, [revision]);
+	const { data, loading, error, reload } = useResource<{ rooms: PublicRoom[] }>(
+		"/rooms",
+		{ rooms: [] },
+	);
+	const rooms = data.rooms;
 	return (
 		<>
 			{loading && <p role="status">Loading…</p>}
@@ -59,11 +40,7 @@ export function PublicRooms({
 					</li>
 				))}
 			</ul>
-			<button
-				type="button"
-				disabled={loading || pending}
-				onClick={() => setRevision((value) => value + 1)}
-			>
+			<button type="button" disabled={loading || pending} onClick={reload}>
 				Refresh
 			</button>
 		</>

@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import rules from "../../../../common/rules.json";
 import { ROOM_MAPS } from "../../game/simulation/roomMaps";
 import type { RoomState } from "../../network/GameSocket";
@@ -19,29 +18,6 @@ export function Lobby({
 	const host = room.hostPlayerId === selfId;
 	const limit =
 		room.settings?.timeLimitMinutes ?? rules.timeLimitDefaultMinutes;
-	const [minutes, setMinutes] = useState(String(limit)),
-		[minutesError, setMinutesError] = useState("");
-	useEffect(() => {
-		setMinutes(String(limit));
-		setMinutesError("");
-	}, [limit]);
-	const commitMinutes = () => {
-		const value = Number(minutes);
-		if (
-			!Number.isInteger(value) ||
-			value < rules.timeLimitMinutesMin ||
-			value > rules.timeLimitMinutesMax
-		) {
-			setMinutesError("Enter a whole number from 1 to 30");
-			return;
-		}
-		setMinutesError("");
-		if (value !== limit)
-			command("UPDATE_ROOM_SETTINGS", {
-				mode: "TIME_LIMIT",
-				timeLimitMinutes: value,
-			});
-	};
 	return (
 		<>
 			<RoomCode roomId={room.roomId} />
@@ -64,7 +40,7 @@ export function Lobby({
 						Map
 						<select
 							aria-label="Map"
-							value={room.settings.mapLevel ?? 10}
+							value={room.settings.mapLevel}
 							disabled={!host || room.state !== "WAITING" || pending}
 							onChange={(event) =>
 								command("UPDATE_ROOM_SETTINGS", {
@@ -125,22 +101,29 @@ export function Lobby({
 					{room.settings.mode === "TIME_LIMIT" && (
 						<label className="mode-setting">
 							Minutes
-							<input
-								type="number"
-								min={rules.timeLimitMinutesMin}
-								max={rules.timeLimitMinutesMax}
-								value={minutes}
+							<select
+								aria-label="Minutes"
+								value={limit}
 								disabled={!host || room.state !== "WAITING" || pending}
-								onChange={(event) => setMinutes(event.currentTarget.value)}
-								onBlur={commitMinutes}
-								onKeyDown={(event) => {
-									if (event.key === "Enter") {
-										event.preventDefault();
-										event.currentTarget.blur();
-									}
-								}}
-							/>
-							{minutesError && <small role="alert">{minutesError}</small>}
+								onChange={(event) =>
+									command("UPDATE_ROOM_SETTINGS", {
+										mode: "TIME_LIMIT",
+										timeLimitMinutes: Number(event.target.value),
+									})
+								}
+							>
+								{Array.from(
+									{
+										length:
+											rules.timeLimitMinutesMax - rules.timeLimitMinutesMin + 1,
+									},
+									(_, i) => i + rules.timeLimitMinutesMin,
+								).map((minutes) => (
+									<option key={minutes} value={minutes}>
+										{minutes} min
+									</option>
+								))}
+							</select>
 						</label>
 					)}
 				</>

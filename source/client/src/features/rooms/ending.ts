@@ -6,7 +6,7 @@ export function roomFinishScreen(
 	selfId: string | null,
 	viewedPlay: string | null,
 ): "online" | "results" {
-	return (result.mapLevel ?? 10) === 10 &&
+	return result.mapLevel === 10 &&
 		result.reason === "FINISH" &&
 		result.saveStatus !== "FAILED" &&
 		result.playId !== viewedPlay &&

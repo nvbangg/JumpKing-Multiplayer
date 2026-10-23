@@ -1,34 +1,14 @@
-import { useEffect, useState } from "react";
 import { PRESENTATION } from "../../game/presentation/config";
-import { api } from "../../network/api";
 import type { LeaderboardEntry } from "../../network/contracts";
+import { useResource } from "../../network/useResource";
 import { duration } from "../records/format";
 export function InGameLeaderboard() {
-	const [revision, setRevision] = useState(0),
-		[entries, setEntries] = useState<LeaderboardEntry[]>([]),
-		[loading, setLoading] = useState(true),
-		[error, setError] = useState("");
-	// biome-ignore lint/correctness/useExhaustiveDependencies: Revision là tín hiệu tải lại khi nhấn Refresh.
-	useEffect(() => {
-		let active = true;
-		setLoading(true);
-		setError("");
-		void api<{ entries: LeaderboardEntry[] }>(
-			`/leaderboard?limit=${PRESENTATION.inGameLeaderboardLimit}`,
-		)
-			.then((result) => {
-				if (active) setEntries(result.entries);
-			})
-			.catch((cause) => {
-				if (active) setError(cause.message);
-			})
-			.finally(() => {
-				if (active) setLoading(false);
-			});
-		return () => {
-			active = false;
-		};
-	}, [revision]);
+	const { data, loading, error, reload } = useResource<{
+		entries: LeaderboardEntry[];
+	}>(`/leaderboard?limit=${PRESENTATION.inGameLeaderboardLimit}`, {
+		entries: [],
+	});
+	const entries = data.entries;
 	return (
 		<section
 			className="in-game-panel records-panel"
@@ -52,11 +32,7 @@ export function InGameLeaderboard() {
 			{loading && <p role="status">Loading…</p>}
 			{error && <p role="alert">{error}</p>}
 			{!loading && !error && !entries.length && <p>No records yet.</p>}
-			<button
-				type="button"
-				disabled={loading}
-				onClick={() => setRevision((value) => value + 1)}
-			>
+			<button type="button" disabled={loading} onClick={reload}>
 				Refresh
 			</button>
 		</section>

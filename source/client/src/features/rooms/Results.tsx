@@ -32,8 +32,8 @@ export function Results({
 			)}
 			<p>Time: {duration(result.durationMs)}</p>
 			<p>
-				Map {result.mapLevel ?? 10} ·{" "}
-				{ROOM_MAPS.find((map) => map.level === (result.mapLevel ?? 10))?.name}
+				Map {result.mapLevel} ·{" "}
+				{ROOM_MAPS.find((map) => map.level === result.mapLevel)?.name}
 			</p>
 			<div className="results-table">
 				<table>

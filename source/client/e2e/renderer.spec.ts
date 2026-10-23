@@ -28,6 +28,8 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 			const { createGame } = await import(modulePath),
 				{ findFinishPlatform } = await import(markerPath),
 				{ ROOM_MAPS, roomMap } = await import(roomMapsPath);
+			const adventurePath = "/src/game/simulation/Adventure.ts";
+			const { ADVENTURE } = await import(adventurePath);
 			const manifest = await (await fetch("/assets/manifest.json")).json();
 			const parent = document.createElement("div");
 			parent.style.cssText =
@@ -58,7 +60,16 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 							lastTick: state.ticks,
 							registeredScreens: [],
 							weatherWind: 0,
-							walls: {},
+							walls: Object.fromEntries(
+								manifest.walls.map((wall: { id: string }) => [
+									wall.id,
+									{
+										touching: false,
+										canPlay: true,
+										fadeTicks: ADVENTURE.tuning.wallFadeTicks,
+									},
+								]),
+							),
 						},
 						peers: [
 							{

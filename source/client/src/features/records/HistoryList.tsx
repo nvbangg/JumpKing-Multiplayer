@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../../network/api";
 import type { HistoryItem } from "../../network/contracts";
 import { displayLabel, duration } from "./format";
@@ -20,42 +20,18 @@ export function HistoryList({
 		[error, setError] = useState("");
 	const generation = useRef(0);
 	const pageSize = 20;
-	useEffect(() => {
-		let disposed = false;
-		void api<HistoryPage>(`/history?page=0&size=${pageSize}`)
-			.then((result) => {
-				if (!disposed) {
-					setItems(result.items);
-					setHasNext(result.hasNext);
-				}
-			})
-			.catch((cause) => {
-				if (!disposed)
-					setError(
-						cause instanceof Error
-							? cause.message
-							: "History could not be loaded",
-					);
-			})
-			.finally(() => {
-				if (!disposed) setLoading(false);
-			});
-		return () => {
-			disposed = true;
-			generation.current++;
-		};
-	}, []);
-	const loadMore = async () => {
-		if (loading) return;
+	const loadPage = useCallback(async (nextPage: number) => {
 		setLoading(true);
 		setError("");
 		const requestGeneration = generation.current;
 		try {
 			const result = await api<HistoryPage>(
-				`/history?page=${page + 1}&size=${pageSize}`,
+				`/history?page=${nextPage}&size=${pageSize}`,
 			);
 			if (generation.current !== requestGeneration) return;
-			setItems((rows) => [...rows, ...result.items]);
+			setItems((rows) =>
+				nextPage === 0 ? result.items : [...rows, ...result.items],
+			);
 			setPage(result.page);
 			setHasNext(result.hasNext);
 		} catch (cause) {
@@ -68,7 +44,13 @@ export function HistoryList({
 		} finally {
 			if (generation.current === requestGeneration) setLoading(false);
 		}
-	};
+	}, []);
+	useEffect(() => {
+		void loadPage(0);
+		return () => {
+			generation.current++;
+		};
+	}, [loadPage]);
 	return (
 		<section className="history-list" aria-label="Game history">
 			{items.map((item) => (
@@ -98,7 +80,7 @@ export function HistoryList({
 					type="button"
 					disabled={loading}
 					onClick={() => {
-						void loadMore();
+						void loadPage(page + 1);
 					}}
 				>
 					Load More
