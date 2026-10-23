@@ -28,7 +28,7 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 	});
 	page.on("pageerror", (error) => errors.push(error.message));
 	try {
-		const name = `board_${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
+		const name = `b${crypto.randomUUID().replaceAll("-", "").slice(0, 5)}`;
 		await page.addInitScript(() =>
 			localStorage.setItem(
 				"jumpking.options",
@@ -42,13 +42,13 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 					entries: Array.from({ length: 10 }, (_, index) => ({
 						id: String(index),
 						rank: index + 1,
-						username: `player_with_a_long_name_${index}`,
-						status: index === 0 ? "FINISHED" : "ACTIVE",
+						username: index < 3 ? "test" : `player_with_a_long_name_${index}`,
+						status: index === 0 || index === 2 ? "FINISHED" : "ACTIVE",
 						currentProgress: 100,
-						maxProgress: 100,
+						maxProgress: 1800,
 						elapsedTimeMs: 1000,
 						peakReachedTimeMs: 1000,
-						finishTimeMs: index === 0 ? 61000 : null,
+						finishTimeMs: index === 0 ? 61000 : index === 2 ? 3661000 : null,
 					})),
 				},
 			}),
@@ -73,7 +73,7 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 			page.getByRole("list", { name: "Community records" }),
 		).toBeVisible();
 		await expect(page.locator(".records-panel li strong").first()).toHaveText(
-			"01:01s",
+			"01:01 s",
 		);
 		await expect(
 			page.getByRole("button", { name: "Refresh", exact: true }),
@@ -178,6 +178,21 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 			const playersPane = page.locator(
 				'.game-panel-pane[data-panel="players"]',
 			);
+			expect(
+				await playersPane
+					.locator("li")
+					.first()
+					.evaluate((row) => {
+						const name = row.firstElementChild?.getBoundingClientRect(),
+							metric = row.lastElementChild?.getBoundingClientRect();
+						return (
+							!!name &&
+							!!metric &&
+							name.top < metric.bottom &&
+							metric.top < name.bottom
+						);
+					}),
+			).toBe(true);
 			if (viewport.width <= 680) {
 				await expect(selection).toBeVisible();
 				await expect(
@@ -201,6 +216,23 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 			}
 			const records = page.getByRole("list", { name: "Community records" });
 			await expect(records.getByRole("listitem")).toHaveCount(10);
+			expect(
+				await records.evaluate((list) => {
+					const rows = [...list.children];
+					return (
+						rows.slice(0, 2).every((row) => {
+							const name = row.firstElementChild?.getBoundingClientRect(),
+								metric = row.lastElementChild?.getBoundingClientRect();
+							return (
+								!!name &&
+								!!metric &&
+								name.top < metric.bottom &&
+								metric.top < name.bottom
+							);
+						}) && rows.every((row) => row.scrollWidth <= row.clientWidth)
+					);
+				}),
+			).toBe(true);
 			await records.scrollIntoViewIfNeeded();
 			if (viewport.width <= 900)
 				expect(
@@ -489,6 +521,23 @@ test("mobile panels preserve drafts and chat stays available while paused", asyn
 			chatBox = await page.locator(".game-chat").boundingBox();
 		if (!menuBox || !chatBox) throw new Error("Pause panels are missing");
 		expect(menuBox.x).toBeGreaterThanOrEqual(chatBox.x + chatBox.width + 8);
+		await menu.locator(".controls-help").scrollIntoViewIfNeeded();
+		expect(
+			await menu.locator(".controls-help").evaluate((help) =>
+				[...help.querySelectorAll("dt")].every((label) => {
+					const term = label.getBoundingClientRect(),
+						keys = label.nextElementSibling?.getBoundingClientRect();
+					return (
+						keys &&
+						term.right <= keys.left &&
+						term.top < keys.bottom &&
+						keys.top < term.bottom &&
+						keys.height <=
+							Number.parseFloat(getComputedStyle(label).lineHeight) + 1
+					);
+				}),
+			),
+		).toBe(true);
 		await page.screenshot({ path: info.outputPath("pause-chat-mobile.png") });
 		await menu.scrollIntoViewIfNeeded();
 		expect(

@@ -36,7 +36,7 @@ for (const kind of ["COMMUNITY", "ROOM"] as const) {
 				).toBeVisible({ timeout: 30000 });
 				await expect(
 					page.getByLabel("Play time", { exact: true }),
-				).not.toHaveText("00:00s", { timeout: 10000 });
+				).not.toHaveText("00:00 s", { timeout: 10000 });
 				await page.locator("canvas").click();
 			}
 			if (

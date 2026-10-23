@@ -27,7 +27,7 @@ test("Sound moves into the game menu, controls remain visible and the timer is a
 	await newCommunity(page);
 	await expect(page.getByLabel("Play time", { exact: true })).toBeVisible();
 	await expect(page.getByLabel("Play time", { exact: true })).toHaveText(
-		/^\d{2}:\d{2}s$/,
+		/^\d{2}:\d{2} s$/,
 	);
 	await expect(page.getByRole("switch", { name: /^Sound:/ })).toHaveCount(0);
 	const region = page.getByLabel("Current region", { exact: true });
@@ -59,6 +59,20 @@ test("Sound moves into the game menu, controls remain visible and the timer is a
 		"A / D or ← / →",
 		"Space / W / ↑",
 	]);
+	expect(
+		await page.locator(".controls-help").evaluate((help) =>
+			[...help.querySelectorAll("dt")].every((label) => {
+				const term = label.getBoundingClientRect(),
+					keys = label.nextElementSibling?.getBoundingClientRect();
+				return (
+					keys &&
+					term.right <= keys.left &&
+					term.top < keys.bottom &&
+					keys.top < term.bottom
+				);
+			}),
+		),
+	).toBe(true);
 	await expect(region).toBeHidden();
 	await expect(region).toHaveCSS("animation-play-state", "paused");
 	await expect(region).toHaveAttribute("data-same-region", "retained");

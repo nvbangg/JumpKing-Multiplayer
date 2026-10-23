@@ -817,17 +817,19 @@ button {
 }
 .in-game-panel li {
 	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
 	justify-content: space-between;
-	gap: 12px;
+	gap: 2px 8px;
 	padding: 5px 2px;
 }
-.in-game-panel li span {
+.in-game-panel li > :first-child {
 	min-width: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+	max-width: 100%;
+	overflow-wrap: anywhere;
 }
 .in-game-panel li strong {
+	margin-left: auto;
 	white-space: nowrap;
 }
 
@@ -896,16 +898,13 @@ button {
 		--column-gap: 8px;
 	}
 	.in-game-panel li {
-		flex-wrap: wrap;
 		line-height: 20px;
 		padding: 5px 0;
 		gap: 0 5px;
 	}
-	.in-game-panel li > :first-child {
-		flex: 1 1 100%;
-	}
-	.in-game-panel li strong {
-		margin-left: auto;
+	.in-game-panel > summary {
+		padding: 6px;
+		font-size: 12px;
 	}
 	.game-chat .chat-messages {
 		max-height: min(160px, calc(var(--play-height) - 60px));
@@ -940,8 +939,10 @@ button {
 		padding-bottom: 7px;
 	}
 	.game-overlay .controls-help {
-		grid-template-columns: minmax(0, 1fr);
-		gap: 6px;
+		grid-template-columns: auto minmax(0, 1fr);
+		gap: 10px 12px;
+		font-size: 16px;
+		line-height: 1.4;
 	}
 	.game-chat .chat-input-box input,
 	.game-chat .chat-input-box button {
@@ -1165,9 +1166,6 @@ button {
 	text-align: left;
 	font: inherit;
 	min-width: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
 }
 .players-panel .watch-player:disabled {
 	opacity: 1;
