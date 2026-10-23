@@ -43,6 +43,7 @@ class RoomLobbyIT {
       var host = clients.getFirst();
       var joined = host.ok("CREATE_ROOM", Map.of());
       String room = joined.path("roomId").asText();
+      assertThat(room).matches("[0-9]{6}");
       assertThat(host.request("/rooms/" + room, "GET", null).path("joinable").asBoolean()).isTrue();
       host.ok("UPDATE_ROOM_SETTINGS", Map.of("mode", "TIME_LIMIT", "timeLimitMinutes", 2));
       var invalid = new HashMap<String, Object>();

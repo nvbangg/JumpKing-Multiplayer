@@ -613,9 +613,7 @@ export function App() {
 									event.preventDefault();
 									const roomId = String(
 										new FormData(event.currentTarget).get("roomId") || "",
-									)
-										.trim()
-										.toUpperCase();
+									).trim();
 									command("JOIN_ROOM", { roomId });
 								}}
 							>
@@ -626,13 +624,9 @@ export function App() {
 									required
 									minLength={6}
 									maxLength={6}
+									inputMode="numeric"
 									autoComplete="off"
-									autoCapitalize="characters"
-									pattern="[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}"
-									onInput={(event) => {
-										event.currentTarget.value =
-											event.currentTarget.value.toUpperCase();
-									}}
+									pattern="[0-9]{6}"
 								/>
 
 								<button type="submit" disabled={pending}>

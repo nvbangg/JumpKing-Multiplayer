@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.concurrent.Executors;
 import jumpking.config.NetworkSettings;
 import jumpking.exception.ApiException;
@@ -17,6 +18,19 @@ class RoomDirectoryTest {
             30, 2, 32, 256, 64, 20, 16384, 120, 120, 4, 240, 4, 8, 5000, 30000, 500, 60, 200, 50,
             1000);
     return new RoomDirectory(new SharedData(new ObjectMapper()), limits);
+  }
+
+  @Test
+  void roomAndCommunityCodesContainSixDigitsAndAreUniqueWhileActive() throws Exception {
+    var directory = directory();
+    var codes = new HashSet<String>();
+    codes.add(directory.community().roomId());
+    for (int index = 0; index < 63; index++) {
+      String id = directory.createRoom().roomId();
+      assertThat(id).matches("[0-9]{6}");
+      assertThat(codes.add(id)).isTrue();
+    }
+    assertThat(codes).allMatch(id -> id.matches("[0-9]{6}"));
   }
 
   @Test

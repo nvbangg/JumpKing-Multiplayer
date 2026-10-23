@@ -44,7 +44,7 @@ Leaderboard chỉ xét Community đã commit, lấy một best run/Account. Fini
 
 ## Room và xếp hạng
 
-Room ID gồm 6 ký tự thuộc `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`. Room mặc định Private; biết ID thì Join được. Public chỉ xuất hiện khi WAITING và còn chỗ. Host đổi visibility, mode, map và Items tại Lobby; chỉ WAITING cho Join mới/đổi settings, không Ready thủ công.
+Room ID là chuỗi 6 chữ số, giữ số 0 đầu, ví dụ `001234`. Room mặc định Private; biết ID thì Join được. Public chỉ xuất hiện khi WAITING và còn chỗ. Host đổi visibility, mode, map và Items tại Lobby; chỉ WAITING cho Join mới/đổi settings, không Ready thủ công.
 
 ```text
 WAITING → COUNTDOWN → PLAYING → FINISHED

@@ -38,7 +38,7 @@ Các path có prefix `/api`. Lỗi dạng `{error:{code,message}}`; không cache
 | GET /history?page=0&size=20 | Account → {items,page,size,hasNext} |
 | GET /history/{kind}/{id} | Owner → chi tiết; kind=COMMUNITY/ROOM, ID lượt/match |
 
-Danh sách phòng chỉ có Public/WAITING còn chỗ. Tra ID không lộ roster/token hoặc cấp quyền Join. History/detail kiểm tra owner, sai owner trả 404. ID Account truyền dưới dạng chuỗi.
+Danh sách phòng chỉ có Public/WAITING còn chỗ. Room ID là chuỗi 6 chữ số ASCII, không đổi thành number để giữ số 0 đầu. Tra ID không lộ roster/token hoặc cấp quyền Join. History/detail kiểm tra owner, sai owner trả 404. ID Account truyền dưới dạng chuỗi.
 
 | Kiểu dữ liệu | Fields |
 | --- | --- |

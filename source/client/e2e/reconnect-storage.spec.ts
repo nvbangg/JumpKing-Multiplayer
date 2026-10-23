@@ -11,7 +11,7 @@ test("reconnect context is stored per backend/identity and contains only the own
 			b = `${location.origin}:account:2`,
 			otherBackend = "http://127.0.0.1:9090:account:1";
 		const context = {
-			roomId: "ABCDEF",
+			roomId: "001234",
 			playerId: crypto.randomUUID(),
 			reconnectToken: "x".repeat(43),
 		};
@@ -31,6 +31,15 @@ test("reconnect context is stored per backend/identity and contains only the own
 		} catch {
 			invalid = true;
 		}
+		const invalidRoomIds = ["ABCDEF", "12345", "1234567", 123456];
+		const rejectedRoomIds = [];
+		for (const roomId of invalidRoomIds) {
+			try {
+				await saveReconnect(a, { ...context, roomId });
+			} catch {
+				rejectedRoomIds.push(roomId);
+			}
+		}
 		await clearReconnect(b);
 		const retained = await loadReconnect(a);
 		await clearReconnect(a);
@@ -40,6 +49,8 @@ test("reconnect context is stored per backend/identity and contains only the own
 			other,
 			backend,
 			invalid,
+			invalidRoomIds,
+			rejectedRoomIds,
 			retained,
 			cleared: await loadReconnect(a),
 		};
@@ -50,6 +61,7 @@ test("reconnect context is stored per backend/identity and contains only the own
 	expect(result.backend).toBeNull();
 	expect(result.cleared).toBeNull();
 	expect(result.invalid).toBe(true);
+	expect(result.rejectedRoomIds).toEqual(result.invalidRoomIds);
 	await page.reload();
 	expect(
 		await page.evaluate(async () => {
