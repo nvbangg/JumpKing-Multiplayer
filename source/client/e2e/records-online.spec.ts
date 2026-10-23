@@ -72,6 +72,7 @@ test("History paginates owned Community results without depending on local stora
 			exact: true,
 		}),
 	).toBeVisible();
+	await page.locator(".account-actions button").click();
 	await page.getByRole("button", { name: "History", exact: true }).click();
 	const list = page.getByLabel("Game history");
 	await expect(

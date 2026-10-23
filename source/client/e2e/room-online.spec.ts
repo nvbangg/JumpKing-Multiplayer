@@ -288,6 +288,7 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			expect(
 				(await (await a.request.get("/api/history")).json()).items,
 			).toHaveLength(2);
+			await a.locator(".account-actions button").click();
 			await a.getByRole("button", { name: "History", exact: true }).click();
 			await a
 				.getByLabel("Game history")

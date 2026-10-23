@@ -259,6 +259,7 @@ test("short Room finish shows Results and History without ending or full-map rew
 		await expect(a.locator(".room-code code")).toHaveText(id);
 		await b.getByRole("button", { name: "Leave", exact: true }).click();
 		await a.getByRole("button", { name: "Leave", exact: true }).click();
+		await a.locator(".account-actions button").click();
 		await a.getByRole("button", { name: "History", exact: true }).click();
 		await a.locator(".history-list > button").first().click();
 		await expect(a.getByText("1 · Green Woods", { exact: true })).toBeVisible();

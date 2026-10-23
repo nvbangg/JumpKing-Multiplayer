@@ -16,6 +16,9 @@ test("home keeps the required menu and one account form", async ({
 	await expect(page.getByRole("switch", { name: /Fullscreen/ })).toHaveCount(0);
 	await expect(page.locator(".controls-help")).toHaveCount(0);
 	await expect(
+		page.getByRole("button", { name: "History", exact: true }),
+	).toHaveCount(0);
+	await expect(
 		page.getByRole("button", { name: "Room", exact: true }),
 	).toHaveCount(0);
 	await expect(
@@ -25,6 +28,25 @@ test("home keeps the required menu and one account form", async ({
 		page.getByRole("button", { name: "Join Public Room", exact: true }),
 	).toBeVisible();
 	await expect(page.getByLabel("Room ID", { exact: true })).toBeVisible();
+	expect(
+		await page
+			.getByLabel("Room ID", { exact: true })
+			.evaluate((input) => input.getBoundingClientRect().width),
+	).toBeLessThanOrEqual(200);
+	const newGame = page.getByRole("button", { name: "New Game", exact: true });
+	const roomId = page.getByLabel("Room ID", { exact: true });
+	await roomId.focus();
+	await expect(roomId).toHaveCSS("outline-color", "rgb(170, 162, 139)");
+	await roomId.hover();
+	await expect(roomId).toHaveCSS("background-color", "rgb(22, 22, 22)");
+	await page.mouse.move(0, 0);
+	const restingBackground = await newGame.evaluate(
+		(button) => getComputedStyle(button).backgroundColor,
+	);
+	await newGame.hover();
+	await expect(newGame).toHaveCSS("background-color", "rgb(28, 25, 17)");
+	await expect(newGame).toHaveCSS("color", "rgb(246, 202, 109)");
+	expect(restingBackground).not.toBe("rgb(28, 25, 17)");
 	await expect(
 		page.getByRole("button", { name: "Join", exact: true }),
 	).toBeVisible();
@@ -85,7 +107,7 @@ test("home keeps the required menu and one account form", async ({
 
 test("one auth flow keeps credentials errors and submits new usernames only to login", async ({
 	page,
-}) => {
+}, info) => {
 	const mutations: { path: string; body: unknown }[] = [];
 	let release!: () => void;
 	const pending = new Promise<void>((resolve) => {
@@ -127,6 +149,24 @@ test("one auth flow keeps credentials errors and submits new usernames only to l
 	await page.route("**/api/community/current", (route) =>
 		route.fulfill({ json: { run: null } }),
 	);
+	await page.route("**/api/profile/me", (route) =>
+		route.fulfill({
+			json: {
+				total: {
+					totalPlayTimeMs: 0,
+					totalJumps: 0,
+					totalFalls: 0,
+					finishes: 0,
+					matchesPlayed: 0,
+					wins: 0,
+					bestFinishTimeMs: null,
+				},
+			},
+		}),
+	);
+	await page.route("**/api/history?**", (route) =>
+		route.fulfill({ json: { items: [], page: 0, hasNext: false } }),
+	);
 	try {
 		await page.goto("/sign-in");
 		await page.getByLabel("Username", { exact: true }).fill("existing_player");
@@ -161,6 +201,39 @@ test("one auth flow keeps credentials errors and submits new usernames only to l
 		await expect(
 			page.getByRole("button", { name: "new_player", exact: true }),
 		).toBeVisible();
+		await expect(
+			page.getByRole("button", { name: "History", exact: true }),
+		).toHaveCount(0);
+		await expect(page.getByLabel("Total statistics")).toBeVisible();
+		await page.screenshot({
+			path: info.outputPath("home-account.png"),
+			fullPage: true,
+		});
+		await page.getByRole("button", { name: "new_player", exact: true }).click();
+		await expect(
+			page.getByRole("button", { name: "Change Password", exact: true }),
+		).toBeVisible();
+		await page.screenshot({
+			path: info.outputPath("account-history.png"),
+			fullPage: true,
+		});
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.screenshot({
+			path: info.outputPath("account-mobile.png"),
+			fullPage: true,
+		});
+		await page.getByRole("button", { name: "History", exact: true }).click();
+		await expect(
+			page.getByRole("heading", { name: "History", exact: true }),
+		).toBeVisible();
+		await page.getByRole("button", { name: "Back", exact: true }).click();
+		await expect(
+			page.getByRole("heading", { name: "Account", exact: true }),
+		).toBeVisible();
+		await page.getByRole("button", { name: "Back", exact: true }).click();
+		await expect(
+			page.getByRole("button", { name: "new_player", exact: true }),
+		).toBeFocused();
 		expect(mutations).toEqual([
 			{
 				path: "/api/auth/login",

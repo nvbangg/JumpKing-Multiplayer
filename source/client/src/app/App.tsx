@@ -124,7 +124,7 @@ export function App() {
 	const home = homeData?.accountId === accountId ? homeData : null;
 	const back = () => {
 		const next =
-			screen === "password"
+			screen === "password" || (screen === "history" && identity.account)
 				? "account"
 				: screen === "detail"
 					? "history"
@@ -534,14 +534,6 @@ export function App() {
 									Join
 								</button>
 							</form>
-							<button
-								type="button"
-								onClick={() =>
-									setScreen(identity.account ? "history" : "sign-in")
-								}
-							>
-								History
-							</button>
 							<div className="account-actions">
 								{identity.account ? (
 									<button type="button" onClick={() => setScreen("account")}>
@@ -570,6 +562,9 @@ export function App() {
 								<dt>Username</dt>
 								<dd>{identity.account.username}</dd>
 							</dl>
+							<button type="button" onClick={() => setScreen("history")}>
+								History
+							</button>
 							<button type="button" onClick={() => setScreen("password")}>
 								Change Password
 							</button>

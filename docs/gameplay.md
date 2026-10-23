@@ -115,7 +115,7 @@ Tutorial Community: thực hiện tuần tự di chuyển → charge → nhảy 
 
 Stats tổng Community/Room: active time, jumps, falls, finishes, số trận/thắng Room và best finish time full map; không lọc kiểu chơi. Jump tính khi launch, fall khi splat; New Game/respawn không xóa tổng. Chưa Finish thì finish time=null.
 
-History gồm lượt Community kết thúc và Room finalize, chỉ chủ lượt/thành viên trận xem; mỗi lượt/trận một mục, Room có chi tiết roster. Pause/Continue/Save & Exit không tạo mục mới. Ownership và chống cộng trùng theo [data](data.md#history-stats-và-leaderboard).
+History mở từ Account khi nhấn username, gồm lượt Community kết thúc và Room finalize, chỉ chủ lượt/thành viên trận xem; mỗi lượt/trận một mục, Room có chi tiết roster. Pause/Continue/Save & Exit không tạo mục mới. Ownership và chống cộng trùng theo [data](data.md#history-stats-và-leaderboard).
 
 ## Chat và các bảng trong trận
 

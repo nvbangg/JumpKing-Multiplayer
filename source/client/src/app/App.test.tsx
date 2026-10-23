@@ -12,6 +12,7 @@ test("entry renders an accessible page without a backend connection", () => {
 	expect(html).toContain('inputMode="numeric"');
 	expect(html).toContain('pattern="[0-9]{6}"');
 	expect(html).not.toContain(">Room<");
+	expect(html).not.toContain(">History<");
 	expect(html).not.toContain("Hold Space");
 	expect(html).not.toContain("Sound: On");
 	expect(html).not.toContain(">Options<");

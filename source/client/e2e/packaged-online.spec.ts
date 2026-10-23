@@ -75,6 +75,7 @@ test("the production web JAR supports Community save and a two-player Room throu
 				page.getByRole("button", { name: "New Game", exact: true }),
 			).toBeVisible();
 		}
+		await a.locator(".account-actions button").click();
 		await a.getByRole("button", { name: "History", exact: true }).click();
 		await a
 			.getByLabel("Game history")

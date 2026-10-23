@@ -779,11 +779,20 @@ button {
 
 .room-join-form {
 	display: flex;
+	align-items: center;
 	gap: 8px;
 }
 .room-join-form input {
 	min-width: 0;
-	width: 100%;
+	width: 200px;
+	padding: 8px 10px;
+	font-size: 18px;
+}
+.room-join-form input:hover {
+	background: #161616;
+}
+.room-join-form input:focus-visible {
+	outline-color: #aaa28b;
 }
 .room-join-form button {
 	flex: 0 0 auto;
