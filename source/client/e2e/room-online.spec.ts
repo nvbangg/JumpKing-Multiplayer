@@ -314,7 +314,6 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 		const observed = observeOnline(page);
 		try {
 			await registerOnline(page, "alone");
-			await page.getByRole("button", { name: "Room", exact: true }).click();
 			const idInput = page.getByPlaceholder("Enter Room ID", { exact: true });
 			await expect(idInput).toBeVisible();
 			const join = page.getByRole("button", { name: "Join", exact: true });

@@ -123,7 +123,9 @@ Chat theo sảnh/phòng, text thuần, không lưu MySQL; Lobby/game dùng chung
 
 Players realtime gồm cả phòng: Room theo comparator mode, Community theo current progress. Leaderboard chỉ Community, tải khi vào trận hoặc Refresh, không polling. Hai bảng mặc định mở, có thể thu gọn; chiều cao giới hạn theo màn hình và danh sách dài cuộn.
 
-Game phóng lớn tối đa trong viewport, giữ đủ screen 4:3 và camera gốc. Chat nổi dưới trái, Players/Leaderboard trên phải, ưu tiên vùng viền dư; mobile ngang dùng cùng bố cục, nút cảm ứng ở đáy và chat phía trên tránh chồng nút. Mobile dọc mở Pause và yêu cầu xoay ngang; thử khóa hướng khi trình duyệt hỗ trợ, vẫn cho xoay thủ công. Timer ở góc trên trái game, ping/Menu trên phải; jumps chỉ ở Stats/History. Ping dưới 100 ms xanh, 100–150 ms vàng, trên 150 ms đỏ. Sound ở menu chính và Pause Menu; mã mời Room chỉ hiện tại Lobby, chọn để sao chép thủ công, không nút Copy ID. Không màn Options hoặc nút Fullscreen; F11 do trình duyệt xử lý và layout theo viewport mới. Chỉ ô nhập/mã phòng cho chọn chữ. New Game Community chỉ tại menu sau Save & Exit.
+Game ở giữa, giữ đủ screen 4:3 và camera gốc; dành hai cột riêng cho chat dưới trái, Players/Leaderboard trên phải, không đè lên canvas. Giới hạn kích thước theo viewport khi vào màn chơi hoặc xoay thiết bị; F11 không phóng lớn game. Cửa sổ nhỏ hơn thì game thu vừa chỗ, mở rộng lại không vượt giới hạn đã đặt. Mobile ngang dùng cùng bố cục, nút cảm ứng ở đáy và chat phía trên tránh chồng nút. Mobile dọc mở Pause và yêu cầu xoay ngang; thử khóa hướng khi trình duyệt hỗ trợ, vẫn cho xoay thủ công. Timer ở góc trên trái game, ping/Menu trên phải; jumps chỉ ở Stats/History. Ping dưới 100 ms xanh, 100–150 ms vàng, trên 150 ms đỏ.
+
+Sound và hướng dẫn phím chỉ ở Pause Menu. Trang chủ có Create Room, Join Public Room và ô Room ID kèm Join trực tiếp, không submenu Room hoặc Options. Mã mời Room chỉ hiện tại Lobby, chọn để sao chép thủ công, không nút Copy ID. F11 do trình duyệt xử lý, không nút Fullscreen. Chỉ ô nhập/mã phòng cho chọn chữ. New Game Community chỉ tại menu sau Save & Exit.
 
 ## Xem người chơi khác
 

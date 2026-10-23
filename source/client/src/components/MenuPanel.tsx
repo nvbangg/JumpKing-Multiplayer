@@ -28,9 +28,10 @@ export function MenuPanel({
 			(button) => button.textContent === selections.current[key],
 		);
 		const first =
-			ref.current?.querySelector<HTMLInputElement>("input") ||
 			selected ||
-			buttons[0];
+			ref.current?.querySelector<HTMLElement>(
+				"button:not(:disabled), input:not(:disabled), select:not(:disabled)",
+			);
 		first?.focus({ preventScroll: true });
 	}, [key]);
 	const keyDown = useCallback(

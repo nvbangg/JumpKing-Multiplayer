@@ -31,7 +31,7 @@ test("username account, change password and online authentication", async ({
 	page,
 }) => {
 	await page.goto("/");
-	await page.getByRole("button", { name: "Room", exact: true }).click();
+	await page.getByRole("button", { name: "Create Room", exact: true }).click();
 	await expect(
 		page.getByRole("heading", { name: "Sign In / Log In", exact: true }),
 	).toBeVisible();
@@ -78,7 +78,7 @@ test("username account, change password and online authentication", async ({
 	).toHaveCount(0);
 });
 
-test("Room menu, public lobby chat, server countdown and end/leave", async ({
+test("Room entry, public lobby chat, server countdown and end/leave", async ({
 	browser,
 }) => {
 	test.setTimeout(120000);
@@ -89,7 +89,6 @@ test("Room menu, public lobby chat, server countdown and end/leave", async ({
 	try {
 		const host = await register(a, "host"),
 			peer = await register(b, "peer");
-		await a.getByRole("button", { name: "Room", exact: true }).click();
 		await a.getByRole("button", { name: "Create Room", exact: true }).click();
 		await expect(a.getByLabel("Visibility", { exact: true })).toHaveValue(
 			"PRIVATE",
@@ -99,7 +98,6 @@ test("Room menu, public lobby chat, server countdown and end/leave", async ({
 		).toHaveCount(0);
 		const room = required(await a.locator(".room-code code").textContent());
 		await a.getByLabel("Visibility", { exact: true }).selectOption("PUBLIC");
-		await b.getByRole("button", { name: "Room", exact: true }).click();
 		await b
 			.getByRole("button", { name: "Join Public Room", exact: true })
 			.click();

@@ -57,47 +57,64 @@ button {
 	outline-offset: 4px;
 }
 .play-page {
-	--panel-width: clamp(240px, 20vw, 280px);
-	--chat-width: clamp(240px, 24vw, 320px);
+	--game-width: 720px;
+	--side-min: 240px;
+	--edge: 12px;
 	--touch-clearance: 0px;
-	--game-top: max(0px, calc((100dvh - 100vw * 3 / 4) / 2));
-	--game-left: max(0px, calc((100vw - 100dvh * 4 / 3) / 2));
+	--play-height: calc(
+		100dvh -
+		max(var(--edge), env(safe-area-inset-top)) -
+		max(var(--edge), env(safe-area-inset-bottom)) -
+		var(--touch-clearance)
+	);
 	width: 100%;
 	height: 100dvh;
 	display: grid;
-	place-items: center;
+	grid-template-columns: minmax(0, 1fr) var(--game-width) minmax(0, 1fr);
+	grid-template-rows: minmax(0, 1fr);
+	gap: 12px;
+	padding: max(var(--edge), env(safe-area-inset-top))
+		max(var(--edge), env(safe-area-inset-right))
+		calc(max(var(--edge), env(safe-area-inset-bottom)) + var(--touch-clearance))
+		max(var(--edge), env(safe-area-inset-left));
 	position: relative;
 	isolation: isolate;
 	overflow: hidden;
 	background: #000;
 }
 .game-stage {
-	width: min(100%, calc(100dvh * 4 / 3));
+	grid-column: 2;
+	grid-row: 1;
+	align-self: center;
+	width: 100%;
 	aspect-ratio: 4 / 3;
 	position: relative;
 	min-width: 0;
 	min-height: 0;
 }
 .game-sidebar {
-	position: absolute;
+	grid-column: 3;
+	grid-row: 1;
+	align-self: start;
+	justify-self: start;
 	z-index: 30;
-	top: calc(var(--game-top) + max(56px, env(safe-area-inset-top) + 48px));
-	right: max(12px, env(safe-area-inset-right));
-	width: var(--panel-width);
+	width: 100%;
+	max-width: 280px;
 	min-height: 0;
-	max-height: calc(100dvh - var(--game-top) - 72px - var(--touch-clearance));
+	max-height: 100%;
 	overflow-y: auto;
 	overscroll-behavior: contain;
 	pointer-events: none;
 }
 .game-chat {
-	position: absolute;
+	grid-column: 1;
+	grid-row: 1;
+	align-self: end;
+	justify-self: end;
 	z-index: 70;
-	left: max(12px, env(safe-area-inset-left));
-	bottom: calc(max(12px, env(safe-area-inset-bottom)) + var(--touch-clearance));
 	min-width: 0;
-	width: var(--chat-width);
-	max-width: calc(100% - 24px);
+	width: 100%;
+	max-width: 320px;
 	pointer-events: none;
 }
 .game-viewport {
@@ -252,7 +269,7 @@ button {
 .touch-controls button:active {
 	background: #463a24cc;
 }
-@media (pointer: coarse), (max-width: 900px) {
+@media (pointer: coarse), (max-width: 960px) {
 	.play-page {
 		--touch-clearance: 62px;
 	}
@@ -673,6 +690,9 @@ button {
 .game-chat .chat-input-box {
 	border: 1px solid #6b6250;
 }
+.game-chat .chat-messages {
+	max-height: min(360px, calc(var(--play-height) - 60px));
+}
 .visually-hidden {
 	position: absolute;
 	width: 1px;
@@ -729,13 +749,7 @@ button {
 	list-style: none;
 	margin: 0;
 	padding: 0 8px;
-	max-height: min(
-		240px,
-		max(
-			30px,
-			calc((100dvh - var(--game-top) - 200px - var(--touch-clearance)) / 2)
-		)
-	);
+	max-height: min(240px, max(30px, calc((var(--play-height) - 128px) / 2)));
 	overflow-y: auto;
 	overscroll-behavior: contain;
 }
@@ -813,18 +827,9 @@ button {
 
 @media (max-width: 960px) {
 	.play-page {
-		--panel-width: clamp(160px, 24vw, 200px);
-		--chat-width: clamp(180px, 28vw, 240px);
-	}
-	.game-sidebar {
-		right: max(8px, env(safe-area-inset-right));
-	}
-	.game-chat {
-		left: max(8px, env(safe-area-inset-left));
-		bottom: calc(
-			max(8px, env(safe-area-inset-bottom)) +
-			var(--touch-clearance)
-		);
+		--side-min: 150px;
+		--edge: 8px;
+		gap: 8px;
 	}
 	.in-game-panel li {
 		height: 30px;
@@ -833,7 +838,7 @@ button {
 		gap: 5px;
 	}
 	.game-chat .chat-messages {
-		max-height: min(160px, calc(100dvh - 180px));
+		max-height: min(160px, calc(var(--play-height) - 60px));
 	}
 	.game-chat .chat-input-box {
 		padding: 6px;
@@ -857,17 +862,6 @@ button {
 	}
 	.touch-controls > div {
 		gap: 8px;
-	}
-	.game-overlay {
-		padding-left: max(
-			12px,
-			calc(
-				var(--chat-width) +
-				max(8px, env(safe-area-inset-left)) -
-				var(--game-left) +
-				12px
-			)
-		);
 	}
 	.game-overlay .menu-panel {
 		width: min(360px, 100%);
@@ -1028,9 +1022,7 @@ button {
 }
 @media (max-width: 680px) {
 	.tutorial-guide {
-		left: 12px;
-		transform: none;
-		width: calc(100% - var(--panel-width) - 24px);
+		width: calc(100% - 24px);
 	}
 	.tutorial-header {
 		flex-wrap: nowrap;
@@ -1123,7 +1115,7 @@ button {
 	position: absolute;
 	z-index: 35;
 	right: max(16px, env(safe-area-inset-right));
-	bottom: calc(12px + var(--touch-clearance));
+	bottom: 12px;
 	font-size: 13px;
 	padding: 10px;
 	touch-action: manipulation;

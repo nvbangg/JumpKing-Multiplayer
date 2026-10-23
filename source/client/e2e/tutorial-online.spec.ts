@@ -141,12 +141,19 @@ for (const mobile of [false, true])
 			await page
 				.getByRole("button", { name: "Save & Exit", exact: true })
 				.click();
-			await expect(
-				page.getByRole("switch", { name: "Sound: Off", exact: true }),
-			).toBeVisible();
+			await expect(page.getByRole("switch", { name: /^Sound:/ })).toHaveCount(
+				0,
+			);
 			await page.getByRole("button", { name: "Continue", exact: true }).click();
 			await expect(page.locator("canvas")).toBeVisible();
 			await expect(guide).toHaveCount(0);
+			await page
+				.getByRole("button", { name: "Menu (Esc)", exact: true })
+				.click();
+			await expect(
+				page.getByRole("switch", { name: "Sound: Off", exact: true }),
+			).toBeVisible();
+			await page.getByRole("button", { name: "Resume", exact: true }).click();
 		} finally {
 			await leaveOnline(page);
 			await context.close();

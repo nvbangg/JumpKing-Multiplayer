@@ -12,14 +12,22 @@ test("home keeps the required menu and one account form", async ({
 	await expect(
 		page.getByRole("button", { name: "Options", exact: true }),
 	).toHaveCount(0);
-	await expect(
-		page.getByRole("switch", { name: "Sound: On", exact: true }),
-	).toBeVisible();
+	await expect(page.getByRole("switch", { name: /^Sound:/ })).toHaveCount(0);
 	await expect(page.getByRole("switch", { name: /Fullscreen/ })).toHaveCount(0);
+	await expect(page.locator(".controls-help")).toHaveCount(0);
 	await expect(
-		page.getByText("Hold Space / W / ↑, then release", { exact: true }),
+		page.getByRole("button", { name: "Room", exact: true }),
+	).toHaveCount(0);
+	await expect(
+		page.getByRole("button", { name: "Create Room", exact: true }),
 	).toBeVisible();
-	await expect(page.locator(".controls-help dt")).toHaveText(["Move", "Jump"]);
+	await expect(
+		page.getByRole("button", { name: "Join Public Room", exact: true }),
+	).toBeVisible();
+	await expect(page.getByLabel("Room ID", { exact: true })).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Join", exact: true }),
+	).toBeVisible();
 	await expect(
 		page.getByRole("button", { name: "Continue", exact: true }),
 	).toBeHidden();
@@ -178,7 +186,7 @@ test("keyboard navigation restores focus and offline actions report real errors"
 	).toBeFocused();
 	await page.keyboard.press("ArrowDown");
 	await expect(
-		page.getByRole("button", { name: "Room", exact: true }),
+		page.getByRole("button", { name: "Create Room", exact: true }),
 	).toBeFocused();
 	await page.keyboard.press("Enter");
 	await expect(
@@ -205,6 +213,6 @@ test("keyboard navigation restores focus and offline actions report real errors"
 	);
 	await page.keyboard.press("Escape");
 	await expect(
-		page.getByRole("button", { name: "Room", exact: true }),
+		page.getByRole("button", { name: "Create Room", exact: true }),
 	).toBeFocused();
 });

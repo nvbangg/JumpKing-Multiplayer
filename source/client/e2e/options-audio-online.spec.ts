@@ -15,17 +15,14 @@ test("Sound moves into the game menu, controls remain visible and the timer is a
 	await expect(
 		page.getByRole("button", { name: "Options", exact: true }),
 	).toHaveCount(0);
-	await expect(
-		page.getByText("Hold Space / W / ↑, then release", { exact: true }),
-	).toBeVisible();
-	await expect(page.locator(".controls-help dt")).toHaveText(["Move", "Jump"]);
+	await expect(page.getByRole("switch", { name: /^Sound:/ })).toHaveCount(0);
+	await expect(page.locator(".controls-help")).toHaveCount(0);
 	await expect(
 		page.getByRole("button", { name: "Controls", exact: true }),
 	).toHaveCount(0);
 	await expect(page.getByRole("switch", { name: /Display Timer/ })).toHaveCount(
 		0,
 	);
-	await page.getByRole("switch", { name: "Sound: On", exact: true }).click();
 	await expect(page.getByRole("switch", { name: /Fullscreen/ })).toHaveCount(0);
 	await newCommunity(page);
 	await expect(page.getByLabel("Play time", { exact: true })).toBeVisible();
@@ -47,7 +44,11 @@ test("Sound moves into the game menu, controls remain visible and the timer is a
 	await expect(
 		page
 			.getByRole("region", { name: "Game menu", exact: true })
-			.getByRole("switch", { name: "Sound: Off", exact: true }),
+			.getByRole("switch", { name: "Sound: On", exact: true }),
+	).toBeVisible();
+	await page.getByRole("switch", { name: "Sound: On", exact: true }).click();
+	await expect(
+		page.getByRole("switch", { name: "Sound: Off", exact: true }),
 	).toBeVisible();
 	await page.screenshot({ path: info.outputPath("pause-desktop.png") });
 	await expect(page.locator(".controls-help dt")).toHaveText(["Move", "Jump"]);

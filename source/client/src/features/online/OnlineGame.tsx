@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	type CSSProperties,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { ControlsHelp } from "../../components/ControlsHelp";
 import { MenuPanel } from "../../components/MenuPanel";
 import { loadManifest } from "../../game/content/assets";
@@ -41,6 +47,7 @@ import {
 	saveTutorialCompleted,
 	type TutorialStep,
 } from "./tutorial";
+import { useGameWidth } from "./useGameWidth";
 
 export function OnlineGame({
 	socket,
@@ -61,6 +68,8 @@ export function OnlineGame({
 	onHome: (message: string) => void;
 	onResults: () => void;
 }) {
+	const layout = useRef<HTMLElement>(null);
+	const gameWidth = useGameWidth(layout);
 	const container = useRef<HTMLDivElement>(null),
 		runtime = useRef<OnlineRuntime | null>(null),
 		input = useRef<InputController | null>(null),
@@ -645,7 +654,15 @@ export function OnlineGame({
 	const captionPaused =
 		!!menu || !!ending || disconnected || room.state === "COUNTDOWN";
 	return (
-		<main className="play-page">
+		<main
+			ref={layout}
+			className="play-page"
+			style={
+				gameWidth
+					? ({ "--game-width": `${gameWidth}px` } as CSSProperties)
+					: undefined
+			}
+		>
 			<div className="game-stage">
 				<section className="game-viewport" aria-label="Online Main Babe game">
 					{/* Phaser quản lý canvas; React giữ overlay ở phần tử anh em. */}

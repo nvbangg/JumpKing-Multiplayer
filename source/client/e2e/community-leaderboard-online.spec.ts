@@ -88,6 +88,62 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 		await expect(page.locator(".players-panel")).toHaveAttribute("open", "");
 		await expect(page.getByLabel("Message", { exact: true })).toBeVisible();
 		await expect(page.locator(".chat-panel > summary")).toHaveCount(0);
+		const settleLayout = () =>
+			page.evaluate(
+				() =>
+					new Promise<void>((resolve) =>
+						requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+					),
+			);
+		// F11 từ cửa sổ thường hoặc maximized đều không được phóng to canvas.
+		for (const viewport of [
+			{ width: 1280, height: 720, expandedWidth: 1280, expandedHeight: 900 },
+			{ width: 1280, height: 720, expandedWidth: 1920, expandedHeight: 1080 },
+			{ width: 1920, height: 720, expandedWidth: 1920, expandedHeight: 900 },
+			{ width: 844, height: 320, expandedWidth: 844, expandedHeight: 390 },
+		]) {
+			// Mỗi kích thước bắt đầu với giới hạn mới, không kế thừa cửa sổ lớn trước đó.
+			await page.setViewportSize({ width: 390, height: 844 });
+			await expect(
+				page.getByRole("dialog", { name: "Landscape required" }),
+			).toBeVisible();
+			await page.setViewportSize({
+				width: viewport.width,
+				height: viewport.height,
+			});
+			await expect(
+				page.getByRole("dialog", { name: "Landscape required" }),
+			).toBeHidden();
+			await page.getByRole("button", { name: "Resume", exact: true }).click();
+			await settleLayout();
+			const canvas = page.locator("canvas");
+			await expect(canvas).toBeVisible();
+			const initial = await canvas.boundingBox();
+			if (!initial) throw new Error("Game canvas is missing");
+			await page.setViewportSize({
+				width: viewport.expandedWidth,
+				height: viewport.expandedHeight,
+			});
+			await settleLayout();
+			await expect
+				.poll(async () => {
+					const expanded = await canvas.boundingBox();
+					return (
+						expanded && {
+							width: Math.round(expanded.width),
+							height: Math.round(expanded.height),
+						}
+					);
+				})
+				.toEqual({
+					width: Math.round(initial.width),
+					height: Math.round(initial.height),
+				});
+			await page.setViewportSize({
+				width: viewport.width,
+				height: viewport.height,
+			});
+		}
 		for (const viewport of [
 			{ width: 2560, height: 1080 },
 			{ width: 1920, height: 1080 },
@@ -99,6 +155,7 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 			{ width: 568, height: 320 },
 		]) {
 			await page.setViewportSize(viewport);
+			await settleLayout();
 			if (
 				await page
 					.getByRole("button", { name: "Resume", exact: true })
@@ -141,35 +198,37 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 				page.getByRole("button", { name: "Refresh", exact: true }),
 			).toBeInViewport();
 			const canvasLocator = page.locator("canvas");
-			const expectedWidth = Math.min(viewport.width, (viewport.height * 4) / 3);
 			await expect
-				.poll(async () =>
-					Math.round((await canvasLocator.boundingBox())?.width ?? 0),
-				)
-				.toBe(Math.round(expectedWidth));
+				.poll(async () => {
+					const canvas = await canvasLocator.boundingBox(),
+						stage = await page.locator(".game-stage").boundingBox();
+					return canvas && stage
+						? Math.abs(canvas.width - stage.width) +
+								Math.abs(canvas.height - stage.height)
+						: Infinity;
+				})
+				.toBeLessThan(1);
 			const shell = await page.locator(".play-page").boundingBox(),
 				stage = await page.locator(".game-stage").boundingBox(),
-				hud = await page.locator(".game-hud").boundingBox(),
 				sidebar = await page.locator(".game-sidebar").boundingBox(),
 				players = await page.locator(".players-panel").boundingBox(),
 				board = await panel.boundingBox(),
 				chat = await page.locator(".game-chat").boundingBox();
-			if (!shell || !stage || !hud || !sidebar || !players || !board || !chat)
+			if (!shell || !stage || !sidebar || !players || !board || !chat)
 				throw new Error("Game layout is missing");
 			expect(shell.x).toBeCloseTo(0, 0);
 			expect(shell.y).toBeCloseTo(0, 0);
 			expect(shell.width).toBeCloseTo(viewport.width, 0);
 			expect(shell.height).toBeCloseTo(viewport.height, 0);
-			expect(stage.width).toBeCloseTo(expectedWidth, 0);
-			expect(stage.height).toBeCloseTo((expectedWidth * 3) / 4, 0);
+			expect(stage.width).toBeGreaterThan(0);
+			expect(stage.width / stage.height).toBeCloseTo(4 / 3, 2);
 			expect(stage.x + stage.width / 2).toBeCloseTo(viewport.width / 2, 0);
-			expect(stage.y + stage.height / 2).toBeCloseTo(viewport.height / 2, 0);
-			expect(sidebar.x).toBeGreaterThan(viewport.width / 2);
-			expect(sidebar.y).toBeGreaterThanOrEqual(hud.y + hud.height);
+			expect(stage.x + stage.width).toBeLessThanOrEqual(sidebar.x);
+			expect(sidebar.y).toBeGreaterThanOrEqual(0);
 			expect(sidebar.x + sidebar.width).toBeLessThanOrEqual(viewport.width);
 			expect(sidebar.y + sidebar.height).toBeLessThanOrEqual(viewport.height);
 			expect(chat.x).toBeGreaterThanOrEqual(0);
-			expect(chat.x + chat.width).toBeLessThanOrEqual(viewport.width / 2);
+			expect(chat.x + chat.width).toBeLessThanOrEqual(stage.x);
 			expect(chat.y + chat.height).toBeLessThanOrEqual(viewport.height);
 			expect(players.y + players.height).toBeLessThanOrEqual(board.y);
 			if (await page.locator(".touch-controls").isVisible()) {
@@ -183,9 +242,10 @@ test("Community records stay visible, scroll on mobile and load only on entry or
 			const canvas = await canvasLocator.boundingBox();
 			if (!canvas) throw new Error("Game canvas is missing");
 			expect(canvas.width / canvas.height).toBeCloseTo(4 / 3, 2);
-			expect(canvas.height).toBeCloseTo((expectedWidth * 3) / 4, 0);
+			expect(canvas.width).toBeCloseTo(stage.width, 0);
+			expect(canvas.height).toBeCloseTo(stage.height, 0);
 			expect(canvas.x + canvas.width / 2).toBeCloseTo(viewport.width / 2, 0);
-			expect(canvas.y + canvas.height / 2).toBeCloseTo(viewport.height / 2, 0);
+			expect(canvas.y).toBeCloseTo(stage.y, 0);
 			expect(
 				await page.evaluate(
 					() =>

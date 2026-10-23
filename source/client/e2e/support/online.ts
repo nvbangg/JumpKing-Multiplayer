@@ -60,12 +60,10 @@ export async function registerOnline(page: Page, prefix: string) {
 }
 
 export async function createRoom(page: Page) {
-	await page.getByRole("button", { name: "Room", exact: true }).click();
 	await page.getByRole("button", { name: "Create Room", exact: true }).click();
 	return (await page.locator(".room-code code").innerText()).trim();
 }
 export async function joinRoom(page: Page, id: string) {
-	await page.getByRole("button", { name: "Room", exact: true }).click();
 	await page.getByLabel("Room ID", { exact: true }).fill(id);
 	await page.getByRole("button", { name: "Join", exact: true }).click();
 	await expect(page.locator(".room-code code")).toHaveText(id);

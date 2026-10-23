@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ControlsHelp } from "../components/ControlsHelp";
 import { MenuPanel } from "../components/MenuPanel";
 import { AuthForm } from "../features/account/AuthForm";
 import { ChangePassword } from "../features/account/ChangePassword";
@@ -13,7 +12,6 @@ import { Lobby } from "../features/rooms/Lobby";
 import { PublicRooms } from "../features/rooms/PublicRooms";
 import { Results } from "../features/rooms/Results";
 import { readOptions, saveOptions } from "../features/settings/options";
-import { SoundButton } from "../features/settings/SoundButton";
 import { ApiError, api, backendOrigin, clearCsrf } from "../network/api";
 import type { HistoryItem, Identity, Statistics } from "../network/contracts";
 import {
@@ -32,7 +30,6 @@ type Screen =
 	| "account"
 	| "history"
 	| "detail"
-	| "rooms"
 	| "password"
 	| "public-rooms"
 	| "lobby"
@@ -127,13 +124,11 @@ export function App() {
 	const home = homeData?.accountId === accountId ? homeData : null;
 	const back = () => {
 		const next =
-			screen === "public-rooms"
-				? "rooms"
-				: screen === "password"
-					? "account"
-					: screen === "detail"
-						? "history"
-						: "home";
+			screen === "password"
+				? "account"
+				: screen === "detail"
+					? "history"
+					: "home";
 		if (routes[next]) window.history.replaceState(null, "", routes[next]);
 		setError("");
 		setScreen(next);
@@ -458,7 +453,6 @@ export function App() {
 									{
 										"sign-in": "Sign In / Log In",
 										password: "Change Password",
-										rooms: "Room",
 										account: "Account",
 										history: "History",
 										detail: "Game Details",
@@ -495,12 +489,51 @@ export function App() {
 							</button>
 							<button
 								type="button"
+								disabled={pending}
+								onClick={() => {
+									if (!identity.account) setScreen("sign-in");
+									else command("CREATE_ROOM");
+								}}
+							>
+								Create Room
+							</button>
+							<button
+								type="button"
 								onClick={() =>
-									setScreen(identity.authenticated ? "rooms" : "sign-in")
+									setScreen(identity.account ? "public-rooms" : "sign-in")
 								}
 							>
-								Room
+								Join Public Room
 							</button>
+							<form
+								className="room-join-form"
+								onSubmit={(event) => {
+									event.preventDefault();
+									if (!identity.account) {
+										setScreen("sign-in");
+										return;
+									}
+									const roomId = String(
+										new FormData(event.currentTarget).get("roomId") || "",
+									).trim();
+									command("JOIN_ROOM", { roomId });
+								}}
+							>
+								<input
+									name="roomId"
+									aria-label="Room ID"
+									placeholder="Enter Room ID"
+									required
+									minLength={6}
+									maxLength={6}
+									inputMode="numeric"
+									autoComplete="off"
+									pattern="[0-9]{6}"
+								/>
+								<button type="submit" disabled={pending}>
+									Join
+								</button>
+							</form>
 							<button
 								type="button"
 								onClick={() =>
@@ -509,11 +542,6 @@ export function App() {
 							>
 								History
 							</button>
-							<SoundButton
-								options={options}
-								onChange={updateOptions}
-								onError={setError}
-							/>
 							<div className="account-actions">
 								{identity.account ? (
 									<button type="button" onClick={() => setScreen("account")}>
@@ -525,7 +553,6 @@ export function App() {
 									</button>
 								)}
 							</div>
-							<ControlsHelp />
 						</>
 					)}
 					{screen === "sign-in" && (
@@ -594,46 +621,6 @@ export function App() {
 							key={`${detail.item.kind}:${detail.item.id}`}
 							item={detail.item}
 						/>
-					)}
-					{screen === "rooms" && identity.authenticated && (
-						<>
-							<button
-								type="button"
-								disabled={pending}
-								onClick={() => command("CREATE_ROOM")}
-							>
-								Create Room
-							</button>
-							<button type="button" onClick={() => setScreen("public-rooms")}>
-								Join Public Room
-							</button>
-							<form
-								className="room-join-form"
-								onSubmit={(event) => {
-									event.preventDefault();
-									const roomId = String(
-										new FormData(event.currentTarget).get("roomId") || "",
-									).trim();
-									command("JOIN_ROOM", { roomId });
-								}}
-							>
-								<input
-									name="roomId"
-									aria-label="Room ID"
-									placeholder="Enter Room ID"
-									required
-									minLength={6}
-									maxLength={6}
-									inputMode="numeric"
-									autoComplete="off"
-									pattern="[0-9]{6}"
-								/>
-
-								<button type="submit" disabled={pending}>
-									Join
-								</button>
-							</form>
-						</>
 					)}
 					{screen === "public-rooms" && identity.authenticated && (
 						<PublicRooms

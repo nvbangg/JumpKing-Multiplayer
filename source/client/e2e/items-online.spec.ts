@@ -55,7 +55,6 @@ for (const mobile of [false, true])
 		try {
 			await registerOnline(host, "item_host");
 			await registerOnline(peer, "item_peer");
-			await host.getByRole("button", { name: "Room", exact: true }).click();
 			await expect(host.getByLabel("Items", { exact: true })).toHaveCount(0);
 			await host
 				.getByRole("button", { name: "Create Room", exact: true })
