@@ -112,6 +112,7 @@ export function Lobby({
 							}
 						>
 							<option value="RACE">Race</option>
+							<option value="EASY">Easy</option>
 							<option value="HARDCORE">Hardcore</option>
 							<option value="TIME_LIMIT">Time Limit</option>
 							<option value="NO_WALK">No Walk</option>

@@ -100,7 +100,7 @@ final class RoomMatch {
       var input = player.input.poll(now);
       if (input.cancel()) player.game.physics().cancelInput();
       if (settings.itemsEnabled()) items.hit(player.game.physics(), ticks);
-      var effect = player.game.tick(input.input(), settings.mode().equals("HARDCORE"));
+      var effect = player.game.tick(input.input(), settings.mode());
       if (settings.itemsEnabled() && effect.movement().contains("JUMP"))
         items.takeoff(
             player.spec.playerId, player.game.physics(), ticks, settings.itemCooldownMinutes());

@@ -114,7 +114,7 @@ kind=COMMUNITY/ROOM. Community state=PLAYING, host/settings=null. currentPlay.co
 
 Snapshot tách rõ:
 
-- self: lastProcessedInputSeq, status, paused và simulation={physics,adventure,world} đủ restore/replay, gồm buffers/counters/Fly/phasing fall. Gốc playId/generation/self/ACK luôn thuộc người nhận; metrics để tính Stats/History/checkpoint không lặp trong snapshot gameplay.
+- self: lastProcessedInputSeq, status, paused và simulation={physics,adventure,world} đủ restore/replay, gồm buffers/counters/Fly/phasing fall; Easy có world.safePosition={x,y} để đồng bộ điểm an toàn khi SPLAT. Gốc playId/generation/self/ACK luôn thuộc người nhận; metrics để tính Stats/History/checkpoint không lặp trong snapshot gameplay.
 - peers: public render state/tên/màu/crown/status ở screen đang xem và liền kề. players là toàn roster {playerId,nickname,colorSlot,rank,currentProgress}, lấy từ RAM.
 - spectating: null hoặc {player,playId,elapsedTimeMs,paused,adventure,world}; chỉ dùng renderer, không thay prediction/checkpoint. Xóa mục tiêu khi reconnect hoặc mất hiệu lực.
 

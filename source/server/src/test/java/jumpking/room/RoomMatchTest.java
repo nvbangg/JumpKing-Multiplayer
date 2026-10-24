@@ -53,7 +53,7 @@ class RoomMatchTest {
 
   @Test
   void preparedBananaDropsOnlyOnJumpInEveryMode() {
-    for (var mode : List.of("RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK")) {
+    for (var mode : List.of("RACE", "EASY", "HARDCORE", "TIME_LIMIT", "NO_WALK")) {
       var match = match(new RoomSettings(mode, mode.equals("TIME_LIMIT") ? 5 : null, 10, true, 3));
       var now = Instant.parse("2026-01-01T00:00:00Z");
       match.start(now);
@@ -269,6 +269,42 @@ class RoomMatchTest {
     assertThat(state.y).isEqualTo(302);
     assertThat(state.ticks).isEqualTo(3);
     assertThat(state.falls).isEqualTo(1);
+  }
+
+  @Test
+  void easySplatRestoresOnlyTheFallingPlayersSafeLandingAndKeepsPeakAndCounters() {
+    var match = match(new RoomSettings("EASY", null, RoomSettings.FULL_MAP_LEVEL, false, 3));
+    var start = Instant.parse("2026-01-01T00:00:00Z");
+    var player = match.players.get("first");
+    var other = match.players.get("second");
+    match.start(start);
+    place(player, 77, 158, shared.tuning().gravity, true);
+    match.tick(1_000_000_000L, start);
+    place(player, 231, 110, -5, false);
+    match.tick(1_000_000_000L, start);
+    place(player, 231, 300, shared.tuning().maxFall, false);
+    var events = match.tick(1_000_000_000L, start);
+
+    assertThat(events.getFirst().effects().movement()).contains("SPLAT");
+    assertThat(player.currentProgress).isEqualTo(144);
+    assertThat(player.maximum).isEqualTo(197);
+    assertThat(player.peak).isEqualTo(2);
+    var state = player.game.physics().snapshot();
+    assertThat(state.x).isEqualTo(77);
+    assertThat(state.y).isEqualTo(158);
+    assertThat(state.ticks).isEqualTo(3);
+    assertThat(state.falls).isEqualTo(1);
+    assertThat(other.game.physics().snapshot().y).isEqualTo(302);
+    assertThat(other.game.physics().snapshot().falls).isZero();
+
+    match.finish("HOST_ENDED", start.plusSeconds(1));
+    assertThat(match.write(1).mode()).isEqualTo("EASY");
+    assertThat(match.write(1).runs().getFirst().progress()).isEqualTo(144);
+    var again = match(new RoomSettings("EASY", null, RoomSettings.FULL_MAP_LEVEL, false, 3));
+    again.start(start);
+    place(again.players.get("first"), 231, 300, shared.tuning().maxFall, false);
+    again.tick(1_000_000_000L, start);
+    assertThat(again.players.get("first").game.physics().snapshot().y).isEqualTo(302);
   }
 
   @Test

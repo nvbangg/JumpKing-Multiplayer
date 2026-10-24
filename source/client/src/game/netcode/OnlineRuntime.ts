@@ -99,7 +99,7 @@ export class OnlineRuntime implements GameRuntime {
 		this.prediction = new Prediction(
 			this.game,
 			NETWORK.maxInputFrames,
-			room.settings?.mode === "HARDCORE",
+			room.settings?.mode,
 		);
 	}
 	updateRoom(room: RoomState): void {

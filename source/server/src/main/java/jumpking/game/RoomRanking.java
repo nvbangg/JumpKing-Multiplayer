@@ -28,7 +28,7 @@ public final class RoomRanking {
   public record Ranked(Score score, int rank, boolean winner) {}
 
   public static List<Ranked> rank(List<Score> scores, String mode, boolean allowWinners) {
-    if (!Set.of("RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK").contains(mode))
+    if (!Set.of("RACE", "EASY", "HARDCORE", "TIME_LIMIT", "NO_WALK").contains(mode))
       throw new IllegalArgumentException("Invalid Room mode");
     Comparator<Score> comparator =
         (a, b) -> {

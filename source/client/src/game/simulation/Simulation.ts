@@ -142,6 +142,15 @@ export class Simulation {
 		this.state = { ...this.initialState(), ticks, jumps, falls };
 	}
 
+	respawnAt(x: number, y: number): void {
+		this.respawn();
+		this.state.x = x;
+		this.state.y = y;
+		this.state.screen = this.screenAt(y + P.bodyHeight / 2);
+		this.state.vy = 0;
+		this.cancelInput();
+	}
+
 	setFlight(enabled: boolean): void {
 		if (enabled && !this.flyAllowed) throw new Error("Fly mode is disabled");
 		if (this.state.freeFlight === enabled) return;

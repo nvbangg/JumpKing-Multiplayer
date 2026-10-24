@@ -1,4 +1,5 @@
 import { expect, test, vi } from "vitest";
+import easyFixture from "../../../../common/fixtures/easy-respawn.json";
 import mapData from "../../../../common/maps/main-babe.json";
 import { NETWORK } from "../../network/config";
 import { GameSocket, type RoomState } from "../../network/GameSocket";
@@ -229,11 +230,11 @@ test("Hardcore prediction and replay respawn on splat while preserving clock and
 			jumps: 12,
 			falls: 2,
 		});
-	const prediction = new Prediction(local, 180, true),
+	const prediction = new Prediction(local, 180, "HARDCORE"),
 		neutral = { left: false, right: false, jump: false };
 	for (let seq = 1; seq <= 6; seq++) {
 		prediction.push(seq, neutral);
-		if (seq <= 3) server.tick(neutral, true);
+		if (seq <= 3) server.tick(neutral, "HARDCORE");
 		race.tick(neutral);
 	}
 	expect(local.physics.snapshot()).toMatchObject({
@@ -249,6 +250,39 @@ test("Hardcore prediction and replay respawn on splat while preserving clock and
 	expect(local.snapshot()).toEqual(expected);
 	expect(race.physics.snapshot().splat).toBeGreaterThan(0);
 });
+test("Easy reconciliation replays a SPLAT using the authoritative safe position", () => {
+	const local = new GameSimulation(map),
+		server = new GameSimulation(map),
+		neutral = { left: false, right: false, jump: false };
+	for (const game of [local, server]) {
+		game.physics.restore({
+			...game.physics.snapshot(),
+			...easyFixture.safe,
+			vy: 1,
+			ticks: easyFixture.initialTicks,
+			jumps: easyFixture.jumps,
+			falls: easyFixture.falls,
+		});
+		game.tick(neutral, "EASY");
+		game.physics.restore({
+			...game.physics.snapshot(),
+			...easyFixture.fall,
+			grounded: false,
+		});
+	}
+	const prediction = new Prediction(local, 180, "EASY");
+	for (let seq = 1; seq <= 6; seq++) {
+		prediction.push(seq, neutral);
+		if (seq <= 3) server.tick(neutral, "EASY");
+	}
+	const expected = local.snapshot();
+	expect(server.physics.snapshot()).toMatchObject(easyFixture.expected);
+	prediction.reconcile(server.snapshot(), 3, true);
+	expect(prediction.pending).toBe(3);
+	expect(local.snapshot()).toEqual(expected);
+	expect(local.snapshot().world.safePosition).toEqual(easyFixture.safe);
+});
+
 test("input overflow is explicit, and cancel drops pending jump edges without launching", () => {
 	const game = new GameSimulation(map),
 		prediction = new Prediction(game, 2);

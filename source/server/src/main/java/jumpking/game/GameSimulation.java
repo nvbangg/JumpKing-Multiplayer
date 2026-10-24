@@ -80,6 +80,19 @@ public final class GameSimulation {
           || screen.asInt() >= map.screens().size()
           || !screens.add(screen.asInt()))
         throw new IllegalArgumentException("Invalid registered screen");
+    if (w.has("safePosition")) {
+      var safe = w.path("safePosition");
+      double x = safe.path("x").asDouble(), y = safe.path("y").asDouble();
+      if (!safe.isObject()
+          || !safe.path("x").isNumber()
+          || !safe.path("y").isNumber()
+          || !Double.isFinite(x)
+          || !Double.isFinite(y)
+          || x < -p.bodyWidth / 2.0
+          || x > map.width() - p.bodyWidth / 2.0
+          || y < -(double) map.screenHeight() * map.screens().size()
+          || y > map.screenHeight()) throw new IllegalArgumentException("Invalid safe position");
+    }
     if (w.has("regionIntro")) {
       var intro = w.path("regionIntro");
       boolean known = false;
@@ -109,13 +122,29 @@ public final class GameSimulation {
   }
 
   public Events tick(PlayerInput input) {
-    return tick(input, false);
+    return tick(input, "RACE");
   }
 
-  public Events tick(PlayerInput input, boolean respawnOnSplat) {
+  public Events tick(PlayerInput input, String mode) {
     var movement = physics.tick(input);
-    if (respawnOnSplat && movement.contains("SPLAT")) physics.respawn();
     var player = physics.snapshot();
+    if (movement.contains("SPLAT") && (mode.equals("HARDCORE") || mode.equals("EASY"))) {
+      if (mode.equals("EASY")) {
+        var safe = world.path("safePosition");
+        physics.respawnAt(
+            safe.path("x").asDouble(map.spawn().x()), safe.path("y").asDouble(map.spawn().y()));
+      } else physics.respawn();
+      player = physics.snapshot();
+    } else if (mode.equals("EASY")
+        && player.grounded
+        && !player.freeFlight
+        && !player.phasingFall
+        && player.splat == 0
+        && !player.slipping
+        && !player.knocked) {
+      // Ghi nền an toàn sau xử lý vật lý; cú đáp gây SPLAT không thay mốc trước đó.
+      world.withObject("safePosition").put("x", player.x).put("y", player.y);
+    }
     var content = adventure.tick(player, input);
     var events = new ArrayList<WorldEvent>();
     if (finished() && map.finish().screen() == map.screens().size() - 1) adventure.complete();

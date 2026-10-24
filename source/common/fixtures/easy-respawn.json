@@ -1,0 +1,27 @@
+{
+  "safe": {
+    "x": 77,
+    "y": 158
+  },
+  "fall": {
+    "x": 231,
+    "y": 280,
+    "vy": 10
+  },
+  "initialTicks": 100,
+  "jumps": 4,
+  "falls": 1,
+  "fallTicks": 3,
+  "expected": {
+    "x": 77,
+    "y": 158,
+    "vx": 0,
+    "vy": 0,
+    "grounded": true,
+    "screen": 0,
+    "splat": 0,
+    "ticks": 104,
+    "jumps": 4,
+    "falls": 2
+  }
+}

@@ -11,7 +11,8 @@ public record RoomSettings(
     boolean itemsEnabled,
     int itemCooldownMinutes) {
   public static final int FULL_MAP_LEVEL = 10;
-  private static final Set<String> MODES = Set.of("RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK");
+  private static final Set<String> MODES =
+      Set.of("RACE", "EASY", "HARDCORE", "TIME_LIMIT", "NO_WALK");
 
   public static RoomSettings defaults() {
     return new RoomSettings("RACE", null, 1, false, 3);

@@ -35,7 +35,7 @@ class RoomRankingTest {
             score("a", "FINISHED", 100, 100, 600L),
             score("b", "UNFINISHED", 99, 100, null),
             score("c", "DNF", 99, 100, null));
-    for (String mode : List.of("RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK")) {
+    for (String mode : List.of("RACE", "EASY", "HARDCORE", "TIME_LIMIT", "NO_WALK")) {
       var ranked = RoomRanking.rank(scores, mode, true);
       assertThat(ranked).extracting(RoomRanking.Ranked::rank).containsExactly(1, 1, 3, 3);
       assertThat(ranked)

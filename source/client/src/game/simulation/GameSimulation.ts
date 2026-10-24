@@ -11,6 +11,7 @@ import type { GameMap, PlayerInput, PlayerState, ReadView } from "./types";
 
 export interface WorldState {
 	lastTick: number;
+	safePosition?: { x: number; y: number };
 	regionIntro?: { screen: number; tick: number };
 	registeredScreens: number[];
 	weatherWind: number;
@@ -77,6 +78,15 @@ export class GameSimulation {
 			!saved.world ||
 			saved.world.lastTick !== saved.physics.ticks ||
 			!Number.isFinite(saved.world.weatherWind) ||
+			(saved.world.safePosition !== undefined &&
+				(!saved.world.safePosition ||
+					!Number.isFinite(saved.world.safePosition.x) ||
+					!Number.isFinite(saved.world.safePosition.y) ||
+					saved.world.safePosition.x < -P.bodyWidth / 2 ||
+					saved.world.safePosition.x > this.map.width - P.bodyWidth / 2 ||
+					saved.world.safePosition.y <
+						-this.map.screenHeight * this.map.screens.length ||
+					saved.world.safePosition.y > this.map.screenHeight)) ||
 			(saved.world.regionIntro !== undefined &&
 				(!ADVENTURE.regionStarts.includes(saved.world.regionIntro.screen) ||
 					!Number.isSafeInteger(saved.world.regionIntro.tick) ||
@@ -112,11 +122,32 @@ export class GameSimulation {
 		adventure();
 		this.world = world;
 	}
-	tick(input: PlayerInput, respawnOnSplat = false) {
+	tick(input: PlayerInput, mode = "RACE") {
 		const movement = this.physics.tick(input);
-		if (respawnOnSplat && movement.includes("SPLAT")) this.physics.respawn();
-		const player = this.physics.snapshot(),
-			events: WorldEvent[] = [];
+		let player = this.physics.snapshot();
+		if (movement.includes("SPLAT")) {
+			if (mode === "HARDCORE") this.physics.respawn();
+			else if (mode === "EASY") {
+				const safe = this.world.safePosition ?? this.map.spawn;
+				this.physics.respawnAt(safe.x, safe.y);
+			}
+			if (mode === "HARDCORE" || mode === "EASY")
+				player = this.physics.snapshot();
+		} else if (
+			mode === "EASY" &&
+			player.grounded &&
+			player.splat === 0 &&
+			!player.freeFlight &&
+			!player.phasingFall &&
+			!player.slipping &&
+			!player.knocked
+		) {
+			// Chỉ nhớ nền an toàn; không lấy vị trí tiếp đất của cú rơi SPLAT.
+			this.world.safePosition ??= { x: player.x, y: player.y };
+			this.world.safePosition.x = player.x;
+			this.world.safePosition.y = player.y;
+		}
+		const events: WorldEvent[] = [];
 		const adventure: AdventureEvent[] = this.adventure.tick(player, input);
 		if (
 			this.physics.finished &&

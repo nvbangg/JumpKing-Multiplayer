@@ -105,6 +105,15 @@ public final class Simulation {
     state.falls = falls;
   }
 
+  public void respawnAt(double x, double y) {
+    respawn();
+    state.x = x;
+    state.y = y;
+    state.screen = screenAt(y + p.bodyHeight / 2.0);
+    state.vy = 0;
+    cancelInput();
+  }
+
   public void setFlight(boolean enabled) {
     if (enabled && !flyAllowed) throw new IllegalArgumentException("Fly mode is disabled");
     if (state.freeFlight == enabled) return;

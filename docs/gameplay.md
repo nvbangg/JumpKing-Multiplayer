@@ -57,11 +57,14 @@ Host Start cần ít nhất một người connected. Chốt roster, chờ tất
 | Mode | Luật |
 | --- | --- |
 | RACE | Rơi vẫn tiếp tục; không giới hạn thời gian |
+| EASY | Tự nhớ vị trí đứng an toàn gần nhất; SPLAT quay về đó, không phải leo lại |
 | HARDCORE | Splat về spawn; giữ clock, peak và thống kê trận |
 | TIME_LIMIT | Như Race; Host chọn 1–30 phút nguyên, mặc định 5 |
 | NO_WALK | Chỉ nhảy để di chuyển; input ngang trên nền chọn hướng nhảy, vẫn có quán tính/bounce |
 
 Clock chung chạy từ hết countdown. Menu/chat/AFK không dừng physics/clock hoặc đuổi người vì mở menu; không Host Pause. All-offline ngừng tick trong hạn reconnect, không chạy bù thời gian offline.
+
+Easy nhớ riêng vị trí đứng/đáp nền bình thường của từng người, không cần cờ hoặc thao tác lưu; vị trí gần nhất có thể thấp hơn vị trí trước. Không ghi điểm khi SPLAT, trượt, bị hất, Fly hoặc phasing. SPLAT trả về điểm đã nhớ (chưa có thì spawn), xóa vận tốc/charge/trượt và chờ thả Jump trước cú nhảy mới. Clock, jumps/falls, peak, Items/cooldown/bẫy và tiến độ NPC/quạ giữ nguyên; current progress cập nhật theo vị trí quay về. Điểm an toàn theo snapshot, giữ khi reconnect và reset mỗi ván; không lưu dài hạn. Kết quả/crown/Best Finish Time áp dụng như các mode Room khác.
 
 Finish đầu tiên kết thúc trận sau khi xử lý mọi người trong cùng tick; Finish cùng tick đồng thắng. Time Limit chốt tại deadline, xét Finish hợp lệ trước timeout. Host có thể End khi PLAYING.
 

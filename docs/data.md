@@ -114,7 +114,7 @@ Autosave chỉ cập nhật đúng run đang ACTIVE. Finish chốt status/finish
 
 Sau countdown, tạo match và runs ROOM của roster trong một transaction; countdown bị hủy không ghi trận. Mỗi Start dùng ID mới. Mode/map/Item settings bất biến trong match; Lobby, visibility, reconnect token, item/cooldown/bẫy và physics chỉ ở RAM.
 
-Ghi định kỳ clock/metrics, flush tại End/Finish/Leave. Người DNF giữ metrics/ended_at đã chốt. Finalize atomically ghi reason/duration/ended_at của match và status/rank/winner toàn roster; retry không thay kết quả hoặc tạo winner mới.
+Ghi định kỳ clock/metrics, flush tại End/Finish/Leave. Người DNF giữ metrics/ended_at đã chốt. Finalize atomically ghi reason/duration/ended_at của match và status/rank/winner toàn roster; retry không thay kết quả hoặc tạo winner mới. Mode Easy lưu dưới giá trị EASY; điểm an toàn chỉ thuộc state trận trong RAM, không thêm bảng hoặc ghi database mỗi lần thay điểm.
 
 Phòng hết người giữ payload chưa commit để retry trong quota. Shutdown flush có giới hạn; restart chốt match mở ABORTED và runs ROOM ACTIVE thành DNF bằng metrics đã commit. Không cộng thời gian offline hoặc khôi phục physics Room.
 

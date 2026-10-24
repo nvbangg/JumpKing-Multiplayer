@@ -31,7 +31,7 @@ CREATE TABLE matches (
     CONSTRAINT ck_matches_items CHECK (items_enabled IN (FALSE, TRUE) AND item_cooldown_minutes BETWEEN 1 AND 15),
     CONSTRAINT ck_matches_map_level CHECK (map_level BETWEEN 1 AND 10),
     CONSTRAINT ck_matches_mode CHECK (
-        (mode IN ('RACE', 'HARDCORE', 'NO_WALK') AND time_limit_minutes IS NULL)
+        (mode IN ('RACE', 'EASY', 'HARDCORE', 'NO_WALK') AND time_limit_minutes IS NULL)
         OR (mode = 'TIME_LIMIT' AND time_limit_minutes IS NOT NULL AND time_limit_minutes BETWEEN 1 AND 30)
     ),
     CONSTRAINT ck_matches_ticks CHECK (duration_ticks BETWEEN 0 AND 9007199254740991),
