@@ -102,6 +102,7 @@ button {
 	width: 100%;
 	max-width: 280px;
 	min-height: 0;
+	height: min(640px, 75dvh, var(--play-height));
 	max-height: var(--play-height);
 	overflow-y: auto;
 	overscroll-behavior: contain;
@@ -669,6 +670,7 @@ button {
 	pointer-events: none;
 }
 .in-game-panel > summary {
+	flex-shrink: 0;
 	cursor: pointer;
 	padding: 8px;
 	color: #e4bb68;
@@ -767,25 +769,41 @@ button {
 }
 
 .in-game-panels {
-	display: grid;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
 	gap: 8px;
 	font-size: 12px;
-	align-items: start;
-}
-.panel-tabs {
-	display: none;
-	min-width: 0;
-	margin: 0;
-	padding: 0;
 }
 .game-panel-pane {
 	min-width: 0;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	/* Bảng ngắn giữ chiều cao nội dung; phần dư dành cho bảng dài. */
+	flex: 1 1 0;
+	max-height: max-content;
 }
 .in-game-panel {
 	min-width: 0;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	flex: 1;
 	background: #08090cdd;
 	border: 1px solid #6b6250;
 	pointer-events: auto;
+}
+.in-game-panel::details-content {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+.in-game-panel p {
+	flex-shrink: 0;
+	margin: 6px 8px;
 }
 .in-game-panel h2 {
 	display: inline;
@@ -796,11 +814,14 @@ button {
 	list-style: none;
 	margin: 0;
 	padding: 0 8px;
-	max-height: min(240px, max(30px, calc((var(--play-height) - 128px) / 2)));
+	flex: 0 1 auto;
+	min-height: 0;
 	overflow-y: auto;
 	overscroll-behavior: contain;
 }
 .records-panel > button {
+	flex-shrink: 0;
+	align-self: start;
 	margin: 6px 8px 8px;
 	font-size: inherit;
 	padding: 4px 8px;
@@ -893,13 +914,14 @@ button {
 		--column-gap: 8px;
 	}
 	.in-game-panel li {
-		line-height: 20px;
-		padding: 5px 0;
+		line-height: 18px;
+		padding: 2px 0;
 		gap: 0 5px;
 	}
 	.in-game-panel > summary {
-		padding: 6px;
+		padding: 4px 6px;
 		font-size: 12px;
+		line-height: 18px;
 	}
 	.game-chat .chat-messages {
 		max-height: min(160px, calc(var(--play-height) - 60px));
@@ -962,39 +984,13 @@ button {
 	.game-chat .chat-messages {
 		max-height: min(160px, max(30px, calc(var(--play-height) - 100px)));
 	}
-	.panel-tabs {
-		display: flex;
-		flex-wrap: wrap;
-		pointer-events: auto;
-		border: 1px solid #6b6250;
+}
+@media (pointer: coarse) {
+	.game-sidebar {
+		height: var(--play-height);
 	}
-	.panel-tabs button {
-		flex: 1 1 auto;
-		min-width: 0;
-		padding: 7px 5px;
-		border: 0;
-		background: #08090c;
-		color: #ede7d3;
-		font-size: 12px;
-	}
-	.panel-tabs button[aria-pressed="true"],
-	.panel-tabs button:hover,
-	.panel-tabs button:focus-visible {
-		background: #1c1911;
-		color: #f6ca6d;
-	}
-	.in-game-panels[data-active-panel="players"]
-		.game-panel-pane[data-panel="leaderboard"],
-	.in-game-panels[data-active-panel="leaderboard"]
-		.game-panel-pane[data-panel="players"] {
-		display: none;
-	}
-	.in-game-panel ol {
-		max-height: min(240px, max(30px, calc(var(--play-height) - 100px)));
-	}
-	.panel-tabs ~ .game-panel-pane .in-game-panel ol {
-		/* Chừa hai hàng tab, tiêu đề và Refresh ngoài vùng danh sách cuộn. */
-		max-height: min(240px, max(30px, calc(var(--play-height) - 160px)));
+	.in-game-panels {
+		gap: 6px;
 	}
 }
 .landscape-gate {

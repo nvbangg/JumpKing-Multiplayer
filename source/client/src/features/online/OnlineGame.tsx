@@ -94,7 +94,6 @@ export function OnlineGame({
 	const placingItem = useRef(false);
 	const [remaining, setRemaining] = useState<number | null>(null);
 	const [players, setPlayers] = useState<PlayerStanding[]>([]);
-	const [panel, setPanel] = useState<"players" | "leaderboard">("players");
 	const [watching, setWatching] = useState<SpectatorView | null>(null);
 	const viewedPlayer = useRef<string | null>(null);
 	// ACK hủy xem có thể tới trước snapshot; tránh nhầm với việc mất mục tiêu.
@@ -921,31 +920,7 @@ export function OnlineGame({
 			</div>
 			{ready && !ending && (
 				<aside className="game-sidebar" aria-label="Game panels">
-					<div
-						className="in-game-panels"
-						data-active-panel={room.kind === "COMMUNITY" ? panel : "players"}
-					>
-						{room.kind === "COMMUNITY" && (
-							<fieldset
-								className="panel-tabs"
-								aria-label="Game panel selection"
-							>
-								<button
-									type="button"
-									aria-pressed={panel === "players"}
-									onClick={() => setPanel("players")}
-								>
-									Players
-								</button>
-								<button
-									type="button"
-									aria-pressed={panel === "leaderboard"}
-									onClick={() => setPanel("leaderboard")}
-								>
-									Leaderboard
-								</button>
-							</fieldset>
-						)}
+					<div className="in-game-panels">
 						<div className="game-panel-pane" data-panel="players">
 							<PlayersPanel
 								players={players}
