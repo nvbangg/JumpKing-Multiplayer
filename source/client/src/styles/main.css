@@ -986,8 +986,45 @@ button {
 	}
 }
 @media (pointer: coarse) {
-	.game-sidebar {
+	.play-page {
+		--touch-button-height: 54px;
+		--touch-gap: 8px;
+		--chat-max-width: 320px;
+		--sidebar-max-width: 280px;
+		--touch-clearance: calc(var(--touch-button-height) + var(--touch-gap));
+	}
+	.play-page[data-flying="true"] {
+		--touch-clearance: calc(
+			2 *
+			(var(--touch-button-height) + var(--touch-gap))
+		);
+	}
+	.play-page .game-chat {
+		max-width: var(--chat-max-width);
+	}
+	.play-page .game-sidebar {
+		max-width: var(--sidebar-max-width);
 		height: var(--play-height);
+	}
+	.play-page .touch-controls {
+		bottom: max(var(--edge), env(safe-area-inset-bottom));
+		align-items: stretch;
+	}
+	.play-page .touch-controls > div {
+		width: 100%;
+		max-width: var(--chat-max-width);
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-auto-rows: var(--touch-button-height);
+		gap: var(--touch-gap);
+	}
+	.play-page .touch-controls button {
+		min-width: 0;
+		min-height: var(--touch-button-height);
+		height: auto;
+	}
+	.play-page .touch-controls > button {
+		width: 100%;
+		max-width: var(--sidebar-max-width);
 	}
 	.in-game-panels {
 		gap: 6px;

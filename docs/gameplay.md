@@ -127,6 +127,8 @@ Game ở giữa, giữ đủ screen 4:3 và camera gốc; dành hai cột riêng
 
 Sound và hướng dẫn phím chỉ ở Pause Menu. Nút cảm ứng/hướng dẫn touch theo khả năng chạm, không theo chiều rộng cửa sổ; desktop hẹp vẫn dùng hướng dẫn bàn phím. Trang chủ có Create Room, Join Public Room và ô Room ID kèm Join trực tiếp, không submenu Room hoặc Options. Mũi tên chọn mục hiện khi hover hoặc focus bàn phím; Tab/Shift+Tab đi qua cả ô Room ID. Mã mời chỉ hiện tại Lobby theo dạng `ROOM ID: <id>`; nhấn mã để sao chép và hiện Copied, vẫn cho kéo chọn thủ công, không có nút Copy ID riêng. Khi clipboard bị chặn, hiện hướng dẫn sao chép thủ công. F11 do trình duyệt xử lý, không nút Fullscreen. Chỉ ô nhập/mã phòng cho chọn chữ. New Game Community chỉ tại menu sau Save & Exit.
 
+Trên thiết bị có con trỏ chính là cảm ứng (`pointer: coarse`), cụm Left/Right khớp chiều rộng và hai mép ngoài với khung nhập chat (ô nhập và Send); Jump khớp với khung Leaderboard, hoặc Players khi chơi Room. Left/Right chia đều chiều rộng còn lại sau khoảng cách 8 px; nút hướng cao 54 px. Hai cụm thẳng mép trên/dưới, cách khung chat và vùng bảng 8 px khi bảng dùng hết chiều cao được cấp, chừa đáy theo safe area. Khi Fly bật, bốn nút hướng chia hai hàng và Jump giãn bằng chiều cao cả cụm. Các quy tắc này không áp dụng cho desktop có con trỏ chính là chuột.
+
 ## Xem người chơi khác
 
 Chọn người connected trong Players cùng Community hoặc Room PLAYING để xem screen/nhân vật/môi trường/NPC/quạ/âm thanh của họ; người được xem rõ 100%, peers 70%. Không điều khiển họ, xem nối tiếp mục tiêu họ đang xem hoặc phát ending của họ.

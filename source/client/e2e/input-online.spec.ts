@@ -6,6 +6,9 @@ import {
 	observeOnline,
 	registerOnline,
 } from "./support/online";
+import { expectTouchLayout } from "./support/touch-layout";
+
+test.use({ isMobile: true, hasTouch: true });
 
 test("touch holds direction and Jump simultaneously and cancellation never launches", async ({
 	page,
@@ -18,6 +21,7 @@ test("touch holds direction and Jump simultaneously and cancellation never launc
 	await newCommunity(page);
 	const jump = page.getByRole("button", { name: "Jump", exact: true });
 	await expect(jump).toBeVisible();
+	await expectTouchLayout(page);
 	const bounds = await jump.boundingBox(),
 		left = await page
 			.getByRole("button", { name: "Move Left", exact: true })

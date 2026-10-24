@@ -8,6 +8,9 @@ import {
 	observeOnline,
 	registerOnline,
 } from "./support/online";
+import { expectTouchLayout } from "./support/touch-layout";
+
+test.use({ isMobile: true, hasTouch: true });
 
 const enabled = process.env.E2E_FLY_ENABLED === "true";
 test("Flight follows the server permission and double Space toggles real Community flight", async ({
@@ -113,11 +116,12 @@ test("touch double Jump respects the gate and simultaneous Jump fingers are one 
 			touchPoints: [],
 		});
 	}
-	if (enabled)
+	if (enabled) {
 		await expect(
 			page.getByRole("button", { name: "Move Up", exact: true }),
 		).toBeVisible();
-	else
+		await expectTouchLayout(page);
+	} else
 		await expect(
 			page.getByRole("button", { name: "Move Up", exact: true }),
 		).toBeHidden();

@@ -7,6 +7,7 @@ import {
 	registerOnline,
 	startRoom,
 } from "./support/online";
+import { expectTouchLayout } from "./support/touch-layout";
 
 test.use({
 	isMobile: true,
@@ -237,6 +238,8 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 			{ width: 1280, height: 1080 },
 			{ width: 1024, height: 768 },
 			{ width: 844, height: 390 },
+			{ width: 932, height: 430 },
+			{ width: 667, height: 375 },
 			{ width: 568, height: 320 },
 		]) {
 			await page.setViewportSize({ width: 390, height: 844 });
@@ -355,6 +358,7 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 			if (!players) throw new Error("Players panel is missing");
 			expect(players.y + players.height).toBeLessThanOrEqual(board.y);
 			if (await page.locator(".touch-controls").isVisible()) {
+				await expectTouchLayout(page);
 				for (const direction of ["Left", "Right", "Up", "Down"]) {
 					const control = page.getByRole("button", {
 						name: `Move ${direction}`,
@@ -401,6 +405,34 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 				fullPage: true,
 			});
 		}
+		const cdp = await page.context().newCDPSession(page);
+		try {
+			for (const insets of [
+				{ left: 44, right: 0, bottom: 21 },
+				{ left: 0, right: 44, bottom: 21 },
+			]) {
+				await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets });
+				await page.setViewportSize({ width: 932, height: 430 });
+				await settleLayout();
+				const boxes = await expectTouchLayout(page);
+				expect(Math.abs(430 - boxes.jump.bottom - insets.bottom)).toBeLessThan(
+					0.5,
+				);
+				expect(boxes.directions.x).toBeGreaterThanOrEqual(insets.left);
+				expect(boxes.jump.right).toBeLessThanOrEqual(932 - insets.right);
+				await page.screenshot({
+					path: info.outputPath(
+						`safe-area-${insets.left ? "left" : "right"}.png`,
+					),
+				});
+			}
+		} finally {
+			await cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: {} });
+			await cdp.detach();
+		}
+		// Trả về màn nhỏ để danh sách Room dài vẫn cần dùng hết chiều cao cột.
+		await page.setViewportSize({ width: 568, height: 320 });
+		await settleLayout();
 		await page
 			.getByRole("button", { name: "Skip tutorial", exact: true })
 			.tap();
@@ -417,6 +449,7 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 		await expect(page.locator(".records-panel")).toHaveCount(0);
 		await expect(playerList.getByRole("listitem")).toHaveCount(10);
 		await expectFullHeight();
+		await expectTouchLayout(page);
 		expect(errors).toEqual([]);
 	} finally {
 		await leaveOnline(page);
@@ -640,6 +673,7 @@ test.describe("Desktop panels", () => {
 						return Math.round(bounds?.height ?? 0);
 					})
 					.toBe(Math.round(Math.min(640, viewport.height * 0.75)));
+				await expect(page.locator(".touch-controls")).toBeHidden();
 				await expect(page.locator(".players-panel summary")).toBeVisible();
 				await expect(page.locator(".records-panel summary")).toBeVisible();
 				await list.evaluate((element) => {
