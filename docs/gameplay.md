@@ -109,7 +109,7 @@ Full Finish mở crown Account vĩnh viễn. Community chỉ người Finish xem
 
 Server cấp 10 màu riêng theo membership, giữ qua reconnect và nhất quán giữa các client. Bản thân opacity=1, vẽ trên peers opacity=0.7; tên rõ, nằm dưới hội thoại. Ngoại hình không đổi hitbox.
 
-Tutorial Community: thực hiện tuần tự di chuyển → charge → nhảy có hướng; hành động ở bước sau không bỏ qua bước trước. Hoàn tất theo counter nhảy server, không tính rơi/Fly. Account đã hoàn tất/Skip trên thiết bị không hiện lại; lưu trạng thái local theo Account, không thêm bảng database.
+Tutorial Community chỉ hiện khi Account chưa có thời gian chơi, chưa tham gia trận Room và chưa có lượt Community đã lưu. Dùng dữ liệu Stats/checkpoint có sẵn trên server; Continue/reconnect không hiện lại. Thực hiện tuần tự di chuyển → charge → nhảy có hướng; hoàn tất bước 3 thì đóng ngay, không có bước xác nhận. Hoàn tất theo counter nhảy server, không tính rơi/Fly. Hoàn tất/Skip được nhớ thêm trên trình duyệt theo Account, không thêm bảng database.
 
 ## Thống kê và History
 

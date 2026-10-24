@@ -385,6 +385,12 @@ export function App() {
 					options={options}
 					onOptionsChange={updateOptions}
 					accountId={accountId}
+					firstGame={
+						!!home &&
+						!home.run &&
+						home.statistics.totalPlayTimeMs === 0 &&
+						home.statistics.matchesPlayed === 0
+					}
 					onResults={() => {
 						viewedEnding.current = resultRef.current?.playId || null;
 						setScreen("results");

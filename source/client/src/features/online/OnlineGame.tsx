@@ -56,6 +56,7 @@ export function OnlineGame({
 	options,
 	onOptionsChange,
 	accountId,
+	firstGame,
 	onHome,
 	onResults,
 }: {
@@ -65,6 +66,7 @@ export function OnlineGame({
 	options: Options;
 	onOptionsChange: (key: keyof Options) => void;
 	accountId?: string;
+	firstGame: boolean;
 	onHome: (message: string) => void;
 	onResults: () => void;
 }) {
@@ -113,7 +115,9 @@ export function OnlineGame({
 	const [ending, setEnding] = useState<"playing" | "picture" | null>(null),
 		[pictureReady, setPictureReady] = useState(false);
 	const [tutorialStep, setTutorialStep] = useState<TutorialStep | null>(() =>
-		room.kind === "ROOM" || isTutorialCompleted(accountId) ? null : "move",
+		room.kind === "COMMUNITY" && firstGame && !isTutorialCompleted(accountId)
+			? "move"
+			: null,
 	);
 	const tutorialRef = useRef<TutorialStep | null>(tutorialStep);
 	tutorialRef.current = tutorialStep;
@@ -485,9 +489,11 @@ export function OnlineGame({
 						);
 						if (next !== tutorialRef.current) {
 							tutorialOrigin.current = { x: physics.x, jumps: physics.jumps };
-							tutorialRef.current = next;
-							setTutorialStep(next);
-							if (next === "completed") saveTutorialCompleted(accountId);
+							if (next === null) dismissTutorial();
+							else {
+								tutorialRef.current = next;
+								setTutorialStep(next);
+							}
 						}
 					}
 				},

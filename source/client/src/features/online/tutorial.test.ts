@@ -115,13 +115,6 @@ test("nextTutorialStep falling does not complete the jump step", () => {
 			{ x: 100, jumps: 0 },
 		),
 	).toBe("jump");
-	expect(
-		nextTutorialStep(
-			"completed",
-			{ x: 100, vx: 0, charge: 0, grounded: true, jumps: 0 },
-			{ x: 100, jumps: 0 },
-		),
-	).toBe("completed");
 });
 
 test("a jump cannot bypass move or charge", () => {
@@ -157,7 +150,7 @@ test("the jump step requires a new directional jump", () => {
 			{ x: 110, vx: -3, charge: 0, grounded: false, jumps: 3 },
 			origin,
 		),
-	).toBe("completed");
+	).toBeNull();
 });
 
 test("Fly and existing jump counts do not complete the guide", () => {

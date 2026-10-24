@@ -1,4 +1,4 @@
-export type TutorialStep = "move" | "charge" | "jump" | "completed";
+export type TutorialStep = "move" | "charge" | "jump";
 
 const TUTORIAL_PREFIX = "jumpking.tutorial";
 
@@ -31,7 +31,7 @@ export function nextTutorialStep(
 		freeFlight?: boolean;
 	},
 	origin: { x: number; jumps: number },
-): TutorialStep {
+): TutorialStep | null {
 	if (state.freeFlight) return current;
 	switch (current) {
 		case "move":
@@ -43,9 +43,7 @@ export function nextTutorialStep(
 		case "jump":
 			// Counter server xác nhận cú nhảy mới; rơi hoặc nhảy thẳng chưa hoàn tất bước này.
 			return state.jumps > origin.jumps && !state.grounded && state.vx !== 0
-				? "completed"
+				? null
 				: "jump";
-		case "completed":
-			return "completed";
 	}
 }

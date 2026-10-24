@@ -121,21 +121,22 @@ for (const mobile of [false, true])
 					type: "touchEnd",
 					touchPoints: [],
 				});
-				await expect(guide).toContainText("Ready to Climb!");
 				await cdp.detach();
 			} else {
 				await page.keyboard.down("Space");
 				await expect(guide).toContainText("Step 3/3: Jump");
 				await page.keyboard.down("KeyD");
 				await page.keyboard.up("Space");
-				await expect(guide).toContainText("Ready to Climb!");
+				await expect(guide).toHaveCount(0);
 				await page.keyboard.up("KeyD");
 			}
 			await expect
 				.poll(() => observed.snapshot?.self.simulation.physics.jumps)
 				.toBeGreaterThan(1);
-			await expect(guide).toContainText("Ready to Climb!");
-			await expect(guide).toBeHidden({ timeout: 6500 });
+			await expect(guide).toHaveCount(0);
+			await expect(
+				page.getByRole("button", { name: "Got it", exact: true }),
+			).toHaveCount(0);
 			await page
 				.getByRole("button", { name: "Menu (Esc)", exact: true })
 				.click();
@@ -163,13 +164,33 @@ for (const mobile of [false, true])
 				page.getByRole("switch", { name: "Sound: Off", exact: true }),
 			).toBeVisible();
 			await page.getByRole("button", { name: "Resume", exact: true }).click();
+			if (!mobile) {
+				await page
+					.getByRole("button", { name: "Menu (Esc)", exact: true })
+					.click();
+				await page
+					.getByRole("button", { name: "Save & Exit", exact: true })
+					.click();
+				await page.evaluate(() => {
+					for (const key of Object.keys(localStorage))
+						if (key.startsWith("jumpking.tutorial"))
+							localStorage.removeItem(key);
+				});
+				await page.reload();
+				await expect(
+					page.getByRole("button", { name: "Continue", exact: true }),
+				).toBeVisible();
+				page.once("dialog", (dialog) => dialog.accept());
+				await newCommunity(page);
+				await expect(guide).toHaveCount(0);
+			}
 		} finally {
 			await leaveOnline(page);
 			await context.close();
 		}
 	});
 
-test("Room never shows or completes the Community tutorial; Skip survives Continue", async ({
+test("Returning Room players do not see the Community tutorial after reload", async ({
 	page,
 }) => {
 	const observed = observeOnline(page);
@@ -187,8 +208,25 @@ test("Room never shows or completes the Community tutorial; Skip survives Contin
 		await expect(guide).toHaveCount(0);
 		await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await page.getByRole("button", { name: "Leave Room", exact: true }).click();
+		await expect(
+			page.getByRole("button", { name: "New Game", exact: true }),
+		).toBeVisible();
+		await page.reload();
 		await newCommunity(page);
-		await expect(guide).toBeVisible();
+		await expect(guide).toHaveCount(0);
+	} finally {
+		await leaveOnline(page);
+	}
+});
+
+test("A new player can skip the tutorial and Continue without seeing it again", async ({
+	page,
+}) => {
+	try {
+		await registerOnline(page, "tutorial_skip");
+		await newCommunity(page);
+		const guide = page.getByRole("complementary", { name: "Tutorial guide" });
+		await expect(guide).toContainText("Step 1/3: Move");
 		await page
 			.getByRole("button", { name: "Skip tutorial", exact: true })
 			.click();

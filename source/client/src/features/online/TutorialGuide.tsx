@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import type { TutorialStep } from "./tutorial";
 
 const STEP_CONTENT: Record<
@@ -21,11 +20,6 @@ const STEP_CONTENT: Record<
 		touchHint:
 			"Hold Jump, then release while holding an arrow to jump sideways.",
 	},
-	completed: {
-		title: "Ready to Climb!",
-		hint: "Great jump! You are ready to conquer the tower.",
-		touchHint: "Great jump! You are ready to conquer the tower.",
-	},
 };
 
 export function TutorialGuide({
@@ -35,11 +29,6 @@ export function TutorialGuide({
 	step: TutorialStep;
 	onDismiss: () => void;
 }) {
-	useEffect(() => {
-		if (step !== "completed") return;
-		const timer = setTimeout(onDismiss, 4000);
-		return () => clearTimeout(timer);
-	}, [step, onDismiss]);
 	const content = STEP_CONTENT[step];
 
 	return (
@@ -50,9 +39,9 @@ export function TutorialGuide({
 					type="button"
 					className="tutorial-dismiss"
 					onClick={onDismiss}
-					aria-label={step === "completed" ? "Close tutorial" : "Skip tutorial"}
+					aria-label="Skip tutorial"
 				>
-					{step === "completed" ? "Got it" : "Skip"}
+					Skip
 				</button>
 			</div>
 			<p className="tutorial-hint desktop-only">{content.hint}</p>
