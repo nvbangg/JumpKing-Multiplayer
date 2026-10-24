@@ -135,28 +135,54 @@ for (const mobile of [false, true])
 				exact: true,
 			});
 			await expect(button).toBeEnabled();
+			const expectItemLayout = async () => {
+				await expect(async () => {
+					const layout = await host
+						.locator(".play-page")
+						.evaluate((root, mobile) => {
+							const bounds = (selector: string) => {
+								const element = root.querySelector(selector);
+								if (!element) throw new Error(`Missing ${selector}`);
+								const { x, y, width, right, bottom } =
+									element.getBoundingClientRect();
+								return { x, y, width, right, bottom };
+							};
+							return {
+								item: bounds('button[aria-label="Use item"]'),
+								stage: bounds(".game-stage"),
+								players: bounds(".game-sidebar"),
+								jump: mobile ? bounds('button[aria-label="Jump"]') : null,
+								width: window.innerWidth,
+								height: window.innerHeight,
+							};
+						}, mobile);
+					expect(layout.item.x).toBeGreaterThanOrEqual(layout.stage.right);
+					expect(layout.item.right).toBeLessThanOrEqual(layout.width);
+					expect(layout.item.y).toBeGreaterThanOrEqual(layout.players.bottom);
+					expect(layout.item.bottom).toBeLessThanOrEqual(layout.height);
+					if (layout.jump) {
+						expect(layout.item.x).toBeCloseTo(layout.jump.x, 0);
+						expect(layout.item.width).toBeCloseTo(layout.jump.width, 0);
+						expect(layout.jump.y - layout.item.bottom).toBeCloseTo(8, 0);
+					} else {
+						expect(layout.height - layout.item.bottom).toBeCloseTo(12, 0);
+					}
+				}).toPass();
+			};
+			await expectItemLayout();
+			await host.screenshot({
+				path: info.outputPath(
+					mobile ? "items-mobile.png" : "items-desktop.png",
+				),
+			});
 			if (mobile) {
 				await host.setViewportSize({ width: 568, height: 320 });
-				const hud = await host.locator(".game-hud").boundingBox(),
-					item = await button.boundingBox();
-				if (!hud || !item) throw new Error("Game controls are missing");
-				expect(hud.y + hud.height).toBeLessThanOrEqual(item.y);
-				for (const name of ["Move Left", "Move Right", "Jump"]) {
-					const control = await host
-						.getByRole("button", { name, exact: true })
-						.boundingBox();
-					if (!control) throw new Error(`${name} button is missing`);
-					expect(
-						item.x + item.width <= control.x ||
-							control.x + control.width <= item.x ||
-							item.y + item.height <= control.y ||
-							control.y + control.height <= item.y,
-					).toBe(true);
-				}
+				await expectItemLayout();
 				await host.screenshot({
 					path: info.outputPath("items-mobile-small.png"),
 				});
 				await host.setViewportSize({ width: 844, height: 390 });
+				await expectItemLayout();
 			}
 			await host.keyboard.press("Enter");
 			await host.getByLabel("Message", { exact: true }).press("KeyE");

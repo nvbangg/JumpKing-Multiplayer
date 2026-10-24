@@ -720,55 +720,6 @@ export function OnlineGame({
 					!menu &&
 					!chat.open &&
 					!watching &&
-					room.kind === "ROOM" &&
-					room.settings?.itemsEnabled && (
-						<button
-							className="item-control"
-							type="button"
-							aria-label="Use item"
-							aria-keyshortcuts="E"
-							aria-pressed={items?.bananaArmed ?? false}
-							title={
-								items?.held === "BANANA"
-									? "Click to prepare a banana, then jump; click again to cancel"
-									: items?.held === "BOOTS"
-										? "Boost the height of your next jump"
-										: "Throw at the highest other player"
-							}
-							disabled={
-								!items?.held ||
-								itemPending ||
-								disconnected ||
-								room.state !== "PLAYING" ||
-								(items.held === "BOOTS" && jumpBoost) ||
-								flying
-							}
-							onPointerDown={(event) => event.preventDefault()}
-							onClick={useItem}
-						>
-							<span>E / Click · </span>
-							{items?.held === "BANANA"
-								? items.bananaArmed
-									? "Banana · Jump to drop"
-									: "Banana · Prepare"
-								: items?.held === "ROCK"
-									? "Rock · Throw"
-									: items?.held === "BOOTS"
-										? "Boots · Use"
-										: `Item ${duration(Math.ceil((items?.cooldownMs ?? 0) / 1000) * 1000)}`}
-							{jumpBoost && (
-								<>
-									<br />
-									<span>Next jump ×2</span>
-								</>
-							)}
-						</button>
-					)}
-				{ready &&
-					!ending &&
-					!menu &&
-					!chat.open &&
-					!watching &&
 					room.kind === "COMMUNITY" &&
 					tutorialStep && (
 						<TutorialGuide step={tutorialStep} onDismiss={dismissTutorial} />
@@ -895,32 +846,81 @@ export function OnlineGame({
 				)}
 			</div>
 			{ready && !ending && (
-				<aside className="game-sidebar" aria-label="Game panels">
-					<div className="in-game-panels">
-						<div className="game-panel-pane" data-panel="players">
-							<PlayersPanel
-								players={players}
-								selfId={socket.selfId}
-								watchingId={watching?.player.playerId}
-								watchableIds={room.members
-									.filter((member) => member.connected)
-									.map((member) => member.playerId)}
-								disabled={
-									pending ||
-									disconnected ||
-									!!menu ||
-									(room.kind === "ROOM" && room.state !== "PLAYING")
-								}
-								onWatch={(id) => void watch(id)}
-							/>
-						</div>
-						{room.kind === "COMMUNITY" && (
-							<div className="game-panel-pane" data-panel="leaderboard">
-								<InGameLeaderboard />
+				<div className="game-right">
+					<aside className="game-sidebar" aria-label="Game panels">
+						<div className="in-game-panels">
+							<div className="game-panel-pane" data-panel="players">
+								<PlayersPanel
+									players={players}
+									selfId={socket.selfId}
+									watchingId={watching?.player.playerId}
+									watchableIds={room.members
+										.filter((member) => member.connected)
+										.map((member) => member.playerId)}
+									disabled={
+										pending ||
+										disconnected ||
+										!!menu ||
+										(room.kind === "ROOM" && room.state !== "PLAYING")
+									}
+									onWatch={(id) => void watch(id)}
+								/>
 							</div>
+							{room.kind === "COMMUNITY" && (
+								<div className="game-panel-pane" data-panel="leaderboard">
+									<InGameLeaderboard />
+								</div>
+							)}
+						</div>
+					</aside>
+					{!menu &&
+						!chat.open &&
+						!watching &&
+						room.kind === "ROOM" &&
+						room.settings?.itemsEnabled && (
+							<button
+								className="item-control"
+								type="button"
+								aria-label="Use item"
+								aria-keyshortcuts="E"
+								aria-pressed={items?.bananaArmed ?? false}
+								title={
+									items?.held === "BANANA"
+										? "Click to prepare a banana, then jump; click again to cancel"
+										: items?.held === "BOOTS"
+											? "Boost the height of your next jump"
+											: "Throw at the highest other player"
+								}
+								disabled={
+									!items?.held ||
+									itemPending ||
+									disconnected ||
+									room.state !== "PLAYING" ||
+									(items.held === "BOOTS" && jumpBoost) ||
+									flying
+								}
+								onPointerDown={(event) => event.preventDefault()}
+								onClick={useItem}
+							>
+								<span>E / Click · </span>
+								{items?.held === "BANANA"
+									? items.bananaArmed
+										? "Banana · Jump to drop"
+										: "Banana · Prepare"
+									: items?.held === "ROCK"
+										? "Rock · Throw"
+										: items?.held === "BOOTS"
+											? "Boots · Use"
+											: `Item ${duration(Math.ceil((items?.cooldownMs ?? 0) / 1000) * 1000)}`}
+								{jumpBoost && (
+									<>
+										<br />
+										<span>Next jump ×2</span>
+									</>
+								)}
+							</button>
 						)}
-					</div>
-				</aside>
+				</div>
 			)}
 			{ready && !ending && (
 				<aside className="game-left" aria-label="Game controls and chat">

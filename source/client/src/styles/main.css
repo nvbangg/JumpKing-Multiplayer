@@ -93,14 +93,23 @@ button {
 	min-width: 0;
 	min-height: 0;
 }
-.game-sidebar {
+.game-right {
 	grid-column: 3;
 	grid-row: 1;
 	align-self: start;
 	justify-self: start;
 	z-index: 30;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
 	width: 100%;
 	max-width: 280px;
+	min-width: 0;
+	height: var(--play-height);
+	pointer-events: none;
+}
+.game-sidebar {
+	width: 100%;
 	min-height: 0;
 	height: min(640px, 75dvh, var(--play-height));
 	max-height: var(--play-height);
@@ -1014,8 +1023,10 @@ button {
 		max-width: var(--chat-max-width);
 	}
 	.play-page .game-sidebar {
-		max-width: var(--sidebar-max-width);
 		height: var(--play-height);
+	}
+	.play-page .game-right {
+		max-width: var(--sidebar-max-width);
 	}
 	.play-page .touch-controls {
 		bottom: max(var(--edge), env(safe-area-inset-bottom));
@@ -1304,13 +1315,14 @@ button {
 	}
 }
 .item-control {
-	position: absolute;
-	z-index: 35;
-	right: max(16px, env(safe-area-inset-right));
-	bottom: 12px;
+	flex-shrink: 0;
+	width: 100%;
+	min-height: 44px;
+	margin-top: auto;
 	font-size: 13px;
 	padding: 10px;
 	touch-action: manipulation;
+	pointer-events: auto;
 }
 .item-control[aria-pressed="true"] {
 	border-color: #d8be69;
