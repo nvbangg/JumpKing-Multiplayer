@@ -70,15 +70,50 @@ test("snow rejects weak charge and raises a small valid charge", () => {
 	expect(sim.snapshot().vy).toBe(Math.fround(P.jumpVelocity * 0.3));
 });
 
-test("No Walk removes walking intent while allowing horizontal jumps", () => {
-	const sim = settled(ground(), true),
-		start = sim.snapshot().x;
-	for (let i = 0; i < 20; i++) sim.tick({ ...idle, right: true });
-	expect(sim.snapshot().x).toBe(start);
-	for (let i = 0; i < 36; i++) sim.tick({ ...idle, right: true, jump: true });
-	expect(sim.snapshot().vx).toBe(3.5);
-	sim.tick(idle);
-	expect(sim.snapshot().x).toBeGreaterThan(start);
+for (const direction of [-1, 1])
+	test(`No Walk stops after landing a horizontal jump (${direction})`, () => {
+		const sim = settled(ground(), true),
+			start = sim.snapshot().x,
+			input = { ...idle, left: direction < 0, right: direction > 0 };
+		for (let i = 0; i < 20; i++) sim.tick(input);
+		expect(sim.snapshot().x).toBe(start);
+		for (let i = 0; i < 12; i++) sim.tick({ ...input, jump: true });
+		sim.tick(input);
+		expect(sim.snapshot().vx).toBe(direction * P.jumpSpeed);
+		for (let i = 0; i < 120; i++) {
+			sim.tick(input);
+			if (sim.snapshot().grounded) break;
+			expect(sim.snapshot().vx).toBe(direction * P.jumpSpeed);
+		}
+		const landing = sim.snapshot();
+		expect(landing.grounded).toBe(true);
+		expect((landing.x - start) * direction).toBeGreaterThan(0);
+		expect(landing.vx).toBe(0);
+		for (const groundedInput of [
+			idle,
+			{ ...idle, left: true },
+			{ ...idle, right: true },
+		])
+			for (let i = 0; i < 20; i++) {
+				sim.tick(groundedInput);
+				expect(sim.snapshot().x).toBe(landing.x);
+				expect(sim.snapshot().vx).toBe(0);
+			}
+	});
+
+test("No Walk preserves ice friction without accelerating from horizontal input", () => {
+	const sim = settled(ground("I"), true),
+		idleSim = settled(ground("I"), true);
+	for (const game of [sim, idleSim])
+		game.restore({ ...game.snapshot(), vx: P.jumpSpeed });
+	for (let i = 0; i < 12; i++) {
+		sim.tick({ ...idle, left: true });
+		idleSim.tick(idle);
+		expect(sim.snapshot().x).toBe(idleSim.snapshot().x);
+		expect(sim.snapshot().vx).toBe(idleSim.snapshot().vx);
+	}
+	expect(sim.snapshot().vx).toBeGreaterThan(0);
+	expect(sim.snapshot().vx).toBeLessThan(P.jumpSpeed);
 });
 
 test("Boots double jump height once while retaining horizontal speed and charge time", () => {

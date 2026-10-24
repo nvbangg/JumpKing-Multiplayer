@@ -456,7 +456,7 @@ export class Simulation {
 					s.jumpConsumed = true;
 				}
 			} else {
-				if (s.snow) s.vx = 0;
+				if (s.snow || (this.noWalk && !s.ice)) s.vx = 0;
 				else if (!this.noWalk) {
 					const target = intent * P.walkSpeed;
 					if (!s.ice) s.vx = target;

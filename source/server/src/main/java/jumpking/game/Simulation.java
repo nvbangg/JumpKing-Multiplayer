@@ -392,7 +392,7 @@ public final class Simulation {
           s.jumpConsumed = true;
         }
       } else {
-        if (s.snow) s.vx = 0;
+        if (s.snow || (noWalk && !s.ice)) s.vx = 0;
         else if (!noWalk) {
           double target = intent * p.walkSpeed;
           if (!s.ice) s.vx = target;

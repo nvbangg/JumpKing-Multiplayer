@@ -60,7 +60,7 @@ Host Start cần ít nhất một người connected. Chốt roster, chờ tất
 | EASY | Tự nhớ vị trí đứng an toàn gần nhất; SPLAT quay về đó, không phải leo lại |
 | HARDCORE | Splat về spawn; giữ clock, peak và thống kê trận |
 | TIME_LIMIT | Như Race; Host chọn 1–30 phút nguyên, mặc định 5 |
-| NO_WALK | Chỉ nhảy để di chuyển; input ngang trên nền chọn hướng nhảy, vẫn có quán tính/bounce |
+| NO_WALK | Chỉ nhảy để di chuyển; input ngang chỉ chọn hướng, đáp nền thường thì dừng. Giữ quán tính băng, gió, bounce và trượt do Items |
 
 Clock chung chạy từ hết countdown. Menu/chat/AFK không dừng physics/clock hoặc đuổi người vì mở menu; không Host Pause. All-offline ngừng tick trong hạn reconnect, không chạy bù thời gian offline.
 

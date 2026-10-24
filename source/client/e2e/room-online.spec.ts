@@ -267,7 +267,6 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 				await expect
 					.poll(() => observed.snapshot?.elapsedTimeMs)
 					.toBeGreaterThan(before + 300);
-				await a.keyboard.up("ArrowRight");
 				expect(required(observed.snapshot).self.simulation.physics.x).toBe(231);
 				expect(required(observed.snapshot).self.simulation.physics.vx).toBe(0);
 			}
@@ -281,6 +280,33 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			await expect
 				.poll(() => observed.snapshot?.self.simulation.physics.jumps)
 				.toBe(1);
+			if (mode === "NO_WALK") {
+				await expect
+					.poll(() => observed.snapshot?.self.simulation.physics.grounded)
+					.toBe(false);
+				expect(
+					required(observed.snapshot).self.simulation.physics.x,
+				).toBeGreaterThan(231);
+				await expect
+					.poll(() => observed.snapshot?.self.simulation.physics.grounded)
+					.toBe(true);
+				expect(required(observed.snapshot).self.simulation.physics.vx).toBe(0);
+				const landingX = required(observed.snapshot).self.simulation.physics.x;
+				for (const direction of ["ArrowRight", "ArrowLeft"]) {
+					await a.keyboard.down(direction);
+					const before = required(observed.snapshot).elapsedTimeMs;
+					await expect
+						.poll(() => observed.snapshot?.elapsedTimeMs)
+						.toBeGreaterThan(before + 300);
+					expect(required(observed.snapshot).self.simulation.physics.x).toBe(
+						landingX,
+					);
+					expect(required(observed.snapshot).self.simulation.physics.vx).toBe(
+						0,
+					);
+					await a.keyboard.up(direction);
+				}
+			}
 			await a.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 			const before = required(observed.snapshot).elapsedTimeMs;
 			await expect
