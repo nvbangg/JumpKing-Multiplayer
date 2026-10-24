@@ -4,10 +4,14 @@ import checkpoints from "../../common/fixtures/main-babe-checkpoints.json" with 
 };
 import { required } from "../src/required";
 
-for (const ravenDone of [false, true])
-	test(`ending raven=${ravenDone} runs without credits or duplicate callbacks`, async ({
+for (const { ravenDone, crown } of [
+	{ ravenDone: false, crown: "GOLD" },
+	{ ravenDone: true, crown: "BLACK" },
+	{ ravenDone: false, crown: "BLACK" },
+] as const)
+	test(`ending raven=${ravenDone}, crown=${crown} runs without credits or duplicate callbacks`, async ({
 		page,
-	}) => {
+	}, info) => {
 		const errors: string[] = [];
 		page.on("pageerror", (error) => errors.push(error.message));
 		page.on("console", (message) => {
@@ -15,14 +19,19 @@ for (const ravenDone of [false, true])
 				errors.push(message.text());
 		});
 		await page.goto("/");
+		await page.exposeFunction("captureCrownEnding", async () => {
+			await page.screenshot({ path: info.outputPath("ending-crown.png") });
+		});
 		const result = await page.evaluate(
-			async ({ physics, ravenDone }) => {
+			async ({ physics, ravenDone, crown }) => {
 				const renderer = "/src/game/presentation/createGame.ts";
 				const { createGame } = await import(renderer);
 				const adventurePath = "/src/game/simulation/Adventure.ts";
 				const { ADVENTURE } = await import(adventurePath);
 				const manifest = await (await fetch("/assets/manifest.json")).json(),
 					parent = document.createElement("div");
+				parent.style.cssText =
+					"position:fixed;inset:0;background:black;z-index:100";
 				document.body.append(parent);
 				let ready!: () => void,
 					picture!: () => void,
@@ -33,7 +42,7 @@ for (const ravenDone of [false, true])
 					completed = new Promise<void>((resolve) => {
 						picture = resolve;
 					});
-				const signal = { id: "ending-test", screen: 42, ravenDone };
+				const signal = { id: "ending-test", screen: 42, ravenDone, crown };
 				const runtime = {
 					advance() {},
 					frame: () => ({
@@ -42,7 +51,7 @@ for (const ravenDone of [false, true])
 							nickname: "Player",
 							color: "#ffffff",
 							state: physics,
-							crowned: true,
+							crown,
 						},
 						peers: [],
 						world: {
@@ -80,6 +89,26 @@ for (const ravenDone of [false, true])
 				try {
 					await loaded;
 					const scene = game.scene.getScene("Tower");
+					const wornTexture =
+						crown === "BLACK" ? `${manifest.crown}/black` : manifest.crown;
+					type ObjectTree = {
+						texture?: { key: string };
+						list?: ObjectTree[];
+					};
+					const wearsCrown = (objects: ObjectTree[]): boolean =>
+						objects.some(
+							(object) =>
+								object.texture?.key === wornTexture ||
+								(object.list !== undefined && wearsCrown(object.list)),
+						);
+					let woreCrown = false;
+					scene.events.on("postupdate", () => {
+						woreCrown ||= wearsCrown(
+							scene.children.list.filter(
+								(object: ObjectTree) => object.list !== undefined,
+							),
+						);
+					});
 					const carrier = scene.children.list
 						.flatMap(
 							(object: { list?: { name: string }[] }) => object.list || [],
@@ -91,12 +120,18 @@ for (const ravenDone of [false, true])
 					const carrierTexture = carrier?.list[0]?.texture.key;
 					if (
 						carrierTexture !==
-						(ravenDone ? "props/textures/raven/raven_crown" : "king/base")
+						(ravenDone ? "props/textures/raven/raven_crown/black" : "king/base")
 					)
 						failures.push("Wrong crown carrier texture");
 					scene.time.timeScale = 32;
 					scene.tweens.timeScale = 32;
 					await completed;
+					await new Promise<void>((resolve) =>
+						requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+					);
+					await (
+						window as unknown as { captureCrownEnding(): Promise<void> }
+					).captureCrownEnding();
 					const image = scene.children.getByName("ending-picture");
 					const texts = scene.children.list
 						.filter((object: { type: string }) =>
@@ -106,6 +141,7 @@ for (const ravenDone of [false, true])
 					await new Promise<void>((resolve) => setTimeout(resolve, 100));
 					return {
 						completions,
+						woreCrown,
 						picture: image.texture.key,
 						camera: scene.cameras.main.scrollY,
 						texts,
@@ -116,10 +152,13 @@ for (const ravenDone of [false, true])
 					parent.remove();
 				}
 			},
-			{ physics: required(checkpoints.at(-1)), ravenDone },
+			{ physics: required(checkpoints.at(-1)), ravenDone, crown },
 		);
 		expect(result.completions).toBe(1);
-		expect(result.picture).toBe("ending/imagecrown");
+		expect(result.woreCrown).toBe(true);
+		expect(result.picture).toBe(
+			crown === "BLACK" ? "ending/imagecrown/black" : "ending/imagecrown",
+		);
 		expect(result.camera).toBe(-42 * 360);
 		expect(result.texts).toEqual(["Player"]);
 		expect(result.failures).toEqual([]);

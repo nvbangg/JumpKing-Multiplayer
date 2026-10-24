@@ -1,6 +1,6 @@
 import rules from "../../../../common/rules.json";
 import { NETWORK } from "../../network/config";
-import type { PlayerStanding } from "../../network/contracts";
+import type { Crown, PlayerStanding } from "../../network/contracts";
 import type { GameSocket, RoomState } from "../../network/GameSocket";
 import { required } from "../../required";
 import type { RoomItemsView } from "../items";
@@ -47,6 +47,7 @@ export interface OnlineSnapshot {
 	elapsedTimeMs: number;
 	remainingTimeMs: number | null;
 	self: {
+		crown: Crown;
 		lastProcessedInputSeq: number;
 		status: string;
 		paused: boolean;
@@ -57,7 +58,7 @@ export interface OnlineSnapshot {
 		nickname: string;
 		colorSlot: number;
 		state: RenderPose;
-		crowned: boolean;
+		crown: Crown;
 		status: string;
 	}[];
 }
@@ -133,10 +134,13 @@ export class OnlineRuntime implements GameRuntime {
 			throw new Error("Invalid ending state");
 		if (ending.ravenDone !== undefined && typeof ending.ravenDone !== "boolean")
 			throw new Error("Invalid ending state");
+		if (ending.crown !== "GOLD" && ending.crown !== "BLACK")
+			throw new Error("Invalid ending state");
 		this.ending ??= {
 			id: payload.playId,
 			screen: required(ending.screen),
 			ravenDone: ending.ravenDone === true,
+			crown: ending.crown,
 		};
 	}
 	receive(payload: Record<string, unknown>): void {
@@ -289,7 +293,7 @@ export class OnlineRuntime implements GameRuntime {
 				nickname: peer.nickname,
 				color: color(peer.colorSlot),
 				state: peer.state,
-				crowned: peer.crowned,
+				crown: peer.crown,
 			}));
 		// Chỉ đổi frame hiển thị; game/prediction và ACK luôn thuộc bản thân.
 		const watched = this.latest?.spectating;
@@ -301,7 +305,7 @@ export class OnlineRuntime implements GameRuntime {
 					nickname: watched.player.nickname,
 					color: color(watched.player.colorSlot),
 					state: target?.state ?? watched.player.state,
-					crowned: watched.player.crowned,
+					crown: watched.player.crown,
 					adventure: watched.adventure,
 				},
 				peers: peers
@@ -311,7 +315,7 @@ export class OnlineRuntime implements GameRuntime {
 						nickname: self?.nickname || "Player",
 						color: color(self?.colorSlot || 0),
 						state: saved.physics,
-						crowned: this.game.adventure.completed,
+						crown: this.latest?.self.crown ?? "NONE",
 					}),
 				world: watched.world,
 				items: this.latest?.items,
@@ -323,7 +327,7 @@ export class OnlineRuntime implements GameRuntime {
 				nickname: self?.nickname || "Player",
 				color: color(self?.colorSlot || 0),
 				state: saved.physics,
-				crowned: this.game.adventure.completed,
+				crown: this.latest?.self.crown ?? "NONE",
 				adventure: saved.adventure,
 			},
 			peers,

@@ -11,6 +11,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import jumpking.config.FeatureFlags;
 import jumpking.config.NetworkSettings;
+import jumpking.entity.Crown;
 import jumpking.exception.ApiException;
 import jumpking.game.SharedData;
 import jumpking.network.*;
@@ -103,7 +104,8 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     final long order;
     GameConnection connection;
     String watching;
-    boolean confirmed = true, crowned, ready;
+    boolean confirmed = true, ready;
+    Crown crown = Crown.NONE;
     String endingNotifiedPlay;
     long disconnectedAt, generation;
 
@@ -469,8 +471,8 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
       return;
     }
     try {
-      boolean crowned = crowns.unlocked(player.identity.owner());
-      room.actor.complete(() -> completeJoin(room, player, command, create, settings, crowned));
+      var crown = crowns.crown(player.identity.owner());
+      room.actor.complete(() -> completeJoin(room, player, command, create, settings, crown));
     } catch (Exception error) {
       room.actor.complete(
           () ->
@@ -488,7 +490,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
       GameEnvelope command,
       boolean create,
       RoomSettings settings,
-      boolean crowned) {
+      Crown crown) {
     if (rooms.get(room.id) != room
         || !room.state.equals("WAITING")
         || !player.connection.open()
@@ -501,7 +503,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
           new ApiException(409, "ROOM_NOT_JOINABLE", "This room is not accepting new players"));
       return;
     }
-    player.crowned = crowned;
+    player.crown = crown;
     if (create) {
       room.settings = settings;
       room.visibility = "PRIVATE";
@@ -761,7 +763,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     room.match = new RoomMatch(room.id, room.settings, specs, shared, limits, flags.flyEnabled());
     room.writer = database.writer(records::save);
     for (var player : roster)
-      if (player.crowned) room.match.players.get(player.id).game.adventure().complete();
+      if (player.crown != Crown.NONE) room.match.players.get(player.id).game.adventure().complete();
     room.state = "COUNTDOWN";
     room.countdownAt = 0;
     room.prepareDeadline = time.nanos() + rules.path("roomLoadTimeoutMs").asLong() * 1_000_000L;
@@ -905,13 +907,13 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
 
   private void finishNotice(Room room, Member member) {
     var match = room.match;
-    if (match == null
-        || !match.saveStatus.equals("SAVED")
-        || member.connection == null
-        || match.id.equals(member.endingNotifiedPlay)) return;
+    if (match == null || !match.saveStatus.equals("SAVED")) return;
     var player = match.players.get(member.id);
     if (player == null || !player.winner || player.ending == null) return;
-    member.crowned = true;
+    member.crown = member.crown.finish(player.game.adventure().ravenDone());
+    if (member.connection == null || match.id.equals(member.endingNotifiedPlay)) return;
+    var ending = new LinkedHashMap<>(player.ending);
+    ending.put("crown", member.crown);
     member.connection.send(
         "PLAYER_FINISHED",
         Map.of(
@@ -924,7 +926,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
             "showEnding",
             true,
             "ending",
-            player.ending));
+            ending));
     member.endingNotifiedPlay = match.id;
   }
 
@@ -1018,7 +1020,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
       captured.put(
           other.id,
           PlayerSnapshot.capture(
-              peer.game, other.id, other.nickname, other.slot.color(), peer.status));
+              peer.game, other.id, other.nickname, other.slot.color(), peer.status, other.crown));
     }
     for (var member : room.players.values()) {
       var self = match.players.get(member.id);
@@ -1037,6 +1039,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
               .putObject("self")
               .put("lastProcessedInputSeq", self.input.processed())
               .put("status", self.status)
+              .put("crown", member.crown.name())
               .put("paused", !room.state.equals("PLAYING"));
       own.putPOJO("simulation", captured.get(member.id).simulation());
       var target = member.watching == null ? null : room.players.get(member.watching);

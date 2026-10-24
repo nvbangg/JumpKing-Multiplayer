@@ -212,7 +212,15 @@ final class RoomMatch {
         endedAt,
         ticks,
         reason,
-        runs);
+        runs,
+        settings.mapLevel() == RoomSettings.FULL_MAP_LEVEL
+            ? players.values().stream()
+                .filter(
+                    player ->
+                        player.status.equals("FINISHED") && player.game.adventure().ravenDone())
+                .map(player -> player.spec.owner())
+                .collect(java.util.stream.Collectors.toSet())
+            : Set.of());
   }
 
   Map<String, Object> results() {

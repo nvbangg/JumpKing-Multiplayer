@@ -609,7 +609,7 @@ class IdentityIT {
           .containsExactlyInAnyOrder("authenticated", "account");
       assertThat(tree(response).path("authenticated").asBoolean()).isTrue();
       assertThat(tree(response).path("account").path("id").isTextual()).isTrue();
-      assertThat(tree(response).path("account").path("crownUnlocked").isBoolean()).isTrue();
+      assertThat(tree(response).path("account").path("crown").asText()).isEqualTo("NONE");
       assertThat(tree(response).path("account").path("hasPassword").asBoolean()).isTrue();
       String id = client.cookie("JSESSIONID");
       assertThat(id).isNotEqualTo(previous);

@@ -126,7 +126,9 @@ for (const mobile of [false, true])
 			}
 			await startRoom(host, peer);
 			const viewport = host.viewportSize();
-			await expect.poll(() => own.snapshot?.items?.held).toMatch(/BANANA|ROCK/);
+			await expect
+				.poll(() => own.snapshot?.items?.held)
+				.toMatch(/BANANA|ROCK|BOOTS/);
 			const kind = own.snapshot?.items?.held;
 			const button = host.getByRole("button", {
 				name: "Use item",
@@ -200,11 +202,26 @@ for (const mobile of [false, true])
 					.toBeGreaterThan(0);
 				await expect.poll(() => seenSlip).toBe(true);
 				await expect.poll(() => own.snapshot?.items?.bananas.length).toBe(0);
-			} else {
+			} else if (kind === "ROCK") {
 				await expect.poll(() => seenRock).toBe(true);
 				await expect
 					.poll(() => other.snapshot?.self.simulation.physics.slipping)
 					.toBe(true);
+			} else {
+				await expect
+					.poll(() => own.snapshot?.self.simulation.physics.jumpBoost)
+					.toBe(true);
+				await expect(button).toContainText("Next jump ×2");
+				const jumps = own.snapshot?.self.simulation.physics.jumps ?? 0;
+				await host.keyboard.down("Space");
+				await expect
+					.poll(() => own.snapshot?.self.simulation.physics.jumps)
+					.toBe(jumps + 1);
+				await host.keyboard.up("Space");
+				await expect
+					.poll(() => own.snapshot?.self.simulation.physics.jumpBoost)
+					.not.toBe(true);
+				await expect(button).not.toContainText("Next jump ×2");
 			}
 			await expect
 				.poll(() => own.snapshot?.items?.cooldownMs)

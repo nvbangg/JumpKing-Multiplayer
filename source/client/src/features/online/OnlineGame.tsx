@@ -91,6 +91,7 @@ export function OnlineGame({
 		"held" | "bananaArmed" | "cooldownMs"
 	> | null>(null);
 	const [itemPending, setItemPending] = useState(false);
+	const [jumpBoost, setJumpBoost] = useState(false);
 	const placingItem = useRef(false);
 	const [remaining, setRemaining] = useState<number | null>(null);
 	const [players, setPlayers] = useState<PlayerStanding[]>([]);
@@ -163,6 +164,7 @@ export function OnlineGame({
 			disconnected ||
 			flying ||
 			!snapshot?.items?.held ||
+			(snapshot.items.held === "BOOTS" && jumpBoost) ||
 			session.menu ||
 			snapshot.spectating ||
 			snapshot.self.paused ||
@@ -400,6 +402,7 @@ export function OnlineGame({
 							: Math.ceil(snapshot.remainingTimeMs / 1000) * 1000,
 					);
 					setFlying(state.freeFlight);
+					setJumpBoost(state.jumpBoost === true);
 					setPlayers((previous) => {
 						const next = snapshot.players ?? [];
 						return previous.length === next.length &&
@@ -748,13 +751,16 @@ export function OnlineGame({
 							title={
 								items?.held === "BANANA"
 									? "Click to prepare a banana, then jump; click again to cancel"
-									: "Throw at the highest other player"
+									: items?.held === "BOOTS"
+										? "Boost the height of your next jump"
+										: "Throw at the highest other player"
 							}
 							disabled={
 								!items?.held ||
 								itemPending ||
 								disconnected ||
 								room.state !== "PLAYING" ||
+								(items.held === "BOOTS" && jumpBoost) ||
 								flying
 							}
 							onPointerDown={(event) => event.preventDefault()}
@@ -767,7 +773,15 @@ export function OnlineGame({
 									: "Banana · Prepare"
 								: items?.held === "ROCK"
 									? "Rock · Throw"
-									: `Item ${duration(Math.ceil((items?.cooldownMs ?? 0) / 1000) * 1000)}`}
+									: items?.held === "BOOTS"
+										? "Boots · Use"
+										: `Item ${duration(Math.ceil((items?.cooldownMs ?? 0) / 1000) * 1000)}`}
+							{jumpBoost && (
+								<>
+									<br />
+									<span>Next jump ×2</span>
+								</>
+							)}
 						</button>
 					)}
 				{ready &&

@@ -11,6 +11,7 @@ import { PHYSICS } from "../simulation/tuning";
 import { AdventureVisuals } from "./AdventureVisuals";
 import { ConversationVisuals } from "./ConversationVisuals";
 import { PLAYER_FRAMES, PRESENTATION as V } from "./config";
+import { createCrownTextures, crownTexture } from "./crownTextures";
 import { ENDING_FRAMES, endingFrameName } from "./endingFrames";
 import { MainBabeEnding } from "./MainBabeEnding";
 import { playerFrame } from "./playerFrame";
@@ -76,7 +77,12 @@ export class TowerScene extends Phaser.Scene {
 	}
 	create(): void {
 		if (this.loadFailed) return;
-		for (const key of ["king/base", this.manifest.crown]) {
+		createCrownTextures(this, this.manifest.crown);
+		for (const key of [
+			"king/base",
+			this.manifest.crown,
+			crownTexture(this.manifest.crown, "BLACK"),
+		]) {
 			const texture = this.textures.get(key);
 			PLAYER_FRAMES.forEach((name, i) => {
 				if (!texture.has(name))
@@ -204,12 +210,14 @@ export class TowerScene extends Phaser.Scene {
 			.setVisible(visible);
 		avatar.crown
 			.setPosition(avatar.sprite.x, avatar.sprite.y)
-			.setFrame(avatar.sprite.frame.name)
+			.setTexture(
+				crownTexture(this.manifest.crown, player.crown),
+				avatar.sprite.frame.name,
+			)
 			.setFlipX(avatar.sprite.flipX)
 			.setDepth(avatar.sprite.depth + 0.1)
 			.setAlpha(avatar.sprite.alpha)
-			.setTint(avatar.sprite.tintTopLeft)
-			.setVisible(visible && player.crowned);
+			.setVisible(visible && player.crown !== "NONE");
 	}
 	private render(frame: WorldFrame): void {
 		if (frame.self.state.screen !== this.screen)

@@ -16,7 +16,7 @@ export interface RockEffect {
 	tick: number;
 }
 export interface RoomItemsView {
-	held: "BANANA" | "ROCK" | null;
+	held: "BANANA" | "ROCK" | "BOOTS" | null;
 	bananaArmed: boolean;
 	cooldownMs: number;
 	bananas: BananaTrap[];

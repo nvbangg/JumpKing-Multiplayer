@@ -139,6 +139,7 @@ class RoomMatchTest {
     match.tick(1_000_000_000L, now);
     assertThat(first.ending).containsEntry("ravenDone", true);
     assertThat(match.players.get("second").ending).containsEntry("ravenDone", false);
+    assertThat(match.write(1).ravenFinishers()).containsExactly(first.spec.owner());
     assertThat(match().players.get("first").game.adventure().ravenDone()).isFalse();
   }
 

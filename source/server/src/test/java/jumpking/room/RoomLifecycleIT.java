@@ -130,7 +130,7 @@ class RoomLifecycleIT {
                   return invocation.callRealMethod();
                 })
             .when(crowns)
-            .unlocked(anyLong());
+            .crown(anyLong());
         var replies = new java.util.ArrayList<Future<JsonNode>>();
         for (var client : joining)
           replies.add(requests.submit(() -> client.command("CREATE_ROOM", Map.of())));
@@ -185,7 +185,7 @@ class RoomLifecycleIT {
                   return invocation.callRealMethod();
                 })
             .when(crowns)
-            .unlocked(pending.owner);
+            .crown(pending.owner);
         request.submit(() -> pending.command("JOIN_ROOM", Map.of("roomId", roomId)));
         assertThat(entered.await(3, TimeUnit.SECONDS)).isTrue();
         assertThat(memberships.find(pending.owner)).isNotNull();

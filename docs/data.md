@@ -19,7 +19,7 @@ erDiagram
         VARCHAR(32) username UK
         VARCHAR(255) password_hash "nullable; trống khi chỉ dùng Google"
         VARCHAR(64) google_id UK "nullable; Google user ID"
-        BOOLEAN crown_unlocked
+        VARCHAR(5) crown "NONE / GOLD / BLACK"
         DATETIME(3) created_at
     }
     play_runs {
@@ -100,7 +100,7 @@ Writer nhận payload bất biến, xử lý theo thứ tự lượt/trận; có
 - Chỉ nhận revision mới hơn; cùng revision/nội dung là no-op, khác nội dung là CONFLICT. Counters/peak không giảm; lượt terminal giữ metrics, riêng Room rank/winner chốt khi finalize. Autosave không phục hồi lượt kết thúc hoặc upsert lượt đã mất.
 - Mọi thao tác cạnh tranh cùng Account/run/match được tuần tự hóa trong transaction; dùng thứ tự khóa thống nhất, không ghi đè payload mới bằng payload cũ.
 - Retry cùng ID/kết quả không tạo hàng hoặc cộng tổng lần nữa. PENDING/SAVED/FAILED phản ánh đúng trạng thái; SAVED chỉ sau commit, retry có giới hạn và cấu hình tập trung phía backend.
-- crown_unlocked chỉ false→true khi Finish full map, cùng transaction với kết quả. Password/session theo [protocol](protocol.md#xác-thực-và-bảo-mật).
+- users.crown nhận NONE/GOLD/BLACK, chỉ nâng cấp khi Finish full map theo [gameplay](gameplay.md#nội-dung-và-nhận-diện), cùng transaction với kết quả. Server lấy tiến độ quạ của chính người Finish trong lượt đó; không nhận quyền crown từ client. Password/session theo [protocol](protocol.md#xác-thực-và-bảo-mật).
 
 ## Checkpoint Community
 

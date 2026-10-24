@@ -15,13 +15,15 @@ class PlayerSnapshotTest {
     var shared = new SharedData(json);
     var game =
         new GameSimulation(shared.geometry(), shared.tuning(), shared.adventure(), false, false);
-    var captured = PlayerSnapshot.capture(game, "player", "name", 2, "ACTIVE");
+    var captured =
+        PlayerSnapshot.capture(game, "player", "name", 2, "ACTIVE", jumpking.entity.Crown.BLACK);
     var before = json.valueToTree(captured);
     game.tick(new PlayerInput(false, true, true));
     var after = json.valueToTree(captured);
     assertThat(after).isEqualTo(before);
     assertThat(captured.ticks()).isZero();
     var view = json.valueToTree(SpectatorView.of(captured, "play", 0, false));
+    assertThat(view.path("player").path("crown").asText()).isEqualTo("BLACK");
     assertThat(view.path("adventure"))
         .isEqualTo(json.valueToTree(captured.simulation().adventure()));
     assertThat(view.path("world")).isEqualTo(json.valueToTree(captured.simulation().world()));

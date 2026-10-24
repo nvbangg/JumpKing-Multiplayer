@@ -8,11 +8,12 @@ CREATE TABLE users (
     username VARCHAR(32) NOT NULL,
     password_hash VARCHAR(255) NULL,
     google_id VARCHAR(64) NULL,
-    crown_unlocked BOOLEAN NOT NULL DEFAULT FALSE,
+    crown VARCHAR(5) NOT NULL DEFAULT 'NONE',
     created_at DATETIME(3) NOT NULL,
     PRIMARY KEY (id),
     UNIQUE KEY uq_users_username (username),
-    UNIQUE KEY uq_users_google_id (google_id)
+    UNIQUE KEY uq_users_google_id (google_id),
+    CONSTRAINT ck_users_crown CHECK (crown IN ('NONE', 'GOLD', 'BLACK'))
 ) ENGINE=InnoDB;
 
 CREATE TABLE matches (

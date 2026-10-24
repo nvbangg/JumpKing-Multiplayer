@@ -152,7 +152,7 @@ test("one auth flow keeps credentials errors and submits new usernames only to l
 					account: {
 						id: "1",
 						username: "new_player",
-						crownUnlocked: false,
+						crown: "NONE",
 						hasPassword: true,
 					},
 				},

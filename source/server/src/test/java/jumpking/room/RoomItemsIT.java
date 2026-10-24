@@ -263,6 +263,85 @@ class RoomItemsIT {
   }
 
   @Test
+  void bootsSurviveReconnectAndAreConsumedByTheNextActualJump() throws Exception {
+    try (var client = new GameClient(port)) {
+      client.register();
+      client.connect();
+      var joined = client.ok("CREATE_ROOM", Map.of());
+      String room = joined.path("roomId").asText(), id = joined.path("playerId").asText();
+      client.ok("UPDATE_ROOM_SETTINGS", Map.of("itemsEnabled", true));
+      var first = start(client);
+      time.advance(100);
+      arrange(room, match -> match.items.slots.get(id).held = RoomItems.Kind.BOOTS);
+      client.ok("USE_ITEM", Map.of("playId", first.path("playId").asText(), "generation", 1));
+      time.advance(50);
+      var activated =
+          client
+              .await(
+                  m ->
+                      m.path("type").asText().equals("GAME_SNAPSHOT")
+                          && m.path("payload")
+                              .path("self")
+                              .path("simulation")
+                              .path("physics")
+                              .path("jumpBoost")
+                              .asBoolean())
+              .path("payload");
+      assertThat(activated.path("items").path("held").isNull()).isTrue();
+      assertThat(activated.path("items").path("cooldownMs").asLong()).isGreaterThan(0);
+      client.disconnect();
+      client.connect();
+      client.ok(
+          "RECONNECT",
+          Map.of(
+              "roomId",
+              room,
+              "playerId",
+              id,
+              "reconnectToken",
+              joined.path("reconnectToken").asText()));
+      time.advance(50);
+      var restored =
+          client
+              .await(
+                  m ->
+                      m.path("type").asText().equals("GAME_SNAPSHOT")
+                          && m.path("payload").path("generation").asLong() > 1)
+              .path("payload");
+      assertThat(
+              restored
+                  .path("self")
+                  .path("simulation")
+                  .path("physics")
+                  .path("jumpBoost")
+                  .asBoolean())
+          .isTrue();
+      input(client, restored, 1, false);
+      time.advance(50);
+      input(client, restored, 2, true);
+      time.advance(200);
+      input(client, restored, 3, false);
+      time.advance(50);
+      var jumped =
+          client
+              .await(
+                  m ->
+                      m.path("type").asText().equals("GAME_SNAPSHOT")
+                          && m.path("payload")
+                                  .path("self")
+                                  .path("simulation")
+                                  .path("physics")
+                                  .path("jumps")
+                                  .asInt()
+                              == 1)
+              .path("payload");
+      assertThat(jumped.path("self").path("simulation").path("physics").has("jumpBoost")).isFalse();
+      assertThat(jumped.path("items").path("cooldownMs").asLong()).isGreaterThan(0);
+      client.ok("LEAVE_ROOM", Map.of());
+    }
+  }
+
+  @Test
   void fullRosterAndMaximumBananasFitOneSnapshotWithoutClosingAnyConnection() throws Exception {
     var clients = new ArrayList<GameClient>();
     try {

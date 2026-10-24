@@ -67,7 +67,7 @@ class RoomRunsIT {
         var write =
             new RoomRuns.Write(
                 match, "ABCDEF", "RACE", null, level, false, 3, 1, started, ended, 600, "FINISH",
-                runs);
+                runs, Set.of());
         records.save(write);
         records.save(write);
         assertThat(
@@ -83,10 +83,8 @@ class RoomRunsIT {
             .isEqualTo(level);
         assertThat(
                 jdbc.queryForObject(
-                    "SELECT crown_unlocked FROM users WHERE id=?",
-                    Boolean.class,
-                    owners.getFirst()))
-            .isEqualTo(level == 10);
+                    "SELECT crown FROM users WHERE id=?", String.class, owners.getFirst()))
+            .isEqualTo(level == 10 ? "GOLD" : "NONE");
         var stats = history.statistics(owners.getFirst());
         assertThat(stats.wins()).isEqualTo(1);
         assertThat(stats.finishes()).isEqualTo(1);
@@ -109,7 +107,8 @@ class RoomRunsIT {
                             ended,
                             600,
                             "FINISH",
-                            runs)))
+                            runs,
+                            Set.of())))
             .isInstanceOf(jumpking.exception.ApiException.class);
       } finally {
         jdbc.update("DELETE FROM play_runs WHERE match_id=?", match);
@@ -159,7 +158,8 @@ class RoomRunsIT {
               null,
               0,
               null,
-              List.of(first, second));
+              List.of(first, second),
+              Set.of());
       records.save(start);
       records.save(start);
       var update =
@@ -206,7 +206,8 @@ class RoomRunsIT {
                       null,
                       null,
                       false,
-                      null)));
+                      null)),
+              Set.of());
       records.save(update);
       records.save(start);
       var finish =
@@ -253,7 +254,8 @@ class RoomRunsIT {
                       null,
                       2,
                       false,
-                      ended)));
+                      ended)),
+              Set.of(users.getFirst()));
       jdbc.execute(
           "CREATE TRIGGER "
               + trigger
@@ -277,20 +279,17 @@ class RoomRunsIT {
       assertThat(jdbc.queryForObject("SELECT jumps FROM play_runs WHERE id=?", Integer.class, a))
           .isEqualTo(1);
       assertThat(
-              jdbc.queryForObject(
-                  "SELECT crown_unlocked FROM users WHERE id=?", Boolean.class, users.get(0)))
-          .isFalse();
+              jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, users.get(0)))
+          .isEqualTo("NONE");
       records.save(finish);
       records.save(finish);
       records.save(update);
       assertThat(
-              jdbc.queryForObject(
-                  "SELECT crown_unlocked FROM users WHERE id=?", Boolean.class, users.get(0)))
-          .isTrue();
+              jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, users.get(0)))
+          .isEqualTo("BLACK");
       assertThat(
-              jdbc.queryForObject(
-                  "SELECT crown_unlocked FROM users WHERE id=?", Boolean.class, users.get(1)))
-          .isFalse();
+              jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, users.get(1)))
+          .isEqualTo("NONE");
       assertThat(
               jdbc.queryForObject(
                   "SELECT COUNT(*) FROM play_runs WHERE match_id=?", Integer.class, match))
@@ -318,7 +317,8 @@ class RoomRunsIT {
                           null,
                           62,
                           null,
-                          update.runs())))
+                          update.runs(),
+                          Set.of())))
           .isInstanceOf(jumpking.exception.ApiException.class);
     } finally {
       jdbc.execute("DROP TRIGGER IF EXISTS " + trigger);

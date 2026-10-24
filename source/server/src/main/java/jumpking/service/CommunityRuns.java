@@ -193,7 +193,9 @@ public class CommunityRuns {
           run.setSnapshot(active ? encode(next.snapshot()) : null);
           run.setEndedAt(next.endedAt());
           run.setUpdatedAt(clock.instant());
-          if (next.status().equals("FINISHED")) crowns.unlock(owner);
+          if (next.status().equals("FINISHED"))
+            crowns.unlock(
+                owner, next.snapshot().adventure().path("raven").path("done").asBoolean());
           runs.flush();
           return null;
         });

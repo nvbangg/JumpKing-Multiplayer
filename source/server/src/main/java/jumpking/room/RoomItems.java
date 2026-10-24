@@ -10,7 +10,8 @@ import jumpking.game.*;
 final class RoomItems {
   enum Kind {
     BANANA,
-    ROCK
+    ROCK,
+    BOOTS
   }
 
   static final class Slot {
@@ -53,7 +54,8 @@ final class RoomItems {
   }
 
   private void grant(Slot slot) {
-    slot.held = random.nextBoolean() ? Kind.BANANA : Kind.ROCK;
+    var kinds = Kind.values();
+    slot.held = kinds[random.nextInt(kinds.length)];
     slot.bananaArmed = false;
   }
 
@@ -91,6 +93,13 @@ final class RoomItems {
         throw new ApiException(
             409, "INVALID_ITEM_POSITION", "Stand on the ground to prepare a banana");
       slot.bananaArmed = true;
+      return;
+    }
+    if (slot.held == Kind.BOOTS) {
+      if (state.jumpBoost)
+        throw new ApiException(409, "ITEM_UNAVAILABLE", "Jump boost is already active");
+      own.boostJump();
+      consume(slot, tick, cooldownMinutes);
       return;
     }
     Simulation target = null;

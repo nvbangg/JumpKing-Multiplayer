@@ -86,11 +86,12 @@ Tối đa 64 bẫy Banana/phòng, cấu hình trong rules. Chạm trần thì h�
 | --- | --- |
 | Banana | Click khi đứng nền để chuẩn bị, click lại hủy. Cú bật nhảy thật tiếp theo để lại bẫy dưới chân; air grace/đặt trùng hủy chuẩn bị, giữ item. Bẫy hoạt động từ tick sau, không trúng người đang bay lên; tồn tại đến khi một người giẫm, kể cả chủ, rồi mất |
 | Rock | Đánh trực tiếp người khác connected/ACTIVE cao nhất Room, bỏ người Fly/phasing/splat; hòa chọn theo roster. Hất ngang ra xa người ném và hủy vận tốc lên; cùng x dùng hướng quay người ném. Không mục tiêu thì giữ item. Đường bay chỉ là hiệu ứng, không projectile/né đá |
+| Jump Boots | Dùng để tăng độ cao cú nhảy hợp lệ kế tiếp gần 2× với cùng mức charge; giữ tốc độ ngang, gravity và thời gian charge. Không cộng dồn hoặc hết hạn theo thời gian; launch thật tiêu hiệu lực, kể cả va trần. Hủy charge hoặc charge yếu trên tuyết chưa launch thì giữ hiệu lực |
 
-- Hết countdown cấp ngẫu nhiên Banana/Rock 50/50, một ô không tích trữ. Click/chạm hoặc E để dùng; tiêu thụ thành công mới tính cooldown, hết cooldown cấp ngẫu nhiên tiếp.
+- Hết countdown cấp ngẫu nhiên Banana/Rock/Jump Boots, mỗi loại 1/3, một ô không tích trữ. Click/chạm hoặc E để dùng; tiêu thụ thành công mới tính cooldown, hết cooldown cấp ngẫu nhiên tiếp. Boots bắt đầu cooldown khi kích hoạt, không dùng thêm Boots khi cú nhảy tăng lực còn chờ.
 - Không dùng khi menu/chat/spectating, charge/splat/trượt/Fly/phasing; Rock dùng được trên không. Server quyết định item, vị trí, mục tiêu và người trúng; nhiều người giẫm cùng tick chọn theo roster. Chủ Leave không xóa Banana.
 - Trúng item gây trượt ngang 4× walkSpeed, không ma sát/gió/đổi hướng/charge, không cộng dồn lực. Banana theo hướng di chuyển, đứng yên dùng hướng quay. Gravity/collision vẫn chạy; hết trượt khi va tường/trần/biên, splat hoặc rơi rồi đáp nền mới. Không bảo đảm rơi khỏi bệ; chỉ splat thật tăng falls/kích hoạt Hardcore.
-- Item/cooldown/bẫy giữ qua reconnect/respawn, reset khi hết ván; all-offline cũng ngừng cooldown. State chỉ ở RAM; History lưu settings theo [data](data.md#room-và-kết-quả).
+- Item/cooldown/bẫy và hiệu lực Boots chưa dùng giữ qua reconnect/respawn, reset khi hết ván; all-offline cũng ngừng cooldown. State chỉ ở RAM; History lưu settings theo [data](data.md#room-và-kết-quả).
 
 ## Leave và reconnect
 
@@ -106,9 +107,9 @@ Giữ nhân vật, NPC/hội thoại, readables, đạo cụ, animation, ambienc
 
 Tên vùng hiện 6 giây khi lần đầu tới màn đầu vùng (Colossal Drain từ screen index 5). Tiến độ thuộc lượt/checkpoint, không phát lại khi rơi/respawn/Continue/reconnect; lượt mới reset, lên vượt bỏ qua vùng thấp. Menu giữ hiệu ứng, ending ẩn tên vùng.
 
-Quạ đen có 14 điểm đậu, tới gần thì bay tiếp; đuổi hết rồi full Finish thay thiên thần trao vương miện. Quạ trắng có 17 điểm trong Main Babe, bay đi sau điểm cuối; không thưởng/đổi ending. Tiến độ riêng từng người, lưu Community và reset mỗi trận Room.
+Quạ đen có 14 điểm đậu, tới gần thì bay tiếp; đuổi hết rồi full Finish trong cùng lượt thì quạ trao vương miện đen thay thiên thần. Quạ trắng có 17 điểm trong Main Babe, bay đi sau điểm cuối; không thưởng/đổi ending. Tiến độ riêng từng người, lưu Community và reset mỗi trận Room.
 
-Full Finish mở crown Account vĩnh viễn. Community chỉ người Finish xem ending; Room full map chỉ winners xem, người khác tới Results. Map 1–9 chỉ Results, không crown/ending/Best Finish Time full map. Giữ cảnh/nhạc/ảnh ending và Skip; không ảnh hưởng kết quả/clock, không phát lại khi replay hoặc spectate.
+Full Finish mở crown vàng Account vĩnh viễn; hoàn thành cả chuỗi quạ đen trong lượt đó nhận thẳng crown đen. Tự đeo cấp cao nhất đã nhận, chỉ nâng NONE → GOLD → BLACK; Finish thường không hạ crown đen. Có thể chơi lượt mới để lấy đen sau khi đã có vàng. Hai màu crown cố định, độc lập màu nhân vật. Community chỉ người Finish xem ending; Room full map chỉ winners xem, người khác tới Results. Map 1–9 chỉ Results, không crown/ending/Best Finish Time full map. Giữ cảnh/nhạc/ảnh ending và Skip; không ảnh hưởng kết quả/clock, không phát lại khi replay hoặc spectate.
 
 Server cấp 10 màu riêng theo membership, giữ qua reconnect và nhất quán giữa các client. Bản thân opacity=1, vẽ trên peers opacity=0.7; tên rõ, nằm dưới hội thoại. Ngoại hình không đổi hitbox.
 

@@ -250,9 +250,8 @@ test("short Room finish shows Results and History without ending or full-map rew
 		expect(stats.wins).toBe(1);
 		expect(stats.bestFinishTimeMs).toBeNull();
 		expect(
-			(await (await a.request.get("/api/auth/me")).json()).account
-				.crownUnlocked,
-		).toBe(false);
+			(await (await a.request.get("/api/auth/me")).json()).account.crown,
+		).toBe("NONE");
 		await a.screenshot({ path: info.outputPath("short-room-results.png") });
 		await a.getByRole("button", { name: "Play Again", exact: true }).click();
 		await expect(a.getByLabel("Map", { exact: true })).toHaveValue("1");

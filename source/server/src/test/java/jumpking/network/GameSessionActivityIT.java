@@ -102,7 +102,7 @@ class GameSessionActivityIT {
                 return invocation.callRealMethod();
               })
           .when(crowns)
-          .unlocked(anyLong());
+          .crown(anyLong());
       clock.now.addAndGet(1_000);
       var payload =
           type.equals("CREATE_ROOM") ? Map.<String, Object>of() : client.communityRequest();

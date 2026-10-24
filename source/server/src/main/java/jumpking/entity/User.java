@@ -22,8 +22,10 @@ public class User {
   @Column(name = "google_id", length = 64)
   private String googleId;
 
-  @Column(name = "crown_unlocked", nullable = false, columnDefinition = "boolean")
-  private boolean crownUnlocked;
+  @Enumerated(EnumType.STRING)
+  @JdbcTypeCode(SqlTypes.VARCHAR)
+  @Column(name = "crown", length = 5, nullable = false)
+  private Crown crown = Crown.NONE;
 
   @JdbcTypeCode(SqlTypes.TIMESTAMP)
   @Column(name = "created_at", columnDefinition = "datetime(3)")
@@ -79,12 +81,12 @@ public class User {
     return createdAt;
   }
 
-  public boolean isCrownUnlocked() {
-    return crownUnlocked;
+  public Crown getCrown() {
+    return crown;
   }
 
-  public void setCrownUnlocked(boolean value) {
-    crownUnlocked = value;
+  public void setCrown(Crown value) {
+    crown = value;
   }
 
   public void setCreatedAt(Instant value) {

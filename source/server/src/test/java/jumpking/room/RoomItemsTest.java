@@ -165,6 +165,47 @@ class RoomItemsTest {
   }
 
   @Test
+  void bootsActivateOneBoostAndStartCooldownWithoutStacking() {
+    var items = items("a");
+    var own = ground("#", false);
+    items.slots.get("a").held = RoomItems.Kind.BOOTS;
+    items.use("a", own, Map.of(), 100, 3);
+    assertThat(own.snapshot().jumpBoost).isTrue();
+    assertThat(items.view("a", 100, 0, 360).held()).isNull();
+    assertThat(items.view("a", 100, 0, 360).cooldownMs()).isEqualTo(180_000);
+    items.slots.get("a").held = RoomItems.Kind.BOOTS;
+    assertThatThrownBy(() -> items.use("a", own, Map.of(), 101, 3))
+        .hasMessageContaining("already active");
+    assertThat(items.slots.get("a").held).isEqualTo(RoomItems.Kind.BOOTS);
+    for (int i = 0; i < p.chargeTicks; i++) own.tick(new PlayerInput(false, true, true));
+    assertThat(own.snapshot().vy).isEqualTo((double) (float) (p.jumpVelocity * Math.sqrt(2)));
+    assertThat(own.snapshot().vx).isEqualTo(p.jumpSpeed);
+    assertThat(own.snapshot().jumpBoost).isFalse();
+  }
+
+  @Test
+  void bootsSurviveCanceledChargeSnowAndRespawnUntilARealJump() {
+    var sim = ground("N", false);
+    sim.boostJump();
+    for (int i = 0; i < 4; i++) sim.tick(new PlayerInput(false, false, true));
+    sim.cancelInput();
+    sim.tick(PlayerInput.NEUTRAL);
+    for (int i = 0; i < 4; i++) sim.tick(new PlayerInput(false, false, true));
+    sim.tick(PlayerInput.NEUTRAL);
+    assertThat(sim.snapshot().jumps).isZero();
+    assertThat(sim.snapshot().jumpBoost).isTrue();
+    var restored = ground("N", false);
+    restored.restore(sim.snapshot());
+    restored.respawnAt(100, 326);
+    assertThat(restored.snapshot().jumpBoost).isTrue();
+    for (int i = 0; i < 5; i++) restored.tick(PlayerInput.NEUTRAL);
+    for (int i = 0; i < p.chargeTicks; i++) restored.tick(new PlayerInput(false, false, true));
+    assertThat(restored.snapshot().jumps).isEqualTo(1);
+    assertThat(restored.snapshot().jumpBoost).isFalse();
+    assertThat(ground("N", false).snapshot().jumpBoost).isFalse();
+  }
+
+  @Test
   void slipHasNoIceFrictionAndStopsAtWorldBoundaryInBothWalkingModes() {
     for (boolean noWalk : List.of(false, true)) {
       var sim = ground("I", noWalk);

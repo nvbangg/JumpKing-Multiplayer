@@ -11,6 +11,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import jumpking.config.FeatureFlags;
 import jumpking.config.NetworkSettings;
+import jumpking.entity.Crown;
 import jumpking.exception.ApiException;
 import jumpking.game.*;
 import jumpking.network.*;
@@ -98,6 +99,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
     final InputFrames input = new InputFrames(limits.inputFrames(), limits.inputTimeoutMs());
     final CheckpointWriter<CommunityRuns.Write> writer = database.writer(records::save);
     GameConnection connection;
+    Crown crown = Crown.NONE;
     String watching;
     GameSimulation game;
     CommunityRuns.Stored stored;
@@ -545,10 +547,12 @@ public class Community implements GameCommandHandler, AutoCloseable {
                           records.open(player.identity.owner(), replace, expected, game.snapshot());
                       game.restore(stored.snapshot());
                       game.physics().cancelInput();
-                      if (crowns.unlocked(player.identity.owner())) game.adventure().complete();
+                      var crown = crowns.crown(player.identity.owner());
+                      if (crown != Crown.NONE) game.adventure().complete();
                       tower.actor.complete(
                           () -> {
                             player.game = game;
+                            player.crown = crown;
                             player.stored = stored;
                             player.revision = player.savedRevision = stored.revision();
                             player.currentProgress = stored.progress();
@@ -871,11 +875,11 @@ public class Community implements GameCommandHandler, AutoCloseable {
   }
 
   private void finishNotice(Member player) {
-    if (!player.finished
-        || player.endingNotified
-        || player.connection == null
-        || player.ending == null
-        || !player.saveStatus.equals("SAVED")) return;
+    if (!player.finished || !player.saveStatus.equals("SAVED")) return;
+    player.crown = player.crown.finish(player.game.adventure().ravenDone());
+    if (player.endingNotified || player.connection == null || player.ending == null) return;
+    var ending = new LinkedHashMap<>(player.ending);
+    ending.put("crown", player.crown);
     player.connection.send(
         "PLAYER_FINISHED",
         Map.of(
@@ -888,7 +892,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
             "showEnding",
             true,
             "ending",
-            player.ending));
+            ending));
     player.endingNotified = true;
   }
 
@@ -963,7 +967,8 @@ public class Community implements GameCommandHandler, AutoCloseable {
                 player.id,
                 player.identity.username(),
                 player.slot.color(),
-                player.finished ? "FINISHED" : "ACTIVE"));
+                player.finished ? "FINISHED" : "ACTIVE",
+                player.crown));
     var scores =
         tower.players.values().stream()
             .filter(player -> !player.loading)
@@ -1006,6 +1011,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
               .putObject("self")
               .put("lastProcessedInputSeq", self.input.processed())
               .put("status", self.finished ? "FINISHED" : "ACTIVE")
+              .put("crown", self.crown.name())
               .put("paused", self.paused || self.pausePending);
       state.putPOJO("simulation", captured.get(self.id).simulation());
       var target = self.watching == null ? null : tower.players.get(self.watching);

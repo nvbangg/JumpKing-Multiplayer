@@ -47,7 +47,7 @@ for (const bird of [
 								nickname: "Player",
 								color: "#ffffff",
 								state: pose,
-								crowned: false,
+								crown: "NONE",
 								adventure: gameState.adventure.snapshot(),
 							},
 							peers: [],

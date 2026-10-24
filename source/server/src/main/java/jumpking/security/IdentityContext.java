@@ -27,7 +27,7 @@ public class IdentityContext {
     return new Account(
         user.getId().toString(),
         user.getUsername(),
-        user.isCrownUnlocked(),
+        user.getCrown(),
         user.getPasswordHash() != null);
   }
 

@@ -17,6 +17,7 @@ public final class Physics {
       slipSpeedMultiplier,
       gravity,
       jumpVelocity,
+      jumpBoostVelocityMultiplier,
       maxFall,
       bounce,
       iceFriction,
@@ -55,6 +56,7 @@ public final class Physics {
     flyVerticalSpeed = number(values, "flyVerticalSpeed");
     gravity = (float) (number(values, "gravityNumerator") / number(values, "gravityDenominator"));
     jumpVelocity = -(float) (number(values, "jumpGravityMultiplier") * gravity);
+    jumpBoostVelocityMultiplier = Math.sqrt(number(values, "jumpBoostHeightMultiplier"));
   }
 
   private static double number(Map<String, Number> values, String key) {

@@ -40,6 +40,7 @@ export interface PlayerState {
 	directions: number[];
 	splat: number;
 	slipping?: boolean;
+	jumpBoost?: boolean;
 	knocked: boolean;
 	ice: boolean;
 	snow: boolean;

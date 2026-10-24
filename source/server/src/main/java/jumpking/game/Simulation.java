@@ -96,13 +96,19 @@ public final class Simulation {
     if (drop) state.vy = Math.max(0, state.vy);
   }
 
+  public void boostJump() {
+    state.jumpBoost = true;
+  }
+
   public void respawn() {
     long ticks = state.ticks;
     int jumps = state.jumps, falls = state.falls;
+    boolean jumpBoost = state.jumpBoost;
     state = initialState();
     state.ticks = ticks;
     state.jumps = jumps;
     state.falls = falls;
+    state.jumpBoost = jumpBoost;
   }
 
   public void respawnAt(double x, double y) {
@@ -366,7 +372,10 @@ public final class Simulation {
                   : s.directions.stream().filter(value -> value != 0).findFirst().orElse(0);
           if (!s.snow || intensity > p.snowMinimumCharge) {
             if (s.snow && intensity < p.snowLaunchCharge) intensity = p.snowLaunchCharge;
-            s.vy = f(p.jumpVelocity * intensity);
+            // Độ cao tỉ lệ bình phương vận tốc bật; Boots không đổi charge hoặc lực ngang.
+            s.vy =
+                f(p.jumpVelocity * intensity * (s.jumpBoost ? p.jumpBoostVelocityMultiplier : 1));
+            s.jumpBoost = false;
             s.vx = f(clamp(s.vx + direction * p.jumpSpeed, -p.jumpSpeed, p.jumpSpeed));
             if (direction != 0) s.direction = direction;
             s.jumps++;

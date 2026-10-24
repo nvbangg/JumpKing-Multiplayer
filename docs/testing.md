@@ -71,7 +71,8 @@ Luật và giới hạn lấy từ [gameplay](gameplay.md), [protocol](protocol.
 | Physics và nội dung | Fixtures có expected độc lập; Java/TypeScript nhất quán; đi hết map bằng input hợp lệ, camera/Finish/NPC/quạ/ending đúng tiến độ |
 | Community | New/Continue đúng owner và lượt; checkpoint đầy đủ, pause/reconnect không mất tiến độ hoặc tính thời gian offline; sảnh dừng mô phỏng không phát snapshot định kỳ và Resume vẫn đúng |
 | Room | Join/Start/countdown/Host/Play Again đúng lifecycle; modes, đồng hạng và DNF đúng comparator |
-| Items và Fly | Server quyết định quyền, cooldown và tác động; reconnect/replay không lặp hiệu ứng; cờ Fly tắt từ chối input giả |
+| Items và Fly | Server quyết định quyền, cooldown và tác động; Boots chỉ tăng một cú nhảy, không cộng dồn hoặc mất khi cancel; reconnect/replay không lặp hiệu ứng; cờ Fly tắt từ chối input giả |
+| Crown | Vàng/đen độc lập màu người chơi; chỉ full Finish và tiến độ quạ đúng owner cấp quyền sau commit; không downgrade, replay hoặc retry không cấp sai; ending và reconnect giữ ngoại hình |
 | Giới hạn tài nguyên | Chạm trần bẫy hủy chuẩn bị, giữ item; chat history và snapshot ở biên Unicode/số players/bẫy vẫn vừa giới hạn message, không làm ngắt người nhận hợp lệ |
 | Đồng bộ | FIFO/ACK/reconciliation đúng input; peers không giật xuyên screen; spectating không thay state/ACK/save của bản thân |
 | Kết nối và quá tải | Timeout, mất mạng, socket cũ và queue đầy được xử lý; client chậm không chặn cả phòng hoặc phòng khác |

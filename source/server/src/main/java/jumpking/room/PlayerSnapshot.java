@@ -1,18 +1,14 @@
 package jumpking.room;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jumpking.entity.Crown;
 import jumpking.game.GameSimulation;
 import jumpking.game.PlayerState;
 
 /** Một bản chụp riêng cho mỗi player/đợt; owner và spectator dùng lại cùng dữ liệu bất biến. */
 record PlayerSnapshot(GameSimulation.Snapshot simulation, PublicPlayer player) {
   record PublicPlayer(
-      String playerId,
-      String nickname,
-      int colorSlot,
-      String status,
-      Pose state,
-      boolean crowned) {}
+      String playerId, String nickname, int colorSlot, String status, Pose state, Crown crown) {}
 
   record Pose(
       double x,
@@ -55,17 +51,10 @@ record PlayerSnapshot(GameSimulation.Snapshot simulation, PublicPlayer player) {
   }
 
   static PlayerSnapshot capture(
-      GameSimulation game, String id, String nickname, int colorSlot, String status) {
+      GameSimulation game, String id, String nickname, int colorSlot, String status, Crown crown) {
     var saved = game.snapshot();
     return new PlayerSnapshot(
-        saved,
-        new PublicPlayer(
-            id,
-            nickname,
-            colorSlot,
-            status,
-            new Pose(saved.physics()),
-            game.adventure().completed()));
+        saved, new PublicPlayer(id, nickname, colorSlot, status, new Pose(saved.physics()), crown));
   }
 
   int screen() {

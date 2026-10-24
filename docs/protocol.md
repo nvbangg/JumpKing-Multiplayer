@@ -22,7 +22,7 @@ Các path có prefix `/api`. Lỗi dạng `{error:{code,message}}`; không cache
 | --- | --- |
 | GET /health | Trạng thái ứng dụng |
 | GET /auth/csrf | → {token,headerName} |
-| GET /auth/me | → {authenticated,account:null hoặc {id,username,crownUnlocked,hasPassword}} |
+| GET /auth/me | → {authenticated,account:null hoặc {id,username,crown,hasPassword}}; crown=NONE/GOLD/BLACK |
 | POST /auth/login | {username,password} → cùng response /auth/me, authenticated=true; Sign In như trên |
 | POST /auth/google | {idToken} → cùng response /auth/me, authenticated=true |
 | POST /auth/password | {currentPassword,newPassword} → {ok:true} |
@@ -103,7 +103,7 @@ Input fields là booleans, field tùy chọn mặc định false; movement chỉ
 | ADVENTURE_EVENTS | {roomId,playId,sourcePlayerId,events:[{eventSeq,kind,type,id}]} |
 | SPECTATE_STATE | {roomId,playerId:string hoặc null} |
 | ITEM_USED | {roomId,playId} |
-| PLAYER_FINISHED | {playerId,playId,result,showEnding,ending:{screen,ravenDone}}; riêng owner/winners sau commit |
+| PLAYER_FINISHED | {playerId,playId,result,showEnding,ending:{screen,ravenDone,crown}}; riêng owner/winners sau commit; crown=GOLD/BLACK đã sở hữu |
 | GAME_FINISHED | {playId,mapLevel,reason,durationMs,results,saveStatus} |
 | SAVE_STATUS | {playId,revision,saveStatus}; revision=null cho Room |
 | CHAT_MESSAGE / CHAT_HISTORY | {roomId,messages:[{id,playerId,nickname,text,sentAt,colorSlot}]} |
@@ -114,11 +114,11 @@ kind=COMMUNITY/ROOM. Community state=PLAYING, host/settings=null. currentPlay.co
 
 Snapshot tách rõ:
 
-- self: lastProcessedInputSeq, status, paused và simulation={physics,adventure,world} đủ restore/replay, gồm buffers/counters/Fly/phasing fall; Easy có world.safePosition={x,y} để đồng bộ điểm an toàn khi SPLAT. Gốc playId/generation/self/ACK luôn thuộc người nhận; metrics để tính Stats/History/checkpoint không lặp trong snapshot gameplay.
+- self: lastProcessedInputSeq, status, paused, crown và simulation={physics,adventure,world} đủ restore/replay, gồm buffers/counters/Fly/phasing fall; Easy có world.safePosition={x,y} để đồng bộ điểm an toàn khi SPLAT. Gốc playId/generation/self/ACK luôn thuộc người nhận; metrics để tính Stats/History/checkpoint không lặp trong snapshot gameplay.
 - peers: public render state/tên/màu/crown/status ở screen đang xem và liền kề. players là toàn roster {playerId,nickname,colorSlot,rank,currentProgress}, lấy từ RAM.
 - spectating: null hoặc {player,playId,elapsedTimeMs,paused,adventure,world}; chỉ dùng renderer, không thay prediction/checkpoint. Xóa mục tiêu khi reconnect hoặc mất hiệu lực.
 
-Room bật Items có items={held:BANANA|ROCK|null,bananaArmed,cooldownMs,bananas:[{id,x,y,armedAtTick}],rocks:[{id,x,y,direction,tick}]}. Held/cooldown riêng owner; trap/cue lọc theo screen như peers. Banana dùng tâm chân, Rock dùng tâm mục tiêu lúc trúng. physics.slipping chỉ gửi khi true; Community không có items.
+Room bật Items có items={held:BANANA|ROCK|BOOTS|null,bananaArmed,cooldownMs,bananas:[{id,x,y,armedAtTick}],rocks:[{id,x,y,direction,tick}]}. Held/cooldown riêng owner; trap/cue lọc theo screen như peers. Banana dùng tâm chân, Rock dùng tâm mục tiêu lúc trúng. physics.slipping và physics.jumpBoost chỉ gửi khi true; jumpBoost cho phép prediction/replay cú nhảy Boots đúng state server. Community không có items. Crown trong self/peers/spectating.player dùng NONE/GOLD/BLACK, tách khỏi tiến độ adventure của lượt.
 
 Effects JUMP/LAND/SPLAT/BUMP, terrain NORMAL/ICE/SNOW. Âm thanh chuyển động bản thân phát từ prediction, bỏ tiếng trùng từ server và không phát khi replay; peers/spectating dùng events server. Adventure/world events có kind=ADVENTURE/WORLD, chỉ gửi owner hoặc người đang xem owner, nội dung tra bằng ID. Dedupe theo eventSeq/context, không phát lại effects khi replay.
 

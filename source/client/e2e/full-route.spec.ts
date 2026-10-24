@@ -46,7 +46,7 @@ test("plays the complete Main Babe input route and renders every reached checkpo
 								nickname: "Route Player",
 								color: "#ffffff",
 								state: saved.physics,
-								crowned: state.adventure.completed,
+								crown: state.adventure.completed ? "GOLD" : "NONE",
 								adventure: saved.adventure,
 							},
 							peers: [],

@@ -52,11 +52,13 @@ public class RoomRuns {
       Instant endedAt,
       long duration,
       String reason,
-      List<Run> runs) {
+      List<Run> runs,
+      Set<Long> ravenFinishers) {
     public Write {
       startedAt = millis(startedAt);
       endedAt = millis(endedAt);
       runs = List.copyOf(runs);
+      ravenFinishers = Set.copyOf(ravenFinishers);
     }
   }
 
@@ -195,7 +197,8 @@ public class RoomRuns {
             entity.setFinishTicks(run.finish);
             entity.setRank(run.rank);
             entity.setWinner(run.winner);
-            if (run.status.equals("FINISHED") && write.mapLevel == 10) crowns.unlock(run.owner);
+            if (run.status.equals("FINISHED") && write.mapLevel == 10)
+              crowns.unlock(run.owner, write.ravenFinishers.contains(run.owner));
             entity.setEndedAt(run.endedAt);
             entity.setUpdatedAt(clock.instant());
             runRepository.save(entity);
@@ -269,7 +272,8 @@ public class RoomRuns {
               deadline,
               match.duration,
               "ABORTED",
-              abandoned));
+              abandoned,
+              Set.of()));
     }
   }
 
@@ -350,6 +354,10 @@ public class RoomRuns {
               || run.status.equals("UNFINISHED"))) throw conflict();
       if (value.endedAt != null && run.status.equals("ACTIVE")) throw conflict();
     }
+    var fullFinishers = new HashSet<Long>();
+    if (value.mapLevel == 10)
+      for (var run : value.runs) if (run.status.equals("FINISHED")) fullFinishers.add(run.owner);
+    if (!fullFinishers.containsAll(value.ravenFinishers)) throw conflict();
     if (value.endedAt != null) {
       var scores =
           value.runs.stream()

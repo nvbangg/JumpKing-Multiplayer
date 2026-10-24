@@ -235,7 +235,7 @@ class CommunityRunsIT {
     var initial = records.open(owner, true, null, spawn);
     var write = progressed(initial, 2);
     records.save(write);
-    jdbc.update("UPDATE users SET crown_unlocked=true WHERE id=?", owner);
+    jdbc.update("UPDATE users SET crown='GOLD' WHERE id=?", owner);
     jdbc.update(
         "UPDATE play_runs SET snapshot=JSON_SET(snapshot,'$.codecVersion','invalid') WHERE id=?",
         initial.id());
@@ -260,10 +260,8 @@ class CommunityRunsIT {
         .containsEntry("play_ticks", write.snapshot().physics().ticks)
         .containsEntry("jumps", write.snapshot().physics().jumps)
         .containsEntry("falls", write.snapshot().physics().falls);
-    assertThat(
-            jdbc.queryForObject(
-                "SELECT crown_unlocked FROM users WHERE id=?", Boolean.class, owner))
-        .isTrue();
+    assertThat(jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, owner))
+        .isEqualTo("GOLD");
     assertThat(
             jdbc.queryForObject(
                 "SELECT COUNT(*) FROM play_runs WHERE user_id=?", Integer.class, owner))
@@ -402,7 +400,7 @@ class CommunityRunsIT {
             + trigger
             + " BEFORE UPDATE ON users FOR EACH ROW BEGIN IF NEW.id="
             + owner
-            + " AND NEW.crown_unlocked THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='injected crown failure'; END IF; END");
+            + " AND NEW.crown <> 'NONE' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='injected crown failure'; END IF; END");
     try {
       assertThatThrownBy(() -> records.save(write))
           .isInstanceOf(org.springframework.dao.DataAccessException.class);
@@ -413,22 +411,53 @@ class CommunityRunsIT {
             jdbc.queryForObject(
                 "SELECT status FROM play_runs WHERE id=?", String.class, initial.id()))
         .isEqualTo("ACTIVE");
-    assertThat(
-            jdbc.queryForObject(
-                "SELECT crown_unlocked FROM users WHERE id=?", Boolean.class, owner))
-        .isFalse();
+    assertThat(jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, owner))
+        .isEqualTo("NONE");
     records.save(write);
     records.save(write);
-    assertThat(
-            jdbc.queryForObject(
-                "SELECT crown_unlocked FROM users WHERE id=?", Boolean.class, owner))
-        .isTrue();
+    assertThat(jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, owner))
+        .isEqualTo("GOLD");
     assertThatThrownBy(() -> records.open(owner, false, initial.id(), game().snapshot()))
         .isInstanceOf(ApiException.class);
     records.open(owner, true, null, game().snapshot());
-    assertThat(
-            jdbc.queryForObject(
-                "SELECT crown_unlocked FROM users WHERE id=?", Boolean.class, owner))
-        .isTrue();
+    assertThat(jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, owner))
+        .isEqualTo("GOLD");
+  }
+
+  @Test
+  void personalRavenFinishUpgradesNewOrGoldAccountsAndANormalFinishKeepsBlack() throws Exception {
+    for (String before : List.of("NONE", "GOLD")) {
+      long owner = account();
+      jdbc.update("UPDATE users SET crown=? WHERE id=?", before, owner);
+      for (boolean ravenDone : List.of(true, false)) {
+        var initial = records.open(owner, true, null, game().snapshot());
+        var finished = game();
+        finished.restore(jumpking.support.MainBabeRoute.beforeFinish(shared, json));
+        if (ravenDone) {
+          var adventure = finished.adventure().snapshot();
+          ((com.fasterxml.jackson.databind.node.ObjectNode) adventure.path("raven"))
+              .put("index", 13)
+              .put("done", true)
+              .put("flying", false);
+          finished.adventure().restore(adventure);
+        }
+        finished.tick(PlayerInput.NEUTRAL);
+        var write =
+            new CommunityRuns.Write(
+                initial.id(),
+                owner,
+                2,
+                "FINISHED",
+                finished.snapshot(),
+                finished.physics().progress(),
+                finished.physics().progress(),
+                finished.physics().snapshot().ticks,
+                java.time.Instant.now());
+        records.save(write);
+        records.save(write);
+        assertThat(jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, owner))
+            .isEqualTo("BLACK");
+      }
+    }
   }
 }

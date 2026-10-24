@@ -5,7 +5,7 @@ const identity = {
 	account: {
 		id: "1",
 		username: "google_player",
-		crownUnlocked: false,
+		crown: "NONE",
 		hasPassword: false,
 	},
 };

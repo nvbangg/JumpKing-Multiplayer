@@ -8,7 +8,7 @@ import type { GameRuntime } from "../src/game/presentation/types";
 
 test("renderer draws all 43 screens and keeps self above translucent peers", async ({
 	page,
-}) => {
+}, info) => {
 	const errors: string[] = [];
 	page.on("pageerror", (error) => errors.push(error.message));
 	page.on("console", (message) => {
@@ -16,6 +16,9 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 			errors.push(message.text());
 	});
 	await page.goto("/");
+	await page.exposeFunction("captureCrownScreen", async (name: string) => {
+		await page.screenshot({ path: info.outputPath(name) });
+	});
 	const output = await page.evaluate(
 		async ({ states, colors, map }) => {
 			const requiredPath = "/src/required.ts";
@@ -54,7 +57,7 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 							nickname: "You",
 							color: colors[ownColor],
 							state,
-							crowned: state.screen % 2 === 0,
+							crown: required(["NONE", "GOLD", "BLACK"][state.screen % 3]),
 						},
 						world: {
 							lastTick: state.ticks,
@@ -77,7 +80,7 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 								nickname: "Friend",
 								color: colors[(ownColor + 1) % colors.length],
 								state: { ...state },
-								crowned: state.screen % 2 === 0,
+								crown: required(["NONE", "GOLD", "BLACK"][state.screen % 3]),
 							},
 						],
 					};
@@ -98,6 +101,25 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 			const screens: number[] = [];
 			try {
 				const scene = game.scene.getScene("Tower");
+				const readPixels = (key: string) => {
+					const image = scene.textures.get(key).getSourceImage(),
+						canvas = document.createElement("canvas");
+					canvas.width = image.width;
+					canvas.height = image.height;
+					const context = required(canvas.getContext("2d"));
+					context.drawImage(image, 0, 0);
+					return context.getImageData(0, 0, canvas.width, canvas.height).data;
+				};
+				const goldPixels = readPixels(manifest.crown),
+					blackPixels = readPixels(`${manifest.crown}/black`);
+				if (
+					goldPixels.length !== blackPixels.length ||
+					!goldPixels.some((value, i) => value !== blackPixels[i]) ||
+					goldPixels.some((value, i) => i % 4 === 3 && value !== blackPixels[i])
+				)
+					failures.push(
+						"Black crown must change color and preserve transparency",
+					);
 				if (scene.children.getByName("room-finish"))
 					failures.push("Finish marker outside Room");
 				runtime.finishMarker = findFinishPlatform(roomMap(map, 1));
@@ -175,7 +197,10 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 					if (self.depth <= peer.depth) failures.push(`Self depth ${screen}`);
 					const crowns = scene.children.list.filter(
 						(child: { type: string; texture?: { key: string } }) =>
-							child.type === "Sprite" && child.texture?.key === manifest.crown,
+							child.type === "Sprite" &&
+							[manifest.crown, `${manifest.crown}/black`].includes(
+								child.texture?.key,
+							),
 					);
 					if (
 						crowns.length !== 2 ||
@@ -188,8 +213,18 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 								crown.alpha === 0.7 && crown.depth < self.depth,
 						) ||
 						crowns.some(
-							(crown: { visible: boolean }) =>
-								crown.visible !== (screen % 2 === 0),
+							(crown: {
+								visible: boolean;
+								tintTopLeft: number;
+								texture: { key: string };
+							}) =>
+								crown.visible !== (screen % 3 !== 0) ||
+								crown.tintTopLeft !== 0xffffff ||
+								(crown.visible &&
+									crown.texture.key !==
+										(screen % 3 === 2
+											? `${manifest.crown}/black`
+											: manifest.crown)),
 						)
 					)
 						failures.push(`Crown ${screen}`);
@@ -228,6 +263,14 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 							failures.push(`Overlapping names ${screen}`);
 					}
 					screens.push(screen);
+					if (screen === 1 || screen === 2)
+						await (
+							window as unknown as {
+								captureCrownScreen(name: string): Promise<void>;
+							}
+						).captureCrownScreen(
+							`crown-${screen === 1 ? "gold" : "black"}.png`,
+						);
 				}
 				return { screens, failures };
 			} finally {

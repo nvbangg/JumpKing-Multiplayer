@@ -9,10 +9,11 @@ export interface NetworkQuality {
 	stalls: number;
 	status: "good" | "fair" | "poor";
 }
+export type Crown = "NONE" | "GOLD" | "BLACK";
 export interface Account {
 	id: string;
 	username: string;
-	crownUnlocked: boolean;
+	crown: Crown;
 	hasPassword: boolean;
 }
 export interface Identity {

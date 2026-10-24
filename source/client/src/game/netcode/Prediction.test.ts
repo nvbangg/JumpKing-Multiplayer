@@ -46,6 +46,7 @@ function snapshot(
 		elapsedTimeMs: 0,
 		remainingTimeMs: null,
 		self: {
+			crown: "NONE" as const,
 			lastProcessedInputSeq: ack,
 			status: "ACTIVE",
 			paused: false,
@@ -116,7 +117,7 @@ test("online ending waits for the private committed notice and matching finished
 		playerId: "self",
 		playId: "run",
 		showEnding: true,
-		ending: { screen: 42, ravenDone: true },
+		ending: { screen: 42, ravenDone: true, crown: "BLACK" },
 	};
 	runtime.receive(snapshot(game, 1, 0) as unknown as Record<string, unknown>);
 	runtime.finish({ ...notice, playerId: "other" });
@@ -131,12 +132,14 @@ test("online ending waits for the private committed notice and matching finished
 		id: "run",
 		screen: 42,
 		ravenDone: true,
+		crown: "BLACK",
 	});
 	runtime.finish(notice);
 	expect(runtime.frame().ending).toEqual({
 		id: "run",
 		screen: 42,
 		ravenDone: true,
+		crown: "BLACK",
 	});
 	socket.playContext = { playId: "next", generation: 2 };
 	runtime.receive({
@@ -216,6 +219,27 @@ test("prediction responds before an ACK and replays only unacknowledged input af
 	expect(prediction.pending).toBe(0);
 	expect(local.snapshot()).toEqual(before);
 });
+test("Boots are consumed once when unacknowledged jump inputs replay", () => {
+	const local = new GameSimulation(map),
+		server = new GameSimulation(map);
+	for (let tick = 0; tick < 30; tick++) server.tick(right);
+	server.physics.boostJump();
+	local.restore(server.snapshot());
+	const prediction = new Prediction(local, 180);
+	for (let seq = 1; seq <= 36; seq++) {
+		const input = { ...right, jump: true };
+		prediction.push(seq, input);
+		if (seq <= 10) server.tick(input);
+	}
+	const expected = local.snapshot();
+	expect(expected.physics.jumpBoost).toBeUndefined();
+	expect(expected.physics.jumps).toBe(1);
+	expect(server.physics.snapshot().jumpBoost).toBe(true);
+	prediction.reconcile(server.snapshot(), 10, true);
+	expect(local.snapshot()).toEqual(expected);
+	expect(prediction.pending).toBe(26);
+});
+
 test("Hardcore prediction and replay respawn on splat while preserving clock and counters", () => {
 	const local = new GameSimulation(map),
 		server = new GameSimulation(map),
@@ -351,7 +375,7 @@ test("remote interpolation follows server tick spacing and never extrapolates or
 		nickname: "Other",
 		colorSlot: 1,
 		state: game.physics.snapshot(),
-		crowned: false,
+		crown: "NONE" as const,
 		status: "ACTIVE",
 	};
 	previous.peers = [{ ...peer, state: { ...peer.state, x: 100 } }];
@@ -386,7 +410,7 @@ test("buffered peers move continuously through delayed and bunched snapshots", (
 					playerId: "peer",
 					nickname: "Peer",
 					colorSlot: 1,
-					crowned: false,
+					crown: "NONE" as const,
 					status: "ACTIVE",
 					state: { ...game.physics.snapshot(), x: index * 10 },
 				},
@@ -412,7 +436,7 @@ test("interpolation snaps screen changes and respawns and resets after a long si
 				playerId: "peer",
 				nickname: "Peer",
 				colorSlot: 1,
-				crowned: false,
+				crown: "NONE" as const,
 				status: "ACTIVE",
 				state: { ...game.physics.snapshot(), x, screen },
 			},
@@ -453,7 +477,7 @@ test("interpolation adjusts clock drift without draining its buffer during a lon
 					playerId: "peer",
 					nickname: "Peer",
 					colorSlot: 1,
-					crowned: false,
+					crown: "NONE" as const,
 					status: "ACTIVE",
 					state: { ...game.physics.snapshot(), x: index * 10 },
 				},

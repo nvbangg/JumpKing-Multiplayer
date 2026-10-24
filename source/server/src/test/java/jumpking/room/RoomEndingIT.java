@@ -147,11 +147,18 @@ class RoomEndingIT {
               a.messages.stream()
                   .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED")))
           .isEmpty();
+      assertThat(jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, a.owner))
+          .isEqualTo("NONE");
       jdbc.execute("DROP TRIGGER " + trigger);
       a.ok("PLAY_AGAIN", Map.of("matchId", game.play));
       saved(a);
       var finished = a.await(message -> message.path("type").asText().equals("PLAYER_FINISHED"));
       assertThat(finished.path("payload").path("ending").path("ravenDone").asBoolean()).isTrue();
+      assertThat(finished.path("payload").path("ending").path("crown").asText()).isEqualTo("BLACK");
+      assertThat(jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, a.owner))
+          .isEqualTo("BLACK");
+      assertThat(jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, b.owner))
+          .isEqualTo("NONE");
       assertThat(
               b.messages.stream()
                   .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED")))
