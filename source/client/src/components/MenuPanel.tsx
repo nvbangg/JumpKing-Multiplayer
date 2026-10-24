@@ -6,6 +6,9 @@ import {
 	useRef,
 } from "react";
 
+const choicesSelector =
+	"button:not(:disabled), input:not(:disabled), select:not(:disabled)";
+
 export function MenuPanel({
 	title,
 	children,
@@ -28,10 +31,7 @@ export function MenuPanel({
 			(button) => button.textContent === selections.current[key],
 		);
 		const first =
-			selected ||
-			ref.current?.querySelector<HTMLElement>(
-				"button:not(:disabled), input:not(:disabled), select:not(:disabled)",
-			);
+			selected || ref.current?.querySelector<HTMLElement>(choicesSelector);
 		first?.focus({ preventScroll: true });
 	}, [key]);
 	const keyDown = useCallback(
@@ -45,15 +45,11 @@ export function MenuPanel({
 				return;
 			if (!["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
 			const choices = Array.from(
-				ref.current?.querySelectorAll<HTMLButtonElement>(
-					"button:not(:disabled)",
-				) || [],
+				ref.current?.querySelectorAll<HTMLElement>(choicesSelector) || [],
 			);
 			if (!choices.length) return;
 			event.preventDefault();
-			const index = choices.indexOf(
-				document.activeElement as HTMLButtonElement,
-			);
+			const index = choices.indexOf(document.activeElement as HTMLElement);
 			const next =
 				event.key === "Home"
 					? 0

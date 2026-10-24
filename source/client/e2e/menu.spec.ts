@@ -39,6 +39,11 @@ test("home keeps the required menu and one account form", async ({
 	await expect(roomId).toHaveCSS("outline-style", "none");
 	await roomId.hover();
 	await expect(roomId).toHaveCSS("background-color", "rgb(22, 22, 22)");
+	expect(
+		await page
+			.locator(".room-join-form")
+			.evaluate((form) => getComputedStyle(form, "::before").content),
+	).toBe('""');
 	await page.mouse.move(0, 0);
 	const restingBackground = await newGame.evaluate(
 		(button) => getComputedStyle(button).backgroundColor,
@@ -46,6 +51,11 @@ test("home keeps the required menu and one account form", async ({
 	await newGame.hover();
 	await expect(newGame).toHaveCSS("background-color", "rgb(28, 25, 17)");
 	await expect(newGame).toHaveCSS("color", "rgb(246, 202, 109)");
+	expect(
+		await newGame.evaluate(
+			(button) => getComputedStyle(button, "::before").content,
+		),
+	).toBe('""');
 	expect(restingBackground).not.toBe("rgb(28, 25, 17)");
 	await expect(
 		page.getByRole("button", { name: "Join", exact: true }),
@@ -252,6 +262,50 @@ test("one auth flow keeps credentials errors and submits new usernames only to l
 	} finally {
 		release();
 	}
+});
+
+test("room ID supports Tab order and arrow navigation without capturing text editing", async ({
+	page,
+}) => {
+	await page.route("**/api/**", (route) => route.abort("connectionrefused"));
+	await page.goto("/");
+	const create = page.getByRole("button", { name: "Create Room", exact: true });
+	const publicRooms = page.getByRole("button", {
+		name: "Join Public Room",
+		exact: true,
+	});
+	const roomId = page.getByLabel("Room ID", { exact: true });
+	const join = page.getByRole("button", { name: "Join", exact: true });
+	await page.keyboard.press("Tab");
+	await expect(create).toBeFocused();
+	await page.keyboard.press("Tab");
+	await expect(publicRooms).toBeFocused();
+	await page.keyboard.press("Tab");
+	await expect(roomId).toBeFocused();
+	expect(
+		await page
+			.locator(".room-join-form")
+			.evaluate((form) => getComputedStyle(form, "::before").content),
+	).toBe('""');
+	await page.keyboard.press("Tab");
+	await expect(join).toBeFocused();
+	await page.keyboard.press("Shift+Tab");
+	await expect(roomId).toBeFocused();
+	await roomId.fill("123456");
+	await page.keyboard.press("Home");
+	await page.keyboard.press("ArrowRight");
+	expect(
+		await roomId.evaluate((input: HTMLInputElement) => input.selectionStart),
+	).toBe(1);
+	await page.keyboard.press("ArrowDown");
+	await expect(roomId).toBeFocused();
+	await publicRooms.focus();
+	await page.keyboard.press("ArrowDown");
+	await expect(roomId).toBeFocused();
+	await page.keyboard.press("Tab");
+	await expect(join).toBeFocused();
+	await page.keyboard.press("ArrowUp");
+	await expect(roomId).toBeFocused();
 });
 
 test("keyboard navigation restores focus and offline actions report real errors", async ({
