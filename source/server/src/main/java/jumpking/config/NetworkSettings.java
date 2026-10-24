@@ -20,7 +20,7 @@ public record NetworkSettings(
     long sendTimeoutMs,
     long heartbeatExpiryMs,
     long inputTimeoutMs,
-    int roomLookupsPerMinute,
+    int publicLookupsPerMinute,
     int chatCodePoints,
     int chatHistory,
     long chatIntervalMs) {
@@ -41,7 +41,7 @@ public record NetworkSettings(
         || sendTimeoutMs < 1
         || heartbeatExpiryMs <= sendTimeoutMs
         || inputTimeoutMs < 1
-        || roomLookupsPerMinute < 1
+        || publicLookupsPerMinute < 1
         || chatCodePoints < 1
         || chatHistory < 1
         || chatIntervalMs < 1) {

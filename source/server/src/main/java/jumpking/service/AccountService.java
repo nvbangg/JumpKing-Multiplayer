@@ -8,6 +8,7 @@ import jumpking.entity.User;
 import jumpking.exception.ApiException;
 import jumpking.repository.UserRepository;
 import jumpking.room.Memberships;
+import jumpking.security.AuthRateLimiter;
 import jumpking.security.GoogleTokenVerifier;
 import jumpking.security.IdentityContext;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -27,6 +28,7 @@ public class AccountService {
   private final Memberships memberships;
   private final Clock clock;
   private final GoogleTokenVerifier googleVerifier;
+  private final AuthRateLimiter limits;
 
   public AccountService(
       UserRepository users,
@@ -35,7 +37,8 @@ public class AccountService {
       TransactionTemplate transactions,
       Memberships memberships,
       Clock clock,
-      GoogleTokenVerifier googleVerifier) {
+      GoogleTokenVerifier googleVerifier,
+      AuthRateLimiter limits) {
     this.users = users;
     this.passwords = passwords;
     this.authentication = authentication;
@@ -43,9 +46,10 @@ public class AccountService {
     this.memberships = memberships;
     this.clock = clock;
     this.googleVerifier = googleVerifier;
+    this.limits = limits;
   }
 
-  public AccountDto.Account register(
+  private AccountDto.Account register(
       AccountCredentials.Registration form, Consumer<AccountDto.Account> authenticated) {
     form.validate();
     var hash = passwords.encode(form.password());
@@ -64,7 +68,8 @@ public class AccountService {
 
   public AccountDto.Account login(
       AccountCredentials.Login form, Long current, Consumer<AccountDto.Account> authenticated) {
-    if (users.findByUsername(form.username()).isEmpty()) {
+    var existing = users.findByUsername(form.username());
+    if (existing.isEmpty()) {
       if (current != null)
         throw new ApiException(409, "CONFLICT", "Sign out before creating another account");
       try {
@@ -72,11 +77,12 @@ public class AccountService {
             new AccountCredentials.Registration(form.username(), form.password()), authenticated);
       } catch (ApiException conflict) {
         // Request khác có thể vừa tạo username; chỉ tiếp tục bằng xác thực mật khẩu hiện có.
-        if (conflict.status() != 409
-            || !"CONFLICT".equals(conflict.code())
-            || users.findByUsername(form.username()).isEmpty()) throw conflict;
+        if (conflict.status() != 409 || !"CONFLICT".equals(conflict.code())) throw conflict;
+        existing = users.findByUsername(form.username());
+        if (existing.isEmpty()) throw conflict;
       }
     }
+    limits.checkAccount(existing.orElseThrow(AccountService::invalidCredentials).getId());
     if (!AccountCredentials.passwordWithinBcrypt(form.password())) throw invalidCredentials();
     try {
       authentication.authenticate(
@@ -107,6 +113,7 @@ public class AccountService {
     }
 
     var existing = users.findByGoogleId(profile.googleId());
+    existing.ifPresent(user -> limits.checkAccount(user.getId()));
     AccountDto.Account account;
     if (existing.isPresent()) {
       account = IdentityContext.accountView(existing.get());
@@ -172,6 +179,7 @@ public class AccountService {
   }
 
   public void changePassword(long owner, AccountCredentials.PasswordChange form) {
+    limits.checkAccount(owner);
     AccountCredentials.validatePassword(form.newPassword());
     if (!AccountCredentials.passwordWithinBcrypt(form.currentPassword()))
       throw invalidCredentials();

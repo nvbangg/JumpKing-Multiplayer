@@ -9,7 +9,7 @@ Chơi tại [jumpking-multiplayer.pages.dev](https://jumpking-multiplayer.pages.
 | Community | Tự ghép sảnh, lưu tiến độ theo Account, Continue và leaderboard |
 | Room | Public/Private, Join Public hoặc ID; Race, Hardcore, Time Limit, No Walk; chọn độ dài map 1–10 |
 
-Cả hai yêu cầu đăng nhập. Username chưa có được tạo khi Sign In; có đổi mật khẩu bằng mật khẩu hiện tại. Luật đầy đủ tại [gameplay](docs/gameplay.md).
+Cả hai yêu cầu đăng nhập. Username chưa có được tạo khi Sign In; có đổi mật khẩu bằng mật khẩu hiện tại. Google Sign-In có sẵn Client ID mặc định theo [hướng dẫn](docs/google-oauth-setup.md); Account chỉ dùng Google không có thao tác đổi mật khẩu. Luật đầy đủ tại [gameplay](docs/gameplay.md).
 
 ## Kiến trúc và công nghệ
 
@@ -83,7 +83,7 @@ java -jar target/jumpking-server.jar --spring.profiles.active=local
 
 Dừng backend development nếu đang chiếm cổng 8080. Chạy JAR từ `source/server/` để đọc cấu hình local, mở [http://127.0.0.1:8080](http://127.0.0.1:8080); không cần Vite.
 
-Người khác chỉ cần trình duyệt. [LAN/ZeroTier](docs/deployment.md#lan-và-zerotier) dùng IP host; triển khai chính dùng cùng JAR trên [VPS](docs/deployment.md#vps) với HTTPS/WSS. Có thể tách frontend lên [Cloudflare Pages](docs/deployment.md#cloudflare-pages-và-vps). [GitHub Actions](docs/deployment.md#github-actions) cập nhật JAR, không tự cập nhật schema.
+Người khác chỉ cần trình duyệt. Production dùng [Cloudflare Pages và VPS](docs/deployment.md#cloudflare-pages-và-vps); JAR cùng frontend dùng cho phương án cùng origin. [LAN/ZeroTier](docs/deployment.md#lan-và-zerotier) dùng IP host. [GitHub Actions](docs/deployment.md#github-actions) build và cập nhật JAR khi push `main` hoặc chạy thủ công, không tự cập nhật schema.
 
 ## Demo
 

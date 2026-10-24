@@ -509,6 +509,8 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     }
     room.players.put(player.id, player);
     chooseHost(room);
+    if (player.identity.sessionId() != null)
+      sessions.valid(sessions.find(player.identity.sessionId()), true);
     player.connection.reply(command, "ROOM_JOINED", joined(room, player));
     broadcast(room);
     chatHistory(room, player);
@@ -1037,9 +1039,6 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
               .put("status", self.status)
               .put("paused", !room.state.equals("PLAYING"));
       own.putPOJO("simulation", captured.get(member.id).simulation());
-      own.putObject("metrics")
-          .put("currentProgress", self.currentProgress)
-          .put("maxProgress", self.maximum);
       var target = member.watching == null ? null : room.players.get(member.watching);
       if (target != null
           && (!room.state.equals("PLAYING")

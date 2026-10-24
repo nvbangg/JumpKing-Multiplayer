@@ -31,7 +31,6 @@ public class GameConfigController {
         "features",
         Map.of("flyEnabled", flags.flyEnabled()),
         "auth",
-        Map.of(
-            "googleClientId", settings.googleClientId() == null ? "" : settings.googleClientId()));
+        java.util.Collections.singletonMap("googleClientId", settings.googleClientId()));
   }
 }

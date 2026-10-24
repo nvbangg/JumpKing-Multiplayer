@@ -571,9 +571,11 @@ export function App() {
 							<button type="button" onClick={() => setScreen("history")}>
 								History
 							</button>
-							<button type="button" onClick={() => setScreen("password")}>
-								Change Password
-							</button>
+							{identity.account.hasPassword && (
+								<button type="button" onClick={() => setScreen("password")}>
+									Change Password
+								</button>
+							)}
 							<button
 								type="button"
 								disabled={pending}
@@ -592,7 +594,7 @@ export function App() {
 							</button>
 						</>
 					)}
-					{screen === "password" && identity.account && (
+					{screen === "password" && identity.account?.hasPassword && (
 						<ChangePassword
 							onChanged={() => {
 								socket.current?.close();

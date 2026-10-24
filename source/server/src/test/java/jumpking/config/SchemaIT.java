@@ -68,6 +68,18 @@ class SchemaIT {
   }
 
   @Test
+  void rejectsGoogleIndexThatDoesNotGuaranteeUniqueGoogleIds() {
+    jdbc.execute(
+        "ALTER TABLE users DROP INDEX uq_users_google_id, ADD UNIQUE KEY uq_users_google_id (google_id,id)");
+    try {
+      assertThatThrownBy(() -> schema.validate()).hasMessageContaining("unique indexes");
+    } finally {
+      jdbc.execute(
+          "ALTER TABLE users DROP INDEX uq_users_google_id, ADD UNIQUE KEY uq_users_google_id (google_id)");
+    }
+  }
+
+  @Test
   void packagedBackendStartsWithValidatedSchema(@org.junit.jupiter.api.io.TempDir Path setup)
       throws Exception {
     int port;

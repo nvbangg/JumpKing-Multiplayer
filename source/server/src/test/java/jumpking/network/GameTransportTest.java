@@ -23,7 +23,7 @@ class GameTransportTest {
   }
 
   @Test
-  void handshakeAndLookupQuotasRemainIndependentAndResetAtMinuteBoundary() {
+  void handshakeAndPublicLookupQuotasRemainIndependentAndResetAtMinuteBoundary() {
     var now = new java.util.concurrent.atomic.AtomicLong(59_999);
     var clock = mock(java.time.Clock.class);
     when(clock.millis()).thenAnswer(call -> now.get());
@@ -38,12 +38,12 @@ class GameTransportTest {
             List.of(),
             workers)) {
       for (int index = 0; index < 30; index++) transport.handshakeAttempt("one");
-      for (int index = 0; index < 60; index++) transport.roomLookup("one");
+      for (int index = 0; index < 60; index++) transport.publicLookup("one");
       assertThatThrownBy(() -> transport.handshakeAttempt("one")).isInstanceOf(ApiException.class);
-      assertThatThrownBy(() -> transport.roomLookup("one")).isInstanceOf(ApiException.class);
+      assertThatThrownBy(() -> transport.publicLookup("one")).isInstanceOf(ApiException.class);
       now.set(60_000);
       transport.handshakeAttempt("one");
-      transport.roomLookup("one");
+      transport.publicLookup("one");
     }
   }
 

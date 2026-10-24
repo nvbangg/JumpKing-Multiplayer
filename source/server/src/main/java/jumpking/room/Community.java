@@ -558,6 +558,8 @@ public class Community implements GameCommandHandler, AutoCloseable {
                             player.input.reset(stored.id(), player.generation);
                             player.lastPhysical = time.nanos();
                             if (player.connection == null) pause(player);
+                            if (connection.open() && player.identity.sessionId() != null)
+                              sessions.valid(sessions.find(player.identity.sessionId()), true);
                             connection.reply(command, "ROOM_JOINED", joined(player));
                             broadcast(tower);
                             chatHistory(tower, player);
@@ -910,10 +912,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
   }
 
   private Map<String, Object> summary(Member player) {
-    return summary(player, player.game.physics().snapshot().ticks);
-  }
-
-  private Map<String, Object> summary(Member player, long ticks) {
+    long ticks = player.game.physics().snapshot().ticks;
     var result = new LinkedHashMap<String, Object>();
     result.put("id", player.stored.id());
     result.put("status", player.finished ? "FINISHED" : "ACTIVE");
@@ -1009,7 +1008,6 @@ public class Community implements GameCommandHandler, AutoCloseable {
               .put("status", self.finished ? "FINISHED" : "ACTIVE")
               .put("paused", self.paused || self.pausePending);
       state.putPOJO("simulation", captured.get(self.id).simulation());
-      state.putPOJO("metrics", summary(self, captured.get(self.id).ticks()));
       var target = self.watching == null ? null : tower.players.get(self.watching);
       if (target != null
           && (self.finished

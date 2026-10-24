@@ -51,7 +51,6 @@ export interface OnlineSnapshot {
 		status: string;
 		paused: boolean;
 		simulation: GameSnapshot;
-		metrics: Record<string, unknown>;
 	};
 	peers: {
 		playerId: string;

@@ -13,6 +13,7 @@ export interface Account {
 	id: string;
 	username: string;
 	crownUnlocked: boolean;
+	hasPassword: boolean;
 }
 export interface Identity {
 	authenticated: boolean;

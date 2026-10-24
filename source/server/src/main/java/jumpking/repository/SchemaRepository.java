@@ -36,10 +36,14 @@ public class SchemaRepository {
         "Required enforced CHECK constraints missing");
     require(
         names(
-                "SELECT index_name FROM information_schema.statistics WHERE table_schema=DATABASE() AND non_unique=0")
+                "SELECT CONCAT(table_name,':',index_name,':',GROUP_CONCAT(column_name ORDER BY seq_in_index)) FROM information_schema.statistics WHERE table_schema=DATABASE() AND non_unique=0 GROUP BY table_name,index_name")
             .containsAll(
-                Set.of("uq_users_username", "uq_active_community_user", "uq_runs_match_user")),
-        "Required unique indexes missing");
+                Set.of(
+                    "users:uq_users_username:username",
+                    "users:uq_users_google_id:google_id",
+                    "play_runs:uq_active_community_user:active_community_user_id",
+                    "play_runs:uq_runs_match_user:match_id,user_id")),
+        "Required unique indexes missing or differ");
     require(
         names(
                 "SELECT constraint_name FROM information_schema.referential_constraints WHERE constraint_schema=DATABASE() AND delete_rule IN ('RESTRICT','NO ACTION')")

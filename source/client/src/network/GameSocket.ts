@@ -209,9 +209,6 @@ export class GameSocket {
 		for (const listener of this.qualityListeners) {
 			listener(this.currentQuality);
 		}
-		for (const listener of this.listeners) {
-			listener("NETWORK_QUALITY", { ...this.currentQuality });
-		}
 	}
 
 	private profile: string | null = null;

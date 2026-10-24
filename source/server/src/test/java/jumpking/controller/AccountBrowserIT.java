@@ -2,15 +2,10 @@ package jumpking.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.net.ServerSocket;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.file.Path;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
 import jumpking.JumpKingApplication;
+import jumpking.support.BrowserHarness;
 import jumpking.support.TestDatabase;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -27,7 +22,7 @@ import org.springframework.test.context.DynamicPropertySource;
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class AccountBrowserIT {
   private static final String ALL_SPECS = "e2e/.*-online.spec.ts";
-  private static final int VITE_PORT = freePort();
+  private static final int VITE_PORT = BrowserHarness.freePort();
   @LocalServerPort int port;
   @Autowired PasswordEncoder passwords;
   @Autowired jumpking.service.CommunityRuns communityRuns;
@@ -128,108 +123,36 @@ class AccountBrowserIT {
     properties.add("app.allowed-origins", () -> "http://127.0.0.1:" + VITE_PORT);
   }
 
-  private static int freePort() {
-    try (var socket = new ServerSocket(0)) {
-      return socket.getLocalPort();
-    } catch (java.io.IOException error) {
-      throw new IllegalStateException(error);
-    }
-  }
-
   @Test
   void accountFormsUseRealBackendAndMySql() throws Exception {
-    var frontend = Path.of("../client").toFile();
-    var viteBuilder =
-        new ProcessBuilder(
-                "node",
-                "node_modules/vite/bin/vite.js",
-                "--host",
-                "127.0.0.1",
-                "--port",
-                Integer.toString(VITE_PORT),
-                "--strictPort")
-            .directory(frontend);
-    viteBuilder.environment().put("BACKEND_URL", "http://127.0.0.1:" + port);
-    Process vite =
-        viteBuilder
-            .redirectErrorStream(true)
-            .redirectOutput(Path.of("target/auth-vite-test.log").toFile())
-            .start();
-    Process browser = null;
-    try (var http =
-        HttpClient.newBuilder()
-            .version(HttpClient.Version.HTTP_1_1)
-            .connectTimeout(Duration.ofSeconds(1))
-            .build()) {
-      String origin = "http://127.0.0.1:" + VITE_PORT;
-      boolean ready = false;
-      for (int attempt = 0; attempt < 80; attempt++) {
-        assertThat(vite.isAlive()).as("Inspect target/auth-vite-test.log").isTrue();
-        try {
-          if (http.send(
-                      HttpRequest.newBuilder(URI.create(origin))
-                          .timeout(Duration.ofSeconds(1))
-                          .build(),
-                      HttpResponse.BodyHandlers.discarding())
-                  .statusCode()
-              == 200) {
-            ready = true;
-            break;
-          }
-        } catch (java.io.IOException notReady) {
-        }
-        Thread.sleep(250);
-      }
-      assertThat(ready).isTrue();
-      String specs = System.getenv().getOrDefault("E2E_SPECS", ALL_SPECS);
-      var builder =
-          new ProcessBuilder(
-                  "node", "node_modules/@playwright/test/cli.js", "test", specs, "--workers=1")
-              .directory(frontend);
-      builder.environment().put("E2E_BASE_URL", origin);
-      builder.environment().put("E2E_AUTH_ONLINE", "true");
-      builder.environment().put("E2E_OUTPUT_DIR", "../../.local/browser-online-tests");
-      var finish = finishFixture();
-      builder.environment().put("E2E_FINISH_USERNAME", finish.username);
-      builder.environment().put("E2E_FINISH_PASSWORD", finish.password);
-      builder.environment().put("E2E_FINISH_RUN", finish.run);
-      var adventure = adventureFixture();
-      builder.environment().put("E2E_ADVENTURE_USERNAME", adventure.username);
-      builder.environment().put("E2E_ADVENTURE_PASSWORD", adventure.password);
-      var history = historyFixture();
-      builder.environment().put("E2E_HISTORY_USERNAME", history.username());
-      builder.environment().put("E2E_HISTORY_PASSWORD", history.password());
-      browser =
-          builder
-              .redirectErrorStream(true)
-              .redirectOutput(Path.of("target/auth-browser-test.log").toFile())
-              .start();
-      assertThat(browser.waitFor(900, TimeUnit.SECONDS))
-          .as("Browser test timeout; inspect target/auth-browser-test.log")
-          .isTrue();
-      assertThat(browser.exitValue())
-          .as("Inspect target/auth-browser-test.log and client/test-results")
-          .isZero();
-      // Các fixtures này chỉ được hoàn tất khi chạy toàn bộ scenarios online.
-      if (specs.equals(ALL_SPECS)) {
-        var jdbc = TestDatabase.get().jdbc;
-        assertThat(
-                jdbc.queryForObject(
-                    "SELECT COUNT(*) FROM play_runs WHERE id=? AND status='FINISHED' AND snapshot IS NULL AND finish_ticks=16957",
-                    Integer.class,
-                    finish.run))
-            .isEqualTo(1);
-      }
-    } finally {
-      if (browser != null && browser.isAlive()) {
-        browser.destroyForcibly();
-        browser.waitFor(5, TimeUnit.SECONDS);
-      }
-      vite.destroy();
-      if (!vite.waitFor(10, TimeUnit.SECONDS)) {
-        vite.destroyForcibly();
-        vite.waitFor(5, TimeUnit.SECONDS);
-      }
+    String specs = System.getenv().getOrDefault("E2E_SPECS", ALL_SPECS);
+    var finish = finishFixture();
+    var adventure = adventureFixture();
+    var history = historyFixture();
+    BrowserHarness.run(
+        port,
+        VITE_PORT,
+        "auth",
+        specs,
+        Map.of(
+            "E2E_AUTH_ONLINE", "true",
+            "E2E_FINISH_USERNAME", finish.username,
+            "E2E_FINISH_PASSWORD", finish.password,
+            "E2E_FINISH_RUN", finish.run,
+            "E2E_ADVENTURE_USERNAME", adventure.username,
+            "E2E_ADVENTURE_PASSWORD", adventure.password,
+            "E2E_HISTORY_USERNAME", history.username(),
+            "E2E_HISTORY_PASSWORD", history.password()),
+        Duration.ofSeconds(900));
+    // Các fixtures này chỉ được hoàn tất khi chạy toàn bộ scenarios online.
+    if (specs.equals(ALL_SPECS)) {
+      var jdbc = TestDatabase.get().jdbc;
+      assertThat(
+              jdbc.queryForObject(
+                  "SELECT COUNT(*) FROM play_runs WHERE id=? AND status='FINISHED' AND snapshot IS NULL AND finish_ticks=16957",
+                  Integer.class,
+                  finish.run))
+          .isEqualTo(1);
     }
   }
 }

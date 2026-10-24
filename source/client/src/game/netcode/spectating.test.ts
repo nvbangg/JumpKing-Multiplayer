@@ -66,7 +66,6 @@ test("watching changes the rendered player and scene without restoring target st
 			lastProcessedInputSeq: 0,
 			status: "ACTIVE",
 			paused: false,
-			metrics: {},
 			simulation: own,
 		},
 		spectating: view,
@@ -138,7 +137,6 @@ test("returning discards cancelled frames from watching before reconciling the v
 			lastProcessedInputSeq: 0,
 			status: "ACTIVE",
 			paused: false,
-			metrics: {},
 			simulation: own,
 		},
 		spectating: {

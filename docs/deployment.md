@@ -1,6 +1,6 @@
 # Cấu hình và triển khai
 
-Phương án chính là một JAR chứa frontend/backend và MySQL nội bộ trên VPS. Cài mới, cấu hình local và chạy hai terminal theo [README](../README.md#cài-đặt-local).
+Production dùng frontend Cloudflare Pages, backend HTTPS/WSS và MySQL nội bộ trên VPS. Vẫn hỗ trợ một JAR chứa frontend/backend để chạy cùng origin. Cài mới, cấu hình local và chạy hai terminal theo [README](../README.md#cài-đặt-local).
 
 ## Môi trường
 
@@ -23,12 +23,13 @@ Backend nạp `config/application-<profile>.properties` theo working directory. 
 | spring.datasource.url/username/password | Kết nối MySQL bằng user ứng dụng |
 | server.address / server.port | Địa chỉ bind và cổng backend |
 | app.allowed-origins | Origins được phép, phân cách bằng dấu phẩy; đủ scheme/host/port, không có path |
-| app.google-client-id | Client ID xác thực Google Sign-In |
+| app.google-client-id / GOOGLE_CLIENT_ID | Có sẵn Client ID của game, không cần cấu hình thêm; chỉ ghi đè khi dùng Google project khác, đặt rõ rỗng để tắt Google Sign-In |
+| app.network.public-lookups-per-minute | Quota chung Rooms/leaderboard theo IP, mặc định 60/phút |
 | BACKEND_URL | Proxy Vite, mặc định http://127.0.0.1:8080 |
 | VITE_BACKEND_ORIGIN | Để trống khi cùng origin; chỉ đặt origin backend khi tách frontend |
 
 JAR dùng URL cùng origin cho HTTP/WS, không cần gắn địa chỉ backend vào frontend. `VITE_*` là dữ liệu công khai tại thời điểm build. Credentials, keystore, session, dumps và file cấu hình thật nằm ngoài Git; không đặt secrets trong frontend.
-Chi tiết các bước đăng ký Client ID và xác minh tên miền trên Google Cloud Console xem tại [google-oauth-setup](google-oauth-setup.md).
+Google Sign-In dùng Client ID mặc định qua `/api/game-config`, không cần thêm biến Google trong GitHub hoặc Pages. Cấu hình Google project riêng và origins xem tại [google-oauth-setup](google-oauth-setup.md).
 
 
 ## MySQL

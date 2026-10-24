@@ -17,14 +17,14 @@ public class RoomLookupController {
 
   @GetMapping
   public java.util.Map<String, ?> list(jakarta.servlet.http.HttpServletRequest request) {
-    transport.roomLookup(request.getRemoteAddr());
+    transport.publicLookup(request.getRemoteAddr());
     return java.util.Map.of("rooms", directory.publicRooms());
   }
 
   @GetMapping("/{id}")
   RoomDirectory.Info lookup(
       @PathVariable String id, jakarta.servlet.http.HttpServletRequest request) {
-    transport.roomLookup(request.getRemoteAddr());
+    transport.publicLookup(request.getRemoteAddr());
     if (!id.matches("[0-9]{6}")) throw new ApiException(400, "VALIDATION", "Invalid room ID");
     var info = directory.find(id);
     if (info == null || !info.kind().equals("ROOM"))

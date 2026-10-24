@@ -102,7 +102,7 @@ class RoomHardcoreIT {
       assertThat(pose.path("x").asDouble()).isEqualTo(231);
       assertThat(pose.path("splat").asInt()).isZero();
       assertThat(pose.path("jumps").asInt()).isEqualTo(3);
-      assertThat(reset.path("self").path("metrics").path("maxProgress").asDouble()).isEqualTo(500);
+      assertThat(reset.path("self").has("metrics")).isFalse();
       assertThat(reset.path("elapsedTimeMs").asLong()).isPositive();
       assertThat(reset.path("self").path("status").asText()).isEqualTo("ACTIVE");
       assertThat(reset.path("peers").get(0).path("state").path("falls").asInt()).isZero();

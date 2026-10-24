@@ -89,7 +89,7 @@ Ticks đổi sang ms bằng floor(ticks×1000/tickRate), theo [nhịp mô phỏn
 - Chỉ COMMUNITY/ACTIVE có snapshot là JSON object, còn lại NULL. Room rank=NULL trước finalize, thuộc [1,số người] sau finalize; Community rank=NULL/is_winner=false. Winner phải FINISHED/rank=1; rank=1 không đồng nghĩa winner.
 - Match map_level=1–10; time_limit_minutes chỉ có khi TIME_LIMIT. Items luôn có boolean/phút hợp lệ dù tắt. ended_at/end_reason cùng NULL hoặc cùng có, ended_at≥started_at; reason=FINISH/TIME_LIMIT/HOST_ENDED/ALL_DISCONNECTED/ABORTED.
 - CHECK/unique/FK bảo vệ tổ hợp và biên trong database; service kiểm tra owner, roster, comparator và ràng buộc match/runs.
-- Indexes: unique username, unique (match_id,user_id), (user_id,ended_at,id), (kind,status). active_community_user_id generated nhận user_id khi COMMUNITY/ACTIVE, còn lại NULL; unique bảo đảm tối đa một checkpoint đang dở/Account.
+- Indexes: unique username và google_id, unique (match_id,user_id), (user_id,ended_at,id), (kind,status). active_community_user_id generated nhận user_id khi COMMUNITY/ACTIVE, còn lại NULL; unique bảo đảm tối đa một checkpoint đang dở/Account. Startup kiểm tra đúng bảng/cột của unique indexes, không tự sửa schema.
 
 ## Transaction và ghi dữ liệu
 

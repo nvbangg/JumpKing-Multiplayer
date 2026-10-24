@@ -159,8 +159,7 @@ class CommunityLifecycleIT {
   }
 
   private void assertCurrentProgress(GameClient client, JsonNode snapshot, double expected) {
-    assertThat(snapshot.path("self").path("metrics").path("currentProgress").asDouble())
-        .isEqualTo(expected);
+    assertThat(snapshot.path("self").has("metrics")).isFalse();
     String id = memberships.find(client.owner).playerId();
     for (var player : snapshot.path("players"))
       if (player.path("playerId").asText().equals(id)) {
@@ -183,7 +182,10 @@ class CommunityLifecycleIT {
       assertThat(
               airborne.path("self").path("simulation").path("physics").path("grounded").asBoolean())
           .isFalse();
-      double maximum = airborne.path("self").path("metrics").path("maxProgress").asDouble();
+      double maximum =
+          shared.geometry().progressOriginY()
+              - airborne.path("self").path("simulation").path("physics").path("y").asDouble()
+              - shared.tuning().bodyHeight;
       assertThat(maximum).isGreaterThan(144);
       var splatted = tickAt(client, 231, 302, true, 3, false);
       assertCurrentProgress(client, splatted, 144);
@@ -201,8 +203,6 @@ class CommunityLifecycleIT {
           .isTrue();
       var lowerLanding = tickAt(client, 231, 302, true, 0, false);
       assertCurrentProgress(client, lowerLanding, 0);
-      assertThat(lowerLanding.path("self").path("metrics").path("maxProgress").asDouble())
-          .isEqualTo(maximum);
       client.ok("LEAVE_ROOM", Map.of());
       var current = client.request("/community/current", "GET", null).path("run");
       assertThat(current.path("id").asText()).isEqualTo(joined.path("playId").asText());

@@ -19,10 +19,14 @@ public class AuthRateLimiter {
     this.settings = settings;
   }
 
-  public synchronized void check(String ip, String identity) {
+  public synchronized void checkIp(String ip) {
     refreshWindow();
     consume("ip:" + ip, settings.authRatePerMinute());
-    if (identity != null) consume("identity:" + identity, settings.authRatePerMinute());
+  }
+
+  public synchronized void checkAccount(long owner) {
+    refreshWindow();
+    consume("account:" + owner, settings.authRatePerMinute());
   }
 
   private void refreshWindow() {

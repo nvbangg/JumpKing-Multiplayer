@@ -67,16 +67,7 @@ public final class GameClient implements AutoCloseable {
   }
 
   public void register(String name) throws Exception {
-    csrf = request("/auth/csrf", "GET", null).path("token").asText();
-    owner =
-        request(
-                "/auth/register",
-                "POST",
-                Map.of("username", name, "password", "A secure server integration password"))
-            .path("account")
-            .path("id")
-            .asLong();
-    csrf = request("/auth/csrf", "GET", null).path("token").asText();
+    login(name, "A secure server integration password");
   }
 
   public void login(String username, String password) throws Exception {

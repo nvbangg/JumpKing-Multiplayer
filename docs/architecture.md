@@ -83,7 +83,7 @@ Unit tests đặt cạnh code TypeScript và trong `server/src/test/java`; E2E �
 
 ## Triển khai và giới hạn
 
-Phương án chính: frontend đóng cùng JAR, một backend trên VPS, cùng origin; development dùng Vite proxy. Static assets được cache/revalidate, API không cache; SPA fallback không che lỗi API/WS/asset. Lỗi tải cho phép reload thủ công, không polling phiên bản hoặc tự reload giữa trận.
+Production: frontend trên Cloudflare Pages, một backend HTTPS/WSS trên VPS và MySQL nội bộ. Development dùng Vite proxy; vẫn hỗ trợ đóng frontend cùng JAR để chạy cùng origin. Cấu hình cookies/Origin theo [deployment](deployment.md). Static assets được cache/revalidate, API không cache; SPA fallback không che lỗi API/WS/asset. Lỗi tải cho phép reload thủ công, không polling phiên bản hoặc tự reload giữa trận.
 
 Membership và gameplay Room ở RAM; restart không phục hồi trận. Community phục hồi checkpoint đã commit; phiên đăng nhập được lưu riêng theo [deployment](deployment.md#giữ-phiên-đăng-nhập).
 

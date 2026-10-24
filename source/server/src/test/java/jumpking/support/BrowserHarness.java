@@ -25,6 +25,17 @@ public final class BrowserHarness {
   public static void run(
       int backendPort, int vitePort, String name, String pattern, Map<String, String> environment)
       throws Exception {
+    run(backendPort, vitePort, name, pattern, environment, Duration.ofSeconds(120));
+  }
+
+  public static void run(
+      int backendPort,
+      int vitePort,
+      String name,
+      String pattern,
+      Map<String, String> environment,
+      Duration timeout)
+      throws Exception {
     var frontend = Path.of("../client").toFile();
     var viteBuilder =
         new ProcessBuilder(
@@ -80,7 +91,9 @@ public final class BrowserHarness {
               .redirectErrorStream(true)
               .redirectOutput(Path.of("target/" + name + "-browser.log").toFile())
               .start();
-      assertThat(browser.waitFor(120, TimeUnit.SECONDS)).as("Browser timeout: " + name).isTrue();
+      assertThat(browser.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS))
+          .as("Browser timeout: " + name)
+          .isTrue();
       assertThat(browser.exitValue()).as("Inspect target/" + name + "-browser.log").isZero();
     } finally {
       if (browser != null && browser.isAlive()) {

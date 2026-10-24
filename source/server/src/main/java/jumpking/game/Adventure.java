@@ -264,7 +264,11 @@ public final class Adventure {
       String id = readable.path("id").asText();
       var s = object(state.path("readables"), id);
       if (!touching(player, readable.path("trigger"), readable.path("screen").asInt())) {
-        object(state, "readables").set(id, freshReadable());
+        if (s.path("wait").asInt() != 0
+            || s.path("line").asInt() != 0
+            || s.path("ticks").asInt() != 0
+            || s.path("done").asBoolean())
+          s.put("wait", 0).put("line", 0).put("ticks", 0).put("done", false);
         continue;
       }
       if (s.path("done").asBoolean()) continue;

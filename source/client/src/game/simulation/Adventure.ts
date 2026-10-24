@@ -253,7 +253,10 @@ export class Adventure {
 		for (const readable of data.readables) {
 			const s = required(this.state.readables[readable.id]);
 			if (!overlap(hitbox, this.worldRect(readable.trigger, readable.screen))) {
-				this.state.readables[readable.id] = freshReadable();
+				if (s.wait !== 0 || s.line !== 0 || s.ticks !== 0 || s.done) {
+					s.wait = s.line = s.ticks = 0;
+					s.done = false;
+				}
 				continue;
 			}
 			if (s.done) continue;

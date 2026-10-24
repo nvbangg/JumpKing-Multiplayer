@@ -139,7 +139,12 @@ test("one auth flow keeps credentials errors and submits new usernames only to l
 			await route.fulfill({
 				json: {
 					authenticated: true,
-					account: { id: "1", username: "new_player", crownUnlocked: false },
+					account: {
+						id: "1",
+						username: "new_player",
+						crownUnlocked: false,
+						hasPassword: true,
+					},
 				},
 			});
 		} else {

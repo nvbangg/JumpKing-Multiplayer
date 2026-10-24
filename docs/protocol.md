@@ -6,9 +6,9 @@ HTTP JSON tại `/api` phục vụ tài khoản/dữ liệu; WebSocket thuần t
 
 ## Xác thực và bảo mật
 
-- Spring Security quản lý session; cookie host-only, Path=/, HttpOnly, SameSite=Lax mặc định và Secure khi HTTPS; frontend khác site theo [deployment](deployment.md#cloudflare-pages-và-vps). HTTP gửi credentials; mutation cần CSRF token. Đăng nhập đổi session ID/CSRF; password băm BCrypt. Rate limit 20 requests/phút/IP và identity.
+- Spring Security quản lý session; cookie host-only, Path=/, HttpOnly, SameSite=Lax mặc định và Secure khi HTTPS; frontend khác site theo [deployment](deployment.md#cloudflare-pages-và-vps). HTTP gửi credentials; mutation cần CSRF token. Đăng nhập đổi session ID/CSRF; password băm BCrypt. Auth giới hạn 20 requests/phút/IP; xác thực hoặc đổi mật khẩu còn giới hạn theo Account ID trước BCrypt, kể cả username khác chữ hoa/dấu cùng trỏ tới một Account.
 - Sign In nhận username/password: username chưa tồn tại thì tạo Account, đã có thì xác thực; sai password không tạo/sửa Account. Username 3–32 ký tự chữ/số/underscore/hyphen; password ít nhất 6 Unicode code points, tối đa 72 UTF-8 bytes. Khi tạo trùng username đồng thời, chỉ đăng nhập bằng mật khẩu của Account đã được tạo. Không đổi Account khi còn membership.
-- Google Sign-In qua POST /auth/google: gửi idToken từ Google, tự động xác thực và liên kết theo google_id; tên Google được chuẩn hóa thành username hợp lệ.
+- Google Sign-In tùy chọn qua POST /auth/google: backend cung cấp Client ID theo [deployment](deployment.md), xác minh chữ ký/audience/issuer/thời hạn bằng GoogleIdTokenVerifier rồi nhận diện theo google_id; không ghép Account theo email. Khóa công khai được thư viện cache, không gửi ID token tới tokeninfo. Client ID rỗng thì ẩn nút và từ chối endpoint; tên Google được chuẩn hóa thành username hợp lệ.
 - Logout hủy phiên. Đổi mật khẩu cần currentPassword, chỉ thành công sau commit và thu hồi mọi phiên/socket của Account; tài khoản chỉ dùng Google trả CONFLICT. Không có email hoặc khôi phục mật khẩu.
 - Session idle/absolute và cookie đều 30 ngày; heartbeat không gia hạn idle. Hết phiên xử lý như disconnect, giữ checkpoint. Restart giữ phiên còn hạn, không gia hạn deadline; cấu hình theo [deployment](deployment.md#giữ-phiên-đăng-nhập).
 - CORS/WS kiểm tra Origin trong allowlist; không wildcard với credentials, preflight trước authentication. WS bắt buộc Account, owner/tên lấy từ session. Kiểm tra lại quyền và state khi thực thi lệnh.
@@ -22,8 +22,7 @@ Các path có prefix `/api`. Lỗi dạng `{error:{code,message}}`; không cache
 | --- | --- |
 | GET /health | Trạng thái ứng dụng |
 | GET /auth/csrf | → {token,headerName} |
-| GET /auth/me | → {authenticated,account:null hoặc {id,username,crownUnlocked}} |
-| POST /auth/register | {username,password} → cùng response /auth/me, authenticated=true |
+| GET /auth/me | → {authenticated,account:null hoặc {id,username,crownUnlocked,hasPassword}} |
 | POST /auth/login | {username,password} → cùng response /auth/me, authenticated=true; Sign In như trên |
 | POST /auth/google | {idToken} → cùng response /auth/me, authenticated=true |
 | POST /auth/password | {currentPassword,newPassword} → {ok:true} |
@@ -115,7 +114,7 @@ kind=COMMUNITY/ROOM. Community state=PLAYING, host/settings=null. currentPlay.co
 
 Snapshot tách rõ:
 
-- self: lastProcessedInputSeq, status, paused, metrics và simulation={physics,adventure,world} đủ restore/replay, gồm buffers/counters/Fly/phasing fall. Gốc playId/generation/self/ACK luôn thuộc người nhận.
+- self: lastProcessedInputSeq, status, paused và simulation={physics,adventure,world} đủ restore/replay, gồm buffers/counters/Fly/phasing fall. Gốc playId/generation/self/ACK luôn thuộc người nhận; metrics để tính Stats/History/checkpoint không lặp trong snapshot gameplay.
 - peers: public render state/tên/màu/crown/status ở screen đang xem và liền kề. players là toàn roster {playerId,nickname,colorSlot,rank,currentProgress}, lấy từ RAM.
 - spectating: null hoặc {player,playId,elapsedTimeMs,paused,adventure,world}; chỉ dùng renderer, không thay prediction/checkpoint. Xóa mục tiêu khi reconnect hoặc mất hiệu lực.
 
@@ -139,7 +138,7 @@ Pagehide, grace, Pause và chuyển Host theo [gameplay](gameplay.md#leave-và-r
 | Nhóm | Mặc định |
 | --- | --- |
 | HTTP body / WS message | 16 KiB |
-| Auth / tra phòng | 20 / 60 requests/phút theo IP/identity |
+| Auth / đọc Rooms và leaderboard | 20/phút/IP và Account cho auth; chung 60/phút/IP cho Rooms/leaderboard |
 | WS handshake / Create-Join-New Run | 30/phút/IP / 20/phút/IP và identity |
 | Connections / phòng | 2/identity, 32/IP, 256/server; 64 phòng kể cả đang reconnect/chờ ghi |
 | Input | 120 messages/giây/connection; queue server 120, client 180 frames; timeout 500 ms |

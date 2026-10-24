@@ -49,7 +49,6 @@ function snapshot(
 			status: "ACTIVE",
 			paused: false,
 			simulation: game.snapshot(),
-			metrics: {},
 		},
 		peers: [],
 	};

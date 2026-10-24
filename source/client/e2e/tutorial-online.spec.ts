@@ -24,7 +24,7 @@ for (const mobile of [false, true])
 						hasTouch: true,
 						isMobile: true,
 					}
-				: {},
+				: { viewport: { width: 680, height: 500 } },
 		);
 		const page = await context.newPage();
 		const observed = observeOnline(page);
@@ -33,6 +33,15 @@ for (const mobile of [false, true])
 			await newCommunity(page);
 			const guide = page.getByRole("complementary", { name: "Tutorial guide" });
 			await expect(guide).toContainText("Step 1/3: Move");
+			await expect(page.locator(".touch-controls")).toBeVisible({
+				visible: mobile,
+			});
+			await expect(guide.locator(".touch-only")).toBeVisible({
+				visible: mobile,
+			});
+			await expect(guide.locator(".desktop-only")).toBeVisible({
+				visible: !mobile,
+			});
 			const bounds = await guide.boundingBox();
 			expect(
 				bounds &&

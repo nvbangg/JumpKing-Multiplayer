@@ -278,7 +278,7 @@ button {
 .touch-controls button:active {
 	background: #463a24cc;
 }
-@media (pointer: coarse), (max-width: 960px) {
+@media (any-pointer: coarse) {
 	.play-page {
 		--touch-clearance: 62px;
 	}
@@ -461,37 +461,8 @@ button {
 	justify-content: center;
 	width: 100%;
 }
-.menu-panel .google-auth-button {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 12px;
-	border: 1px solid #72684d;
-	background: #11100d;
-	color: #ede7d3;
-	font-size: 18px;
-	padding: 10px 16px;
-	border-radius: 4px;
-	cursor: pointer;
-	width: 100%;
-	text-align: center;
-	transition:
-		background 0.15s,
-		border-color 0.15s,
-		color 0.15s;
-}
-.menu-panel .google-auth-button:hover:not(:disabled) {
-	background: #242016;
-	border-color: #bfa15f;
-	color: #fff;
-}
-.menu-panel .google-auth-button .google-icon {
-	font-weight: bold;
-	color: #e4bb68;
-	font-size: 1.1em;
-}
-.google-btn-slot:not(:empty) + .google-auth-button {
-	display: none;
+.google-btn-slot[inert] {
+	opacity: 0.5;
 }
 .menu-form label,
 .mode-setting {
@@ -1114,35 +1085,24 @@ button {
 	display: block;
 }
 
-@media (pointer: coarse), (max-width: 680px) {
+@media (any-pointer: coarse) {
 	.tutorial-hint.desktop-only {
 		display: none;
 	}
 	.tutorial-hint.touch-only {
 		display: block;
 	}
+}
+@media (max-width: 960px) {
 	.tutorial-guide {
 		top: 44px;
 		transform: translateX(-50%);
 		padding: 8px 12px;
-		width: min(92%, 440px);
-	}
-	.tutorial-title {
-		font-size: 1.05rem;
-		min-width: 136px;
-	}
-	.tutorial-hint {
-		font-size: 0.95rem;
-		min-height: 2.9em;
+		width: calc(100% - 24px);
 	}
 	.tutorial-dismiss {
 		font-size: 0.85rem;
 		padding: 3px 8px;
-	}
-}
-@media (max-width: 680px) {
-	.tutorial-guide {
-		width: calc(100% - 24px);
 	}
 	.tutorial-header {
 		flex-wrap: nowrap;
@@ -1156,6 +1116,7 @@ button {
 	.tutorial-hint {
 		font-size: 0.9rem;
 		line-height: 1.35;
+		min-height: 2.9em;
 	}
 }
 
