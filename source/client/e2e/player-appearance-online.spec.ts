@@ -101,7 +101,7 @@ test("player colors match across browsers while only the local player has full o
 		const id = await createRoom(required(host));
 		const roomCode = required(host).locator(".room-code code");
 		await expect(roomCode).toHaveText(id);
-		await expect(roomCode).toHaveCSS("user-select", "all");
+		await expect(roomCode).toHaveCSS("user-select", "text");
 		await expect(
 			required(host).getByRole("button", { name: "Copy ID", exact: true }),
 		).toHaveCount(0);

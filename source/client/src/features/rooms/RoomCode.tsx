@@ -1,10 +1,32 @@
+import { useState } from "react";
+
 export function RoomCode({ roomId }: { roomId: string }) {
+	const [notice, setNotice] = useState("");
 	return (
 		<span className="room-code">
-			<span className="room-code-label">Room ID</span>
-			<output aria-label="Room ID">
+			<span className="room-code-label">ROOM ID:</span>
+			<button
+				type="button"
+				className="room-code-copy"
+				aria-label="Copy room ID"
+				onClick={async (event) => {
+					// Kéo chọn mã thủ công không kích hoạt thao tác sao chép.
+					if (event.detail > 0 && window.getSelection()?.isCollapsed === false)
+						return;
+					setNotice("");
+					try {
+						await navigator.clipboard.writeText(roomId);
+						setNotice("Copied");
+					} catch {
+						setNotice("Unable to copy. Select the ID to copy.");
+					}
+				}}
+			>
 				<code>{roomId}</code>
-			</output>
+			</button>
+			<span className="room-code-status" role="status">
+				{notice}
+			</span>
 		</span>
 	);
 }

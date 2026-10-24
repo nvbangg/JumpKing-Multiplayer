@@ -368,7 +368,8 @@ button {
 	background: #1c1911;
 	outline: none;
 }
-.menu-panel button:enabled:is(:hover, :focus-visible)::before,
+.menu-panel
+	button:enabled:not(.room-code-copy):is(:hover, :focus-visible)::before,
 .room-join-form:has(input:is(:hover, :focus-visible))::before {
 	content: "";
 	position: absolute;
@@ -591,18 +592,30 @@ button {
 	flex-wrap: wrap;
 	justify-content: center;
 	align-items: center;
-	gap: 8px;
+	gap: 4px 16px;
+}
+.room-code-label {
+	white-space: nowrap;
+}
+.menu-panel button.room-code-copy {
+	padding: 4px 0;
+	line-height: 1;
 }
 .room-code code {
-	user-select: all;
-	-webkit-user-select: all;
+	user-select: text;
+	-webkit-user-select: text;
 	-webkit-touch-callout: default;
-}
-.room-code code {
 	font: inherit;
-	font-size: 32px;
+	font-size: clamp(24px, 2.5vw, 32px);
 	letter-spacing: 0.15em;
 	color: #e4bb68;
+}
+.room-code-status {
+	flex-basis: 100%;
+	min-height: 1.4em;
+	text-align: center;
+	font-size: 13px;
+	color: #aaa28b;
 }
 .save-error {
 	position: absolute;

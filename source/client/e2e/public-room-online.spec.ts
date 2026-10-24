@@ -13,6 +13,13 @@ async function checkLobbyLayout(page: Page) {
 	if (!viewport) throw new Error("Lobby checks require a viewport");
 	await expect(panel).toBeVisible();
 	await expect(chat).toBeVisible();
+	await expect(page.locator(".room-code-label")).toHaveText("ROOM ID:");
+	const labelBounds = await page.locator(".room-code-label").boundingBox(),
+		idBounds = await page.locator(".room-code code").boundingBox();
+	if (!labelBounds || !idBounds) throw new Error("Room ID is missing");
+	expect(idBounds.x - labelBounds.x - labelBounds.width).toBeGreaterThanOrEqual(
+		12,
+	);
 	await expect
 		.poll(async () => {
 			const bounds = await panel.boundingBox();
@@ -47,6 +54,7 @@ test("Public rooms can be discovered and joined while Private rooms remain acces
 	const first = await browser.newContext(),
 		second = await browser.newContext();
 	try {
+		await first.grantPermissions(["clipboard-read", "clipboard-write"]);
 		for (const context of [first, second])
 			await context.addInitScript(() =>
 				localStorage.setItem(
@@ -95,6 +103,42 @@ test("Public rooms can be discovered and joined while Private rooms remain acces
 		);
 		await a.getByLabel("Visibility", { exact: true }).selectOption("PUBLIC");
 		const id = await a.locator(".room-code code").innerText();
+		const copyId = a.getByRole("button", {
+			name: "Copy room ID",
+			exact: true,
+		});
+		await a.bringToFront();
+		await expect(a.locator(".room-code code")).toHaveCSS("user-select", "text");
+		await copyId.click();
+		await expect(a.locator(".room-code").getByRole("status")).toHaveText(
+			"Copied",
+		);
+		expect(await a.evaluate(() => navigator.clipboard.readText())).toBe(id);
+		expect(await a.evaluate(() => window.getSelection()?.toString())).toBe("");
+		await a.evaluate(() => navigator.clipboard.writeText("unchanged"));
+		await copyId.focus();
+		await copyId.press("Enter");
+		await expect
+			.poll(() => a.evaluate(() => navigator.clipboard.readText()))
+			.toBe(id);
+		await a.evaluate(() => navigator.clipboard.writeText("unchanged"));
+		const codeBounds = await a.locator(".room-code code").boundingBox();
+		if (!codeBounds) throw new Error("Room ID is missing");
+		await a.mouse.move(codeBounds.x + 1, codeBounds.y + codeBounds.height / 2);
+		await a.mouse.down();
+		await a.mouse.move(
+			codeBounds.x + codeBounds.width - 1,
+			codeBounds.y + codeBounds.height / 2,
+			{ steps: 10 },
+		);
+		await a.mouse.up();
+		expect(await a.evaluate(() => window.getSelection()?.toString())).not.toBe(
+			"",
+		);
+		expect(await a.evaluate(() => navigator.clipboard.readText())).toBe(
+			"unchanged",
+		);
+		await a.evaluate(() => window.getSelection()?.removeAllRanges());
 		await expect(
 			a.getByLabel("Map", { exact: true }).locator("option"),
 		).toHaveCount(10);
@@ -151,6 +195,17 @@ test("Public rooms can be discovered and joined while Private rooms remain acces
 			capacity: 10,
 		});
 		await b.screenshot({ path: info.outputPath("public-room-lobby.png") });
+		await a.bringToFront();
+		await a.evaluate(() => {
+			Object.defineProperty(navigator.clipboard, "writeText", {
+				value: () =>
+					Promise.reject(new DOMException("Not allowed", "NotAllowedError")),
+			});
+		});
+		await copyId.click();
+		await expect(a.locator(".room-code").getByRole("status")).toHaveText(
+			"Unable to copy. Select the ID to copy.",
+		);
 		await b.getByRole("button", { name: "Leave", exact: true }).click();
 		await a.getByRole("button", { name: "Leave", exact: true }).click();
 	} finally {
