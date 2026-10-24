@@ -108,6 +108,8 @@ class SpectatorIT {
       var view = watching(viewer, id);
       assertThat(view.path("playId")).isEqualTo(joined.path("playId"));
       assertThat(view.path("spectating").path("playId")).isEqualTo(other.path("playId"));
+      assertThat(view.path("spectating").path("player").path("positionRevision").isIntegralNumber())
+          .isTrue();
       assertThat(view.path("spectating").has("simulation")).isFalse();
       assertThat(view.path("spectating").has("reconnectToken")).isFalse();
       viewer.await(
@@ -199,6 +201,8 @@ class SpectatorIT {
                   && m.path("payload").path("self").path("lastProcessedInputSeq").asLong() >= 2);
       viewer.ok("SET_SPECTATE", Map.of("playerId", other.path("playerId").asText()));
       var view = watching(viewer, other.path("playerId").asText());
+      assertThat(view.path("spectating").path("player").path("positionRevision").isIntegralNumber())
+          .isTrue();
       double x = view.path("self").path("simulation").path("physics").path("x").asDouble();
       viewer.input(
           Map.of(

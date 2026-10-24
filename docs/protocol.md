@@ -115,7 +115,7 @@ kind=COMMUNITY/ROOM. Community state=PLAYING, host/settings=null. currentPlay.co
 Snapshot tách rõ:
 
 - self: lastProcessedInputSeq, status, paused, crown và simulation={physics,adventure,world} đủ restore/replay, gồm buffers/counters/Fly/phasing fall; Easy có world.safePosition={x,y} để đồng bộ điểm an toàn khi SPLAT. Gốc playId/generation/self/ACK luôn thuộc người nhận; metrics để tính Stats/History/checkpoint không lặp trong snapshot gameplay.
-- peers: public render state/tên/màu/crown/status ở screen đang xem và liền kề. players là toàn roster {playerId,nickname,colorSlot,rank,currentProgress}, lấy từ RAM.
+- peers: public render state/tên/màu/crown/status ở screen đang xem và liền kề; positionRevision tăng mỗi lần server respawn, chỉ ở RAM để phân biệt dịch chuyển tức thời với chuyển động liên tục. players là toàn roster {playerId,nickname,colorSlot,rank,currentProgress}, lấy từ RAM.
 - spectating: null hoặc {player,playId,elapsedTimeMs,paused,adventure,world}; chỉ dùng renderer, không thay prediction/checkpoint. Xóa mục tiêu khi reconnect hoặc mất hiệu lực.
 
 Room bật Items có items={held:BANANA|ROCK|BOOTS|null,bananaArmed,cooldownMs,bananas:[{id,x,y,armedAtTick}],rocks:[{id,x,y,direction,tick}]}. Held/cooldown riêng owner; trap/cue lọc theo screen như peers. Banana dùng tâm chân, Rock dùng tâm mục tiêu lúc trúng. physics.slipping và physics.jumpBoost chỉ gửi khi true; jumpBoost cho phép prediction/replay cú nhảy Boots đúng state server. Community không có items. Crown trong self/peers/spectating.player dùng NONE/GOLD/BLACK, tách khỏi tiến độ adventure của lượt.
@@ -125,7 +125,7 @@ Effects JUMP/LAND/SPLAT/BUMP, terrain NORMAL/ICE/SNOW. Âm thanh chuyển độn
 ## Đồng bộ và khôi phục kết nối
 
 1. Client gửi full input mỗi tick. Server áp dụng tối đa một frame/player/tick FIFO; thiếu frame giữ input cuối và không tăng ACK, quá timeout thì cancel. Backlog quá hạn khi input mới vẫn tới: đóng 1013/resync, không âm thầm bỏ cạnh nhấn/thả hoặc ACK frame chưa xử lý.
-2. ACK/state cùng tick. Client restore snapshot mới hơn, bỏ input đã ACK và replay phần còn lại; đổi playId/generation thì xóa buffers. Peers nội suy có giới hạn, không extrapolate hoặc kéo qua screen/respawn. Nhịp tick theo [architecture](architecture.md#xử-lý-đồng-thời).
+2. ACK/state cùng tick. Client restore snapshot mới hơn, bỏ input đã ACK và replay phần còn lại; đổi playId/generation thì xóa buffers. Peers nội suy với buffer 50 ms, không extrapolate; snap khi positionRevision/screen/falls đổi hoặc ticks lùi, không dùng ngưỡng khoảng cách cố định để đoán teleport. Nhịp tick theo [architecture](architecture.md#xử-lý-đồng-thời).
 3. Mở Pause/menu/chat phải cancel, không tạo release-jump. Heartbeat đo RTT/jitter/stall; RTT không chứng minh one-way latency, packet loss hoặc TCP retransmission.
 4. Duplicate requestId cùng type/payload trả kết quả cũ; khác nội dung trả CONFLICT. Timeout control dùng GET_ROOM_STATE/reconnect, không tự gửi lại Start/New Run/End. Bỏ phản hồi socket/context cũ; đóng socket kết thúc pending requests.
 5. Mất kết nối/đầy input chưa ACK: dừng input và cho Reconnect/Back to Menu. Reconnect xác thực owner/token, nhận full state/generation trước Resume; không dùng Resume/Save & Exit trên socket đã đóng.

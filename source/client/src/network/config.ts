@@ -7,9 +7,8 @@ export const NETWORK = Object.freeze({
 	maxInputFrames: 180,
 	maxChatCodePoints: 200,
 	chatHistory: 30,
-	interpolationDelayMs: 100,
-	interpolationSnapshots: 12,
+	interpolationDelayMs: 50,
+	interpolationSnapshots: 20,
 	interpolationResetMs: 1000,
 	interpolationClockCorrection: 0.1,
-	interpolationTeleportPixels: 96,
 });

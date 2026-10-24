@@ -55,6 +55,34 @@ function snapshot(
 		peers: [],
 	};
 }
+function fallingPeerSnapshot(
+	game: GameSimulation,
+	tick: number,
+	y: number,
+	positionRevision = 0,
+): OnlineSnapshot {
+	const value = snapshot(game, tick, 0);
+	value.peers = [
+		{
+			playerId: "peer",
+			positionRevision,
+			nickname: "Peer",
+			colorSlot: 1,
+			crown: "NONE",
+			status: "ACTIVE",
+			state: {
+				...game.physics.snapshot(),
+				x: 100,
+				y,
+				vy: 10,
+				grounded: false,
+				screen: 1,
+				ticks: tick,
+			},
+		},
+	];
+	return value;
+}
 test("missing acknowledgements stops input and requests disconnect; a new generation resumes cleanly", () => {
 	const socket = new GameSocket(
 		() => {},
@@ -372,53 +400,66 @@ test("remote interpolation follows server tick spacing and never extrapolates or
 		current = snapshot(game, 6, 0);
 	const peer = {
 		playerId: "other",
+		positionRevision: 0,
 		nickname: "Other",
 		colorSlot: 1,
 		state: game.physics.snapshot(),
 		crown: "NONE" as const,
 		status: "ACTIVE",
 	};
-	previous.peers = [{ ...peer, state: { ...peer.state, x: 100 } }];
-	current.peers = [{ ...peer, state: { ...peer.state, x: 120 } }];
+	previous.peers = [{ ...peer, state: { ...peer.state, x: 100, ticks: 3 } }];
+	current.peers = [{ ...peer, state: { ...peer.state, x: 120, ticks: 6 } }];
 	const interpolation = new PeerInterpolation(60);
 	interpolation.receive(previous, 0);
 	interpolation.receive(current, 50);
-	expect(required(interpolation.frame(125)[0]).state.x).toBe(110);
-	expect(required(interpolation.frame(200)[0]).state.x).toBe(120);
+	expect(
+		required(interpolation.frame(NETWORK.interpolationDelayMs + 25)[0]).state.x,
+	).toBe(110);
+	expect(
+		required(interpolation.frame(NETWORK.interpolationDelayMs + 100)[0]).state
+			.x,
+	).toBe(120);
 	interpolation.receive({ ...current, serverTick: 9, peers: [] }, 200);
 	expect(interpolation.frame(220)).toEqual([]);
 });
 
 test("buffered peers move continuously through delayed and bunched snapshots", () => {
 	const game = new GameSimulation(map),
-		interpolation = new PeerInterpolation(60);
+		interpolation = new PeerInterpolation(60),
+		delay = NETWORK.interpolationDelayMs;
+	// Giữ chuỗi đến dồn trong bộ đệm hiện tại, không giả định độ trễ 100 ms.
 	const arrivals = new Map([
 		[0, 0],
 		[50, 1],
-		[120, 2],
-		[140, 3],
-		[210, 4],
-		[250, 5],
+		[delay + 20, 2],
+		[delay + 40, 3],
+		[delay + 110, 4],
+		[delay + 150, 5],
 	]);
 	let previousX = 0;
-	for (let now = 0; now <= 250; now++) {
+	for (let now = 0; now <= delay + 150; now++) {
 		const index = arrivals.get(now);
 		if (index !== undefined) {
 			const packet = snapshot(game, index * 3, 0);
 			packet.peers = [
 				{
 					playerId: "peer",
+					positionRevision: 0,
 					nickname: "Peer",
 					colorSlot: 1,
 					crown: "NONE" as const,
 					status: "ACTIVE",
-					state: { ...game.physics.snapshot(), x: index * 10 },
+					state: {
+						...game.physics.snapshot(),
+						x: index * 10,
+						ticks: index * 3,
+					},
 				},
 			];
 			interpolation.receive(packet, now);
 		}
 		const x = required(interpolation.frame(now)[0]).state.x;
-		if (now > 110) {
+		if (now > delay + 10) {
 			expect(x - previousX).toBeGreaterThan(0);
 			expect(x - previousX).toBeLessThanOrEqual(0.221);
 		}
@@ -426,19 +467,131 @@ test("buffered peers move continuously through delayed and bunched snapshots", (
 	}
 });
 
+test("continuous falling interpolates snapshot gaps exceeding 96 pixels in the same screen", () => {
+	const game = new GameSimulation(map),
+		interpolation = new PeerInterpolation(60);
+	interpolation.receive(fallingPeerSnapshot(game, 0, -300), 0);
+	interpolation.frame(0);
+	interpolation.receive(fallingPeerSnapshot(game, 12, -180), 200);
+	expect(
+		required(interpolation.frame(NETWORK.interpolationDelayMs + 150)[0]).state
+			.y,
+	).toBeCloseTo(-210);
+	expect(
+		required(interpolation.frame(NETWORK.interpolationDelayMs + 300)[0]).state
+			.y,
+	).toBe(-180);
+});
+
+test("bunched falling snapshots do not teleport toward a newest position over 96 pixels ahead", () => {
+	const game = new GameSimulation(map),
+		interpolation = new PeerInterpolation(60);
+	interpolation.receive(fallingPeerSnapshot(game, 0, -300), 0);
+	interpolation.frame(0);
+	interpolation.frame(249);
+	for (let tick = 3; tick <= 15; tick += 3)
+		interpolation.receive(
+			fallingPeerSnapshot(game, tick, -300 + tick * 10),
+			250,
+		);
+	let previousY = -300;
+	for (let now = 250; now <= 400; now++) {
+		const y = required(interpolation.frame(now)[0]).state.y;
+		expect(y - previousY).toBeGreaterThan(0);
+		expect(y - previousY).toBeLessThanOrEqual(0.661);
+		previousY = y;
+	}
+	expect(previousY).toBeLessThan(-150);
+});
+
+test("a same-screen respawn under 96 pixels snaps with unchanged falls without advancing other peers", () => {
+	const game = new GameSimulation(map),
+		interpolation = new PeerInterpolation(60);
+	const previous = fallingPeerSnapshot(game, 0, -300),
+		respawn = fallingPeerSnapshot(game, 3, -340, 1);
+	for (const value of [previous, respawn]) {
+		const peer = required(value.peers[0]);
+		value.peers.push({
+			...peer,
+			playerId: "steady",
+			positionRevision: 0,
+			state: {
+				...peer.state,
+				x: value.serverTick * 1.5,
+				y: -300,
+				vy: 0,
+				grounded: true,
+			},
+		});
+	}
+	interpolation.receive(previous, 0);
+	interpolation.frame(0);
+	interpolation.receive(respawn, 50);
+	const frame = interpolation.frame(50);
+	expect(required(frame[0])).toEqual(required(respawn.peers[0]));
+	expect(required(frame[1]).state.x).toBe(0);
+	expect(
+		required(interpolation.frame(NETWORK.interpolationDelayMs + 25)[1]).state.x,
+	).toBeCloseTo(2.25);
+	expect(required(respawn.peers[0]).state.falls).toBe(0);
+});
+
+test("a peer returning after removal starts at its new position instead of stale buffered history", () => {
+	const game = new GameSimulation(map),
+		interpolation = new PeerInterpolation(60);
+	interpolation.receive(fallingPeerSnapshot(game, 0, -300), 0);
+	interpolation.frame(0);
+	interpolation.receive(fallingPeerSnapshot(game, 3, -270), 50);
+	interpolation.frame(50);
+	interpolation.receive(snapshot(game, 6, 0), 60);
+	expect(interpolation.frame(60)).toEqual([]);
+	interpolation.receive(fallingPeerSnapshot(game, 9, -180), 70);
+	expect(required(interpolation.frame(70)[0]).state.y).toBe(-180);
+	interpolation.receive(fallingPeerSnapshot(game, 12, -150), 80);
+	expect(required(interpolation.frame(80)[0]).state.y).toBe(-180);
+	expect(required(interpolation.frame(350)[0]).state.y).toBe(-150);
+});
+
+test("snapshots after a respawn never pull a peer back into its buffered pre-respawn path", () => {
+	const game = new GameSimulation(map),
+		interpolation = new PeerInterpolation(60);
+	interpolation.receive(fallingPeerSnapshot(game, 0, -300), 0);
+	interpolation.frame(0);
+	interpolation.receive(fallingPeerSnapshot(game, 3, -290), 50);
+	interpolation.frame(50);
+	interpolation.receive(fallingPeerSnapshot(game, 6, -250, 1), 100);
+	expect(required(interpolation.frame(100)[0]).state.y).toBe(-250);
+	interpolation.receive(fallingPeerSnapshot(game, 9, -240, 1), 110);
+	interpolation.frame(110);
+	interpolation.receive(fallingPeerSnapshot(game, 12, -230, 1), 120);
+	let previousY = required(interpolation.frame(120)[0]).state.y;
+	for (let now = 121; now <= 350; now++) {
+		const y = required(interpolation.frame(now)[0]).state.y;
+		expect(y).toBeGreaterThanOrEqual(previousY);
+		expect(y).toBeLessThanOrEqual(-230);
+		previousY = y;
+	}
+});
+
 test("interpolation snaps screen changes and respawns and resets after a long silence", () => {
 	const game = new GameSimulation(map),
 		interpolation = new PeerInterpolation(60);
-	const packet = (tick: number, x: number, screen = 0) => ({
+	const packet = (
+		tick: number,
+		x: number,
+		screen = 0,
+		positionRevision = 0,
+	) => ({
 		...snapshot(game, tick, 0),
 		peers: [
 			{
 				playerId: "peer",
+				positionRevision,
 				nickname: "Peer",
 				colorSlot: 1,
 				crown: "NONE" as const,
 				status: "ACTIVE",
-				state: { ...game.physics.snapshot(), x, screen },
+				state: { ...game.physics.snapshot(), x, screen, ticks: tick },
 			},
 		],
 	});
@@ -446,13 +599,13 @@ test("interpolation snaps screen changes and respawns and resets after a long si
 	interpolation.frame(0);
 	interpolation.receive(packet(3, 110), 50);
 	interpolation.frame(50);
-	interpolation.receive(packet(6, 300), 100);
+	interpolation.receive(packet(6, 300, 0, 1), 100);
 	expect(required(interpolation.frame(100)[0]).state.x).toBe(300);
-	interpolation.receive(packet(9, 10, 1), 150);
+	interpolation.receive(packet(9, 10, 1, 1), 150);
 	expect(required(interpolation.frame(150)[0]).state.screen).toBe(1);
-	interpolation.receive(packet(8, 400), 160);
+	interpolation.receive(packet(8, 400, 1, 1), 160);
 	expect(required(interpolation.frame(160)[0]).state.screen).toBe(1);
-	interpolation.receive(packet(12, 200), 5000);
+	interpolation.receive(packet(12, 200, 0, 1), 5000);
 	expect(required(interpolation.frame(5000)[0]).state.x).toBe(200);
 	interpolation.reset();
 	expect(interpolation.frame(6000)).toEqual([]);
@@ -462,6 +615,11 @@ test("interpolation snaps screen changes and respawns and resets after a long si
 	required(respawn.peers[0]).state.falls = 1;
 	interpolation.receive(respawn, 50);
 	expect(required(interpolation.frame(50)[0]).state.x).toBe(30);
+	const restarted = packet(6, 20);
+	required(restarted.peers[0]).state.falls = 1;
+	required(restarted.peers[0]).state.ticks = 1;
+	interpolation.receive(restarted, 100);
+	expect(required(interpolation.frame(100)[0]).state.x).toBe(20);
 });
 
 test("interpolation adjusts clock drift without draining its buffer during a long session", () => {
@@ -475,11 +633,16 @@ test("interpolation adjusts clock drift without draining its buffer during a lon
 			packet.peers = [
 				{
 					playerId: "peer",
+					positionRevision: 0,
 					nickname: "Peer",
 					colorSlot: 1,
 					crown: "NONE" as const,
 					status: "ACTIVE",
-					state: { ...game.physics.snapshot(), x: index * 10 },
+					state: {
+						...game.physics.snapshot(),
+						x: index * 10,
+						ticks: index * 3,
+					},
 				},
 			];
 			interpolation.receive(packet, now);

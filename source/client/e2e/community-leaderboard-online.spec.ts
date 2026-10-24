@@ -337,8 +337,9 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 				stage = await page.locator(".game-stage").boundingBox(),
 				sidebar = await page.locator(".game-sidebar").boundingBox(),
 				board = await panel.boundingBox(),
-				chat = await page.locator(".game-chat").boundingBox();
-			if (!shell || !stage || !sidebar || !board || !chat)
+				chat = await page.locator(".game-chat").boundingBox(),
+				hud = await page.locator(".game-hud").boundingBox();
+			if (!shell || !stage || !sidebar || !board || !chat || !hud)
 				throw new Error("Game layout is missing");
 			expect(shell.x).toBeCloseTo(0, 0);
 			expect(shell.y).toBeCloseTo(0, 0);
@@ -354,6 +355,15 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 			expect(chat.x).toBeGreaterThanOrEqual(0);
 			expect(chat.x + chat.width).toBeLessThanOrEqual(stage.x);
 			expect(chat.y + chat.height).toBeLessThanOrEqual(viewport.height);
+			expect(hud.x).toBeGreaterThanOrEqual(0);
+			expect(hud.y).toBeGreaterThanOrEqual(0);
+			expect(hud.x + hud.width).toBeLessThanOrEqual(stage.x);
+			expect(hud.y + hud.height).toBeLessThanOrEqual(chat.y);
+			expect(
+				await page
+					.locator(".game-hud")
+					.evaluate((element) => element.scrollWidth <= element.clientWidth),
+			).toBe(true);
 			const players = await page.locator(".players-panel").boundingBox();
 			if (!players) throw new Error("Players panel is missing");
 			expect(players.y + players.height).toBeLessThanOrEqual(board.y);

@@ -55,6 +55,7 @@ export interface OnlineSnapshot {
 	};
 	peers: {
 		playerId: string;
+		positionRevision: number;
 		nickname: string;
 		colorSlot: number;
 		state: RenderPose;

@@ -43,6 +43,7 @@ test("watching changes the rendered player and scene without restoring target st
 	const view = {
 		player: {
 			playerId: "peer",
+			positionRevision: 0,
 			nickname: "Peer",
 			colorSlot: 1,
 			state: target,
@@ -146,6 +147,7 @@ test("returning discards cancelled frames from watching before reconciling the v
 		spectating: {
 			player: {
 				playerId: "peer",
+				positionRevision: 0,
 				nickname: "Peer",
 				colorSlot: 1,
 				state: { ...own.physics, screen: 6, y: -2160 },

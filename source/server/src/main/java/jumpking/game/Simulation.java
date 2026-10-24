@@ -10,6 +10,7 @@ public final class Simulation {
   private final boolean noWalk;
   private final FinishPlatform finishPlatform;
   private PlayerState state;
+  private long positionRevision;
   private static final double SQRT_HALF = Math.sqrt(0.5);
 
   private static double f(double value) {
@@ -46,6 +47,10 @@ public final class Simulation {
 
   public PlayerState snapshot() {
     return state.copy();
+  }
+
+  public long positionRevision() {
+    return positionRevision;
   }
 
   public void restore(PlayerState saved) {
@@ -109,6 +114,8 @@ public final class Simulation {
     state.jumps = jumps;
     state.falls = falls;
     state.jumpBoost = jumpBoost;
+    // Metadata hiển thị trong RAM; tách respawn khỏi chuyển động liên tục, không lưu checkpoint.
+    positionRevision++;
   }
 
   public void respawnAt(double x, double y) {

@@ -715,26 +715,6 @@ export function OnlineGame({
 						{countdown ?? "Waiting for players…"}
 					</p>
 				)}
-				{ready && !ending && (
-					<div className="game-hud">
-						<span>
-							<span className="timer" role="timer" aria-label="Play time">
-								{duration(watching?.elapsedTimeMs ?? elapsed)}
-							</span>
-							{remaining !== null && (
-								<span className="timer" role="timer" aria-label="Time left">
-									Time Left: {duration(Math.ceil(remaining / 1000) * 1000)}
-								</span>
-							)}
-						</span>
-						<span>
-							<NetworkStatusBadge quality={networkQuality} />
-							<button type="button" onClick={pause}>
-								Menu (Esc)
-							</button>
-						</span>
-					</div>
-				)}
 				{ready &&
 					!ending &&
 					!menu &&
@@ -793,24 +773,6 @@ export function OnlineGame({
 					tutorialStep && (
 						<TutorialGuide step={tutorialStep} onDismiss={dismissTutorial} />
 					)}
-				{ready && watching && !ending && !menu && (
-					<div className="spectator-bar" role="status">
-						<span
-							className="spectator-label"
-							title={`Watching ${watching.player.nickname}`}
-						>
-							Watching {watching.player.nickname}
-							{watching.paused ? " (Paused)" : ""}
-						</span>
-						<button
-							type="button"
-							disabled={pending || disconnected}
-							onClick={() => void watch(null)}
-						>
-							Back to My Game
-						</button>
-					</div>
-				)}
 				{ending && (
 					<div className="ending-actions">
 						{ending === "playing" ? (
@@ -961,8 +923,46 @@ export function OnlineGame({
 				</aside>
 			)}
 			{ready && !ending && (
-				<aside className="game-chat" aria-label="Game chat">
-					<Chat chat={chat} socket={socket} dismissible />
+				<aside className="game-left" aria-label="Game controls and chat">
+					<div className="game-hud">
+						<span>
+							<span className="timer" role="timer" aria-label="Play time">
+								{duration(watching?.elapsedTimeMs ?? elapsed)}
+							</span>
+							{remaining !== null && (
+								<span className="timer" role="timer" aria-label="Time left">
+									Time Left: {duration(Math.ceil(remaining / 1000) * 1000)}
+								</span>
+							)}
+						</span>
+						<span>
+							<NetworkStatusBadge quality={networkQuality} />
+							<button type="button" onClick={pause}>
+								Menu (Esc)
+							</button>
+						</span>
+					</div>
+					{watching && !menu && (
+						<div className="spectator-bar" role="status">
+							<span
+								className="spectator-label"
+								title={`Watching ${watching.player.nickname}`}
+							>
+								Watching {watching.player.nickname}
+								{watching.paused ? " (Paused)" : ""}
+							</span>
+							<button
+								type="button"
+								disabled={pending || disconnected}
+								onClick={() => void watch(null)}
+							>
+								Back to My Game
+							</button>
+						</div>
+					)}
+					<section className="game-chat" aria-label="Game chat">
+						<Chat chat={chat} socket={socket} dismissible />
+					</section>
 				</aside>
 			)}
 			{ready && !ending && !menu && !chat.open && !watching && (

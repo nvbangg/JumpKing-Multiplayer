@@ -8,7 +8,13 @@ import jumpking.game.PlayerState;
 /** Một bản chụp riêng cho mỗi player/đợt; owner và spectator dùng lại cùng dữ liệu bất biến. */
 record PlayerSnapshot(GameSimulation.Snapshot simulation, PublicPlayer player) {
   record PublicPlayer(
-      String playerId, String nickname, int colorSlot, String status, Pose state, Crown crown) {}
+      String playerId,
+      String nickname,
+      int colorSlot,
+      String status,
+      Pose state,
+      Crown crown,
+      long positionRevision) {}
 
   record Pose(
       double x,
@@ -54,7 +60,15 @@ record PlayerSnapshot(GameSimulation.Snapshot simulation, PublicPlayer player) {
       GameSimulation game, String id, String nickname, int colorSlot, String status, Crown crown) {
     var saved = game.snapshot();
     return new PlayerSnapshot(
-        saved, new PublicPlayer(id, nickname, colorSlot, status, new Pose(saved.physics()), crown));
+        saved,
+        new PublicPlayer(
+            id,
+            nickname,
+            colorSlot,
+            status,
+            new Pose(saved.physics()),
+            crown,
+            game.physics().positionRevision()));
   }
 
   int screen() {
