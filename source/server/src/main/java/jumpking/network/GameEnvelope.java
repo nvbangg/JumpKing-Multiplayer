@@ -15,6 +15,8 @@ public record GameEnvelope(String type, String requestId, JsonNode payload) {
           "LEAVE_ROOM",
           "GET_ROOM_STATE",
           "UPDATE_ROOM_SETTINGS",
+          "SET_ROOM_CONFIRMED",
+          "KICK_PLAYER",
           "START_GAME",
           "GAME_READY",
           "END_MATCH",

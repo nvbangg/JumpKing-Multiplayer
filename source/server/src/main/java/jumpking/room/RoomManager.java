@@ -32,6 +32,8 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
           "GET_ROOM_STATE",
           "LEAVE_ROOM",
           "UPDATE_ROOM_SETTINGS",
+          "SET_ROOM_CONFIRMED",
+          "KICK_PLAYER",
           "RECONNECT",
           "CHAT_SEND",
           "START_GAME",
@@ -104,7 +106,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     final long order;
     GameConnection connection;
     String watching;
-    boolean confirmed = true, ready;
+    boolean confirmed = true, nextMatchJoined = true;
     Crown crown = Crown.NONE;
     String endingNotifiedPlay;
     long disconnectedAt, generation;
@@ -195,6 +197,8 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     }
     var membership = memberships.find(connection.identity().owner());
     var room = membership == null ? null : rooms.get(membership.roomId());
+    if (room == null && command.type().equals("RECONNECT"))
+      throw new ApiException(409, "RECONNECT_EXPIRED", "Reconnect is no longer available");
     if (room == null) throw new ApiException(404, "ROOM_NOT_FOUND", "Room not found");
     room.actor.execute(
         () ->
@@ -203,6 +207,9 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
                 command,
                 () -> {
                   var player = room.players.get(membership.playerId());
+                  if (player == null && command.type().equals("RECONNECT"))
+                    throw new ApiException(
+                        409, "RECONNECT_EXPIRED", "Reconnect is no longer available");
                   if (player == null)
                     throw new ApiException(409, "CONFLICT", "Room join is still in progress");
                   if (command.type().equals("RECONNECT")) {
@@ -270,6 +277,28 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
                       connection.reply(command, "ROOM_STATE", state(room));
                       broadcast(room);
                     }
+                    case "SET_ROOM_CONFIRMED" -> {
+                      GameEnvelope.fields(command.payload(), Set.of("confirmed"));
+                      if (!room.state.equals("WAITING") || !player.nextMatchJoined)
+                        throw new ApiException(
+                            409, "CONFLICT", "Confirmation can only change in the Lobby");
+                      player.confirmed = GameEnvelope.bool(command.payload(), "confirmed", false);
+                      connection.reply(command, "ROOM_STATE", state(room));
+                      broadcast(room);
+                    }
+                    case "KICK_PLAYER" -> {
+                      GameEnvelope.fields(command.payload(), Set.of("playerId"));
+                      requireHost(room, player);
+                      if (!room.state.equals("WAITING"))
+                        throw new ApiException(
+                            409, "CONFLICT", "Players can only be kicked in the Lobby");
+                      String targetId = GameEnvelope.text(command.payload(), "playerId");
+                      var target = room.players.get(targetId);
+                      if (target == null || target == player)
+                        throw new ApiException(409, "CONFLICT", "Choose another Room member");
+                      remove(room, target, null, "KICKED");
+                      connection.reply(command, "ROOM_STATE", state(room));
+                    }
                     case "START_GAME" -> {
                       GameEnvelope.fields(command.payload(), Set.of());
                       start(room, player);
@@ -277,17 +306,16 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
                     }
                     case "GAME_READY" -> {
                       GameEnvelope.fields(command.payload(), Set.of("playId", "generation"));
-                      if (!room.state.equals("COUNTDOWN")
+                      if (!Set.of("COUNTDOWN", "PLAYING").contains(room.state)
                           || room.match == null
                           || !room.match.id.equals(GameEnvelope.text(command.payload(), "playId"))
                           || GameEnvelope.integer(command.payload(), "generation")
                               != player.generation)
                         throw new ApiException(
                             409, "STALE_PLAY", "Loading acknowledgement belongs to an old match");
-                      player.ready = true;
-                      if (room.countdownAt == 0
-                          && room.players.values().stream()
-                              .allMatch(p -> p.ready && p.connection != null))
+                      if (room.state.equals("COUNTDOWN")
+                          && room.countdownAt == 0
+                          && player.id.equals(room.host))
                         room.countdownAt =
                             time.nanos() + rules.path("countdownMs").asLong() * 1_000_000L;
                       connection.reply(command, "ROOM_STATE", state(room));
@@ -305,6 +333,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
                       if (room.match.saveStatus.equals("FAILED")) save(room, true);
                       if (room.match.saveStatus.equals("SAVED")) {
                         player.confirmed = true;
+                        player.nextMatchJoined = true;
                         room.state = "WAITING";
                         directory.joinable(room.id, true);
                       }
@@ -575,6 +604,10 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
   }
 
   private void remove(Room room, Member player, GameEnvelope command) {
+    remove(room, player, command, null);
+  }
+
+  private void remove(Room room, Member player, GameEnvelope command, String reason) {
     if (room.state.equals("COUNTDOWN")) cancelCountdown(room);
     if (room.match != null && room.match.startedAt != null && room.match.endedAt == null)
       room.match.abandon(player.id, clock.instant());
@@ -582,8 +615,10 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     room.chat.leave(player.id);
     memberships.release(player.identity.owner(), new Memberships.Membership(room.id, player.id));
     if (player.connection != null) {
-      if (command == null) player.connection.send("ROOM_LEFT", Map.of("roomId", room.id));
-      else player.connection.reply(command, "ROOM_LEFT", Map.of("roomId", room.id));
+      var payload = json.createObjectNode().put("roomId", room.id);
+      if (reason != null) payload.put("reason", reason);
+      if (command == null) player.connection.send("ROOM_LEFT", payload);
+      else player.connection.reply(command, "ROOM_LEFT", payload);
     }
     releaseSlot(room, player.slot);
   }
@@ -662,7 +697,8 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
               .put("colorSlot", player.slot.color())
               .put("connected", player.connection != null)
               .putNull("paused")
-              .put("nextMatchConfirmed", player.confirmed);
+              .put("nextMatchConfirmed", player.confirmed)
+              .put("nextMatchJoined", player.nextMatchJoined);
       if (player.identity.username() == null) member.putNull("username");
       else member.put("username", player.identity.username());
     }
@@ -767,7 +803,6 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     room.state = "COUNTDOWN";
     room.countdownAt = 0;
     room.prepareDeadline = time.nanos() + rules.path("roomLoadTimeoutMs").asLong() * 1_000_000L;
-    roster.forEach(player -> player.ready = false);
     directory.joinable(room.id, false);
     for (var player : roster)
       player.connection.send(
@@ -832,6 +867,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
       return;
     }
     int steps = 0;
+    // Giữ nợ tick cho lượt actor sau để input FIFO không chậm dần sau gián đoạn.
     while (now >= room.nextTick && steps++ < 5 && room.state.equals("PLAYING")) {
       room.nextTick += step;
       room.serverTick++;
@@ -843,12 +879,17 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
       if (room.match.ticks % (room.match.tickRate / rules.path("snapshotRate").asInt()) == 0)
         snapshots(room);
     }
-    if (now >= room.nextTick) room.nextTick = now + step;
     if (room.state.equals("PLAYING") && now - room.lastSave >= saveIntervalNs) save(room, false);
   }
 
   private void finish(Room room) {
-    room.players.values().forEach(player -> player.confirmed = false);
+    room.players
+        .values()
+        .forEach(
+            player -> {
+              player.confirmed = false;
+              player.nextMatchJoined = false;
+            });
     room.state = "FINISHED";
     directory.joinable(room.id, false);
     save(room, true);

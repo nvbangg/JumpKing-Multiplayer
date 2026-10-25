@@ -74,6 +74,7 @@ Unit tests đặt cạnh code TypeScript và trong `server/src/test/java`; E2E �
 ## Xử lý đồng thời
 
 - Fixed-step **60 Hz**, snapshot **20 Hz**, dùng monotonic clock; số packet hoặc deltaTime của client không quyết định thời gian trận.
+- Mỗi lượt actor xử lý bù tối đa 5 tick và giữ phần còn nợ cho lượt sau; chỉ đặt lại clock khi ngừng mô phỏng hoặc Room không còn kết nối, không chạy bù thời gian nghỉ.
 - Mỗi phòng/sảnh xử lý commands và tick tuần tự trên worker pool chung; các phòng có thể chạy song song. Trong tick cập nhật mọi player, không chờ mạng của từng người.
 - Mọi thay đổi state, kể cả callback I/O, quay về executor sở hữu phòng. Queue có giới hạn, bảo đảm callback của công việc đã nhận vẫn được xử lý khi quá tải.
 - Chụp state bất biến một lần/player trong mỗi đợt snapshot, tái sử dụng cho owner/spectator theo đúng quyền. Gộp bản chưa gửi trước khi serialize JSON trên send worker; control messages giữ thứ tự. Không truyền state đang bị simulation sửa sang worker.

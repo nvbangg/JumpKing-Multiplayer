@@ -69,7 +69,8 @@ class RoomRaceIT {
   }
 
   @Test
-  void loadingWaitsForTheRosterAndOnlyOneServerCountdownStarts() throws Exception {
+  void hostRendererStartsOneCountdownWithoutWaitingForPeersAndAcceptsLateReadiness()
+      throws Exception {
     try (var a = new GameClient(port);
         var b = new GameClient(port)) {
       a.autoReady = b.autoReady = false;
@@ -80,10 +81,13 @@ class RoomRaceIT {
       String room = a.ok("CREATE_ROOM", Map.of()).path("roomId").asText();
       b.ok("JOIN_ROOM", Map.of("roomId", room));
       a.ok("START_GAME", Map.of());
+      assertThat(a.command("START_GAME", Map.of()).path("payload").path("code").asText())
+          .isEqualTo("CONFLICT");
+      assertThat(b.command("START_GAME", Map.of()).path("payload").path("code").asText())
+          .isEqualTo("FORBIDDEN");
       var started = a.await(m -> m.path("type").asText().equals("GAME_STARTED")).path("payload");
       String play = started.path("playId").asText();
       var ready = Map.of("playId", play, "generation", 1);
-      a.ok("GAME_READY", ready);
       time.advance(5000);
       var loading = a.ok("GET_ROOM_STATE", Map.of());
       assertThat(loading.path("state").asText()).isEqualTo("COUNTDOWN");
@@ -97,7 +101,9 @@ class RoomRaceIT {
                   .path("code")
                   .asText())
           .isEqualTo("STALE_PLAY");
-      b.ok("GAME_READY", ready);
+      var countdown = a.ok("GAME_READY", ready);
+      assertThat(countdown.path("currentPlay").path("countdownRemainingMs").asLong())
+          .isEqualTo(3000);
       time.advance(1000);
       a.ok("GAME_READY", ready);
       assertThat(
@@ -106,9 +112,29 @@ class RoomRaceIT {
                   .path("countdownRemainingMs")
                   .asLong())
           .isEqualTo(2000);
-      time.advance(2000);
+      time.advance(1000);
+      assertThat(
+              b.ok("GET_ROOM_STATE", Map.of())
+                  .path("currentPlay")
+                  .path("countdownRemainingMs")
+                  .asLong())
+          .isEqualTo(1000);
+      time.advance(1000);
       a.await(m -> m.path("type").asText().equals("GAME_SNAPSHOT"));
+      var peerSnapshot = b.await(m -> m.path("type").asText().equals("GAME_SNAPSHOT"));
+      assertThat(peerSnapshot.path("payload").path("playId").asText()).isEqualTo(play);
       assertThat(a.ok("GET_ROOM_STATE", Map.of()).path("state").asText()).isEqualTo("PLAYING");
+      var lateReady = b.ok("GAME_READY", ready);
+      assertThat(lateReady.path("state").asText()).isEqualTo("PLAYING");
+      assertThat(lateReady.path("currentPlay").path("id").asText()).isEqualTo(play);
+      assertThat(lateReady.path("currentPlay").path("countdownRemainingMs").asLong()).isZero();
+      assertThat(a.ok("GAME_READY", ready).path("state").asText()).isEqualTo("PLAYING");
+      for (var invalid :
+          List.of(
+              Map.of("playId", "old-match", "generation", 1),
+              Map.of("playId", play, "generation", 99)))
+        assertThat(b.command("GAME_READY", invalid).path("payload").path("code").asText())
+            .isEqualTo("STALE_PLAY");
       a.socket
           .sendText(
               json.writeValueAsString(
@@ -127,7 +153,8 @@ class RoomRaceIT {
   }
 
   @Test
-  void rendererTimeoutReturnsToLobbyWithoutWritingAMatch() throws Exception {
+  void hostRendererTimeoutReturnsToLobbyEvenWhenAPeerIsReadyWithoutWritingAMatch()
+      throws Exception {
     try (var a = new GameClient(port);
         var b = new GameClient(port)) {
       a.autoReady = b.autoReady = false;
@@ -138,6 +165,8 @@ class RoomRaceIT {
       String room = a.ok("CREATE_ROOM", Map.of()).path("roomId").asText();
       b.ok("JOIN_ROOM", Map.of("roomId", room));
       a.ok("START_GAME", Map.of());
+      var started = a.await(m -> m.path("type").asText().equals("GAME_STARTED")).path("payload");
+      b.ok("GAME_READY", Map.of("playId", started.path("playId").asText(), "generation", 1));
       a.messages.clear();
       time.advance(shared.rules().path("roomLoadTimeoutMs").asLong());
       a.await(

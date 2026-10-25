@@ -15,7 +15,12 @@ export function Lobby({
 	pending: boolean;
 	command: (type: string, payload?: Record<string, unknown>) => void;
 }) {
-	const host = room.hostPlayerId === selfId;
+	const members = room.members.filter(
+		(member) => member.nextMatchJoined !== false,
+	);
+	const self = members.find((member) => member.playerId === selfId);
+	const host = !!self && room.hostPlayerId === selfId;
+	const confirmed = self?.nextMatchConfirmed === true;
 	const limit =
 		room.settings?.timeLimitMinutes ?? rules.timeLimitDefaultMinutes;
 	return (
@@ -24,23 +29,49 @@ export function Lobby({
 				<RoomCode roomId={room.roomId} />
 				{room.state === "COUNTDOWN" && <p role="status">Starting…</p>}
 				<ul className="players">
-					{room.members.map((member) => (
+					{members.map((member) => (
 						<li key={member.playerId}>
 							<span>{member.nickname}</span>
 							<span>
 								{member.playerId === room.hostPlayerId ? "Host" : ""}
 								{!member.connected ? " · Offline" : ""}
 								{member.nextMatchConfirmed ? " · Confirmed" : ""}
+								{host &&
+									room.state === "WAITING" &&
+									member.playerId !== selfId && (
+										<button
+											type="button"
+											aria-label={`Kick ${member.nickname}`}
+											disabled={pending}
+											onClick={() =>
+												command("KICK_PLAYER", { playerId: member.playerId })
+											}
+										>
+											Kick
+										</button>
+									)}
 							</span>
 						</li>
 					))}
 				</ul>
+				{self && room.state === "WAITING" && (
+					<button
+						type="button"
+						disabled={pending}
+						onClick={() =>
+							command("SET_ROOM_CONFIRMED", { confirmed: !confirmed })
+						}
+					>
+						{confirmed ? "Cancel Confirm" : "Confirm"}
+					</button>
+				)}
 				{host && room.state === "WAITING" && (
 					<button
 						type="button"
 						disabled={
 							pending ||
-							room.members.filter(
+							!confirmed ||
+							members.filter(
 								(member) =>
 									member.connected && member.nextMatchConfirmed !== false,
 							).length < rules.minimumRoomPlayers
@@ -111,11 +142,11 @@ export function Lobby({
 								})
 							}
 						>
-							<option value="RACE">Race</option>
-							<option value="EASY">Easy</option>
-							<option value="HARDCORE">Hardcore</option>
-							<option value="TIME_LIMIT">Time Limit</option>
-							<option value="NO_WALK">No Walk</option>
+							<option value="RACE">RACE – Default</option>
+							<option value="EASY">EASY – Respawn at Last Position</option>
+							<option value="HARDCORE">HARDCORE – Restart on Death</option>
+							<option value="TIME_LIMIT">TIME LIMIT – Beat the Clock</option>
+							<option value="NO_WALK">NO WALK – Jump Only</option>
 						</select>
 					</label>
 					{room.settings.mode === "TIME_LIMIT" && (

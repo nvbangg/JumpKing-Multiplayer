@@ -216,11 +216,12 @@ public class Community implements GameCommandHandler, AutoCloseable {
           else runState(player);
         }
       }
+      // Giữ nợ tick khi còn mô phỏng; mỗi lượt actor vẫn chỉ xử lý tối đa 5 bước.
       while (now >= nextTick && steps++ < 5 && needsSimulation()) {
         nextTick += 1_000_000_000L / physics.tickRate;
         tick(now);
       }
-      if (!needsSimulation() || now >= nextTick) nextTick = now + 1_000_000_000L / physics.tickRate;
+      if (!needsSimulation()) nextTick = now + 1_000_000_000L / physics.tickRate;
       if (changed) {
         broadcast(this);
         snapshots(this);
