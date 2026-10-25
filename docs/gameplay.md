@@ -52,7 +52,7 @@ WAITING → COUNTDOWN → PLAYING → FINISHED
    └──────── Play Again ───────────┘
 ```
 
-Host Start cần ít nhất một người connected. Chốt roster, chờ tất cả renderer sẵn sàng rồi đếm ngược 3 giây; quá 30 giây hoặc có người Leave trong lúc chuẩn bị thì về Lobby, không ghi trận. Ngoài WAITING chỉ nhận reconnect của roster.
+Host Start cần ít nhất một người connected. Chốt roster, renderer của Host sẵn sàng thì đếm ngược 3 giây, không chờ renderer của người khác. Host chưa tải xong quá 30 giây hoặc có người Leave trong lúc chuẩn bị thì về Lobby, không ghi trận. Người tải chậm nhận state hiện tại khi sẵn sàng, không khởi động lại countdown. Ngoài WAITING chỉ nhận reconnect của roster.
 
 Host đã Confirmed có thể Start một mình; không chờ thêm thành viên hoặc người đã hủy xác nhận. Chỉ Host được Start, lệnh Start tiếp theo khi đã COUNTDOWN không tạo trận mới. Trong WAITING, Host có thể Kick người khác, kể cả người offline; không Kick chính mình. Kick kết thúc membership và thu hồi token reconnect, đồng thời cập nhật danh sách cho những người còn lại.
 

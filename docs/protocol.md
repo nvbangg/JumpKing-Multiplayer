@@ -75,7 +75,7 @@ Page là integer 0–100000; size/limit 1–100. Status: 400 validation, 401 xá
 | START_GAME / END_MATCH | {} |
 | SET_ROOM_CONFIRMED | {confirmed:boolean}; chỉ thay đổi bản thân trong Room/WAITING |
 | KICK_PLAYER | {playerId}; chỉ Host trong Room/WAITING, không chọn bản thân |
-| GAME_READY | {playId,generation}; renderer sẵn sàng |
+| GAME_READY | {playId,generation}; renderer sẵn sàng. Host bắt đầu countdown; người tải chậm được ACK trong PLAYING nếu cùng context, không khởi động lại countdown |
 | PLAY_AGAIN | {matchId} |
 | SET_COMMUNITY_PAUSED | {paused:boolean} |
 | SET_SPECTATE | {playerId:string hoặc null} |
@@ -112,7 +112,7 @@ Input fields là booleans, field tùy chọn mặc định false; movement chỉ
 | RECONNECT_OK | {roomId,playerId,generation,playId}; tiếp theo là full state |
 | PONG / ERROR | {nonce} / {code,message,playId?,generation?,seq?} |
 
-kind=COMMUNITY/ROOM. Community state=PLAYING, host/settings=null. currentPlay.countdownRemainingMs bằng 0 khi đợi tải, >0 khi đếm ngược. Member gồm playerId/nickname/username/colorSlot/connected/paused/nextMatchConfirmed; Room thêm nextMatchJoined để phân biệt người đã vào Lobby ván tiếp theo với trạng thái Confirmed. Create/Join và Play Again đặt nextMatchJoined=true, hết trận đặt false; Cancel Confirm không đổi trường này. Trường không áp dụng là null. Results gồm playerId/nickname/status/rank/currentProgress/maxProgress/isWinner/finishTimeMs; tên giữ lúc tham gia.
+kind=COMMUNITY/ROOM. Community state=PLAYING, host/settings=null. currentPlay.countdownRemainingMs bằng 0 khi đợi Host tải, >0 khi đếm ngược. Member gồm playerId/nickname/username/colorSlot/connected/paused/nextMatchConfirmed; Room thêm nextMatchJoined để phân biệt người đã vào Lobby ván tiếp theo với trạng thái Confirmed. Create/Join và Play Again đặt nextMatchJoined=true, hết trận đặt false; Cancel Confirm không đổi trường này. Trường không áp dụng là null. Results gồm playerId/nickname/status/rank/currentProgress/maxProgress/isWinner/finishTimeMs; tên giữ lúc tham gia.
 
 Snapshot tách rõ:
 

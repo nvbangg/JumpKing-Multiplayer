@@ -106,7 +106,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     final long order;
     GameConnection connection;
     String watching;
-    boolean confirmed = true, nextMatchJoined = true, ready;
+    boolean confirmed = true, nextMatchJoined = true;
     Crown crown = Crown.NONE;
     String endingNotifiedPlay;
     long disconnectedAt, generation;
@@ -306,17 +306,16 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
                     }
                     case "GAME_READY" -> {
                       GameEnvelope.fields(command.payload(), Set.of("playId", "generation"));
-                      if (!room.state.equals("COUNTDOWN")
+                      if (!Set.of("COUNTDOWN", "PLAYING").contains(room.state)
                           || room.match == null
                           || !room.match.id.equals(GameEnvelope.text(command.payload(), "playId"))
                           || GameEnvelope.integer(command.payload(), "generation")
                               != player.generation)
                         throw new ApiException(
                             409, "STALE_PLAY", "Loading acknowledgement belongs to an old match");
-                      player.ready = true;
-                      if (room.countdownAt == 0
-                          && room.players.values().stream()
-                              .allMatch(p -> p.ready && p.connection != null))
+                      if (room.state.equals("COUNTDOWN")
+                          && room.countdownAt == 0
+                          && player.id.equals(room.host))
                         room.countdownAt =
                             time.nanos() + rules.path("countdownMs").asLong() * 1_000_000L;
                       connection.reply(command, "ROOM_STATE", state(room));
@@ -804,7 +803,6 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     room.state = "COUNTDOWN";
     room.countdownAt = 0;
     room.prepareDeadline = time.nanos() + rules.path("roomLoadTimeoutMs").asLong() * 1_000_000L;
-    roster.forEach(player -> player.ready = false);
     directory.joinable(room.id, false);
     for (var player : roster)
       player.connection.send(
@@ -869,6 +867,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
       return;
     }
     int steps = 0;
+    // Giữ nợ tick cho lượt actor sau để input FIFO không chậm dần sau gián đoạn.
     while (now >= room.nextTick && steps++ < 5 && room.state.equals("PLAYING")) {
       room.nextTick += step;
       room.serverTick++;
@@ -880,7 +879,6 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
       if (room.match.ticks % (room.match.tickRate / rules.path("snapshotRate").asInt()) == 0)
         snapshots(room);
     }
-    if (now >= room.nextTick) room.nextTick = now + step;
     if (room.state.equals("PLAYING") && now - room.lastSave >= saveIntervalNs) save(room, false);
   }
 
