@@ -207,9 +207,10 @@ test("Account lobby, permanent chat, selected settings and Host transfer", async
 			if (viewport.width > 680)
 				expect(roster.x + roster.width).toBeLessThanOrEqual(settings.x);
 			else expect(roster.y + roster.height).toBeLessThanOrEqual(settings.y);
-			if (viewport.width > 1000)
-				expect(chat.x + chat.width).toBeLessThanOrEqual(menu.x);
-			else expect(menu.y + menu.height).toBeLessThanOrEqual(chat.y);
+			// Kiểm tra không chồng lấn theo vị trí thực, không giả định breakpoint của Lobby.
+			expect(
+				chat.x + chat.width <= menu.x || menu.y + menu.height <= chat.y,
+			).toBe(true);
 			await a.getByLabel("Minutes", { exact: true }).scrollIntoViewIfNeeded();
 			await expect(a.getByLabel("Minutes", { exact: true })).toBeInViewport();
 			await a.screenshot({

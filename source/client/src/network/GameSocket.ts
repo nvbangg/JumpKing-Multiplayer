@@ -94,6 +94,7 @@ export interface RoomMember {
 	connected: boolean;
 	paused: boolean | null;
 	nextMatchConfirmed: boolean | null;
+	nextMatchJoined?: boolean;
 }
 export interface RoomState {
 	visibility?: "PRIVATE" | "PUBLIC";
@@ -139,6 +140,7 @@ export class GameSocket {
 	private pending = new Map<
 		string,
 		{
+			type: string;
 			resolve: (value: Message) => void;
 			reject: (error: Error) => void;
 			timer: ReturnType<typeof setTimeout>;
@@ -384,6 +386,8 @@ export class GameSocket {
 			const request = message.requestId
 				? this.pending.get(message.requestId)
 				: undefined;
+			// Không đưa lỗi của command đã hết hạn hoặc kết thúc về màn hình hiện tại.
+			if (message.type === "ERROR" && message.requestId && !request) return;
 			if (request && message.requestId) {
 				clearTimeout(request.timer);
 				this.pending.delete(message.requestId);
@@ -481,11 +485,13 @@ export class GameSocket {
 					this.playContext = { playId, generation };
 				}
 			}
-			this.onMessage(
-				message.type,
-				message.payload,
-				message.requestId !== undefined,
-			);
+			// Lỗi gửi chat thuộc form chat đang chờ Promise, không hiện lại ở Lobby.
+			if (message.type !== "ERROR" || request?.type !== "CHAT_SEND")
+				this.onMessage(
+					message.type,
+					message.payload,
+					message.requestId !== undefined,
+				);
 			for (const listener of this.listeners)
 				listener(message.type, message.payload);
 		};
@@ -515,7 +521,7 @@ export class GameSocket {
 					),
 				);
 			}, NETWORK.timeoutMs);
-			this.pending.set(requestId, { resolve, reject, timer });
+			this.pending.set(requestId, { type, resolve, reject, timer });
 			try {
 				const message = JSON.stringify({ v: 1, type, requestId, payload });
 				if (new TextEncoder().encode(message).length > NETWORK.maxMessageBytes)

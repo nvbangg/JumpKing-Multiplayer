@@ -39,7 +39,7 @@ async function end(host: Page, peer: Page) {
 		await page.getByRole("button", { name: "Leave", exact: true }).click();
 }
 
-test("slow renderer holds the whole roster before the single server countdown", async ({
+test("slow Host renderer delays the single server countdown", async ({
 	browser,
 }) => {
 	test.setTimeout(90000);
@@ -89,6 +89,57 @@ test("slow renderer holds the whole roster before the single server countdown", 
 		release();
 		await leaveOnline(a);
 		await leaveOnline(b);
+		await ca.close();
+		await cb.close();
+	}
+});
+
+test("a slow peer joins the same running match without delaying the Host countdown", async ({
+	browser,
+}) => {
+	const ca = await browser.newContext(),
+		cb = await browser.newContext();
+	const host = await ca.newPage(),
+		peer = await cb.newPage(),
+		hostState = observeOnline(host),
+		peerState = observeOnline(peer),
+		errors: string[] = [];
+	let release!: () => void;
+	const held = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	for (const page of [host, peer])
+		page.on("pageerror", (error) => errors.push(error.message));
+	try {
+		await registerOnline(host, "ready_host");
+		await registerOnline(peer, "slow_peer");
+		await joinRoom(peer, await createRoom(host));
+		await peer.route(await kingTexture(peer), async (route) => {
+			await held;
+			await route.continue();
+		});
+		await host.bringToFront();
+		await host.getByRole("button", { name: "Start", exact: true }).click();
+		await expect
+			.poll(() => hostState.snapshot?.elapsedTimeMs ?? 0, { timeout: 20000 })
+			.toBeGreaterThan(500);
+		await expect(
+			peer.getByRole("button", { name: "Menu (Esc)", exact: true }),
+		).toHaveCount(0);
+		release();
+		await expect(
+			peer.getByRole("button", { name: "Menu (Esc)", exact: true }),
+		).toBeVisible({ timeout: 15000 });
+		await expect
+			.poll(() => peerState.snapshot?.playId)
+			.toBe(hostState.snapshot?.playId);
+		await expect(peer.getByRole("alert")).toHaveCount(0);
+		expect(errors).toEqual([]);
+		await end(host, peer);
+	} finally {
+		release();
+		await leaveOnline(host);
+		await leaveOnline(peer);
 		await ca.close();
 		await cb.close();
 	}

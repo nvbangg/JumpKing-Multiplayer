@@ -27,6 +27,158 @@ class RoomLobbyIT {
 
   @LocalServerPort int port;
 
+  private Map<String, Object> reconnect(com.fasterxml.jackson.databind.JsonNode joined) {
+    return Map.of(
+        "roomId", joined.path("roomId").asText(),
+        "playerId", joined.path("playerId").asText(),
+        "reconnectToken", joined.path("reconnectToken").asText());
+  }
+
+  private com.fasterxml.jackson.databind.JsonNode member(
+      com.fasterxml.jackson.databind.JsonNode state, String playerId) {
+    for (var member : state.path("members"))
+      if (member.path("playerId").asText().equals(playerId)) return member;
+    throw new AssertionError("Room member not found: " + playerId);
+  }
+
+  @Test
+  void defaultConfirmationCanBeCancelledRestoredAndPreservedAcrossUpdatesAndReconnect()
+      throws Exception {
+    try (var host = new GameClient(port);
+        var peer = new GameClient(port)) {
+      for (var client : List.of(host, peer)) {
+        client.register();
+        client.connect();
+      }
+      var room = host.ok("CREATE_ROOM", Map.of());
+      var joined = peer.ok("JOIN_ROOM", Map.of("roomId", room.path("roomId").asText()));
+      String playerId = joined.path("playerId").asText();
+      for (var member : host.ok("GET_ROOM_STATE", Map.of()).path("members")) {
+        assertThat(member.path("nextMatchConfirmed").asBoolean()).isTrue();
+        assertThat(member.path("nextMatchJoined").asBoolean()).isTrue();
+      }
+      peer.ok("SET_ROOM_CONFIRMED", Map.of("confirmed", false));
+      host.await(
+          message ->
+              message.path("type").asText().equals("ROOM_STATE")
+                  && message.path("payload").path("members").size() == 2
+                  && !member(message.path("payload"), playerId)
+                      .path("nextMatchConfirmed")
+                      .asBoolean());
+      host.ok("UPDATE_ROOM_SETTINGS", Map.of("mapLevel", 2));
+      var cancelled = member(host.ok("GET_ROOM_STATE", Map.of()), playerId);
+      assertThat(cancelled.path("nextMatchConfirmed").asBoolean()).isFalse();
+      assertThat(cancelled.path("nextMatchJoined").asBoolean()).isTrue();
+      peer.disconnect();
+      host.await(
+          message ->
+              message.path("type").asText().equals("ROOM_STATE")
+                  && message.path("payload").path("members").size() == 2
+                  && !member(message.path("payload"), playerId).path("connected").asBoolean());
+      peer.connect();
+      assertThat(peer.ok("RECONNECT", reconnect(joined)).path("playerId").asText())
+          .isEqualTo(playerId);
+      var restored = peer.ok("GET_ROOM_STATE", Map.of());
+      assertThat(restored.path("members")).hasSize(2);
+      assertThat(member(restored, playerId).path("nextMatchConfirmed").asBoolean()).isFalse();
+      peer.ok("SET_ROOM_CONFIRMED", Map.of("confirmed", true));
+      assertThat(
+              member(host.ok("GET_ROOM_STATE", Map.of()), playerId)
+                  .path("nextMatchConfirmed")
+                  .asBoolean())
+          .isTrue();
+      for (var invalid : List.<Map<String, ?>>of(Map.of(), Map.of("confirmed", "false")))
+        assertThat(
+                peer.command("SET_ROOM_CONFIRMED", invalid).path("payload").path("code").asText())
+            .isEqualTo("INVALID_MESSAGE");
+      host.ok("START_GAME", Map.of());
+      assertThat(
+              peer.command("SET_ROOM_CONFIRMED", Map.of("confirmed", false))
+                  .path("payload")
+                  .path("code")
+                  .asText())
+          .isEqualTo("CONFLICT");
+      assertThat(
+              host.command("KICK_PLAYER", Map.of("playerId", playerId))
+                  .path("payload")
+                  .path("code")
+                  .asText())
+          .isEqualTo("CONFLICT");
+      host.ok("LEAVE_ROOM", Map.of());
+      peer.ok("LEAVE_ROOM", Map.of());
+    }
+  }
+
+  @Test
+  void onlyHostCanKickAnotherLobbyMemberAndTheRemovedTokenCannotReconnect() throws Exception {
+    try (var host = new GameClient(port);
+        var peer = new GameClient(port);
+        var target = new GameClient(port)) {
+      for (var client : List.of(host, peer, target)) {
+        client.register();
+        client.connect();
+      }
+      var room = host.ok("CREATE_ROOM", Map.of());
+      String roomId = room.path("roomId").asText();
+      peer.ok("JOIN_ROOM", Map.of("roomId", roomId));
+      var joined = target.ok("JOIN_ROOM", Map.of("roomId", roomId));
+      String playerId = joined.path("playerId").asText();
+      assertThat(
+              peer.command("KICK_PLAYER", Map.of("playerId", playerId))
+                  .path("payload")
+                  .path("code")
+                  .asText())
+          .isEqualTo("FORBIDDEN");
+      assertThat(
+              host.command("KICK_PLAYER", Map.of("playerId", room.path("playerId").asText()))
+                  .path("payload")
+                  .path("code")
+                  .asText())
+          .isEqualTo("CONFLICT");
+      assertThat(host.ok("GET_ROOM_STATE", Map.of()).path("members")).hasSize(3);
+      var kicked = host.ok("KICK_PLAYER", Map.of("playerId", playerId));
+      assertThat(kicked.path("members")).hasSize(2);
+      var left = target.await(message -> message.path("type").asText().equals("ROOM_LEFT"));
+      assertThat(left.path("payload").path("reason").asText()).isEqualTo("KICKED");
+      peer.await(
+          message ->
+              message.path("type").asText().equals("ROOM_STATE")
+                  && message.path("payload").path("members").size() == 2);
+      assertThat(target.ok("GET_ROOM_STATE", Map.of()).path("roomId").isNull()).isTrue();
+      assertThat(
+              target.command("RECONNECT", reconnect(joined)).path("payload").path("code").asText())
+          .isEqualTo("RECONNECT_EXPIRED");
+      host.ok("LEAVE_ROOM", Map.of());
+      peer.ok("LEAVE_ROOM", Map.of());
+    }
+  }
+
+  @Test
+  void hostCanKickAnOfflineMemberBeforeItsReconnectDeadline() throws Exception {
+    try (var host = new GameClient(port);
+        var peer = new GameClient(port)) {
+      for (var client : List.of(host, peer)) {
+        client.register();
+        client.connect();
+      }
+      String roomId = host.ok("CREATE_ROOM", Map.of()).path("roomId").asText();
+      var joined = peer.ok("JOIN_ROOM", Map.of("roomId", roomId));
+      String playerId = joined.path("playerId").asText();
+      peer.disconnect();
+      host.await(
+          message ->
+              message.path("type").asText().equals("ROOM_STATE")
+                  && message.path("payload").path("members").size() == 2
+                  && !member(message.path("payload"), playerId).path("connected").asBoolean());
+      assertThat(host.ok("KICK_PLAYER", Map.of("playerId", playerId)).path("members")).hasSize(1);
+      peer.connect();
+      assertThat(peer.command("RECONNECT", reconnect(joined)).path("payload").path("code").asText())
+          .isEqualTo("RECONNECT_EXPIRED");
+      assertThat(host.ok("GET_ROOM_STATE", Map.of()).path("members")).hasSize(1);
+      host.ok("LEAVE_ROOM", Map.of());
+    }
+  }
+
   @Test
   void accountRoomCapacitySettingsPermissionsAndHostTransferUseRealConnections() throws Exception {
     var clients = new ArrayList<GameClient>();
