@@ -73,6 +73,8 @@ Page là integer 0–100000; size/limit 1–100. Status: 400 validation, 401 xá
 | LEAVE_ROOM / GET_ROOM_STATE | {} |
 | UPDATE_ROOM_SETTINGS | Patch {mode?,timeLimitMinutes?,mapLevel?,visibility?,itemsEnabled?,itemCooldownMinutes?} |
 | START_GAME / END_MATCH | {} |
+| SET_ROOM_CONFIRMED | {confirmed:boolean}; chỉ thay đổi bản thân trong Room/WAITING |
+| KICK_PLAYER | {playerId}; chỉ Host trong Room/WAITING, không chọn bản thân |
 | GAME_READY | {playId,generation}; renderer sẵn sàng |
 | PLAY_AGAIN | {matchId} |
 | SET_COMMUNITY_PAUSED | {paused:boolean} |
@@ -95,7 +97,7 @@ Input fields là booleans, field tùy chọn mặc định false; movement chỉ
 | --- | --- |
 | ROOM_JOINED | {roomId,kind,playerId,reconnectToken,generation,playId}; riêng owner |
 | ROOM_STATE | {roomId,kind,state,visibility?,hostPlayerId,settings,members,currentPlay,result} |
-| ROOM_LEFT | {roomId}; có thể null |
+| ROOM_LEFT | {roomId,reason?}; roomId có thể null; reason=KICKED khi Host đưa ra khỏi Lobby |
 | GAME_STARTED | {playId,generation,countdownMs} |
 | GAME_SNAPSHOT | {roomId,serverTick,playId,generation,self,peers,players,spectating,elapsedTimeMs,remainingTimeMs,items?} |
 | COMMUNITY_RUN_STATE | {run,generation,paused,pausePending,saveStatus} |
@@ -110,7 +112,7 @@ Input fields là booleans, field tùy chọn mặc định false; movement chỉ
 | RECONNECT_OK | {roomId,playerId,generation,playId}; tiếp theo là full state |
 | PONG / ERROR | {nonce} / {code,message,playId?,generation?,seq?} |
 
-kind=COMMUNITY/ROOM. Community state=PLAYING, host/settings=null. currentPlay.countdownRemainingMs bằng 0 khi đợi tải, >0 khi đếm ngược. Member gồm playerId/nickname/username/colorSlot/connected/paused/nextMatchConfirmed; trường không áp dụng là null. Results gồm playerId/nickname/status/rank/currentProgress/maxProgress/isWinner/finishTimeMs; tên giữ lúc tham gia.
+kind=COMMUNITY/ROOM. Community state=PLAYING, host/settings=null. currentPlay.countdownRemainingMs bằng 0 khi đợi tải, >0 khi đếm ngược. Member gồm playerId/nickname/username/colorSlot/connected/paused/nextMatchConfirmed; Room thêm nextMatchJoined để phân biệt người đã vào Lobby ván tiếp theo với trạng thái Confirmed. Create/Join và Play Again đặt nextMatchJoined=true, hết trận đặt false; Cancel Confirm không đổi trường này. Trường không áp dụng là null. Results gồm playerId/nickname/status/rank/currentProgress/maxProgress/isWinner/finishTimeMs; tên giữ lúc tham gia.
 
 Snapshot tách rõ:
 
@@ -130,6 +132,9 @@ Effects JUMP/LAND/SPLAT/BUMP, terrain NORMAL/ICE/SNOW. Âm thanh chuyển độn
 4. Duplicate requestId cùng type/payload trả kết quả cũ; khác nội dung trả CONFLICT. Timeout control dùng GET_ROOM_STATE/reconnect, không tự gửi lại Start/New Run/End. Bỏ phản hồi socket/context cũ; đóng socket kết thúc pending requests.
 5. Mất kết nối/đầy input chưa ACK: dừng input và cho Reconnect/Back to Menu. Reconnect xác thực owner/token, nhận full state/generation trước Resume; không dùng Resume/Save & Exit trên socket đã đóng.
 6. Context lưu IndexedDB theo backend origin và Account; chỉ xóa sau Leave được xác nhận hoặc membership hết hạn. Offline Back to Menu không báo Leave/SAVED thành công. ROOM_LEFT chủ động, RECONNECT_EXPIRED/ROOM_NOT_FOUND hoặc roomId=null kết thúc membership, giữ Account/checkpoint.
+7. Lobby Room có nút Reconnect và tự thử lại tối đa 5 lần với thời gian chờ 1/2/4/8/16 giây; khi trình duyệt báo offline thì chờ sự kiện online. Hai thao tác dùng chung một yêu cầu khôi phục, không mở thêm socket khi đang kết nối. Hết lượt tự động vẫn cho thử thủ công. Ý định Leave dừng tự khôi phục ngay cả khi mất ACK; vẫn giữ context tới khi server xác nhận. Rời Lobby hoặc membership kết thúc thì dọn timer/listener; không áp dụng tự reconnect cho Community hoặc game đang chạy.
+
+KICK_PLAYER giải phóng membership/token ngay cả khi mục tiêu offline; socket cũ và RECONNECT với token đó không khôi phục được phòng. CHAT_SEND bị từ chối vẫn trả ERROR có requestId như cũ; client chỉ hiển thị lỗi của lệnh này trong Chat, giữ lỗi của lệnh khác ở nơi đang xử lý.
 
 Pagehide, grace, Pause và chuyển Host theo [gameplay](gameplay.md#leave-và-reconnect). Không chờ client chậm trong vòng tick; gửi snapshot/bảo vệ queue theo [architecture](architecture.md#xử-lý-đồng-thời).
 

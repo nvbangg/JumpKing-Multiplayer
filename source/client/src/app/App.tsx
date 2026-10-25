@@ -11,6 +11,7 @@ import { roomFinishScreen } from "../features/rooms/ending";
 import { Lobby } from "../features/rooms/Lobby";
 import { PublicRooms } from "../features/rooms/PublicRooms";
 import { Results } from "../features/rooms/Results";
+import { reconnectLobby } from "../features/rooms/reconnectLobby";
 import { readOptions, saveOptions } from "../features/settings/options";
 import { ApiError, api, backendOrigin, clearCsrf } from "../network/api";
 import type { HistoryItem, Identity, Statistics } from "../network/contracts";
@@ -81,14 +82,19 @@ export function App() {
 	const [error, setError] = useState("");
 	const [pending, setPending] = useState(false);
 	const socket = useRef<GameSocket | null>(null);
+	const leaveRequested = useRef(false);
 	const exitScreen = useRef<Screen | null>(null);
 	const [navigationError, setNavigationError] = useState("");
 	const [connectionNotice, setConnectionNotice] = useState("");
+	const [disconnected, setDisconnected] = useState(false);
+	const [reconnecting, setReconnecting] = useState(false);
+	const reconnectTask = useRef<Promise<void> | null>(null);
+	const reconnectAction = useRef<() => Promise<void>>(async () => {});
 	const leaveOnline = useCallback(() => {
 		const connection = socket.current;
-		return connection?.selfId
-			? connection.command("LEAVE_ROOM").then(() => {})
-			: Promise.resolve();
+		if (!connection?.selfId) return Promise.resolve();
+		leaveRequested.current = true;
+		return connection.command("LEAVE_ROOM").then(() => {});
 	}, []);
 	const setScreen = useCallback(
 		(next: Screen) => {
@@ -197,6 +203,18 @@ export function App() {
 			cancelled = true;
 		};
 	}, [reconnectProfile, identity.authenticated]);
+	useEffect(() => {
+		if (
+			!disconnected ||
+			screen !== "lobby" ||
+			room?.kind !== "ROOM" ||
+			room.state !== "WAITING"
+		)
+			return;
+		return reconnectLobby(() =>
+			leaveRequested.current ? Promise.resolve() : reconnectAction.current(),
+		);
+	}, [disconnected, screen, room?.kind, room?.state]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: Revision cho phép thử tải lại sau lỗi hoặc save thay đổi ở tab khác.
 	useEffect(() => {
@@ -242,6 +260,7 @@ export function App() {
 			const connection = new GameSocket(
 				(type, payload, replied) => {
 					if (socket.current !== connection) return;
+					if (type === "ROOM_JOINED") leaveRequested.current = false;
 					if (type === "ROOM_STATE") {
 						const next = payload as unknown as RoomState;
 						if (!next.roomId) {
@@ -250,6 +269,7 @@ export function App() {
 							return;
 						}
 						setRoom(next);
+						setDisconnected(false);
 						if (next.kind === "COMMUNITY") {
 							setScreen("online");
 							return;
@@ -267,7 +287,7 @@ export function App() {
 						);
 						setScreen(
 							resultRef.current &&
-								self?.nextMatchConfirmed !== true &&
+								self?.nextMatchJoined !== true &&
 								(next.state === "WAITING" || next.state === "FINISHED")
 								? roomFinishScreen(
 										resultRef.current,
@@ -302,17 +322,20 @@ export function App() {
 						};
 						resultRef.current = updated;
 						setResult(updated);
-						setScreen(
-							roomFinishScreen(
-								updated,
-								socket.current?.selfId || null,
-								viewedEnding.current,
-							),
+						setScreenState((current) =>
+							current === "lobby"
+								? current
+								: roomFinishScreen(
+										updated,
+										socket.current?.selfId || null,
+										viewedEnding.current,
+									),
 						);
 					} else if (type === "ROOM_LEFT") {
 						const next = exitScreen.current;
 						exitScreen.current = null;
 						setNavigationError("");
+						setDisconnected(false);
 						setRoom(null);
 						setResult(null);
 						resultRef.current = null;
@@ -323,14 +346,20 @@ export function App() {
 						else {
 							// Server tự đưa người chơi ra: về trang chủ và báo lý do.
 							setError("");
-							setConnectionNotice(REMOVED_FROM_ROOM);
+							setConnectionNotice(
+								payload.reason === "KICKED"
+									? "You were kicked from the room by the host."
+									: REMOVED_FROM_ROOM,
+							);
 							setScreen("home");
 						}
 					} else if (type === "ERROR") setError(String(payload.message));
 				},
 				() => {
-					if (socket.current === connection)
+					if (socket.current === connection) {
+						setDisconnected(true);
 						setError("Disconnected from the game server");
+					}
 				},
 			);
 			socket.current = connection;
@@ -339,7 +368,44 @@ export function App() {
 		return socket.current;
 	};
 	connect.current = connectedSocket;
+	reconnectAction.current = () => {
+		if (reconnectTask.current) return reconnectTask.current;
+		const connection = socket.current;
+		if (!connection) return Promise.resolve();
+		setReconnecting(true);
+		setError("");
+		const task = connection
+			.reconnect()
+			.catch((cause) => {
+				if (socket.current !== connection) return;
+				if (
+					cause instanceof ApiError &&
+					["RECONNECT_EXPIRED", "ROOM_NOT_FOUND"].includes(cause.code)
+				) {
+					connection.close();
+					socket.current = null;
+					setDisconnected(false);
+					setRoom(null);
+					setResult(null);
+					resultRef.current = null;
+					setError("");
+					setConnectionNotice(REMOVED_FROM_ROOM);
+					setScreen("home");
+				} else
+					setError(cause instanceof Error ? cause.message : "Reconnect failed");
+				throw cause;
+			})
+			.finally(() => {
+				if (reconnectTask.current === task) {
+					reconnectTask.current = null;
+					setReconnecting(false);
+				}
+			});
+		reconnectTask.current = task;
+		return task;
+	};
 	const command = (type: string, payload: Record<string, unknown> = {}) => {
+		if (type === "LEAVE_ROOM") leaveRequested.current = true;
 		void execute(async () => {
 			const connection = await connectedSocket();
 			await connection.command(type, payload);
@@ -641,9 +707,21 @@ export function App() {
 						<Lobby
 							room={room}
 							selfId={socket.current?.selfId || null}
-							pending={pending}
+							pending={pending || disconnected || reconnecting}
 							command={command}
 						/>
+					)}
+					{disconnected && room && (
+						<button
+							type="button"
+							disabled={pending || reconnecting}
+							onClick={() => {
+								leaveRequested.current = false;
+								void reconnectAction.current().catch(() => {});
+							}}
+						>
+							Reconnect
+						</button>
 					)}
 					{screen === "results" && result && (
 						<Results

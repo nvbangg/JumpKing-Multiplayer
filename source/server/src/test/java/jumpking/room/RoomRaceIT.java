@@ -80,6 +80,10 @@ class RoomRaceIT {
       String room = a.ok("CREATE_ROOM", Map.of()).path("roomId").asText();
       b.ok("JOIN_ROOM", Map.of("roomId", room));
       a.ok("START_GAME", Map.of());
+      assertThat(a.command("START_GAME", Map.of()).path("payload").path("code").asText())
+          .isEqualTo("CONFLICT");
+      assertThat(b.command("START_GAME", Map.of()).path("payload").path("code").asText())
+          .isEqualTo("FORBIDDEN");
       var started = a.await(m -> m.path("type").asText().equals("GAME_STARTED")).path("payload");
       String play = started.path("playId").asText();
       var ready = Map.of("playId", play, "generation", 1);
@@ -97,7 +101,9 @@ class RoomRaceIT {
                   .path("code")
                   .asText())
           .isEqualTo("STALE_PLAY");
-      b.ok("GAME_READY", ready);
+      var countdown = b.ok("GAME_READY", ready);
+      assertThat(countdown.path("currentPlay").path("countdownRemainingMs").asLong())
+          .isEqualTo(3000);
       time.advance(1000);
       a.ok("GAME_READY", ready);
       assertThat(
@@ -106,8 +112,17 @@ class RoomRaceIT {
                   .path("countdownRemainingMs")
                   .asLong())
           .isEqualTo(2000);
-      time.advance(2000);
+      time.advance(1000);
+      assertThat(
+              b.ok("GET_ROOM_STATE", Map.of())
+                  .path("currentPlay")
+                  .path("countdownRemainingMs")
+                  .asLong())
+          .isEqualTo(1000);
+      time.advance(1000);
       a.await(m -> m.path("type").asText().equals("GAME_SNAPSHOT"));
+      var peerSnapshot = b.await(m -> m.path("type").asText().equals("GAME_SNAPSHOT"));
+      assertThat(peerSnapshot.path("payload").path("playId").asText()).isEqualTo(play);
       assertThat(a.ok("GET_ROOM_STATE", Map.of()).path("state").asText()).isEqualTo("PLAYING");
       a.socket
           .sendText(

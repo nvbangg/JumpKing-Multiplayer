@@ -44,7 +44,7 @@ Leaderboard chỉ xét Community đã commit, lấy một best run/Account. Fini
 
 ## Room và xếp hạng
 
-Room ID là chuỗi 6 chữ số, giữ số 0 đầu, ví dụ `001234`. Room mặc định Private, Race và map 1; biết ID thì Join được. Public chỉ xuất hiện khi WAITING và còn chỗ. Lobby tách ID/danh sách người chơi và settings thành hai phần, màn hẹp xếp dọc. Host đổi settings khi WAITING; Minutes nằm ngay dưới Mode khi chọn Time Limit. Không Ready thủ công.
+Room ID là chuỗi 6 chữ số, giữ số 0 đầu, ví dụ `001234`. Room mặc định Private, Race và map 1; biết ID thì Join được. Public chỉ xuất hiện khi WAITING và còn chỗ. Lobby tách ID/danh sách người chơi và settings thành hai phần, màn hẹp xếp dọc. Host đổi settings khi WAITING; Minutes nằm ngay dưới Mode khi chọn Time Limit. Thành viên mặc định Confirmed khi tạo/Join phòng; trong WAITING có thể Cancel Confirm và Confirm lại. Server giữ trạng thái này qua cập nhật Lobby và reconnect.
 
 ```text
 WAITING → COUNTDOWN → PLAYING → FINISHED
@@ -53,6 +53,8 @@ WAITING → COUNTDOWN → PLAYING → FINISHED
 ```
 
 Host Start cần ít nhất một người connected. Chốt roster, chờ tất cả renderer sẵn sàng rồi đếm ngược 3 giây; quá 30 giây hoặc có người Leave trong lúc chuẩn bị thì về Lobby, không ghi trận. Ngoài WAITING chỉ nhận reconnect của roster.
+
+Host đã Confirmed có thể Start một mình; không chờ thêm thành viên hoặc người đã hủy xác nhận. Chỉ Host được Start, lệnh Start tiếp theo khi đã COUNTDOWN không tạo trận mới. Trong WAITING, Host có thể Kick người khác, kể cả người offline; không Kick chính mình. Kick kết thúc membership và thu hồi token reconnect, đồng thời cập nhật danh sách cho những người còn lại.
 
 | Mode | Luật |
 | --- | --- |
@@ -74,7 +76,7 @@ Finishers xếp trước theo finish time tăng dần. Người khác so current
 - Peak: độ cao tức thời cao nhất từng đạt. Hardcore reset current về spawn, giữ peak/clock/falls.
 - Không làm tròn trước xếp hạng. Rock chọn theo độ cao tức thời, không dùng current của lần đáp nền.
 
-Play Again giữ room code/settings và thành viên, nhưng reset trạng thái ván, clock, bẫy và xác nhận. Người chọn đầu tiên đưa phòng về WAITING; từng người xác nhận lại, người Join mới được tính đã xác nhận. Host đã xác nhận mới Start; chỉ người connected đã xác nhận vào roster, người khác về menu. Mỗi Start dùng ID mới; chỉ ghi match/runs sau countdown.
+Play Again giữ room code/settings và thành viên, nhưng reset trạng thái ván, clock, bẫy và xác nhận. Người chọn đầu tiên đưa phòng về WAITING; danh sách Lobby chỉ hiển thị người đã chọn Play Again hoặc Join mới. Người còn ở Results giữ membership để có thể Play Again sau; Cancel Confirm không ẩn người đã vào Lobby. Từng người xác nhận lại, người Join mới được tính đã xác nhận. Host đã xác nhận mới Start; chỉ người connected đã xác nhận vào roster, người khác về menu. Mỗi Start dùng ID mới; chỉ ghi match/runs sau countdown.
 
 ## Items trong Room
 
@@ -98,6 +100,8 @@ Tối đa 64 bẫy Banana/phòng, cấu hình trong rules. Chạm trần thì h�
 Leave kết thúc membership; khi trang còn hoạt động phải đợi server xác nhận. Đóng tab gửi Leave best effort, thất bại xử lý như disconnect. Đổi tab/blur hoặc chuyển Results/Lobby không phải Leave.
 
 Disconnect hủy input/charge, giữ slot 5 phút. Reconnect đúng Account/player/token giữ tiến độ, không tự bật điều khiển; Community trở lại Pause và tính lại hạn Pause. Hết hạn Community vẫn giữ checkpoint. Room còn người connected vẫn chạy; all-offline chờ reconnect, hết hạn thì finalize. Trong Room, Leave/hết hạn chốt DNF, đóng băng metrics.
+
+Lobby mất kết nối hiển thị Reconnect và tự thử lại có giới hạn khi có mạng; dùng chung thao tác khôi phục với nút thủ công theo [protocol](protocol.md#đồng-bộ-và-khôi-phục-kết-nối). Trong trận giữ nút Reconnect thủ công. Leave đã xác nhận, Kick hoặc membership hết hạn dừng khôi phục; không tự Join mới.
 
 Host Leave/disconnect chuyển ngay cho người connected có joinOrder nhỏ nhất. Không còn ai thì Host=null, người reconnect đầu tiên nhận quyền. Mọi người Leave thì đóng phòng sau xử lý kết quả. Room gameplay chỉ giữ trong RAM; hành vi restart và commit theo [data](data.md#room-và-kết-quả).
 
@@ -123,13 +127,13 @@ History mở từ Account khi nhấn username, gồm lượt Community kết th�
 
 ## Chat và các bảng trong trận
 
-Chat theo sảnh/phòng, text thuần, không lưu MySQL; Lobby/game dùng chung form, luôn hiện ô nhập và giữ tối đa 30 tin gần nhất. Trong trận, lịch sử ẩn sau 5 giây không có tin mới; hover vùng tin nhắn giữ lịch sử mở, rời vùng này 2 giây thì ẩn. Tin mới hoặc focus chat tự hiện lại; giữ focus ô nhập không ngăn tự ẩn. Lobby không tự ẩn: khung phòng căn giữa, chat góc trái dưới có vùng riêng; màn hẹp dành chỗ chat bên dưới, không che khung phòng. Chỉ tự cuộn khi đang gần cuối; khi đọc tin cũ giữ vị trí, có Latest để về cuối. Enter focus/gửi, Escape hoặc rời ô nhập trả điều khiển; không bắt phím form khác. Menu/pause không che hoặc ngắt chat.
+Chat theo sảnh/phòng, text thuần, không lưu MySQL; Lobby/game dùng chung form, luôn hiện ô nhập và giữ tối đa 30 tin gần nhất. Trong trận, lịch sử ẩn sau 5 giây không có tin mới; hover vùng tin nhắn giữ lịch sử mở, rời vùng này 2 giây thì ẩn. Tin mới hoặc focus chat tự hiện lại; giữ focus ô nhập không ngăn tự ẩn. Lobby không tự ẩn: khung phòng căn giữa, chat góc trái dưới có vùng riêng; màn hẹp dành chỗ chat bên dưới, không che khung phòng. Chỉ tự cuộn khi đang gần cuối; khi đọc tin cũ giữ vị trí, có Latest để về cuối. Enter focus/gửi, Escape hoặc rời ô nhập trả điều khiển; không bắt phím form khác. Menu/pause không che hoặc ngắt chat. Lỗi gửi chat, kể cả giới hạn tốc độ, chỉ hiển thị trong khung Chat.
 
 Players realtime gồm cả phòng: Room theo comparator mode, Community theo current progress. Leaderboard chỉ Community, tải khi vào trận hoặc Refresh, không polling. Luôn hiện cả hai bảng; bảng ngắn nhường chiều cao cho bảng dài, cả hai dài thì chia đều vùng có sẵn. Mobile thu gọn hàng và tận dụng chiều cao cột phải phía trên nút Jump; desktop giới hạn tối đa 640 px hoặc 75% chiều cao màn hình. Chỉ danh sách dài cuộn; tiêu đề/Refresh luôn thấy và từng bảng vẫn thu gọn được.
 
 Game ở giữa, giữ đủ screen 4:3 và camera gốc; dành hai cột riêng cho chat dưới trái, Players/Leaderboard trên phải, không đè lên canvas. Cột bên thu gọn theo viewport để ưu tiên game. Giới hạn kích thước khi vào màn chơi hoặc xoay thiết bị; F11 không phóng lớn game. Cửa sổ nhỏ hơn thì game thu vừa chỗ, mở rộng lại không vượt giới hạn đã đặt. Mobile ngang đặt nút di chuyển ở đáy cột trái, Jump ở đáy cột phải; chat/bảng ở phía trên, không dành dải trống dưới game. Màn nhỏ có nút Chat để mở lịch sử mà không bật bàn phím, ô nhập vẫn hiện. Mobile dọc mở Pause và yêu cầu xoay ngang; thử khóa hướng khi trình duyệt hỗ trợ, vẫn cho xoay thủ công. Timer, ping, Menu và Back to My Game nằm ở đầu cột trái, ngoài canvas và phía trên chat; jumps chỉ ở Stats/History. Nút dùng Item ở đáy cột phải, ngoài canvas; mobile đặt ngay trên Jump, bảng Players thu/cuộn trong phần chiều cao còn lại. Ping dưới 100 ms xanh, 100–150 ms vàng, trên 150 ms đỏ.
 
-Sound và hướng dẫn phím chỉ ở Pause Menu. Nút cảm ứng/hướng dẫn touch theo khả năng chạm, không theo chiều rộng cửa sổ; desktop hẹp vẫn dùng hướng dẫn bàn phím. Trang chủ có Create Room, Join Public Room và ô Room ID kèm Join trực tiếp, không submenu Room hoặc Options. Mũi tên chọn mục hiện khi hover hoặc focus bàn phím; Tab/Shift+Tab đi qua cả ô Room ID. Mã mời chỉ hiện tại Lobby theo dạng `ROOM ID: <id>`; nhấn mã để sao chép và hiện Copied, vẫn cho kéo chọn thủ công, không có nút Copy ID riêng. Khi clipboard bị chặn, hiện hướng dẫn sao chép thủ công. F11 do trình duyệt xử lý, không nút Fullscreen. Chỉ ô nhập/mã phòng cho chọn chữ. New Game Community chỉ tại menu sau Save & Exit.
+Sound và hướng dẫn phím chỉ ở Pause Menu. Nút cảm ứng/hướng dẫn touch theo khả năng chạm, không theo chiều rộng cửa sổ; desktop hẹp vẫn dùng hướng dẫn bàn phím. Trang chủ có Create Room, Join Public Room và ô Room ID kèm Join trực tiếp, không submenu Room hoặc Options. Mũi tên chọn mục hiện khi hover hoặc focus bàn phím; Tab/Shift+Tab đi qua cả ô Room ID. Mã mời chỉ hiện tại Lobby theo dạng `ROOM ID: <id>`; nhấn mã để sao chép và hiện Copied trong 3 giây kể từ lần sao chép thành công gần nhất, vẫn cho kéo chọn thủ công, không có nút Copy ID riêng. Khi clipboard bị chặn, hiện hướng dẫn sao chép thủ công. F11 do trình duyệt xử lý, không nút Fullscreen. Chỉ ô nhập/mã phòng cho chọn chữ. New Game Community chỉ tại menu sau Save & Exit.
 
 Trên thiết bị có con trỏ chính là cảm ứng (`pointer: coarse`), cụm Left/Right khớp chiều rộng và hai mép ngoài với khung nhập chat (ô nhập và Send); Jump khớp với khung Leaderboard, hoặc Players khi chơi Room. Left/Right chia đều chiều rộng còn lại sau khoảng cách 8 px; nút hướng cao 54 px. Hai cụm thẳng mép trên/dưới, cách khung chat và vùng bảng 8 px khi bảng dùng hết chiều cao được cấp, chừa đáy theo safe area. Khi Fly bật, bốn nút hướng chia hai hàng và Jump giãn bằng chiều cao cả cụm. Các quy tắc này không áp dụng cho desktop có con trỏ chính là chuột.
 
