@@ -33,6 +33,8 @@ Main Babe có 43 screens (0–42), mỗi screen 480×360 px. Camera chuyển ngu
 
 Một geometry dùng cho mọi kiểu chơi. Room chia đường Main Babe thành 9 chặng: map 1 bắt đầu ở spawn gốc; map 2–9 bắt đầu trên nền Finish của map ngay trước và kết thúc tại Finish đã định cho map đó. Map 4 gộp cả đoạn Great Frontier; map 5 bắt đầu tại bệ mở đầu Windswept Bluff. Map 9 kết thúc tại đích The Tower; Community vẫn dùng toàn đường từ spawn gốc. Nếu rơi thấp hơn điểm bắt đầu của chặng Room, người chơi trở về spawn chặng và tính một fall. Đáp nền khác hoặc bay qua Finish không tính. Cờ FINISH chỉ dẫn vị trí, không thay collision. Geometry, spawn, camera và điều kiện Finish được kiểm chứng bằng fixtures.
 
+Community New Game hiện Green Woods trong 3 giây. Sau đó, mỗi lần đáp an toàn lên bất kỳ bệ nào có cao độ bằng hoặc cao hơn mốc Finish của map N, hiển thị tên map N+1 trong 3 giây; nếu vượt nhiều mốc, dùng tên vùng cao nhất đã tới. Chỉ xét cao độ chân khi tiếp đất, không giới hạn bệ hoặc vị trí ngang. Bay qua cao độ, đáp SPLAT hoặc respawn không kích hoạt caption; rơi xuống rồi leo lại không phát lại tên vùng đã tới. Continue giữ tiến độ caption của lượt. Trong Room chỉ hiện tên map đã chọn khi trận bắt đầu; không đổi caption ở đích.
+
 ## Community
 
 - Tự chọn sảnh còn chỗ, ưu tiên sảnh đông hơn; hết chỗ tạo sảnh mới. Save thuộc Account/lượt, không thuộc sảnh.

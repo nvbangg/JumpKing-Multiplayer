@@ -18,7 +18,7 @@ test.skip(
 	"Requires the local-profile Room flight harness",
 );
 
-test("region caption appears once per region and fades without blocking mobile controls", async ({
+test("Room shows the selected map name at start and keeps it through reconnect", async ({
 	page,
 }, info) => {
 	test.setTimeout(45000);
@@ -39,7 +39,7 @@ test("region caption appears once per region and fades without blocking mobile c
 			};
 		});
 		await createRoom(page);
-		await page.getByLabel("Map", { exact: true }).selectOption("10");
+		await page.getByLabel("Map", { exact: true }).selectOption("9");
 		await page.getByRole("button", { name: "Start", exact: true }).click();
 		await expect(page.getByLabel("Play time", { exact: true })).not.toHaveText(
 			"00:00 s",
@@ -47,31 +47,11 @@ test("region caption appears once per region and fades without blocking mobile c
 		);
 		await page.locator("canvas").click();
 		const caption = page.getByLabel("Current region", { exact: true });
-		await expect(caption).toHaveText("REDCROWN WOODS");
-		await caption.evaluate((element) =>
-			element.setAttribute("data-same-region", "retained"),
-		);
-		await page.keyboard.press("Space");
-		await page.waitForTimeout(80);
-		await page.keyboard.press("Space");
 		await expect
-			.poll(() => observed.snapshot?.self.simulation.physics.freeFlight)
-			.toBe(true);
-		await page.keyboard.down("ArrowUp");
-		await expect
-			.poll(() => observed.snapshot?.self.simulation.physics.screen)
-			.toBeGreaterThanOrEqual(1);
-		await expect(caption).toHaveText("REDCROWN WOODS");
-		await expect(caption).toHaveAttribute("data-same-region", "retained");
-		await expect
-			.poll(() => observed.snapshot?.self.simulation.physics.screen, {
-				timeout: 15000,
-				intervals: [30],
-			})
-			.toBe(5);
-		await page.keyboard.up("ArrowUp");
-		await expect(caption).toHaveText("COLOSSAL DRAIN");
-		await expect(caption).not.toHaveAttribute("data-same-region", "retained");
+			.poll(() => observed.snapshot?.self.simulation.world.mapIntro?.level)
+			.toBe(9);
+		await expect(caption).toHaveText("The Tower");
+		await expect(caption).toHaveCSS("animation-duration", "3s");
 		await expect
 			.poll(() =>
 				caption.evaluate((element) =>
@@ -90,33 +70,24 @@ test("region caption appears once per region and fades without blocking mobile c
 			);
 		});
 		await expect(caption).toHaveCSS("opacity", "0");
-		await page.keyboard.down("ArrowDown");
-		await expect
-			.poll(() => observed.snapshot?.self.simulation.physics.screen)
-			.toBeLessThan(5);
-		await page.keyboard.up("ArrowDown");
-		await expect(caption).toHaveCount(0, { timeout: 8000 });
-		await page.keyboard.down("ArrowUp");
-		await expect
-			.poll(() => observed.snapshot?.self.simulation.physics.screen)
-			.toBeGreaterThanOrEqual(5);
-		await page.keyboard.up("ArrowUp");
-		await expect(caption).toHaveCount(0);
 		const intro = structuredClone(
-			required(observed.snapshot).self.simulation.world.regionIntro,
+			required(observed.snapshot).self.simulation.world.mapIntro,
 		);
+		await expect
+			.poll(() => observed.snapshot?.self.simulation.world.mapIntro)
+			.toEqual(intro);
 		await page.evaluate(() => {
 			const connection = (
 				window as unknown as { regionConnection: { socket: WebSocket } }
 			).regionConnection;
-			connection.socket.close(4000, "Test region reconnect");
+			connection.socket.close(4000, "Test map caption reconnect");
 		});
 		await page.getByRole("button", { name: "Reconnect", exact: true }).click();
 		await expect(
 			page.getByRole("button", { name: "Resume", exact: true }),
 		).toBeVisible();
 		await expect
-			.poll(() => observed.snapshot?.self.simulation.world.regionIntro)
+			.poll(() => observed.snapshot?.self.simulation.world.mapIntro)
 			.toEqual(intro);
 		await expect(caption).toHaveCount(0);
 	} finally {

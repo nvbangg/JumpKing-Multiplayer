@@ -50,6 +50,7 @@ class CommunityRunsIT {
                 shared.physics(),
                 new com.fasterxml.jackson.core.type.TypeReference<Map<String, Number>>() {})),
         shared.adventure(),
+        shared.roomScenes(),
         false,
         false);
   }
@@ -93,20 +94,27 @@ class CommunityRunsIT {
     player.x = 201;
     player.y = 18;
     for (int tick = 0; tick < 5; tick++) game.adventure().tick(player, PlayerInput.NEUTRAL);
+    var landing = game.physics().snapshot();
+    landing.x = 300;
+    landing.y = -920 - shared.tuning().bodyHeight - 3;
+    landing.vy = 4;
+    landing.grounded = false;
+    game.physics().restore(landing);
     game.tick(PlayerInput.NEUTRAL);
     var whiteRaven = game.adventure().snapshot().path("whiteRaven");
     assertThat(whiteRaven.path("flying").asBoolean()).isTrue();
     raven = game.adventure().snapshot().path("raven");
-    var region = game.snapshot().world().path("regionIntro");
+    var mapIntro = game.snapshot().world().path("mapIntro");
+    assertThat(mapIntro.path("level").asInt()).isEqualTo(2);
     var stored = records.open(owner, true, null, game.snapshot());
     var continued = records.open(owner, false, stored.id(), game().snapshot());
     var restored = game();
     restored.restore(continued.snapshot());
     assertThat(restored.adventure().snapshot().path("raven")).isEqualTo(raven);
     assertThat(restored.adventure().snapshot().path("whiteRaven")).isEqualTo(whiteRaven);
-    var restoredRegion = restored.snapshot().world().path("regionIntro");
-    assertThat(restoredRegion.path("screen").asInt()).isEqualTo(region.path("screen").asInt());
-    assertThat(restoredRegion.path("tick").asLong()).isEqualTo(region.path("tick").asLong());
+    var restoredIntro = restored.snapshot().world().path("mapIntro");
+    assertThat(restoredIntro.path("level").asInt()).isEqualTo(mapIntro.path("level").asInt());
+    assertThat(restoredIntro.path("tick").asLong()).isEqualTo(mapIntro.path("tick").asLong());
     var other = records.open(account(), true, null, game().snapshot());
     assertThat(other.snapshot().adventure().path("raven").path("flying").asBoolean()).isFalse();
     assertThat(other.snapshot().adventure().path("whiteRaven").path("flying").asBoolean())
@@ -116,7 +124,8 @@ class CommunityRunsIT {
     assertThat(next.snapshot().adventure().path("raven").path("flying").asBoolean()).isFalse();
     assertThat(next.snapshot().adventure().path("whiteRaven").path("index").asInt()).isZero();
     assertThat(next.snapshot().adventure().path("whiteRaven").path("flying").asBoolean()).isFalse();
-    assertThat(next.snapshot().world().has("regionIntro")).isFalse();
+    assertThat(next.snapshot().world().path("mapIntro").path("level").asInt()).isEqualTo(1);
+    assertThat(next.snapshot().world().path("mapIntro").path("tick").asLong()).isZero();
   }
 
   @Test

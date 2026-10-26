@@ -95,3 +95,51 @@ export async function newCommunity(page: Page) {
 	).toBeVisible({ timeout: 30000 });
 	await page.locator("canvas").click();
 }
+
+export async function landOnMapMarker(
+	page: Page,
+	player: () => {
+		x: number;
+		y: number;
+		grounded: boolean;
+		freeFlight: boolean;
+	},
+	marker: { x: number; y: number; width: number },
+	bodyWidth: number,
+	bodyHeight: number,
+) {
+	await page.keyboard.down("ArrowUp");
+	await expect
+		.poll(() => player().y + bodyHeight <= marker.y - 16, {
+			timeout: 15000,
+			intervals: [16],
+		})
+		.toBe(true);
+	await page.keyboard.up("ArrowUp");
+
+	const targetX = marker.x + (marker.width - bodyWidth) / 2,
+		startX = player().x;
+	if (Math.abs(startX - targetX) > 2) {
+		const key = startX < targetX ? "ArrowRight" : "ArrowLeft";
+		await page.keyboard.down(key);
+		await expect
+			.poll(
+				() =>
+					startX < targetX ? player().x >= targetX : player().x <= targetX,
+				{ timeout: 15000, intervals: [16] },
+			)
+			.toBe(true);
+		await page.keyboard.up(key);
+	}
+
+	await page.keyboard.press("Space");
+	await page.waitForTimeout(80);
+	await page.keyboard.press("Space");
+	await expect.poll(() => player().freeFlight).toBe(false);
+	await expect
+		.poll(() => {
+			const state = player();
+			return state.grounded && state.y + bodyHeight <= marker.y;
+		})
+		.toBe(true);
+}

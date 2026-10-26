@@ -31,17 +31,7 @@ test("Sound moves into the game menu, controls remain visible and the timer is a
 	);
 	await expect(page.getByRole("switch", { name: /^Sound:/ })).toHaveCount(0);
 	const region = page.getByLabel("Current region", { exact: true });
-	await expect(region).toHaveText("REDCROWN WOODS");
-	await expect(region).toHaveCSS("animation-duration", "6s");
-	await expect(region).toHaveCSS("pointer-events", "none");
-	await expect
-		.poll(() =>
-			region.evaluate((element) => Number(getComputedStyle(element).opacity)),
-		)
-		.toBeGreaterThan(0);
-	await region.evaluate((element) => {
-		element.setAttribute("data-same-region", "retained");
-	});
+	await expect(region).toHaveText("Green Woods");
 	await expect(page.getByText(/^Jumps:/)).toHaveCount(0);
 	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await expect(
@@ -73,9 +63,6 @@ test("Sound moves into the game menu, controls remain visible and the timer is a
 			}),
 		),
 	).toBe(true);
-	await expect(region).toBeHidden();
-	await expect(region).toHaveCSS("animation-play-state", "paused");
-	await expect(region).toHaveAttribute("data-same-region", "retained");
 	expect(
 		await page.locator(".controls-help").evaluate((help) => {
 			const button = document.querySelector(
@@ -93,28 +80,12 @@ test("Sound moves into the game menu, controls remain visible and the timer is a
 	const paused = await page
 		.getByLabel("Play time", { exact: true })
 		.textContent();
-	const captionTime = await region.evaluate((element) =>
-		Number(element.getAnimations()[0]?.currentTime),
-	);
 	await page.waitForTimeout(500);
-	expect(
-		await region.evaluate((element) =>
-			Number(element.getAnimations()[0]?.currentTime),
-		),
-	).toBe(captionTime);
 	await expect(page.getByLabel("Play time", { exact: true })).toHaveText(
 		required(paused),
 	);
 	await page.getByRole("button", { name: "Resume", exact: true }).click();
 	await expect(page.getByRole("switch", { name: /^Sound:/ })).toHaveCount(0);
-	await expect(region).toBeVisible();
-	await expect(region).toHaveCSS("animation-play-state", "running");
-	expect(
-		await region.evaluate((element) =>
-			Number(element.getAnimations()[0]?.currentTime),
-		),
-	).toBeGreaterThanOrEqual(captionTime);
-	await expect(region).toHaveAttribute("data-same-region", "retained");
 	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await expect(
 		page.getByRole("switch", { name: "Sound: Off", exact: true }),

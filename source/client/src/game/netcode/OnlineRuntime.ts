@@ -93,6 +93,7 @@ export class OnlineRuntime implements GameRuntime {
 				: map,
 			flyAllowed,
 			room.settings?.mode === "NO_WALK",
+			room.kind === "ROOM" ? required(room.settings).mapLevel : undefined,
 		);
 		if (room.kind === "ROOM")
 			this.finishMarker =
