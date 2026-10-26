@@ -28,7 +28,7 @@ class EasyTest {
   }
 
   private GameSimulation game() {
-    return new GameSimulation(map, physics, shared.adventure(), true, false);
+    return new GameSimulation(map, physics, shared.adventure(), shared.roomScenes(), true, false);
   }
 
   private void startFall(GameSimulation game) {
@@ -123,7 +123,7 @@ class EasyTest {
     assertThat(reset.world().path("safePosition")).isEqualTo(safe);
     assertThat(reset.world().path("registeredScreens"))
         .isEqualTo(saved.world().path("registeredScreens"));
-    assertThat(reset.world().path("regionIntro")).isEqualTo(saved.world().path("regionIntro"));
+    assertThat(reset.world().path("mapIntro")).isEqualTo(saved.world().path("mapIntro"));
     assertThat(reset.adventure().path("raven").path("index"))
         .isEqualTo(saved.adventure().path("raven").path("index"));
     assertThat(reset.world().path("lastTick").asLong()).isEqualTo(reset.physics().ticks);

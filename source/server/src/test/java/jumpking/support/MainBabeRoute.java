@@ -22,6 +22,7 @@ public final class MainBabeRoute {
                     shared.physics(),
                     new com.fasterxml.jackson.core.type.TypeReference<Map<String, Number>>() {})),
             shared.adventure(),
+            shared.roomScenes(),
             false,
             false);
     java.util.function.Consumer<PlayerInput> step =

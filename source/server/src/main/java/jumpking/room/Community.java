@@ -47,6 +47,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
   private final FeatureFlags flags;
   private final GameMap map;
   private final Physics physics;
+  private final List<SharedData.RoomScene> sceneMarkers;
   private final JsonNode adventure, rules;
   private final Map<String, Tower> towers = new ConcurrentHashMap<>();
   private final ScheduledExecutorService scheduler =
@@ -88,6 +89,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
       throw new IllegalArgumentException("Checkpoint interval must be positive");
     map = shared.geometry();
     physics = shared.tuning();
+    sceneMarkers = shared.roomScenes();
     adventure = shared.adventure();
     rules = shared.rules();
   }
@@ -543,7 +545,8 @@ public class Community implements GameCommandHandler, AutoCloseable {
                   () -> {
                     try {
                       var game =
-                          new GameSimulation(map, physics, adventure, flags.flyEnabled(), false);
+                          new GameSimulation(
+                              map, physics, adventure, sceneMarkers, flags.flyEnabled(), false);
                       var stored =
                           records.open(player.identity.owner(), replace, expected, game.snapshot());
                       game.restore(stored.snapshot());

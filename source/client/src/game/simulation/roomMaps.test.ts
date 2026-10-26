@@ -44,15 +44,22 @@ test("Room maps keep the nine approved Finish boundaries", () => {
 	]);
 });
 
-test("Room labels match their finish regions", () => {
-	expect(ROOM_MAPS.slice(0, 2).map((goal) => goal.name)).toEqual([
+test("Room labels follow the asset regions and requested early split", () => {
+	expect(ROOM_MAPS.map((goal) => goal.name)).toEqual([
 		"Green Woods",
 		"Red Tree",
+		"Colossal Drain",
+		"Bargainburg",
+		"Windswept Bluff",
+		"Stormwall Pass",
+		"Chapel Perilous",
+		"Blue Ruin",
+		"The Tower",
 	]);
-	for (const goal of ROOM_MAPS.slice(2, -1))
-		expect(required(manifest.screens[goal.finish.screen]).location).toBe(
-			goal.level === 4 ? "WINDSWEPT BLUFF" : goal.name.toUpperCase(),
-		);
+	expect(manifest.screens[26]?.location).toBe("STORMWALL PASS");
+	expect(manifest.screens[32]?.location).toBe("CHAPEL PERILOUS");
+	expect(manifest.screens[36]?.location).toBe("BLUE RUIN");
+	expect(manifest.screens[39]?.location).toBe("THE TOWER");
 });
 
 test("each Room map after the first starts on the previous map's Finish platform", () => {

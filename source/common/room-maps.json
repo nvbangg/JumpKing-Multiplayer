@@ -51,7 +51,7 @@
   },
   {
     "level": 6,
-    "name": "Chapel Perilous",
+    "name": "Stormwall Pass",
     "finish": {
       "screen": 32,
       "minCenterX": 72,
@@ -62,7 +62,7 @@
   },
   {
     "level": 7,
-    "name": "Blue Ruin",
+    "name": "Chapel Perilous",
     "finish": {
       "screen": 36,
       "minCenterX": 416,
@@ -72,7 +72,7 @@
   },
   {
     "level": 8,
-    "name": "The Tower",
+    "name": "Blue Ruin",
     "finish": {
       "screen": 39,
       "minCenterX": 304,

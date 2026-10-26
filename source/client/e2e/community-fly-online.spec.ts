@@ -1,14 +1,16 @@
 import { expect, test } from "@playwright/test";
+import physics from "../../common/physics.json" with { type: "json" };
 import type { OnlineSnapshot } from "../src/game/netcode/OnlineRuntime";
 import { required } from "../src/required";
 import {
+	landOnMapMarker,
 	leaveOnline,
 	newCommunity,
 	observeOnline,
 	registerOnline,
 } from "./support/online";
 
-test("region discovery persists through Community Continue and resets for New Game", async ({
+test("Community shows Green Woods at start, saves region captions and resets for New Game", async ({
 	page,
 }) => {
 	test.setTimeout(60000);
@@ -20,7 +22,8 @@ test("region discovery persists through Community Continue and resets for New Ga
 		await registerOnline(page, "region");
 		await newCommunity(page);
 		const caption = page.getByLabel("Current region", { exact: true });
-		await expect(caption).toHaveText("REDCROWN WOODS");
+		await expect(caption).toHaveText("Green Woods");
+		await expect(caption).toHaveCSS("animation-duration", "3s");
 		await page.locator("canvas").click();
 		await page.keyboard.press("Space");
 		await page.waitForTimeout(80);
@@ -28,18 +31,24 @@ test("region discovery persists through Community Continue and resets for New Ga
 		await expect
 			.poll(() => observed.snapshot?.self.simulation.physics.freeFlight)
 			.toBe(true);
-		await page.keyboard.down("ArrowUp");
+		await landOnMapMarker(
+			page,
+			() => required(observed.snapshot).self.simulation.physics,
+			// Bệ khác tại screen 4 cao hơn mốc Red Tree, không phải bệ Finish map 1.
+			{ x: 328, y: -1200, width: 40 },
+			physics.bodyWidth,
+			physics.bodyHeight,
+		);
 		await expect
-			.poll(() => observed.snapshot?.self.simulation.physics.screen, {
-				timeout: 15000,
+			.poll(() => observed.snapshot?.self.simulation.world.mapIntro?.level, {
+				timeout: 5000,
 				intervals: [30],
 			})
-			.toBe(5);
-		await page.keyboard.up("ArrowUp");
-		await expect(caption).toHaveText("COLOSSAL DRAIN");
-		await expect(caption).toHaveCount(0, { timeout: 8000 });
+			.toBe(2);
+		await expect(caption).toHaveText("Red Tree");
+		await expect(caption).toHaveCount(0, { timeout: 5000 });
 		const intro = structuredClone(
-			required(observed.snapshot).self.simulation.world.regionIntro,
+			required(observed.snapshot).self.simulation.world.mapIntro,
 		);
 		const run = required(observed.snapshot).playId;
 		await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
@@ -52,30 +61,18 @@ test("region discovery persists through Community Continue and resets for New Ga
 			page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible();
 		await expect.poll(() => observed.snapshot?.playId).toBe(run);
-		expect(
-			required(observed.snapshot).self.simulation.world.regionIntro,
-		).toEqual(intro);
+		expect(required(observed.snapshot).self.simulation.world.mapIntro).toEqual(
+			intro,
+		);
 		await expect(caption).toHaveCount(0);
 		await page.locator("canvas").click();
-		await page.keyboard.down("ArrowDown");
-		await expect
-			.poll(() => observed.snapshot?.self.simulation.physics.screen)
-			.toBeLessThan(5);
-		await page.keyboard.up("ArrowDown");
-		await expect(caption).toHaveCount(0);
-		await page.keyboard.down("ArrowUp");
-		await expect
-			.poll(() => observed.snapshot?.self.simulation.physics.screen)
-			.toBeGreaterThanOrEqual(5);
-		await page.keyboard.up("ArrowUp");
-		await expect(caption).toHaveCount(0);
 		await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await page
 			.getByRole("button", { name: "Save & Exit", exact: true })
 			.click();
 		page.once("dialog", (dialog) => dialog.accept());
 		await newCommunity(page);
-		await expect(caption).toHaveText("REDCROWN WOODS");
+		await expect(caption).toHaveText("Green Woods");
 		await expect.poll(() => observed.snapshot?.playId).not.toBe(run);
 	} finally {
 		await page.keyboard.up("ArrowUp");

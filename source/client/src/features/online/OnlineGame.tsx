@@ -20,6 +20,7 @@ import { PlayerEffects } from "../../game/netcode/PlayerEffects";
 import { AudioBus } from "../../game/presentation/AudioBus";
 import { PRESENTATION } from "../../game/presentation/config";
 import { parseMap } from "../../game/simulation/map";
+import { ROOM_MAPS } from "../../game/simulation/roomMaps";
 import { PHYSICS } from "../../game/simulation/tuning";
 import { ApiError, api } from "../../network/api";
 import type {
@@ -57,6 +58,7 @@ export function OnlineGame({
 	onOptionsChange,
 	accountId,
 	firstGame,
+	newCommunityRun,
 	onHome,
 	onResults,
 }: {
@@ -67,6 +69,7 @@ export function OnlineGame({
 	onOptionsChange: (key: keyof Options) => void;
 	accountId?: string;
 	firstGame: boolean;
+	newCommunityRun: boolean;
 	onHome: (message: string) => void;
 	onResults: () => void;
 }) {
@@ -273,6 +276,8 @@ export function OnlineGame({
 	useEffect(() => {
 		let disposed = false,
 			game: { destroy(removeCanvas: boolean): void } | undefined;
+		let initialCaptionTick: number | undefined;
+		let rendererReady = false;
 		const controller = new AbortController();
 		const effects = new PlayerEffects(),
 			adventureEffects = new AdventureEffects();
@@ -447,23 +452,39 @@ export function OnlineGame({
 					});
 					if (view) controls.cancel();
 					const intro = (view?.world ?? snapshot.self.simulation.world)
-						.regionIntro;
+						.mapIntro;
 					if (intro) {
-						const id = `${view?.playId ?? snapshot.playId}:${intro.screen}:${intro.tick}`;
+						const id = `${view?.playId ?? snapshot.playId}:${intro.level}:${intro.tick}`;
+						const initialIntro =
+							!view &&
+							newCommunityRun &&
+							latestRoom.current.kind === "COMMUNITY" &&
+							intro.level === 1 &&
+							intro.tick === 0;
+						if (
+							initialIntro &&
+							rendererReady &&
+							initialCaptionTick === undefined &&
+							!socket.resumeRequired
+						)
+							initialCaptionTick = snapshot.self.simulation.physics.ticks;
+						const introTick = initialIntro ? initialCaptionTick : intro.tick;
 						const age =
-							(((view?.player.state.ticks ??
-								snapshot.self.simulation.physics.ticks) -
-								intro.tick) *
-								1000) /
-							PHYSICS.tickRate;
+							introTick === undefined
+								? PRESENTATION.mapCaptionMs
+								: (((view?.player.state.ticks ??
+										snapshot.self.simulation.physics.ticks) -
+										introTick) *
+										1000) /
+									PHYSICS.tickRate;
 						setCaption((previous) =>
-							age >= PRESENTATION.regionCaptionMs
+							age >= PRESENTATION.mapCaptionMs
 								? null
 								: previous?.id === id
 									? previous
 									: {
 											id,
-											name: manifest.screens[intro.screen]?.location || "",
+											name: ROOM_MAPS[intro.level - 1]?.name || "",
 											delayMs: -age,
 										},
 						);
@@ -531,8 +552,27 @@ export function OnlineGame({
 				manifest,
 				session,
 				() => {
+					rendererReady = true;
 					setReady(true);
 					const current = latestRoom.current;
+					const snapshot = session.latest;
+					const intro = snapshot?.self.simulation.world.mapIntro;
+					if (
+						newCommunityRun &&
+						current.kind === "COMMUNITY" &&
+						!socket.resumeRequired &&
+						snapshot &&
+						intro?.level === 1 &&
+						intro.tick === 0
+					) {
+						// Caption đầu lượt đủ 3 giây sau khi tải màn chơi; Continue không phát lại.
+						initialCaptionTick = snapshot.self.simulation.physics.ticks;
+						setCaption({
+							id: `${snapshot.playId}:1:0`,
+							name: required(ROOM_MAPS[0]).name,
+							delayMs: 0,
+						});
+					}
 					if (
 						current.kind === "ROOM" &&
 						current.state === "COUNTDOWN" &&
@@ -579,7 +619,7 @@ export function OnlineGame({
 			audio.current?.dispose();
 			audio.current = null;
 		};
-	}, [socket, room.roomId, chat.closeChat]);
+	}, [socket, room.roomId, chat.closeChat, newCommunityRun]);
 	const command = async (
 		type: string,
 		payload: Record<string, unknown> = {},
@@ -685,7 +725,7 @@ export function OnlineGame({
 							style={{
 								visibility: captionPaused ? "hidden" : "visible",
 								animationPlayState: captionPaused ? "paused" : "running",
-								animationDuration: `${PRESENTATION.regionCaptionMs}ms`,
+								animationDuration: `${PRESENTATION.mapCaptionMs}ms`,
 								animationDelay: `${caption.delayMs}ms`,
 							}}
 						>

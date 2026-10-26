@@ -1,9 +1,25 @@
+import mainBabe from "../../../../common/maps/main-babe.json";
 import goals from "../../../../common/room-maps.json";
 import { findFinishPlatform } from "./finishPlatform";
 import { PHYSICS } from "./tuning";
 import type { GameMap } from "./types";
 
 export const ROOM_MAPS = goals;
+export const ROOM_SCENE_MARKERS = ROOM_MAPS.slice(0, -1).map((goal, index) => {
+	const nextMap = ROOM_MAPS[index + 1];
+	if (!nextMap) throw new Error("Room map is missing its next scene");
+	const platform = findFinishPlatform({ ...mainBabe, finish: goal.finish });
+	if (!platform)
+		throw new Error(`Room map ${goal.level} has no finish platform`);
+	return {
+		level: nextMap.level,
+		name: nextMap.name,
+		x: platform.x,
+		y: platform.y,
+		width: platform.width,
+	};
+});
+
 export function roomMap(map: GameMap, level: number): GameMap {
 	const index = ROOM_MAPS.findIndex((item) => item.level === level),
 		goal = ROOM_MAPS[index];

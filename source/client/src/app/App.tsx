@@ -75,6 +75,7 @@ export function App() {
 		item: HistoryItem;
 	} | null>(null);
 	const [room, setRoom] = useState<RoomState | null>(null);
+	const [newCommunityRun, setNewCommunityRun] = useState(false);
 	const [result, setResult] = useState<MatchResult | null>(null);
 	const resultRef = useRef<MatchResult | null>(null);
 	const viewedEnding = useRef<string | null>(null);
@@ -420,6 +421,7 @@ export function App() {
 		if (pending || homeLoading || !home || (!newRun && !home.run)) return;
 		if (newRun && home.run && !window.confirm("Replace your unfinished game?"))
 			return;
+		setNewCommunityRun(newRun);
 		void execute(async () => {
 			try {
 				const connection = await connectedSocket();
@@ -450,6 +452,7 @@ export function App() {
 					navigationError={navigationError}
 					options={options}
 					onOptionsChange={updateOptions}
+					newCommunityRun={newCommunityRun}
 					accountId={accountId}
 					firstGame={
 						!!home &&
