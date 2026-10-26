@@ -54,7 +54,7 @@ class RoomMatchTest {
   @Test
   void preparedBananaDropsOnlyOnJumpInEveryMode() {
     for (var mode : List.of("RACE", "EASY", "HARDCORE", "TIME_LIMIT", "NO_WALK")) {
-      var match = match(new RoomSettings(mode, mode.equals("TIME_LIMIT") ? 5 : null, 10, true, 3));
+      var match = match(new RoomSettings(mode, mode.equals("TIME_LIMIT") ? 5 : null, 1, true, 3));
       var now = Instant.parse("2026-01-01T00:00:00Z");
       match.start(now);
       for (int i = 0; i < 30; i++) match.tick(1, now);
@@ -120,7 +120,7 @@ class RoomMatchTest {
 
   @Test
   void eachWinnerKeepsTheirOwnRavenEndingAndANewMatchResetsProgress() throws Exception {
-    var match = match(new RoomSettings("RACE", null, RoomSettings.FULL_MAP_LEVEL, false, 3));
+    var match = match(new RoomSettings("RACE", null, RoomSettings.FINAL_MAP_LEVEL, false, 3));
     var now = Instant.parse("2026-01-01T00:00:00Z");
     match.start(now);
     var point = landing(10);
@@ -252,7 +252,7 @@ class RoomMatchTest {
 
   @Test
   void hardcoreSplatRespawnsCurrentProgressWithoutResettingPeakOrCounters() {
-    var match = match(new RoomSettings("HARDCORE", null, RoomSettings.FULL_MAP_LEVEL, false, 3));
+    var match = match(new RoomSettings("HARDCORE", null, 1, false, 3));
     var start = Instant.parse("2026-01-01T00:00:00Z");
     var player = match.players.get("first");
     match.start(start);
@@ -274,7 +274,7 @@ class RoomMatchTest {
 
   @Test
   void easySplatRestoresOnlyTheFallingPlayersSafeLandingAndKeepsPeakAndCounters() {
-    var match = match(new RoomSettings("EASY", null, RoomSettings.FULL_MAP_LEVEL, false, 3));
+    var match = match(new RoomSettings("EASY", null, 1, false, 3));
     var start = Instant.parse("2026-01-01T00:00:00Z");
     var player = match.players.get("first");
     var other = match.players.get("second");
@@ -301,7 +301,7 @@ class RoomMatchTest {
     match.finish("HOST_ENDED", start.plusSeconds(1));
     assertThat(match.write(1).mode()).isEqualTo("EASY");
     assertThat(match.write(1).runs().getFirst().progress()).isEqualTo(144);
-    var again = match(new RoomSettings("EASY", null, RoomSettings.FULL_MAP_LEVEL, false, 3));
+    var again = match(new RoomSettings("EASY", null, 1, false, 3));
     again.start(start);
     place(again.players.get("first"), 231, 300, shared.tuning().maxFall, false);
     again.tick(1_000_000_000L, start);
@@ -359,7 +359,7 @@ class RoomMatchTest {
 
   @Test
   void allPlayersOfTheFinishingTickAreProcessedBeforeResultsAndTies() throws Exception {
-    var match = match(new RoomSettings("RACE", null, RoomSettings.FULL_MAP_LEVEL, false, 3));
+    var match = match(new RoomSettings("RACE", null, RoomSettings.FINAL_MAP_LEVEL, false, 3));
     var before = MainBabeRoute.beforeFinish(shared, json);
     var start = Instant.parse("2026-01-01T00:00:00Z");
     match.start(start);

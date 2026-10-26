@@ -9,7 +9,7 @@
   "communityPauseMs": 900000,
   "reconnectMs": 300000,
   "timeLimitMinutesMin": 1,
-  "timeLimitMinutesMax": 30,
+  "timeLimitMinutesMax": 10,
   "timeLimitDefaultMinutes": 5,
   "appearanceColors": [
     "#ffffff",
@@ -26,7 +26,7 @@
   "roomLoadTimeoutMs": 30000,
   "items": {
     "cooldownMinMinutes": 1,
-    "cooldownMaxMinutes": 15,
+    "cooldownMaxMinutes": 10,
     "cooldownDefaultMinutes": 3,
     "maximumBananas": 64,
     "bananaWidth": 12,

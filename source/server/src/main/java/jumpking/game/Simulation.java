@@ -42,6 +42,7 @@ public final class Simulation {
     s.vy = 1;
     s.grounded = true;
     s.direction = 1;
+    s.screen = screenAt(s.y + p.bodyHeight / 2.0);
     return s;
   }
 
@@ -51,6 +52,10 @@ public final class Simulation {
 
   public long positionRevision() {
     return positionRevision;
+  }
+
+  public double y() {
+    return state.y;
   }
 
   public void restore(PlayerState saved) {
@@ -119,7 +124,12 @@ public final class Simulation {
   }
 
   public void respawnAt(double x, double y) {
+    respawnAt(x, y, false);
+  }
+
+  public void respawnAt(double x, double y, boolean countFall) {
     respawn();
+    if (countFall) state.falls++;
     state.x = x;
     state.y = y;
     state.screen = screenAt(y + p.bodyHeight / 2.0);

@@ -126,9 +126,19 @@ public final class GameSimulation {
   }
 
   public Events tick(PlayerInput input, String mode) {
+    double previousY = physics.y();
     var movement = physics.tick(input);
     var player = physics.snapshot();
-    if (movement.contains("SPLAT") && (mode.equals("HARDCORE") || mode.equals("EASY"))) {
+    if (map.roomBottomY() != null
+        && (previousY > map.roomBottomY() || player.y > map.roomBottomY())) {
+      boolean alreadyFell = movement.contains("SPLAT");
+      physics.respawnAt(map.spawn().x(), map.spawn().y(), !alreadyFell);
+      if (!alreadyFell) {
+        movement = new ArrayList<>(movement);
+        movement.add("SPLAT");
+      }
+      player = physics.snapshot();
+    } else if (movement.contains("SPLAT") && (mode.equals("HARDCORE") || mode.equals("EASY"))) {
       if (mode.equals("EASY")) {
         var safe = world.path("safePosition");
         physics.respawnAt(

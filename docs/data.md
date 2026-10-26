@@ -50,9 +50,9 @@ erDiagram
         CHAR(6) room_code
         VARCHAR(16) mode
         SMALLINT map_level "1–10; default 1"
-        SMALLINT time_limit_minutes "nullable; TIME_LIMIT"
+        SMALLINT time_limit_minutes "nullable; TIME_LIMIT 1–10 min"
         BOOLEAN items_enabled "default false"
-        SMALLINT item_cooldown_minutes "1–15; default 3"
+        SMALLINT item_cooldown_minutes "1–10; default 3"
         DATETIME(3) started_at
         DATETIME(3) ended_at "nullable"
         BIGINT duration_ticks
@@ -87,8 +87,8 @@ Ticks đổi sang ms bằng floor(ticks×1000/tickRate), theo [nhịp mô phỏn
 
 - COMMUNITY dùng ACTIVE/FINISHED/ABANDONED và match_id/nickname=NULL; ROOM dùng ACTIVE/FINISHED/UNFINISHED/DNF, bắt buộc match_id và nickname. Chỉ ACTIVE có ended_at=NULL; trạng thái khác có ended_at≥started_at. Chỉ FINISHED có finish_ticks.
 - Chỉ COMMUNITY/ACTIVE có snapshot là JSON object, còn lại NULL. Room rank=NULL trước finalize, thuộc [1,số người] sau finalize; Community rank=NULL/is_winner=false. Winner phải FINISHED/rank=1; rank=1 không đồng nghĩa winner.
-- Match map_level=1–10; time_limit_minutes chỉ có khi TIME_LIMIT. Items luôn có boolean/phút hợp lệ dù tắt. ended_at/end_reason cùng NULL hoặc cùng có, ended_at≥started_at; reason=FINISH/TIME_LIMIT/HOST_ENDED/ALL_DISCONNECTED/ABORTED.
-- CHECK/unique/FK bảo vệ tổ hợp và biên trong database; service kiểm tra owner, roster, comparator và ràng buộc match/runs.
+- Match map_level=1–10 lưu chặng được chọn; tiến độ tính từ spawn chặng và không lưu riêng. Backend giới hạn TIME_LIMIT và item cooldown ở 1–10 phút; mặc định lần lượt 5 và 3 phút. Database giữ các ràng buộc cơ bản về kiểu dữ liệu và mode/null; ended_at/end_reason cùng NULL hoặc cùng có, ended_at≥started_at; reason=FINISH/TIME_LIMIT/HOST_ENDED/ALL_DISCONNECTED/ABORTED.
+- Database dùng CHECK/unique/FK cho các quan hệ và tổ hợp cơ bản; backend kiểm tra giới hạn đầu vào, owner, roster, comparator và ràng buộc match/runs.
 - Indexes: unique username và google_id, unique (match_id,user_id), (user_id,ended_at,id), (kind,status). active_community_user_id generated nhận user_id khi COMMUNITY/ACTIVE, còn lại NULL; unique bảo đảm tối đa một checkpoint đang dở/Account. Startup kiểm tra đúng bảng/cột của unique indexes, không tự sửa schema.
 
 ## Transaction và ghi dữ liệu

@@ -52,8 +52,8 @@ class RoomRankingIT {
     }
     var settings = new HashMap<String, Object>();
     settings.put("mode", mode);
-    settings.put("mapLevel", RoomSettings.FULL_MAP_LEVEL);
-    settings.put("timeLimitMinutes", mode.equals("TIME_LIMIT") ? 30 : null);
+    settings.put("mapLevel", RoomSettings.FINAL_MAP_LEVEL);
+    settings.put("timeLimitMinutes", mode.equals("TIME_LIMIT") ? 10 : null);
     String room =
         clients[0].ok("CREATE_ROOM", Map.of("settings", settings)).path("roomId").asText();
     for (int index = 1; index < clients.length; index++)

@@ -50,7 +50,7 @@ export class Simulation {
 			ice: false,
 			snow: false,
 			wind: false,
-			screen: 0,
+			screen: this.screenAt(this.map.spawn.y + P.bodyHeight / 2),
 			ticks: 0,
 			jumps: 0,
 			falls: 0,
@@ -66,6 +66,10 @@ export class Simulation {
 		if (!result.slipping) delete result.slipping;
 		if (!result.jumpBoost) delete result.jumpBoost;
 		return result;
+	}
+
+	get y(): number {
+		return this.state.y;
 	}
 
 	restore(state: PlayerState): void {
@@ -148,8 +152,9 @@ export class Simulation {
 		this.state = { ...this.initialState(), ticks, jumps, falls, jumpBoost };
 	}
 
-	respawnAt(x: number, y: number): void {
+	respawnAt(x: number, y: number, countFall = false): void {
 		this.respawn();
+		if (countFall) this.state.falls++;
 		this.state.x = x;
 		this.state.y = y;
 		this.state.screen = this.screenAt(y + P.bodyHeight / 2);

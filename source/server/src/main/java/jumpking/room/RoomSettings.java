@@ -10,7 +10,7 @@ public record RoomSettings(
     int mapLevel,
     boolean itemsEnabled,
     int itemCooldownMinutes) {
-  public static final int FULL_MAP_LEVEL = 10;
+  public static final int FINAL_MAP_LEVEL = 10;
   private static final Set<String> MODES =
       Set.of("RACE", "EASY", "HARDCORE", "TIME_LIMIT", "NO_WALK");
 
@@ -39,7 +39,7 @@ public record RoomSettings(
             && (!input.path("mapLevel").isIntegralNumber()
                 || !input.path("mapLevel").canConvertToInt())
         || level < 1
-        || level > FULL_MAP_LEVEL) throw GameEnvelope.invalid();
+        || level > FINAL_MAP_LEVEL) throw GameEnvelope.invalid();
     boolean items = GameEnvelope.bool(input, "itemsEnabled", true);
     var cooldown = input.path("itemCooldownMinutes");
     int itemMinutes =
