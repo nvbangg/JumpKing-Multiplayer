@@ -61,7 +61,7 @@ class RoomTimeLimitIT {
                         "timeLimitMinutes",
                         minutes,
                         "mapLevel",
-                        RoomSettings.FULL_MAP_LEVEL)))
+                        RoomSettings.FINAL_MAP_LEVEL)))
             .path("roomId")
             .asText();
     b.ok("JOIN_ROOM", Map.of("roomId", room));

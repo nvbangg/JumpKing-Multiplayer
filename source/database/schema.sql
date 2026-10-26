@@ -29,11 +29,11 @@ CREATE TABLE matches (
     duration_ticks BIGINT NOT NULL DEFAULT 0,
     end_reason VARCHAR(32) NULL,
     PRIMARY KEY (id),
-    CONSTRAINT ck_matches_items CHECK (items_enabled IN (FALSE, TRUE) AND item_cooldown_minutes BETWEEN 1 AND 15),
+    CONSTRAINT ck_matches_items CHECK (items_enabled IN (FALSE, TRUE)),
     CONSTRAINT ck_matches_map_level CHECK (map_level BETWEEN 1 AND 10),
     CONSTRAINT ck_matches_mode CHECK (
         (mode IN ('RACE', 'EASY', 'HARDCORE', 'NO_WALK') AND time_limit_minutes IS NULL)
-        OR (mode = 'TIME_LIMIT' AND time_limit_minutes IS NOT NULL AND time_limit_minutes BETWEEN 1 AND 30)
+        OR (mode = 'TIME_LIMIT' AND time_limit_minutes IS NOT NULL)
     ),
     CONSTRAINT ck_matches_ticks CHECK (duration_ticks BETWEEN 0 AND 9007199254740991),
     CONSTRAINT ck_matches_end CHECK (

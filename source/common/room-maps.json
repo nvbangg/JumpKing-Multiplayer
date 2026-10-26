@@ -54,9 +54,9 @@
     "name": "Great Frontier",
     "finish": {
       "screen": 24,
-      "minCenterX": 96,
+      "minCenterX": 208,
       "requiresGrounded": true,
-      "minProgress": 8912
+      "minProgress": 8744
     }
   },
   {

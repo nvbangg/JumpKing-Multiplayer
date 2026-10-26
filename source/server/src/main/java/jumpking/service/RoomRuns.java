@@ -319,7 +319,7 @@ public class RoomRuns {
     if (value.mapLevel < 1
         || value.mapLevel > 10
         || value.itemCooldownMinutes < 1
-        || value.itemCooldownMinutes > 15
+        || value.itemCooldownMinutes > 10
         || value.revision < 1
         || value.duration < 0
         || value.startedAt == null

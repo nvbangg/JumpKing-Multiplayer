@@ -19,7 +19,7 @@ test("Room markers use the approved landing platforms", () => {
 		[3, 8, -3056, 48],
 		[4, 216, -4584, 64],
 		[5, 128, -6424, 48],
-		[6, 96, -8584, 8],
+		[6, 208, -8416, 72],
 		[7, 24, -11064, 48],
 		[8, 288, -12256, 96],
 		[9, 248, -13584, 40],
@@ -38,7 +38,9 @@ test("Room 7 does not Finish on the right walkway at the same height", () => {
 	});
 	for (let tick = 0; tick < PHYSICS.tickRate; tick++) game.tick(NEUTRAL_INPUT);
 	expect(game.physics.snapshot().grounded).toBe(true);
-	expect(game.physics.progress).toBe(11392);
+	expect(game.physics.progress).toBe(
+		required(game.physics.map.finish.minProgress),
+	);
 	expect(game.finished).toBe(false);
 });
 
@@ -59,7 +61,15 @@ for (const goal of ROOM_MAPS)
 		expect(game.finished).toBe(false);
 		for (let tick = 0; tick < PHYSICS.tickRate && !game.finished; tick++)
 			game.tick(NEUTRAL_INPUT);
-		expect(game.finished).toBe(true);
+		expect(
+			game.finished,
+			JSON.stringify({
+				state: game.physics.snapshot(),
+				progress: game.physics.progress,
+				finish: world.finish,
+				marker,
+			}),
+		).toBe(true);
 		expect(game.physics.snapshot().grounded).toBe(true);
 		expect(game.physics.snapshot().y + PHYSICS.bodyHeight).toBe(marker.y);
 	});

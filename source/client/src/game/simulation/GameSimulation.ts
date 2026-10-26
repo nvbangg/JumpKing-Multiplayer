@@ -123,9 +123,18 @@ export class GameSimulation {
 		this.world = world;
 	}
 	tick(input: PlayerInput, mode = "RACE") {
+		const previousY = this.physics.y;
 		const movement = this.physics.tick(input);
 		let player = this.physics.snapshot();
-		if (movement.includes("SPLAT")) {
+		if (
+			this.map.roomBottomY !== undefined &&
+			(previousY > this.map.roomBottomY || player.y > this.map.roomBottomY)
+		) {
+			const alreadyFell = movement.includes("SPLAT");
+			this.physics.respawnAt(this.map.spawn.x, this.map.spawn.y, !alreadyFell);
+			if (!alreadyFell) movement.push("SPLAT");
+			player = this.physics.snapshot();
+		} else if (movement.includes("SPLAT")) {
 			if (mode === "HARDCORE") this.physics.respawn();
 			else if (mode === "EASY") {
 				const safe = this.world.safePosition ?? this.map.spawn;

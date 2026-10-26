@@ -3,6 +3,7 @@ package jumpking.game;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,7 +33,7 @@ public class SharedData {
             mapper.convertValue(
                 read(mapper, "room-maps.json"),
                 new com.fasterxml.jackson.core.type.TypeReference<List<RoomMap>>() {}));
-    if (roomMaps.size() != 10) throw new IOException("Expected ten Room lengths");
+    if (roomMaps.size() != 10) throw new IOException("Expected ten Room maps");
     for (int index = 0; index < roomMaps.size(); index++) {
       var goal = roomMaps.get(index);
       if (goal.level() != index + 1
@@ -77,19 +78,55 @@ public class SharedData {
                 physics,
                 new com.fasterxml.jackson.core.type.TypeReference<Map<String, Number>>() {}));
     // Định nghĩa bất biến dùng chung; state của mỗi người thuộc simulation riêng.
-    playableMaps =
-        roomMaps.stream()
-            .map(
-                goal ->
-                    new GameMap(
-                        geometry.width(),
-                        geometry.screenHeight(),
-                        geometry.tileSize(),
-                        geometry.progressOriginY(),
-                        geometry.spawn(),
-                        goal.finish(),
-                        geometry.screens()))
-            .toList();
+    var stages = new ArrayList<GameMap>();
+    for (var goal : roomMaps) {
+      var spawn = geometry.spawn();
+      var origin = geometry.progressOriginY();
+      var finish = goal.finish();
+      Double roomBottomY = null;
+      if (goal.level() > 1) {
+        var previous = roomMaps.get(goal.level() - 2);
+        var previousMap =
+            new GameMap(
+                geometry.width(),
+                geometry.screenHeight(),
+                geometry.tileSize(),
+                geometry.progressOriginY(),
+                geometry.spawn(),
+                previous.finish(),
+                geometry.screens());
+        var platform = FinishPlatform.find(previousMap);
+        if (platform == null || platform.width() <= 0)
+          throw new IOException("Room Finish cannot provide a safe next-map spawn");
+        spawn =
+            new GameMap.Spawn(
+                platform.x() + (platform.width() - tuning.bodyWidth) / 2,
+                platform.y() - tuning.bodyHeight);
+        // Tiến độ của mỗi chặng bắt đầu từ 0 nhưng tọa độ thế giới giữ nguyên.
+        origin = spawn.y() + tuning.bodyHeight;
+        finish =
+            new GameMap.Finish(
+                finish.screen(),
+                finish.minCenterX(),
+                finish.requiresGrounded(),
+                finish.minProgress() == 0
+                    ? 0
+                    : finish.minProgress() + origin - geometry.progressOriginY(),
+                finish.maxCenterX());
+        roomBottomY = spawn.y();
+      }
+      stages.add(
+          new GameMap(
+              geometry.width(),
+              geometry.screenHeight(),
+              geometry.tileSize(),
+              origin,
+              spawn,
+              finish,
+              geometry.screens(),
+              roomBottomY));
+    }
+    playableMaps = List.copyOf(stages);
   }
 
   private JsonNode read(ObjectMapper mapper, String name) throws IOException {

@@ -9,7 +9,9 @@ public record GameMap(
     double progressOriginY,
     Spawn spawn,
     Finish finish,
-    List<Screen> screens) {
+    List<Screen> screens,
+    // Chặng Room 2–9: ranh giới dưới tại điểm bắt đầu; null với map đầy đủ.
+    Double roomBottomY) {
   public record Spawn(double x, double y) {}
 
   public record Finish(
@@ -23,6 +25,17 @@ public record GameMap(
     public Screen {
       tiles = List.copyOf(tiles);
     }
+  }
+
+  public GameMap(
+      int width,
+      int screenHeight,
+      int tileSize,
+      double progressOriginY,
+      Spawn spawn,
+      Finish finish,
+      List<Screen> screens) {
+    this(width, screenHeight, tileSize, progressOriginY, spawn, finish, screens, null);
   }
 
   public GameMap {

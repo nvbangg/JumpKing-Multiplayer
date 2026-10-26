@@ -116,7 +116,7 @@ final class RoomMatch {
       if (player.game.finished()) {
         player.status = "FINISHED";
         player.finish = ticks;
-        if (settings.mapLevel() == RoomSettings.FULL_MAP_LEVEL)
+        if (settings.mapLevel() == RoomSettings.FINAL_MAP_LEVEL)
           player.ending =
               Map.of("screen", state.screen, "ravenDone", player.game.adventure().ravenDone());
       }
@@ -213,7 +213,7 @@ final class RoomMatch {
         ticks,
         reason,
         runs,
-        settings.mapLevel() == RoomSettings.FULL_MAP_LEVEL
+        settings.mapLevel() == RoomSettings.FINAL_MAP_LEVEL
             ? players.values().stream()
                 .filter(
                     player ->
