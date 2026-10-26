@@ -73,7 +73,7 @@ class RoomRestartIT {
           .isEqualTo(duration);
       assertThat(
               jdbc.queryForObject(
-                  "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND status='DNF' AND is_winner=FALSE AND `rank` IS NOT NULL",
+                  "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND status='DNF' AND `rank` IS NOT NULL",
                   Integer.class,
                   match))
           .isEqualTo(2);
@@ -147,8 +147,7 @@ class RoomRestartIT {
       assertThat(
               jdbc.queryForObject("SELECT end_reason FROM matches WHERE id=?", String.class, match))
           .isEqualTo("ABORTED");
-      assertThat(
-              jdbc.queryForObject("SELECT map_level FROM matches WHERE id=?", Integer.class, match))
+      assertThat(jdbc.queryForObject("SELECT map_id FROM matches WHERE id=?", Integer.class, match))
           .isEqualTo(1);
       assertThat(
               jdbc.queryForObject(
@@ -156,7 +155,7 @@ class RoomRestartIT {
           .isEqualTo(120);
       assertThat(
               jdbc.queryForObject(
-                  "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND status='DNF' AND play_ticks=120 AND jumps=3 AND falls=1 AND `rank`=1 AND is_winner=FALSE",
+                  "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND status='DNF' AND play_ticks=120 AND jumps=3 AND falls=1 AND `rank`=1",
                   Integer.class,
                   match))
           .isEqualTo(2);

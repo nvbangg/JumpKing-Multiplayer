@@ -215,10 +215,10 @@ test("short Room finish shows Results and History without ending or full-map rew
 		expect(finishes).toEqual([]);
 		const history = (await (await a.request.get("/api/history")).json())
 			.items[0];
-		expect(history.room.mapLevel).toBe(1);
+		expect(history.room.mapId).toBe(1);
 		const stats = (await (await a.request.get("/api/profile/me")).json()).total;
 		expect(stats.finishes).toBe(1);
-		expect(stats.wins).toBe(1);
+		expect(stats.matchesPlayed).toBe(1);
 		expect(stats.bestFinishTimeMs).toBeNull();
 		expect(
 			(await (await a.request.get("/api/auth/me")).json()).account.crown,

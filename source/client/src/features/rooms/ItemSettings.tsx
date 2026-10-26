@@ -15,15 +15,13 @@ export function ItemSettings({
 			Items cooldown
 			<select
 				aria-label="Items cooldown"
-				value={value.itemsEnabled ? value.itemCooldownMinutes : "OFF"}
+				value={value.itemCooldownMinutes ?? "OFF"}
 				disabled={disabled}
 				onChange={(event) => {
-					if (event.target.value === "OFF") onChange({ itemsEnabled: false });
-					else
-						onChange({
-							itemsEnabled: true,
-							itemCooldownMinutes: Number(event.target.value),
-						});
+					onChange({
+						itemCooldownMinutes:
+							event.target.value === "OFF" ? null : Number(event.target.value),
+					});
 				}}
 			>
 				<option value="OFF">No items</option>

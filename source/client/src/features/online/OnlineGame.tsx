@@ -917,7 +917,7 @@ export function OnlineGame({
 						!chat.open &&
 						!watching &&
 						room.kind === "ROOM" &&
-						room.settings?.itemsEnabled && (
+						room.settings?.itemCooldownMinutes != null && (
 							<button
 								className="item-control"
 								type="button"

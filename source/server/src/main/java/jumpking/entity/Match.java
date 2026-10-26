@@ -20,8 +20,8 @@ public class Match {
   @Column(name = "mode", length = 16)
   private String mode;
 
-  @Column(name = "map_level", columnDefinition = "smallint", nullable = false)
-  private int mapLevel = 1;
+  @Column(name = "map_id", columnDefinition = "smallint", nullable = false)
+  private int mapId;
 
   @Column(name = "time_limit_minutes", columnDefinition = "smallint")
   private Integer timeLimitMinutes;
@@ -40,27 +40,8 @@ public class Match {
   @Column(name = "end_reason", length = 32)
   private String endReason;
 
-  @Column(name = "items_enabled", nullable = false)
-  private boolean itemsEnabled;
-
-  @Column(name = "item_cooldown_minutes", columnDefinition = "smallint", nullable = false)
-  private int itemCooldownMinutes = 3;
-
-  public boolean getItemsEnabled() {
-    return itemsEnabled;
-  }
-
-  public void setItemsEnabled(boolean value) {
-    itemsEnabled = value;
-  }
-
-  public int getItemCooldownMinutes() {
-    return itemCooldownMinutes;
-  }
-
-  public void setItemCooldownMinutes(int value) {
-    itemCooldownMinutes = value;
-  }
+  @Column(name = "item_cooldown_minutes", columnDefinition = "smallint")
+  private Integer itemCooldownMinutes;
 
   public Match() {}
 
@@ -80,12 +61,20 @@ public class Match {
     roomCode = value;
   }
 
-  public int getMapLevel() {
-    return mapLevel;
+  public int getMapId() {
+    return mapId;
   }
 
-  public void setMapLevel(int value) {
-    mapLevel = value;
+  public void setMapId(int value) {
+    mapId = value;
+  }
+
+  public Integer getItemCooldownMinutes() {
+    return itemCooldownMinutes;
+  }
+
+  public void setItemCooldownMinutes(Integer value) {
+    itemCooldownMinutes = value;
   }
 
   public String getMode() {

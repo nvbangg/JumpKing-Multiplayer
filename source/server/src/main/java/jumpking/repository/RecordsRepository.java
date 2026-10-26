@@ -27,14 +27,14 @@ public class RecordsRepository {
   private static final String HISTORY =
       """
         WITH history AS (
-          SELECT id,kind,status,started_at,ended_at,play_ticks,jumps,falls,current_progress,max_progress,finish_ticks,
-            NULL AS mode,NULL AS map_level,FALSE AS items_enabled,NULL AS item_cooldown_minutes,NULL AS room_code,NULL AS duration_ticks,NULL AS `rank`,FALSE AS is_winner
-          FROM play_runs WHERE user_id=:owner AND kind='COMMUNITY' AND status<>'ACTIVE'
+          SELECT id,'COMMUNITY' AS kind,status,started_at,ended_at,play_ticks,jumps,falls,current_progress,max_progress,finish_ticks,
+            NULL AS mode,NULL AS map_id,NULL AS item_cooldown_minutes,NULL AS room_code,NULL AS duration_ticks,NULL AS `rank`
+          FROM play_runs WHERE user_id=:owner AND match_id IS NULL AND status<>'ACTIVE'
           UNION ALL
           SELECT m.id,'ROOM',p.status,m.started_at,m.ended_at,p.play_ticks,p.jumps,p.falls,p.current_progress,p.max_progress,p.finish_ticks,
-            m.mode,m.map_level,m.items_enabled,m.item_cooldown_minutes,m.room_code,m.duration_ticks,p.`rank`,p.is_winner
+            m.mode,m.map_id,m.item_cooldown_minutes,m.room_code,m.duration_ticks,p.`rank`
           FROM play_runs p JOIN matches m ON m.id=p.match_id
-          WHERE p.user_id=:owner AND p.kind='ROOM' AND m.ended_at IS NOT NULL
+          WHERE p.user_id=:owner AND m.ended_at IS NOT NULL
         ) SELECT * FROM history
         """;
 
@@ -45,9 +45,8 @@ public class RecordsRepository {
                 .createNativeQuery(
                     """
             SELECT COALESCE(SUM(play_ticks),0) AS ticks,COALESCE(SUM(jumps),0) AS jumps,COALESCE(SUM(falls),0) AS falls,
-              COALESCE(SUM(status='FINISHED'),0) AS finishes,MIN(CASE WHEN kind<>'ROOM' OR m.map_level>=9 THEN finish_ticks END) AS best,
-              COUNT(CASE WHEN kind='ROOM' THEN match_id END) AS matches,
-              COUNT(CASE WHEN kind='ROOM' AND is_winner=TRUE THEN match_id END) AS wins
+              COALESCE(SUM(status='FINISHED'),0) AS finishes,MIN(CASE WHEN p.match_id IS NULL OR m.map_id=9 THEN finish_ticks END) AS best,
+              COUNT(CASE WHEN p.match_id IS NOT NULL THEN 1 END) AS matches
             FROM play_runs p LEFT JOIN matches m ON m.id=p.match_id WHERE p.user_id=:owner
             """,
                     Tuple.class)
@@ -60,7 +59,6 @@ public class RecordsRepository {
         number(row, "falls"),
         number(row, "finishes"),
         number(row, "matches"),
-        number(row, "wins"),
         optionalMs(row, "best"));
   }
 
@@ -95,8 +93,8 @@ public class RecordsRepository {
             entityManager
                 .createNativeQuery(
                     """
-            SELECT id,nickname,status,`rank`,is_winner,current_progress,max_progress,finish_ticks,play_ticks,jumps,falls
-            FROM play_runs WHERE match_id=:id ORDER BY `rank`,id
+            SELECT p.id,u.username,p.status,p.`rank`,p.current_progress,p.max_progress,p.finish_ticks,p.play_ticks,p.jumps,p.falls
+            FROM play_runs p JOIN users u ON u.id=p.user_id WHERE p.match_id=:id ORDER BY p.`rank`,p.id
             """,
                     Tuple.class)
                 .setParameter("id", id))
@@ -105,10 +103,9 @@ public class RecordsRepository {
             row ->
                 new Participant(
                     text(row, "id"),
-                    text(row, "nickname"),
+                    text(row, "username"),
                     text(row, "status"),
                     integer(row, "rank"),
-                    bool(row, "is_winner"),
                     decimal(row, "current_progress"),
                     decimal(row, "max_progress"),
                     optionalMs(row, "finish_ticks"),
@@ -130,7 +127,7 @@ public class RecordsRepository {
                   CASE WHEN r.status='FINISHED' THEN r.finish_ticks END,
                   CASE WHEN r.status<>'FINISHED' THEN r.max_progress END DESC,
                   CASE WHEN r.status<>'FINISHED' THEN r.peak_reached_ticks END,r.id) AS best
-              FROM play_runs r JOIN users u ON u.id=r.user_id WHERE r.kind='COMMUNITY'
+              FROM play_runs r JOIN users u ON u.id=r.user_id WHERE r.match_id IS NULL
             ), ranked AS (
               SELECT id,username,status,current_progress,max_progress,play_ticks,peak_reached_ticks,finish_ticks,
                 RANK() OVER (ORDER BY (status='FINISHED') DESC,CASE WHEN status='FINISHED' THEN finish_ticks END,
@@ -164,7 +161,7 @@ public class RecordsRepository {
                 .createNativeQuery(
                     """
             SELECT id,status,current_progress,max_progress,play_ticks,peak_reached_ticks,updated_at
-            FROM play_runs WHERE user_id=:owner AND kind='COMMUNITY' AND status='ACTIVE'
+            FROM play_runs WHERE user_id=:owner AND match_id IS NULL AND status='ACTIVE'
             """,
                     Tuple.class)
                 .setParameter("owner", owner));
@@ -205,13 +202,11 @@ public class RecordsRepository {
         text(row, "kind").equals("ROOM")
             ? new Room(
                 text(row, "mode"),
-                integer(row, "map_level"),
-                bool(row, "items_enabled"),
+                integer(row, "map_id"),
                 integer(row, "item_cooldown_minutes"),
                 text(row, "room_code"),
                 ms(number(row, "duration_ticks")),
-                integer(row, "rank"),
-                bool(row, "is_winner"))
+                integer(row, "rank"))
             : null);
   }
 
@@ -233,11 +228,6 @@ public class RecordsRepository {
 
   private static Integer integer(Tuple row, String key) {
     return row.get(key) == null ? null : ((Number) row.get(key)).intValue();
-  }
-
-  private static boolean bool(Tuple row, String key) {
-    var value = row.get(key);
-    return Boolean.TRUE.equals(value) || value instanceof Number n && n.intValue() != 0;
   }
 
   private static Instant instant(Tuple row, String key) {

@@ -1,6 +1,6 @@
 # Thiết kế dữ liệu
 
-MySQL/InnoDB, utf8mb4, timestamps UTC. Hibernate chỉ validate; DDL tại `source/database/schema.sql`, khởi tạo theo [deployment](deployment.md#mysql). Database lưu Account, lượt Community và kết quả Room; gameplay đang chạy của Room ở RAM.
+MySQL/InnoDB, utf8mb4, timestamps UTC. Hibernate chỉ validate; `source/database/schema.sql` tạo database mới. Với database hiện có theo schema trước đó, dừng backend, sao lưu rồi chạy `source/database/migrate-to-current-schema.sql` một lần trong MySQL Workbench. Script kiểm tra schema và dữ liệu nickname trước khi đổi; DDL MySQL tự commit từng bước. Database lưu Account, lượt Community và kết quả Room; gameplay đang chạy của Room ở RAM.
 
 ## Schema
 
@@ -25,8 +25,7 @@ erDiagram
     play_runs {
         CHAR(36) id PK
         BIGINT user_id FK
-        VARCHAR(16) kind
-        CHAR(36) match_id FK "nullable; ROOM"
+        CHAR(36) match_id FK "nullable; ROOM; null means COMMUNITY"
         VARCHAR(16) status
         BIGINT play_ticks
         INT jumps
@@ -35,9 +34,7 @@ erDiagram
         DOUBLE max_progress
         BIGINT peak_reached_ticks
         BIGINT finish_ticks "nullable"
-        VARCHAR(32) nickname "nullable; ROOM"
         TINYINT rank "nullable; ROOM"
-        BOOLEAN is_winner
         JSON snapshot "nullable; COMMUNITY ACTIVE"
         BIGINT revision
         BIGINT active_community_user_id UK "generated; nullable"
@@ -49,10 +46,9 @@ erDiagram
         CHAR(36) id PK
         CHAR(6) room_code
         VARCHAR(16) mode
-        SMALLINT map_level "1–9; default 1"
-        SMALLINT time_limit_minutes "nullable; optional limit 1–10 min"
-        BOOLEAN items_enabled "default false"
-        SMALLINT item_cooldown_minutes "1–10; default 3"
+        SMALLINT map_id "map selected for this match"
+        SMALLINT time_limit_minutes "nullable; null means unlimited"
+        SMALLINT item_cooldown_minutes "nullable; null means Items off, otherwise cooldown minutes"
         DATETIME(3) started_at
         DATETIME(3) ended_at "nullable"
         BIGINT duration_ticks
@@ -69,7 +65,7 @@ Community không có match; Room có nhiều runs cùng match. users.id tự tă
 | current_progress / max_progress | Tiến độ xếp hạng / peak theo [gameplay](gameplay.md#room-và-xếp-hạng) |
 | peak_reached_ticks | play_ticks lần đầu đạt peak; chỉ đổi khi peak tăng |
 | finish_ticks | Clock Community hoặc clock trận Room khi Finish |
-| nickname / rank / is_winner | Tên lúc tham gia / hạng cuối / winner Room |
+| rank | Hạng cuối Room |
 | snapshot / revision | Checkpoint / thứ tự payload ghi từ 1 do writer quản lý, không phải Hibernate @Version |
 | started_at / updated_at / ended_at | Bắt đầu / commit gần nhất / kết thúc; không dùng hiệu timestamp tính thành tích |
 
@@ -85,11 +81,10 @@ Ticks đổi sang ms bằng floor(ticks×1000/tickRate), theo [nhịp mô phỏn
 | UNFINISHED | Chưa Finish khi Room kết thúc, vẫn tham gia |
 | DNF | Đã rời/hết reconnect Room hoặc trận bị abort |
 
-- COMMUNITY dùng ACTIVE/FINISHED/ABANDONED và match_id/nickname=NULL; ROOM dùng ACTIVE/FINISHED/UNFINISHED/DNF, bắt buộc match_id và nickname. Chỉ ACTIVE có ended_at=NULL; trạng thái khác có ended_at≥started_at. Chỉ FINISHED có finish_ticks.
-- Chỉ COMMUNITY/ACTIVE có snapshot là JSON object, còn lại NULL. Room rank=NULL trước finalize, thuộc [1,số người] sau finalize; Community rank=NULL/is_winner=false. Winner phải FINISHED/rank=1; rank=1 không đồng nghĩa winner.
-- Match map_level=1–9 lưu chặng được chọn; tiến độ tính từ spawn chặng và không lưu riêng. Giới hạn thời gian Room là tùy chọn độc lập với mode, mặc định không giới hạn; nếu bật thì 1–10 phút. Item cooldown giới hạn 1–10 phút, mặc định 3. Database giữ các ràng buộc cơ bản về kiểu dữ liệu, mode và giới hạn thời gian; ended_at/end_reason cùng NULL hoặc cùng có, ended_at≥started_at; reason=FINISH/TIME_LIMIT/HOST_ENDED/ALL_DISCONNECTED/ABORTED.
-- Database dùng CHECK/unique/FK cho các quan hệ và tổ hợp cơ bản; backend kiểm tra giới hạn đầu vào, owner, roster, comparator và ràng buộc match/runs.
-- Indexes: unique username và google_id, unique (match_id,user_id), (user_id,ended_at,id), (kind,status). active_community_user_id generated nhận user_id khi COMMUNITY/ACTIVE, còn lại NULL; unique bảo đảm tối đa một checkpoint đang dở/Account. Startup kiểm tra đúng bảng/cột của unique indexes, không tự sửa schema.
+- `match_id IS NULL` xác định lượt Community; có `match_id` xác định lượt Room. Rank chỉ áp dụng cho Room; server chốt rank cho toàn bộ roster với mọi `end_reason`. Snapshot chỉ dùng cho lượt Community đang ACTIVE. API có thể trả `kind` như trường phân loại suy ra từ `match_id`, nhưng không lưu trùng trong `play_runs`.
+- Backend quản lý vòng đời và tập giá trị hợp lệ của `status`, `end_reason`, `mode`, `crown` cùng các giới hạn nghiệp vụ. Database lưu chúng bằng cột chuỗi, không dùng ENUM hoặc CHECK liệt kê giá trị hợp lệ. Database chỉ giữ các ràng buộc cấu trúc như khóa, kiểu dữ liệu, bộ đếm không âm, quan hệ thời gian và JSON hợp lệ.
+- `map_id` là ID map độc lập, không biểu thị level/độ khó; backend chọn map mặc định 1. `time_limit_minutes` NULL nghĩa là không giới hạn; nếu có giá trị thì backend kiểm tra 1–10 phút. `item_cooldown_minutes` NULL nghĩa là tắt Items; chọn 1–10 phút sẽ bật Items với cooldown đó. Room mới mặc định không giới hạn thời gian và tắt Items. Database không đặt default hoặc giới hạn nghiệp vụ cho các trường này.
+- Indexes: unique username và google_id, unique (match_id,user_id), (user_id,ended_at,id), (match_id,status). `active_community_user_id` là cột generated phục vụ unique index, nhận user_id khi lượt Community đang ACTIVE; unique bảo đảm tối đa một checkpoint đang dở/Account. Đây là ràng buộc duy nhất dựa vào trạng thái trong database để bảo vệ tính duy nhất khi ghi đồng thời. Startup kiểm tra đúng bảng/cột của unique indexes, không tự sửa schema.
 
 ## Transaction và ghi dữ liệu
 
@@ -97,7 +92,7 @@ Owner lấy từ session, không nhận user_id/metrics chính thức từ clien
 
 Writer nhận payload bất biến, xử lý theo thứ tự lượt/trận; có thể gộp autosave nhưng không bỏ mốc Pause/Leave/Finish. Ghi dữ liệu phải bảo đảm:
 
-- Chỉ nhận revision mới hơn; cùng revision/nội dung là no-op, khác nội dung là CONFLICT. Counters/peak không giảm; lượt terminal giữ metrics, riêng Room rank/winner chốt khi finalize. Autosave không phục hồi lượt kết thúc hoặc upsert lượt đã mất.
+- Chỉ nhận revision mới hơn; cùng revision/nội dung là no-op, khác nội dung là CONFLICT. Counters/peak không giảm; lượt terminal giữ metrics, Room rank chốt khi finalize. Autosave không phục hồi lượt kết thúc hoặc upsert lượt đã mất.
 - Mọi thao tác cạnh tranh cùng Account/run/match được tuần tự hóa trong transaction; dùng thứ tự khóa thống nhất, không ghi đè payload mới bằng payload cũ.
 - Retry cùng ID/kết quả không tạo hàng hoặc cộng tổng lần nữa. PENDING/SAVED/FAILED phản ánh đúng trạng thái; SAVED chỉ sau commit, retry có giới hạn và cấu hình tập trung phía backend.
 - users.crown nhận NONE/GOLD/BLACK, chỉ nâng cấp khi Finish full map theo [gameplay](gameplay.md#nội-dung-và-nhận-diện), cùng transaction với kết quả. Server lấy tiến độ quạ của chính người Finish trong lượt đó; không nhận quyền crown từ client. Password/session theo [protocol](protocol.md#xác-thực-và-bảo-mật).
@@ -114,7 +109,7 @@ Autosave chỉ cập nhật đúng run đang ACTIVE. Finish chốt status/finish
 
 Sau countdown, tạo match và runs ROOM của roster trong một transaction; countdown bị hủy không ghi trận. Mỗi Start dùng ID mới. Mode/map/Item settings bất biến trong match; Lobby, visibility, reconnect token, item/cooldown/bẫy và physics chỉ ở RAM.
 
-Ghi định kỳ clock/metrics, flush tại End/Finish/Leave. Người DNF giữ metrics/ended_at đã chốt. Finalize atomically ghi reason/duration/ended_at của match và status/rank/winner toàn roster; retry không thay kết quả hoặc tạo winner mới. Mode Easy lưu dưới giá trị EASY; điểm an toàn chỉ thuộc state trận trong RAM, không thêm bảng hoặc ghi database mỗi lần thay điểm.
+Ghi định kỳ clock/metrics, flush tại End/Finish/Leave. Người DNF giữ metrics/ended_at đã chốt. Finalize atomically ghi reason/duration/ended_at của match và status/rank toàn roster. Mọi `end_reason` đều có bảng xếp hạng; reason chỉ giải thích vì sao trận kết thúc. Retry không thay kết quả. Mode Easy lưu dưới giá trị EASY; điểm an toàn chỉ thuộc state trận trong RAM, không thêm bảng hoặc ghi database mỗi lần thay điểm.
 
 Phòng hết người giữ payload chưa commit để retry trong quota. Shutdown flush có giới hạn; restart chốt match mở ABORTED và runs ROOM ACTIVE thành DNF bằng metrics đã commit. Không cộng thời gian offline hoặc khôi phục physics Room.
 
@@ -122,11 +117,11 @@ Phòng hết người giữ payload chưa commit để retry trong quota. Shutdo
 
 | Dữ liệu | Nguồn |
 | --- | --- |
-| History | Community terminal theo run ID; Room đã finalize theo match ID; mới nhất trước theo ended_at rồi kind/id |
-| Chi tiết Room | Account từng tham gia được xem roster/kết quả, dùng nickname lúc tham gia |
-| Stats tổng | SUM counters/ticks đã commit; số Finish, số trận và winner Room; MIN finish_ticks của lượt full map |
+| History | Community terminal theo run ID; Room đã finalize theo match ID; mới nhất trước theo ended_at rồi ID |
+| Chi tiết Room | Account từng tham gia xem roster/kết quả; username lấy từ `users` |
+| Stats tổng | SUM counters/ticks đã commit; số Finish, số trận Room; MIN finish_ticks của lượt full map |
 | Leaderboard | Chỉ Community, một best run/Account; comparator theo [gameplay](gameplay.md#community) |
 
-ACTIVE/match chưa finalize không vào History; metrics đã commit vẫn góp Stats/leaderboard. Room ngắn góp counters/finishes/wins, không góp Best Finish Time/crown. Không lưu thêm tổng cộng dồn trong users; giữ các hàng metrics làm nguồn tổng và lịch sử.
+ACTIVE/match chưa finalize không vào History; metrics đã commit vẫn góp Stats/leaderboard. Room ngắn góp counters/finishes, không góp Best Finish Time/crown. Không lưu thêm tổng cộng dồn trong users; giữ các hàng metrics làm nguồn tổng và lịch sử.
 
 Query dùng tham số/projection, kiểm tra owner, không lộ snapshot. Leaderboard chọn best run mỗi Account, tính RANK trước LIMIT; ID chỉ ổn định hiển thị, không phá đồng hạng.

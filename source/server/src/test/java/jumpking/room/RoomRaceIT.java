@@ -457,7 +457,7 @@ class RoomRaceIT {
       var total = a.request("/profile/me", "GET", null).path("total");
       assertThat(total.path("totalJumps").asInt()).isEqualTo(1);
       assertThat(total.path("matchesPlayed").asInt()).isEqualTo(1);
-      assertThat(total.path("wins").asInt()).isZero();
+      assertThat(total.has("wins")).isFalse();
       assertThat(
               TestDatabase.get()
                   .jdbc
@@ -478,7 +478,7 @@ class RoomRaceIT {
       a.connect();
       b.connect();
       String id = a.ok("CREATE_ROOM", Map.of()).path("roomId").asText();
-      a.ok("UPDATE_ROOM_SETTINGS", Map.of("mapLevel", RoomSettings.FINAL_MAP_LEVEL));
+      a.ok("UPDATE_ROOM_SETTINGS", Map.of("mapId", RoomSettings.FINAL_MAP_ID));
       b.ok("JOIN_ROOM", Map.of("roomId", id));
       a.ok("START_GAME", Map.of());
       time.advance(3000);
@@ -516,7 +516,6 @@ class RoomRaceIT {
       assertThat(finished.path("durationMs").asLong()).isEqualTo(282616);
       for (var row : finished.path("results")) {
         assertThat(row.path("rank").asInt()).isEqualTo(1);
-        assertThat(row.path("isWinner").asBoolean()).isTrue();
       }
       a.await(
           message ->
@@ -532,7 +531,7 @@ class RoomRaceIT {
               TestDatabase.get()
                   .jdbc
                   .queryForObject(
-                      "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND status='FINISHED' AND is_winner=TRUE AND finish_ticks=16957",
+                      "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND status='FINISHED' AND `rank`=1 AND finish_ticks=16957",
                       Integer.class,
                       play))
           .isEqualTo(2);
@@ -584,7 +583,7 @@ class RoomRaceIT {
               .orElseThrow();
       assertThat(entry.path("playerCount").asInt()).isEqualTo(2);
       assertThat(entry.path("mode").asText()).isEqualTo("RACE");
-      assertThat(entry.path("mapLevel").asInt()).isEqualTo(1);
+      assertThat(entry.path("mapId").asInt()).isEqualTo(1);
       for (String secret : List.of("members", "reconnectToken", "username"))
         assertThat(entry.has(secret)).isFalse();
       try (var pool = java.util.concurrent.Executors.newFixedThreadPool(2)) {

@@ -170,7 +170,7 @@ class CommunityRunsIT {
     }
     assertThat(
             jdbc.queryForObject(
-                "SELECT COUNT(*) FROM play_runs WHERE user_id=? AND kind='COMMUNITY' AND status='ACTIVE'",
+                "SELECT COUNT(*) FROM play_runs WHERE user_id=? AND match_id IS NULL AND status='ACTIVE'",
                 Integer.class,
                 owner))
         .isEqualTo(1);
@@ -346,7 +346,7 @@ class CommunityRunsIT {
             + trigger
             + " BEFORE INSERT ON play_runs FOR EACH ROW BEGIN IF NEW.user_id="
             + owner
-            + " AND NEW.kind='COMMUNITY' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='injected test failure'; END IF; END");
+            + " AND NEW.match_id IS NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='injected test failure'; END IF; END");
     try {
       assertThatThrownBy(() -> records.open(owner, true, initial.id(), game().snapshot()))
           .isInstanceOf(org.springframework.dao.DataAccessException.class);
@@ -378,7 +378,7 @@ class CommunityRunsIT {
         .isInstanceOf(ApiException.class);
     assertThat(
             jdbc.queryForObject(
-                "SELECT COUNT(*) FROM play_runs WHERE user_id=? AND kind='COMMUNITY' AND status='ACTIVE'",
+                "SELECT COUNT(*) FROM play_runs WHERE user_id=? AND match_id IS NULL AND status='ACTIVE'",
                 Integer.class,
                 owner))
         .isEqualTo(1);

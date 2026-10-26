@@ -1,6 +1,5 @@
 export interface RoomItemSettings {
-	itemsEnabled: boolean;
-	itemCooldownMinutes: number;
+	itemCooldownMinutes: number | null;
 }
 export interface BananaTrap {
 	id: number;

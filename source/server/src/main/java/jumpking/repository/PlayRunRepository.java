@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
 public interface PlayRunRepository extends JpaRepository<PlayRun, String> {
-  boolean existsByUserIdAndKind(long userId, String kind);
+  boolean existsByUserIdAndMatchIdIsNull(long userId);
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select r from PlayRun r where r.id = :id")
@@ -16,7 +16,7 @@ public interface PlayRunRepository extends JpaRepository<PlayRun, String> {
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query(
-      "select r from PlayRun r where r.userId = :owner and r.kind = 'COMMUNITY' and r.status = 'ACTIVE'")
+      "select r from PlayRun r where r.userId = :owner and r.matchId is null and r.status = 'ACTIVE'")
   Optional<PlayRun> lockActiveCommunity(@Param("owner") long owner);
 
   List<PlayRun> findByMatchId(String matchId);

@@ -32,26 +32,22 @@ class RecordsServiceIT {
     long peer = TestDatabase.get().account();
     try {
       jdbc.update(
-          "INSERT INTO matches(id,room_code,mode,map_level,started_at,ended_at,duration_ticks,end_reason) VALUES (?,'ABCDEF','RACE',9,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),180,'FINISH')",
+          "INSERT INTO matches(id,room_code,mode,map_id,started_at,ended_at,duration_ticks,end_reason) VALUES (?,'ABCDEF','RACE',9,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),180,'FINISH')",
           match);
-      for (String kind : java.util.List.of("COMMUNITY", "ROOM")) {
-        boolean room = kind.equals("ROOM");
+      for (boolean room : java.util.List.of(false, true)) {
         long ticks = room ? 180 : 61;
         jdbc.update(
-            "INSERT INTO play_runs(id,user_id,kind,match_id,nickname,status,play_ticks,jumps,falls,current_progress,max_progress,peak_reached_ticks,finish_ticks,`rank`,is_winner,started_at,ended_at,updated_at) VALUES (?,?,?,?,?,'FINISHED',?,2,1,100,100,?,?,?, ?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO play_runs(id,user_id,match_id,status,play_ticks,jumps,falls,current_progress,max_progress,peak_reached_ticks,finish_ticks,`rank`,started_at,ended_at,updated_at) VALUES (?,?,?,'FINISHED',?,2,1,100,100,?,?,?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             UUID.randomUUID().toString(),
             owner,
-            kind,
             room ? match : null,
-            room ? "A player" : null,
             ticks,
             ticks,
             ticks,
-            room ? 1 : null,
-            room);
+            room ? 1 : null);
       }
       jdbc.update(
-          "INSERT INTO play_runs(id,user_id,kind,match_id,nickname,status,play_ticks,jumps,falls,current_progress,max_progress,peak_reached_ticks,finish_ticks,`rank`,is_winner,started_at,ended_at,updated_at) SELECT ?,?,kind,match_id,'Other player',status,play_ticks,jumps,falls,current_progress,max_progress,peak_reached_ticks,finish_ticks,`rank`,is_winner,started_at,ended_at,updated_at FROM play_runs WHERE user_id=? AND kind='ROOM'",
+          "INSERT INTO play_runs(id,user_id,match_id,status,play_ticks,jumps,falls,current_progress,max_progress,peak_reached_ticks,finish_ticks,`rank`,started_at,ended_at,updated_at) SELECT ?,?,match_id,status,play_ticks,jumps,falls,current_progress,max_progress,peak_reached_ticks,finish_ticks,`rank`,started_at,ended_at,updated_at FROM play_runs WHERE user_id=? AND match_id IS NOT NULL",
           UUID.randomUUID().toString(),
           peer,
           owner);
@@ -62,7 +58,6 @@ class RecordsServiceIT {
       assertThat(total.finishes()).isEqualTo(2);
       assertThat(total.bestFinishTimeMs()).isEqualTo(1016);
       assertThat(total.matchesPlayed()).isEqualTo(1);
-      assertThat(total.wins()).isEqualTo(1);
       assertThat(records.statistics(Long.MAX_VALUE).totalPlayTimeMs()).isEqualTo(BigInteger.ZERO);
       var first = records.history(owner, 0, 1);
       var second = records.history(owner, 1, 1);
@@ -75,8 +70,9 @@ class RecordsServiceIT {
                   .map(RecordsDto.History::kind))
           .containsExactlyInAnyOrder("COMMUNITY", "ROOM");
       var detail = records.detail(owner, "ROOM", match);
-      assertThat(detail.path("room").path("mapLevel").asInt()).isEqualTo(9);
+      assertThat(detail.path("room").path("mapId").asInt()).isEqualTo(9);
       assertThat(detail.path("participants").size()).isEqualTo(2);
+      assertThat(detail.path("participants").get(0).path("username").asText()).isNotBlank();
       assertThat(detail.has("snapshot")).isFalse();
       assertThatThrownBy(() -> records.detail(Long.MAX_VALUE, "ROOM", match))
           .isInstanceOf(jumpking.exception.ApiException.class);

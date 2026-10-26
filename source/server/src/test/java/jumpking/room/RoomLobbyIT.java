@@ -65,7 +65,7 @@ class RoomLobbyIT {
                   && !member(message.path("payload"), playerId)
                       .path("nextMatchConfirmed")
                       .asBoolean());
-      host.ok("UPDATE_ROOM_SETTINGS", Map.of("mapLevel", 2));
+      host.ok("UPDATE_ROOM_SETTINGS", Map.of("mapId", 2));
       var cancelled = member(host.ok("GET_ROOM_STATE", Map.of()), playerId);
       assertThat(cancelled.path("nextMatchConfirmed").asBoolean()).isFalse();
       assertThat(cancelled.path("nextMatchJoined").asBoolean()).isTrue();

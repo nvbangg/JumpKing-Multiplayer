@@ -83,7 +83,10 @@ test("only the committed Room winner sees ending while peers can confirm the nex
 			await winner.request.get(`/api/history/ROOM/${fixture.playId}`)
 		).json();
 		expect(
-			history.participants.filter((row: { isWinner: boolean }) => row.isWinner),
+			history.participants.filter(
+				(row: { rank: number; status: string }) =>
+					row.rank === 1 && row.status === "FINISHED",
+			),
 		).toHaveLength(1);
 		await peer.getByRole("button", { name: "Play Again", exact: true }).click();
 		await expect(

@@ -300,7 +300,7 @@ class RoomLifecycleIT {
           .isEqualTo("ERROR");
       end(b);
       var history = a.request("/history/ROOM/" + game.play, "GET", null);
-      assertThat(history.path("participants").get(0).path("nickname").asText()).isNotBlank();
+      assertThat(history.path("participants").get(0).path("username").asText()).isNotBlank();
       assertThat(
               TestDatabase.get()
                   .jdbc
@@ -367,7 +367,7 @@ class RoomLifecycleIT {
               TestDatabase.get()
                   .jdbc
                   .queryForObject(
-                      "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND status='DNF' AND is_winner=FALSE",
+                      "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND status='DNF' AND `rank` IS NOT NULL",
                       Integer.class,
                       game.play))
           .isEqualTo(2);

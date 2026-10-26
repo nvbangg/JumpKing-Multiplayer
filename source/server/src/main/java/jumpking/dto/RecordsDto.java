@@ -15,18 +15,15 @@ public final class RecordsDto {
       long totalFalls,
       long finishes,
       long matchesPlayed,
-      long wins,
       Long bestFinishTimeMs) {}
 
   public record Room(
       String mode,
-      int mapLevel,
-      boolean itemsEnabled,
-      int itemCooldownMinutes,
+      int mapId,
+      Integer itemCooldownMinutes,
       String roomCode,
       long durationMs,
-      Integer rank,
-      boolean isWinner) {}
+      Integer rank) {}
 
   public record History(
       String id,
@@ -46,10 +43,9 @@ public final class RecordsDto {
 
   public record Participant(
       String runId,
-      String nickname,
+      String username,
       String status,
       Integer rank,
-      boolean isWinner,
       double currentProgress,
       double maxProgress,
       Long finishTimeMs,

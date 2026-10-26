@@ -94,16 +94,19 @@ class RoomItemsIT {
       String room = joined.path("roomId").asText();
       var other = b.ok("JOIN_ROOM", Map.of("roomId", room));
       assertThat(
-              a.ok("GET_ROOM_STATE", Map.of()).path("settings").path("itemCooldownMinutes").asInt())
-          .isEqualTo(3);
+              a.ok("GET_ROOM_STATE", Map.of())
+                  .path("settings")
+                  .path("itemCooldownMinutes")
+                  .isNull())
+          .isTrue();
       assertThat(
-              b.command("UPDATE_ROOM_SETTINGS", Map.of("itemsEnabled", true))
+              b.command("UPDATE_ROOM_SETTINGS", Map.of("itemCooldownMinutes", 1))
                   .path("payload")
                   .path("code")
                   .asText())
           .isEqualTo("FORBIDDEN");
-      a.ok("UPDATE_ROOM_SETTINGS", Map.of("itemsEnabled", true, "itemCooldownMinutes", 1));
-      a.ok("UPDATE_ROOM_SETTINGS", Map.of("mapLevel", 1));
+      a.ok("UPDATE_ROOM_SETTINGS", Map.of("itemCooldownMinutes", 1));
+      a.ok("UPDATE_ROOM_SETTINGS", Map.of("mapId", 1));
       var first = start(a);
       time.advance(100);
       a.await(
@@ -134,7 +137,9 @@ class RoomItemsIT {
       assertThat(a.command("USE_ITEM", invalid).path("payload").path("code").asText())
           .isEqualTo("INVALID_MESSAGE");
       assertThat(
-              a.command("UPDATE_ROOM_SETTINGS", Map.of("itemsEnabled", false))
+              a.command(
+                      "UPDATE_ROOM_SETTINGS",
+                      java.util.Collections.singletonMap("itemCooldownMinutes", null))
                   .path("payload")
                   .path("code")
                   .asText())
@@ -242,8 +247,8 @@ class RoomItemsIT {
       String match = first.path("playId").asText();
       assertThat(
               jdbc.queryForObject(
-                  "SELECT items_enabled FROM matches WHERE id=?", Boolean.class, match))
-          .isTrue();
+                  "SELECT item_cooldown_minutes FROM matches WHERE id=?", Integer.class, match))
+          .isEqualTo(1);
       assertThat(
               b.request("/history/ROOM/" + match, "GET", null)
                   .path("room")
@@ -269,7 +274,7 @@ class RoomItemsIT {
       client.connect();
       var joined = client.ok("CREATE_ROOM", Map.of());
       String room = joined.path("roomId").asText(), id = joined.path("playerId").asText();
-      client.ok("UPDATE_ROOM_SETTINGS", Map.of("itemsEnabled", true));
+      client.ok("UPDATE_ROOM_SETTINGS", Map.of("itemCooldownMinutes", 3));
       var first = start(client);
       time.advance(100);
       arrange(room, match -> match.items.slots.get(id).held = RoomItems.Kind.BOOTS);
@@ -357,7 +362,7 @@ class RoomItemsIT {
       String playerId = joined.path("playerId").asText();
       for (int index = 1; index < clients.size(); index++)
         clients.get(index).ok("JOIN_ROOM", Map.of("roomId", roomId));
-      host.ok("UPDATE_ROOM_SETTINGS", Map.of("itemsEnabled", true));
+      host.ok("UPDATE_ROOM_SETTINGS", Map.of("itemCooldownMinutes", 3));
       start(host);
       arrange(
           roomId,

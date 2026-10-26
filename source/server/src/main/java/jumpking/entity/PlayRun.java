@@ -16,9 +16,6 @@ public class PlayRun {
   @Column(name = "user_id")
   private long userId;
 
-  @Column(name = "kind", length = 16)
-  private String kind;
-
   @JdbcTypeCode(SqlTypes.CHAR)
   @Column(name = "match_id", length = 36)
   private String matchId;
@@ -47,15 +44,9 @@ public class PlayRun {
   @Column(name = "finish_ticks")
   private Long finishTicks;
 
-  @Column(name = "nickname", length = 32)
-  private String nickname;
-
   @JdbcTypeCode(SqlTypes.TINYINT)
   @Column(name = "`rank`")
   private Integer rank;
-
-  @Column(name = "is_winner", columnDefinition = "boolean")
-  private boolean winner;
 
   @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "snapshot", columnDefinition = "json")
@@ -92,14 +83,6 @@ public class PlayRun {
 
   public void setUserId(long value) {
     userId = value;
-  }
-
-  public String getKind() {
-    return kind;
-  }
-
-  public void setKind(String value) {
-    kind = value;
   }
 
   public String getMatchId() {
@@ -174,28 +157,12 @@ public class PlayRun {
     finishTicks = value;
   }
 
-  public String getNickname() {
-    return nickname;
-  }
-
-  public void setNickname(String value) {
-    nickname = value;
-  }
-
   public Integer getRank() {
     return rank;
   }
 
   public void setRank(Integer value) {
     rank = value;
-  }
-
-  public boolean getWinner() {
-    return winner;
-  }
-
-  public void setWinner(boolean value) {
-    winner = value;
   }
 
   public String getSnapshot() {
