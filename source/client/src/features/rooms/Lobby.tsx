@@ -21,8 +21,6 @@ export function Lobby({
 	const self = members.find((member) => member.playerId === selfId);
 	const host = !!self && room.hostPlayerId === selfId;
 	const confirmed = self?.nextMatchConfirmed === true;
-	const limit =
-		room.settings?.timeLimitMinutes ?? rules.timeLimitDefaultMinutes;
 	return (
 		<div className="lobby-layout">
 			<section className="lobby-roster" aria-label="Room players">
@@ -135,48 +133,44 @@ export function Lobby({
 							onChange={(event) =>
 								command("UPDATE_ROOM_SETTINGS", {
 									mode: event.target.value,
-									timeLimitMinutes:
-										event.target.value === "TIME_LIMIT"
-											? rules.timeLimitDefaultMinutes
-											: null,
 								})
 							}
 						>
 							<option value="RACE">RACE – Default</option>
 							<option value="EASY">EASY – Respawn at Last Position</option>
 							<option value="HARDCORE">HARDCORE – Restart on Death</option>
-							<option value="TIME_LIMIT">TIME LIMIT – Beat the Clock</option>
 							<option value="NO_WALK">NO WALK – Jump Only</option>
 						</select>
 					</label>
-					{room.settings.mode === "TIME_LIMIT" && (
-						<label className="mode-setting">
-							Minutes
-							<select
-								aria-label="Minutes"
-								value={limit}
-								disabled={!host || room.state !== "WAITING" || pending}
-								onChange={(event) =>
-									command("UPDATE_ROOM_SETTINGS", {
-										mode: "TIME_LIMIT",
-										timeLimitMinutes: Number(event.target.value),
-									})
-								}
-							>
-								{Array.from(
-									{
-										length:
-											rules.timeLimitMinutesMax - rules.timeLimitMinutesMin + 1,
-									},
-									(_, i) => i + rules.timeLimitMinutesMin,
-								).map((minutes) => (
-									<option key={minutes} value={minutes}>
-										{minutes} min
-									</option>
-								))}
-							</select>
-						</label>
-					)}
+					<label className="mode-setting">
+						Time Limit
+						<select
+							aria-label="Time Limit"
+							value={room.settings.timeLimitMinutes ?? "UNLIMITED"}
+							disabled={!host || room.state !== "WAITING" || pending}
+							onChange={(event) =>
+								command("UPDATE_ROOM_SETTINGS", {
+									timeLimitMinutes:
+										event.target.value === "UNLIMITED"
+											? null
+											: Number(event.target.value),
+								})
+							}
+						>
+							<option value="UNLIMITED">Unlimited</option>
+							{Array.from(
+								{
+									length:
+										rules.timeLimitMinutesMax - rules.timeLimitMinutesMin + 1,
+								},
+								(_, i) => i + rules.timeLimitMinutesMin,
+							).map((minutes) => (
+								<option key={minutes} value={minutes}>
+									{minutes} min
+								</option>
+							))}
+						</select>
+					</label>
 					<ItemSettings
 						value={room.settings}
 						disabled={!host || room.state !== "WAITING" || pending}

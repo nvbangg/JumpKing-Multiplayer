@@ -60,12 +60,13 @@ for (const mobile of [false, true])
 				.getByRole("button", { name: "Create Room", exact: true })
 				.click();
 			const id = (await host.locator(".room-code code").innerText()).trim();
-			await expect(host.getByLabel("Items", { exact: true })).not.toBeChecked();
 			await expect(
-				host.getByLabel("Item Cooldown", { exact: true }),
-			).toHaveCount(0);
+				host.getByLabel("Items cooldown", { exact: true }),
+			).toHaveValue("OFF");
 			await joinRoom(peer, id);
-			await expect(peer.getByLabel("Items", { exact: true })).toBeDisabled();
+			await expect(
+				peer.getByLabel("Items cooldown", { exact: true }),
+			).toBeDisabled();
 			await expect(host.locator(".menu-panel .chat-panel")).toHaveCount(0);
 			await expect(host.locator(".chat-panel")).toBeVisible();
 			await host.locator("body").click({ position: { x: 1, y: 1 } });
@@ -78,25 +79,18 @@ for (const mobile of [false, true])
 			await peer.getByRole("button", { name: "Send", exact: true }).click();
 			await expect(host.getByRole("log")).toContainText("Ready too");
 			await expect(host.getByLabel("Message", { exact: true })).toBeVisible();
-			const toggle = host.locator(".item-toggle");
-			if (mobile) await toggle.tap();
-			else await toggle.click();
-			await expect(peer.getByLabel("Items", { exact: true })).toBeChecked();
+			await host
+				.getByLabel("Items cooldown", { exact: true })
+				.selectOption("3");
 			await expect(
-				host.getByLabel("Item Cooldown", { exact: true }),
+				peer.getByLabel("Items cooldown", { exact: true }),
 			).toHaveValue("3");
-			await host.getByLabel("Item Cooldown", { exact: true }).selectOption("1");
+			await host
+				.getByLabel("Items cooldown", { exact: true })
+				.selectOption("1");
 			await expect(
-				peer.getByLabel("Item Cooldown", { exact: true }),
+				peer.getByLabel("Items cooldown", { exact: true }),
 			).toHaveValue("1");
-			const alignment = await toggle.evaluate((label) => {
-				const text = label.querySelector("span")?.getBoundingClientRect();
-				const box = label.querySelector("input")?.getBoundingClientRect();
-				return text && box
-					? Math.abs(text.y + text.height / 2 - box.y - box.height / 2)
-					: Infinity;
-			});
-			expect(alignment).toBeLessThanOrEqual(1);
 			await host.getByLabel("Map", { exact: true }).selectOption("1");
 			const chatBounds = await host.locator(".chat-panel").boundingBox(),
 				menuBounds = await host.locator(".menu-panel").boundingBox();
@@ -120,9 +114,7 @@ for (const mobile of [false, true])
 			});
 			if (mobile) {
 				await host.setViewportSize({ width: 844, height: 390 });
-				await host
-					.getByLabel("Mode", { exact: true })
-					.selectOption("TIME_LIMIT");
+				await host.getByLabel("Time Limit", { exact: true }).selectOption("1");
 			}
 			await startRoom(host, peer);
 			const viewport = host.viewportSize();

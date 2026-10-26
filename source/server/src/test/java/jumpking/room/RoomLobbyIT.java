@@ -197,14 +197,18 @@ class RoomLobbyIT {
       String room = joined.path("roomId").asText();
       assertThat(room).matches("[0-9]{6}");
       assertThat(host.request("/rooms/" + room, "GET", null).path("joinable").asBoolean()).isTrue();
-      host.ok("UPDATE_ROOM_SETTINGS", Map.of("mode", "TIME_LIMIT", "timeLimitMinutes", 2));
+      host.ok("UPDATE_ROOM_SETTINGS", Map.of("timeLimitMinutes", 2));
       var invalid = new HashMap<String, Object>();
-      invalid.put("mode", "RACE");
-      invalid.put("timeLimitMinutes", 2);
+      invalid.put("timeLimitMinutes", 11);
       assertThat(host.command("UPDATE_ROOM_SETTINGS", invalid).path("type").asText())
           .isEqualTo("ERROR");
       assertThat(host.ok("GET_ROOM_STATE", Map.of()).path("settings").path("mode").asText())
-          .isEqualTo("TIME_LIMIT");
+          .isEqualTo("RACE");
+      host.ok("UPDATE_ROOM_SETTINGS", Map.of("mode", "NO_WALK"));
+      var independent = host.ok("GET_ROOM_STATE", Map.of()).path("settings");
+      assertThat(independent.path("mode").asText()).isEqualTo("NO_WALK");
+      assertThat(independent.path("timeLimitMinutes").asInt()).isEqualTo(2);
+      host.ok("UPDATE_ROOM_SETTINGS", Map.of("mode", "RACE"));
       for (int index = 1; index < 10; index++)
         clients.get(index).ok("JOIN_ROOM", Map.of("roomId", room));
       var chat = host.ok("CHAT_SEND", Map.of("text", "Room chat"));
@@ -237,8 +241,7 @@ class RoomLobbyIT {
       assertThat(
               clients
                   .get(1)
-                  .command(
-                      "UPDATE_ROOM_SETTINGS", Map.of("mode", "TIME_LIMIT", "timeLimitMinutes", 3))
+                  .command("UPDATE_ROOM_SETTINGS", Map.of("timeLimitMinutes", 3))
                   .path("payload")
                   .path("code")
                   .asText())

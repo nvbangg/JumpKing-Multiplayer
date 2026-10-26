@@ -31,7 +31,7 @@ Menu, chat, mất focus và disconnect hủy input/charge, không biến hủy t
 
 Main Babe có 43 screens (0–42), mỗi screen 480×360 px. Camera chuyển nguyên screen 4:3 theo vị trí và hướng di chuyển, không smooth-follow. Tải tài nguyên trước khi chơi, chỉ vẽ screen hiện tại; không streaming tài nguyên theo screen.
 
-Một geometry dùng cho mọi kiểu chơi. Room chia đường Main Babe thành 10 chặng: map 1 bắt đầu ở spawn gốc; map 2–10 bắt đầu trên nền Finish của map ngay trước và kết thúc tại Finish đã định cho map đó. Map 10 giữ nguyên đích cuối toàn đường; Community vẫn dùng toàn đường từ spawn gốc. Nếu rơi thấp hơn điểm bắt đầu của chặng Room, người chơi trở về spawn chặng và tính một fall. Đáp nền khác hoặc bay qua Finish không tính. Cờ FINISH chỉ dẫn vị trí, không thay collision. Geometry, spawn, camera và điều kiện Finish được kiểm chứng bằng fixtures.
+Một geometry dùng cho mọi kiểu chơi. Room chia đường Main Babe thành 9 chặng: map 1 bắt đầu ở spawn gốc; map 2–9 bắt đầu trên nền Finish của map ngay trước và kết thúc tại Finish đã định cho map đó. Map 4 gộp cả đoạn Great Frontier; map 5 bắt đầu tại bệ mở đầu Windswept Bluff. Map 9 kết thúc tại đích The Tower; Community vẫn dùng toàn đường từ spawn gốc. Nếu rơi thấp hơn điểm bắt đầu của chặng Room, người chơi trở về spawn chặng và tính một fall. Đáp nền khác hoặc bay qua Finish không tính. Cờ FINISH chỉ dẫn vị trí, không thay collision. Geometry, spawn, camera và điều kiện Finish được kiểm chứng bằng fixtures.
 
 ## Community
 
@@ -44,7 +44,7 @@ Leaderboard chỉ xét Community đã commit, lấy một best run/Account. Fini
 
 ## Room và xếp hạng
 
-Room ID là chuỗi 6 chữ số, giữ số 0 đầu, ví dụ `001234`. Room mặc định Private, Race và map 1; biết ID thì Join được. Public chỉ xuất hiện khi WAITING và còn chỗ. Lobby tách ID/danh sách người chơi và settings thành hai phần, màn hẹp xếp dọc. Host đổi settings khi WAITING; Minutes nằm ngay dưới Mode khi chọn Time Limit. Thành viên mặc định Confirmed khi tạo/Join phòng; trong WAITING có thể Cancel Confirm và Confirm lại. Server giữ trạng thái này qua cập nhật Lobby và reconnect.
+Room ID là chuỗi 6 chữ số, giữ số 0 đầu, ví dụ `001234`. Room mặc định Private, Race và map 1; biết ID thì Join được. Public chỉ xuất hiện khi WAITING và còn chỗ. Lobby tách ID/danh sách người chơi và settings thành hai phần, màn hẹp xếp dọc. Host đổi settings khi WAITING; Time Limit chọn Unlimited hoặc 1–10 phút, Items cooldown chọn No items hoặc 1–10 phút. Thành viên mặc định Confirmed khi tạo/Join phòng; trong WAITING có thể Cancel Confirm và Confirm lại. Server giữ trạng thái này qua cập nhật Lobby và reconnect.
 
 ```text
 WAITING → COUNTDOWN → PLAYING → FINISHED
@@ -58,21 +58,22 @@ Host đã Confirmed có thể Start một mình; không chờ thêm thành viên
 
 | Mode | Luật |
 | --- | --- |
-| RACE | Rơi vẫn tiếp tục; không giới hạn thời gian |
+| RACE | Rơi vẫn tiếp tục |
 | EASY | Tự nhớ vị trí đứng an toàn gần nhất; SPLAT quay về đó, không phải leo lại |
 | HARDCORE | Splat về spawn; giữ clock, peak và thống kê trận |
-| TIME_LIMIT | Như Race; Host chọn 1–10 phút nguyên, mặc định 5 |
 | NO_WALK | Chỉ nhảy để di chuyển; input ngang chỉ chọn hướng, đáp nền thường thì dừng. Giữ quán tính băng, gió, bounce và trượt do Items |
+
+Giới hạn thời gian là tùy chọn độc lập với mode, mặc định không giới hạn. Khi chọn 1–10 phút và hết giờ, trận kết thúc theo luật TIME_LIMIT.
 
 Clock chung chạy từ hết countdown. Menu/chat/AFK không dừng physics/clock hoặc đuổi người vì mở menu; không Host Pause. All-offline ngừng tick trong hạn reconnect, không chạy bù thời gian offline.
 
 Easy nhớ riêng vị trí đứng/đáp nền bình thường của từng người, không cần cờ hoặc thao tác lưu; vị trí gần nhất có thể thấp hơn vị trí trước. Không ghi điểm khi SPLAT, trượt, bị hất, Fly hoặc phasing. SPLAT trả về điểm đã nhớ (chưa có thì spawn), xóa vận tốc/charge/trượt và chờ thả Jump trước cú nhảy mới. Clock, jumps/falls, peak, Items/cooldown/bẫy và tiến độ NPC/quạ giữ nguyên; current progress cập nhật theo vị trí quay về. Điểm an toàn theo snapshot, giữ khi reconnect và reset mỗi ván; không lưu dài hạn. Kết quả/crown/Best Finish Time áp dụng như các mode Room khác.
 
-Trong map 2–10, rơi qua ranh giới dưới chặng luôn đưa người chơi về spawn chặng và tính một fall; các lần SPLAT còn lại theo mode đã chọn. Tiến độ và peak Room tính từ đầu chặng, không cộng độ cao của các map trước.
+Trong map 2–9, rơi qua ranh giới dưới chặng luôn đưa người chơi về spawn chặng và tính một fall; các lần SPLAT còn lại theo mode đã chọn. Tiến độ và peak Room tính từ đầu chặng, không cộng độ cao của các map trước.
 
 Finish đầu tiên kết thúc trận sau khi xử lý mọi người trong cùng tick; Finish cùng tick đồng thắng. Time Limit chốt tại deadline, xét Finish hợp lệ trước timeout. Host có thể End khi PLAYING.
 
-Finishers xếp trước theo finish time tăng dần. Người khác so current progress giảm dần, thêm peak giảm dần riêng Time Limit; bằng các khóa thì đồng hạng. Clock trận là đồng hồ chung, không tạo thêm khóa phân hạng. ID chỉ ổn định thứ tự hiển thị. Chưa ai Finish thì không có winner; DNF không thắng.
+Finishers xếp trước theo finish time tăng dần. Người khác so current progress giảm dần; khi bật giới hạn thời gian thì thêm peak giảm dần. Bằng các khóa thì đồng hạng. Clock trận là đồng hồ chung, không tạo thêm khóa phân hạng. ID chỉ ổn định thứ tự hiển thị. Chưa ai Finish thì không có winner; DNF không thắng.
 
 - Current progress: độ cao tại lần đáp nền hợp lệ gần nhất, không tính splat/phasing; khi trên không giữ giá trị đó.
 - Peak: độ cao tức thời cao nhất từng đạt. Hardcore reset current về spawn, giữ peak/clock/falls.
@@ -82,7 +83,7 @@ Play Again giữ room code/settings và thành viên, nhưng reset trạng thái
 
 ## Items trong Room
 
-Host bật tại Lobby, mặc định Off; cooldown 1–10 phút nguyên, mặc định 3. Settings giữ qua Play Again, không đổi giữa trận.
+Tại Lobby, Host chọn No items hoặc cooldown 1–10 phút; mặc định No items. Chọn số phút sẽ bật Items với cooldown tương ứng. Settings giữ qua Play Again, không đổi giữa trận.
 
 Tối đa 64 bẫy Banana/phòng, cấu hình trong rules. Chạm trần thì hủy chuẩn bị, không đặt thêm, giữ item và không bắt đầu cooldown; bẫy cũ vẫn tồn tại đến khi bị giẫm.
 
@@ -115,7 +116,7 @@ Tên vùng hiện 6 giây khi lần đầu tới màn đầu vùng (Colossal Dra
 
 Quạ đen có 14 điểm đậu, tới gần thì bay tiếp; đuổi hết rồi full Finish trong cùng lượt thì quạ trao vương miện đen thay thiên thần. Quạ trắng có 17 điểm trong Main Babe, bay đi sau điểm cuối; không thưởng/đổi ending. Tiến độ riêng từng người, lưu Community và reset mỗi trận Room.
 
-Full Finish mở crown vàng Account vĩnh viễn; hoàn thành cả chuỗi quạ đen trong lượt đó nhận thẳng crown đen. Tự đeo cấp cao nhất đã nhận, chỉ nâng NONE → GOLD → BLACK; Finish thường không hạ crown đen. Có thể chơi lượt mới để lấy đen sau khi đã có vàng. Hai màu crown cố định, độc lập màu nhân vật. Community chỉ người Finish xem ending; Room full map chỉ winners xem, người khác tới Results. Map 1–9 chỉ Results, không crown/ending/Best Finish Time full map. Giữ cảnh/nhạc/ảnh ending và Skip; không ảnh hưởng kết quả/clock, không phát lại khi replay hoặc spectate.
+Full Finish mở crown vàng Account vĩnh viễn; hoàn thành cả chuỗi quạ đen trong lượt đó nhận thẳng crown đen. Tự đeo cấp cao nhất đã nhận, chỉ nâng NONE → GOLD → BLACK; Finish thường không hạ crown đen. Có thể chơi lượt mới để lấy đen sau khi đã có vàng. Hai màu crown cố định, độc lập màu nhân vật. Chỉ Community mới phát ending cho người Finish; mọi Room map kết thúc ở Results, kể cả map 9 The Tower. Người thắng Room map 9 vẫn nhận crown và Best Finish Time full map. Map 1–8 không mở crown/Best Finish Time full map. Giữ cảnh/nhạc/ảnh ending và Skip trong Community; không ảnh hưởng kết quả/clock, không phát lại khi replay hoặc spectate.
 
 Server cấp 10 màu riêng theo membership, giữ qua reconnect và nhất quán giữa các client. Bản thân opacity=1, vẽ trên peers opacity=0.7; tên rõ, nằm dưới hội thoại. Ngoại hình không đổi hitbox.
 

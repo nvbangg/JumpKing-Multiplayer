@@ -140,7 +140,7 @@ class EasyTest {
     assertThat(game.snapshot().physics().x).isEqualTo(map.spawn().x());
     assertThat(game.snapshot().physics().y).isEqualTo(map.spawn().y());
     assertThat(game.snapshot().world().has("safePosition")).isFalse();
-    for (String mode : List.of("RACE", "HARDCORE", "TIME_LIMIT")) {
+    for (String mode : List.of("RACE", "HARDCORE")) {
       var other = game();
       other.tick(PlayerInput.NEUTRAL, mode);
       assertThat(other.snapshot().world().has("safePosition")).isFalse();

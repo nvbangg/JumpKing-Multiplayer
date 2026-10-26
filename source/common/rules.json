@@ -10,7 +10,6 @@
   "reconnectMs": 300000,
   "timeLimitMinutesMin": 1,
   "timeLimitMinutesMax": 10,
-  "timeLimitDefaultMinutes": 5,
   "appearanceColors": [
     "#ffffff",
     "#e76f51",

@@ -166,25 +166,28 @@ test("Account lobby, permanent chat, selected settings and Host transfer", async
 		await expect(
 			a.getByRole("button", { name: "Close chat", exact: true }),
 		).toHaveCount(0);
-		await a.getByLabel("Mode", { exact: true }).selectOption("TIME_LIMIT");
+		await expect(a.getByLabel("Time Limit", { exact: true })).toHaveValue(
+			"UNLIMITED",
+		);
+		await a.getByLabel("Time Limit", { exact: true }).selectOption("5");
 		await a.getByLabel("Mode", { exact: true }).focus();
 		await expect(a.getByLabel("Mode", { exact: true })).toHaveCSS(
 			"outline-style",
 			"none",
 		);
-		await expect(a.getByLabel("Minutes", { exact: true })).toBeVisible();
+		await expect(a.getByLabel("Time Limit", { exact: true })).toHaveValue("5");
 		const fields = await a
 			.locator(".lobby-settings select, .lobby-settings input")
 			.evaluateAll((inputs) =>
 				inputs.map((input) => input.getAttribute("aria-label")),
 			);
-		expect(fields.indexOf("Minutes")).toBe(fields.indexOf("Mode") + 1);
-		await expect(b.getByLabel("Minutes", { exact: true })).toHaveValue("5");
+		expect(fields.indexOf("Time Limit")).toBe(fields.indexOf("Mode") + 1);
+		await expect(b.getByLabel("Time Limit", { exact: true })).toHaveValue("5");
 		await expect(
-			a.getByLabel("Minutes", { exact: true }).locator("option"),
-		).toHaveCount(30);
-		await a.getByLabel("Minutes", { exact: true }).selectOption("12");
-		await expect(b.getByLabel("Minutes", { exact: true })).toHaveValue("12");
+			a.getByLabel("Time Limit", { exact: true }).locator("option"),
+		).toHaveCount(11);
+		await a.getByLabel("Time Limit", { exact: true }).selectOption("10");
+		await expect(b.getByLabel("Time Limit", { exact: true })).toHaveValue("10");
 		for (const viewport of [
 			{ width: 1280, height: 720 },
 			{ width: 844, height: 390 },
@@ -211,8 +214,12 @@ test("Account lobby, permanent chat, selected settings and Host transfer", async
 			expect(
 				chat.x + chat.width <= menu.x || menu.y + menu.height <= chat.y,
 			).toBe(true);
-			await a.getByLabel("Minutes", { exact: true }).scrollIntoViewIfNeeded();
-			await expect(a.getByLabel("Minutes", { exact: true })).toBeInViewport();
+			await a
+				.getByLabel("Time Limit", { exact: true })
+				.scrollIntoViewIfNeeded();
+			await expect(
+				a.getByLabel("Time Limit", { exact: true }),
+			).toBeInViewport();
 			await a.screenshot({
 				path: info.outputPath(`lobby-${viewport.width}.png`),
 				fullPage: true,
@@ -239,7 +246,7 @@ test("Account lobby, permanent chat, selected settings and Host transfer", async
 	}
 });
 
-for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
+for (const mode of ["RACE", "HARDCORE", "NO_WALK"] as const)
 	test(`Room ${mode}: authoritative input, menu clock, End, Play Again and History`, async ({
 		browser,
 	}) => {
@@ -255,9 +262,6 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			const room = await createRoom(a);
 			await joinRoom(b, room);
 			await a.getByLabel("Mode", { exact: true }).selectOption(mode);
-			if (mode === "TIME_LIMIT") {
-				await a.getByLabel("Minutes", { exact: true }).selectOption("1");
-			}
 			await startRoom(a, b);
 			await expect
 				.poll(() => observed.snapshot?.self.simulation.physics.grounded)
@@ -271,10 +275,6 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 				expect(required(observed.snapshot).self.simulation.physics.x).toBe(231);
 				expect(required(observed.snapshot).self.simulation.physics.vx).toBe(0);
 			}
-			if (mode === "TIME_LIMIT")
-				await expect(a.getByLabel("Time left", { exact: true })).toContainText(
-					"Time Left:",
-				);
 			await a.keyboard.down("Space");
 			await a.waitForTimeout(220);
 			await a.keyboard.up("Space");
@@ -381,7 +381,7 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 		}
 	});
 
-for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
+for (const mode of ["RACE", "HARDCORE", "NO_WALK"] as const)
 	test(`one-player Room ${mode}: Start, Players, End, Play Again and History`, async ({
 		page,
 	}, info) => {

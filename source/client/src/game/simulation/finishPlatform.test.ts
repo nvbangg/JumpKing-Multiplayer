@@ -16,24 +16,23 @@ test("Room markers use the approved landing platforms", () => {
 	).toEqual([
 		[1, 136, -760, 72],
 		[2, 152, -1472, 176],
-		[3, 8, -3056, 48],
-		[4, 216, -4584, 64],
-		[5, 128, -6424, 48],
-		[6, 208, -8416, 72],
-		[7, 24, -11064, 48],
-		[8, 288, -12256, 96],
-		[9, 248, -13584, 40],
-		[10, 336, -14976, 88],
+		[3, 152, -3136, 48],
+		[4, 208, -8688, 80],
+		[5, 200, -8808, 88],
+		[6, 72, -11176, 88],
+		[7, 416, -12632, 56],
+		[8, 304, -13768, 32],
+		[9, 328, -14232, 24],
 	]);
 });
 
-test("Room 7 does not Finish on the right walkway at the same height", () => {
-	const game = new GameSimulation(roomMap(map, 7));
+test("Room 6 does not Finish on the right platform at the same height", () => {
+	const game = new GameSimulation(roomMap(map, 6));
 	game.physics.restore({
 		...game.physics.snapshot(),
 		x: 400 - PHYSICS.bodyWidth / 2,
-		y: -11064 - PHYSICS.bodyHeight - 2,
-		screen: 31,
+		y: -11176 - PHYSICS.bodyHeight - 2,
+		screen: 32,
 		grounded: false,
 	});
 	for (let tick = 0; tick < PHYSICS.tickRate; tick++) game.tick(NEUTRAL_INPUT);

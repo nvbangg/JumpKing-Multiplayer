@@ -30,11 +30,9 @@ CREATE TABLE matches (
     end_reason VARCHAR(32) NULL,
     PRIMARY KEY (id),
     CONSTRAINT ck_matches_items CHECK (items_enabled IN (FALSE, TRUE)),
-    CONSTRAINT ck_matches_map_level CHECK (map_level BETWEEN 1 AND 10),
-    CONSTRAINT ck_matches_mode CHECK (
-        (mode IN ('RACE', 'EASY', 'HARDCORE', 'NO_WALK') AND time_limit_minutes IS NULL)
-        OR (mode = 'TIME_LIMIT' AND time_limit_minutes IS NOT NULL)
-    ),
+    CONSTRAINT ck_matches_map_level CHECK (map_level BETWEEN 1 AND 9),
+    CONSTRAINT ck_matches_mode CHECK (mode IN ('RACE', 'EASY', 'HARDCORE', 'NO_WALK')),
+    CONSTRAINT ck_matches_time_limit CHECK (time_limit_minutes IS NULL OR time_limit_minutes BETWEEN 1 AND 10),
     CONSTRAINT ck_matches_ticks CHECK (duration_ticks BETWEEN 0 AND 9007199254740991),
     CONSTRAINT ck_matches_end CHECK (
         (ended_at IS NULL AND end_reason IS NULL)

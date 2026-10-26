@@ -57,7 +57,7 @@ class RoomTimeLimitIT {
                     "settings",
                     Map.of(
                         "mode",
-                        "TIME_LIMIT",
+                        "RACE",
                         "timeLimitMinutes",
                         minutes,
                         "mapLevel",

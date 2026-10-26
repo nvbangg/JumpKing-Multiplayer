@@ -311,7 +311,7 @@ class SchemaIT {
       assertThatThrownBy(() -> schema.validate()).hasMessageContaining("CHECK");
     } finally {
       jdbc.execute(
-          "ALTER TABLE matches ADD CONSTRAINT ck_matches_map_level CHECK (map_level BETWEEN 1 AND 10)");
+          "ALTER TABLE matches ADD CONSTRAINT ck_matches_map_level CHECK (map_level BETWEEN 1 AND 9)");
     }
   }
 
@@ -358,13 +358,32 @@ class SchemaIT {
   }
 
   @Test
-  void rejectsInvalidIdentityAndNullTimeLimit() {
+  void validatesRoomModeAndOptionalTimeLimitIndependently() {
     assertThatThrownBy(() -> jdbc.update("INSERT INTO users(created_at) VALUES (UTC_TIMESTAMP(3))"))
         .isInstanceOf(org.springframework.dao.DataAccessException.class);
+    jdbc.update(
+        "INSERT INTO matches(id,room_code,mode,time_limit_minutes,started_at) VALUES (?,'ABCDEF','RACE',10,UTC_TIMESTAMP(3))",
+        UUID.randomUUID().toString());
+    for (String mode : new String[] {"TIME_LIMIT", "UNKNOWN"})
+      assertThatThrownBy(
+              () ->
+                  jdbc.update(
+                      "INSERT INTO matches(id,room_code,mode,started_at) VALUES (?,'ABCDEF',?,UTC_TIMESTAMP(3))",
+                      UUID.randomUUID().toString(),
+                      mode))
+          .isInstanceOf(org.springframework.dao.DataAccessException.class);
+    for (int minutes : new int[] {0, 11})
+      assertThatThrownBy(
+              () ->
+                  jdbc.update(
+                      "INSERT INTO matches(id,room_code,mode,time_limit_minutes,started_at) VALUES (?,'ABCDEF','RACE',?,UTC_TIMESTAMP(3))",
+                      UUID.randomUUID().toString(),
+                      minutes))
+          .isInstanceOf(org.springframework.dao.DataAccessException.class);
     assertThatThrownBy(
             () ->
                 jdbc.update(
-                    "INSERT INTO matches(id,room_code,mode,started_at) VALUES (?,'ABCDEF','TIME_LIMIT',UTC_TIMESTAMP(3))",
+                    "INSERT INTO matches(id,room_code,mode,started_at) VALUES (?,'ABCDEF','RACE',UTC_TIMESTAMP(3))",
                     UUID.randomUUID().toString()))
         .isInstanceOf(org.springframework.dao.DataAccessException.class);
     for (int level : new int[] {0, 11})

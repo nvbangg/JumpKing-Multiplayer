@@ -98,7 +98,7 @@ class RoomFlyIT {
   @Test
   void allModesAllowFlightPhasingAndCountTheNormalCommittedFinish() throws Exception {
     var before = MainBabeRoute.beforeFinish(shared, json);
-    for (String mode : List.of("RACE", "EASY", "HARDCORE", "TIME_LIMIT", "NO_WALK")) {
+    for (String mode : List.of("RACE", "EASY", "HARDCORE", "NO_WALK")) {
       try (var a = new GameClient(port);
           var b = new GameClient(port)) {
         a.register();
@@ -108,7 +108,7 @@ class RoomFlyIT {
         var settings = new HashMap<String, Object>();
         settings.put("mode", mode);
         settings.put("mapLevel", RoomSettings.FINAL_MAP_LEVEL);
-        settings.put("timeLimitMinutes", mode.equals("TIME_LIMIT") ? 10 : null);
+        settings.put("timeLimitMinutes", null);
         String room = a.ok("CREATE_ROOM", Map.of("settings", settings)).path("roomId").asText();
         b.ok("JOIN_ROOM", Map.of("roomId", room));
         a.ok("START_GAME", Map.of());

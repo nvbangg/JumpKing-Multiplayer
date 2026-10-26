@@ -49,15 +49,16 @@ class RoomSettingsTest {
               RoomSettings.parse(
                   json.readTree("{\"mode\":\"" + mode + "\",\"timeLimitMinutes\":null}"), rules))
           .isEqualTo(new RoomSettings(mode, null, 1, false, 3));
-    for (int minutes : java.util.List.of(1, 10))
-      assertThat(
-              RoomSettings.parse(
-                      json.readTree(
-                          "{\"mode\":\"TIME_LIMIT\",\"timeLimitMinutes\":" + minutes + "}"),
-                      rules)
-                  .timeLimitMinutes())
-          .isEqualTo(minutes);
-    for (int level = 1; level <= 10; level++)
+    for (String mode : java.util.List.of("RACE", "EASY", "HARDCORE", "NO_WALK"))
+      for (int minutes : java.util.List.of(1, 10))
+        assertThat(
+                RoomSettings.parse(
+                        json.readTree(
+                            "{\"mode\":\"" + mode + "\",\"timeLimitMinutes\":" + minutes + "}"),
+                        rules)
+                    .timeLimitMinutes())
+            .isEqualTo(minutes);
+    for (int level = 1; level <= 9; level++)
       assertThat(
               RoomSettings.parse(
                       json.readTree(
@@ -68,7 +69,7 @@ class RoomSettingsTest {
                   .mapLevel())
           .isEqualTo(level);
     for (String level :
-        java.util.List.of("0", "11", "1.5", "\"5\"", "null", "true", "4294967297")) {
+        java.util.List.of("0", "10", "1.5", "\"5\"", "null", "true", "4294967297")) {
       assertThatThrownBy(
               () ->
                   RoomSettings.parse(
@@ -81,12 +82,11 @@ class RoomSettingsTest {
     }
     for (String input :
         java.util.List.of(
-            "{\"mode\":\"TIME_LIMIT\",\"timeLimitMinutes\":0}",
-            "{\"mode\":\"TIME_LIMIT\",\"timeLimitMinutes\":11}",
-            "{\"mode\":\"TIME_LIMIT\",\"timeLimitMinutes\":1.5}",
-            "{\"mode\":\"TIME_LIMIT\",\"timeLimitMinutes\":\"5\"}",
-            "{\"mode\":\"RACE\",\"timeLimitMinutes\":5}",
-            "{\"mode\":\"EASY\",\"timeLimitMinutes\":5}",
+            "{\"mode\":\"RACE\",\"timeLimitMinutes\":0}",
+            "{\"mode\":\"RACE\",\"timeLimitMinutes\":11}",
+            "{\"mode\":\"RACE\",\"timeLimitMinutes\":1.5}",
+            "{\"mode\":\"RACE\",\"timeLimitMinutes\":\"5\"}",
+            "{\"mode\":\"TIME_LIMIT\",\"timeLimitMinutes\":5}",
             "{\"mode\":\"RACE\"}",
             "{\"mode\":\"RACE\",\"timeLimitMinutes\":null,\"extra\":true}",
             "{\"mode\":\"UNKNOWN\",\"timeLimitMinutes\":null}")) {

@@ -97,9 +97,7 @@ class RoomAgainIT {
         player.connect();
       }
       String room =
-          a.ok(
-                  "CREATE_ROOM",
-                  Map.of("settings", Map.of("mode", "TIME_LIMIT", "timeLimitMinutes", 8)))
+          a.ok("CREATE_ROOM", Map.of("settings", Map.of("mode", "RACE", "timeLimitMinutes", 8)))
               .path("roomId")
               .asText();
       var bJoined = b.ok("JOIN_ROOM", Map.of("roomId", room));

@@ -46,6 +46,10 @@ class RoomRankingIT {
   private record Started(String room, String play) {}
 
   private Started start(String mode, GameClient... clients) throws Exception {
+    return start(mode, null, clients);
+  }
+
+  private Started start(String mode, Integer minutes, GameClient... clients) throws Exception {
     for (var client : clients) {
       client.register();
       client.connect();
@@ -53,7 +57,7 @@ class RoomRankingIT {
     var settings = new HashMap<String, Object>();
     settings.put("mode", mode);
     settings.put("mapLevel", RoomSettings.FINAL_MAP_LEVEL);
-    settings.put("timeLimitMinutes", mode.equals("TIME_LIMIT") ? 10 : null);
+    settings.put("timeLimitMinutes", minutes);
     String room =
         clients[0].ok("CREATE_ROOM", Map.of("settings", settings)).path("roomId").asText();
     for (int index = 1; index < clients.length; index++)
@@ -102,7 +106,7 @@ class RoomRankingIT {
   void allFourModesFinishTogetherAtTheNativeDestinationAndPersistSharedFirstPlace()
       throws Exception {
     var before = MainBabeRoute.beforeFinish(shared, json);
-    for (String mode : List.of("RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK")) {
+    for (String mode : List.of("RACE", "EASY", "HARDCORE", "NO_WALK")) {
       try (var a = new GameClient(port);
           var b = new GameClient(port)) {
         var game = start(mode, a, b);
@@ -127,20 +131,16 @@ class RoomRankingIT {
         }
         saved(a);
         for (var client : List.of(a, b)) {
-          var ending =
-              client
-                  .await(message -> message.path("type").asText().equals("PLAYER_FINISHED"))
-                  .path("payload");
-          assertThat(ending.path("playId").asText()).isEqualTo(game.play);
-          assertThat(ending.path("showEnding").asBoolean()).isTrue();
-          assertThat(ending.path("ending").path("screen").asInt()).isEqualTo(42);
-          assertThat(ending.path("ending").has("equipped")).isFalse();
+          assertThat(
+                  client.messages.stream()
+                      .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED")))
+              .isEmpty();
           client.ok("GET_ROOM_STATE", Map.of());
           assertThat(
                   client.messages.stream()
                       .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED"))
                       .count())
-              .isEqualTo(1);
+              .isZero();
         }
         assertThat(
                 TestDatabase.get()
@@ -158,89 +158,90 @@ class RoomRankingIT {
   }
 
   @Test
-  void timeLimitUsesPeakAfterCurrentHeightWhileOtherModesKeepTiesAndDnfMetricsFrozen()
+  void optionalTimeLimitUsesPeakAfterCurrentHeightRegardlessOfModeAndKeepsDnfMetricsFrozen()
       throws Exception {
-    for (String mode : List.of("RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK")) {
-      try (var a = new GameClient(port);
-          var b = new GameClient(port);
-          var c = new GameClient(port)) {
-        var game = start(mode, a, b, c);
-        arrange(
-            game.room,
-            match -> {
-              match.ticks = 100;
-              int index = 0;
-              for (var player : match.players.values()) {
-                var snapshot = player.game.snapshot();
-                var pose = snapshot.physics();
-                pose.x = 77;
-                pose.y = 158;
-                pose.vx = 0;
-                pose.vy =
-                    (float)
-                        (shared.physics().path("gravityNumerator").asDouble()
-                            / shared.physics().path("gravityDenominator").asDouble());
-                pose.grounded = true;
-                pose.ticks = 100;
-                ((ObjectNode) snapshot.world()).put("lastTick", 100);
-                player.game.restore(snapshot);
-                player.currentProgress = player.game.physics().progress();
-                player.maximum = new int[] {900, 1000, 950}[index++];
-                player.peak = 100;
-              }
-            });
-        c.ok("LEAVE_ROOM", Map.of());
-        time.advance(50);
-        a.await(
-            message ->
-                message.path("type").asText().equals("GAME_SNAPSHOT")
-                    && message.path("payload").path("elapsedTimeMs").asLong() > 1666);
-        a.ok("END_MATCH", Map.of());
-        saved(a);
-        assertThat(
-                a.messages.stream()
-                    .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED")))
-            .isEmpty();
-        assertThat(
-                b.messages.stream()
-                    .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED")))
-            .isEmpty();
-        var jdbc = TestDatabase.get().jdbc;
-        assertThat(
-                jdbc.queryForObject(
-                    "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND is_winner=TRUE",
-                    Integer.class,
-                    game.play))
-            .isZero();
-        assertThat(
-                jdbc.queryForObject(
-                    "SELECT play_ticks FROM play_runs WHERE match_id=? AND user_id=?",
-                    Long.class,
-                    game.play,
-                    c.owner))
-            .isEqualTo(100);
-        assertThat(
-                jdbc.queryForObject(
-                    "SELECT status FROM play_runs WHERE match_id=? AND user_id=?",
-                    String.class,
-                    game.play,
-                    c.owner))
-            .isEqualTo("DNF");
-        for (int index = 0; index < 3; index++) {
-          long owner = new long[] {a.owner, b.owner, c.owner}[index];
-          int expected = mode.equals("TIME_LIMIT") ? new int[] {3, 1, 2}[index] : 1;
+    for (String mode : List.of("RACE", "EASY", "HARDCORE", "NO_WALK")) {
+      for (boolean limited : List.of(false, true))
+        try (var a = new GameClient(port);
+            var b = new GameClient(port);
+            var c = new GameClient(port)) {
+          var game = start(mode, limited ? 10 : null, a, b, c);
+          arrange(
+              game.room,
+              match -> {
+                match.ticks = 100;
+                int index = 0;
+                for (var player : match.players.values()) {
+                  var snapshot = player.game.snapshot();
+                  var pose = snapshot.physics();
+                  pose.x = 77;
+                  pose.y = 158;
+                  pose.vx = 0;
+                  pose.vy =
+                      (float)
+                          (shared.physics().path("gravityNumerator").asDouble()
+                              / shared.physics().path("gravityDenominator").asDouble());
+                  pose.grounded = true;
+                  pose.ticks = 100;
+                  ((ObjectNode) snapshot.world()).put("lastTick", 100);
+                  player.game.restore(snapshot);
+                  player.currentProgress = player.game.physics().progress();
+                  player.maximum = new int[] {900, 1000, 950}[index++];
+                  player.peak = 100;
+                }
+              });
+          c.ok("LEAVE_ROOM", Map.of());
+          time.advance(50);
+          a.await(
+              message ->
+                  message.path("type").asText().equals("GAME_SNAPSHOT")
+                      && message.path("payload").path("elapsedTimeMs").asLong() > 1666);
+          a.ok("END_MATCH", Map.of());
+          saved(a);
+          assertThat(
+                  a.messages.stream()
+                      .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED")))
+              .isEmpty();
+          assertThat(
+                  b.messages.stream()
+                      .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED")))
+              .isEmpty();
+          var jdbc = TestDatabase.get().jdbc;
           assertThat(
                   jdbc.queryForObject(
-                      "SELECT `rank` FROM play_runs WHERE match_id=? AND user_id=?",
+                      "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND is_winner=TRUE",
                       Integer.class,
+                      game.play))
+              .isZero();
+          assertThat(
+                  jdbc.queryForObject(
+                      "SELECT play_ticks FROM play_runs WHERE match_id=? AND user_id=?",
+                      Long.class,
                       game.play,
-                      owner))
-              .as(mode)
-              .isEqualTo(expected);
+                      c.owner))
+              .isEqualTo(100);
+          assertThat(
+                  jdbc.queryForObject(
+                      "SELECT status FROM play_runs WHERE match_id=? AND user_id=?",
+                      String.class,
+                      game.play,
+                      c.owner))
+              .isEqualTo("DNF");
+          for (int index = 0; index < 3; index++) {
+            long owner = new long[] {a.owner, b.owner, c.owner}[index];
+            int expected = limited ? new int[] {3, 1, 2}[index] : 1;
+            assertThat(
+                    jdbc.queryForObject(
+                        "SELECT `rank` FROM play_runs WHERE match_id=? AND user_id=?",
+                        Integer.class,
+                        game.play,
+                        owner))
+                .as(mode + " limited=" + limited)
+                .isEqualTo(expected);
+          }
+          a.ok("LEAVE_ROOM", Map.of());
+          b.ok("LEAVE_ROOM", Map.of());
         }
-        a.ok("LEAVE_ROOM", Map.of());
-        b.ok("LEAVE_ROOM", Map.of());
-      }
     }
   }
 }

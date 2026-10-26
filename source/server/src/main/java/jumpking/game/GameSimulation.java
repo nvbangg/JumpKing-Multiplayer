@@ -157,7 +157,9 @@ public final class GameSimulation {
     }
     var content = adventure.tick(player, input);
     var events = new ArrayList<WorldEvent>();
-    if (finished() && map.finish().screen() == map.screens().size() - 1) adventure.complete();
+    if (finished()
+        && map.roomBottomY() == null
+        && map.finish().screen() == map.screens().size() - 1) adventure.complete();
     double phase = player.ticks / (double) p.tickRate * p.windFrequency;
     double force =
         Math.max(-1, Math.min(1, 2 * Math.sin(phase) + (Math.cos(phase) > 0 ? 1 : -1)))

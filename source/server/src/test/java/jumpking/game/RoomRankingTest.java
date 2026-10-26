@@ -22,7 +22,10 @@ class RoomRankingTest {
     assertThat(height).extracting(row -> row.score().playerId()).containsExactly("a", "b", "c");
     assertThat(height).extracting(RoomRanking.Ranked::rank).containsExactly(1, 1, 3);
     assertThat(height).noneMatch(RoomRanking.Ranked::winner);
-    assertThat(RoomRanking.rank(scores, "TIME_LIMIT", false))
+    assertThat(RoomRanking.rank(scores, "RACE", false, false))
+        .extracting(row -> row.score().playerId())
+        .containsExactly("c", "a", "b");
+    assertThat(RoomRanking.rank(scores, "RACE", true, false))
         .extracting(row -> row.score().playerId())
         .containsExactly("c", "b", "a");
   }
@@ -35,30 +38,31 @@ class RoomRankingTest {
             score("a", "FINISHED", 100, 100, 600L),
             score("b", "UNFINISHED", 99, 100, null),
             score("c", "DNF", 99, 100, null));
-    for (String mode : List.of("RACE", "EASY", "HARDCORE", "TIME_LIMIT", "NO_WALK")) {
-      var ranked = RoomRanking.rank(scores, mode, true);
+    for (String mode : List.of("RACE", "EASY", "HARDCORE", "NO_WALK")) {
+      var ranked = RoomRanking.rank(scores, mode, false, true);
       assertThat(ranked).extracting(RoomRanking.Ranked::rank).containsExactly(1, 1, 3, 3);
       assertThat(ranked)
           .extracting(RoomRanking.Ranked::winner)
           .containsExactly(true, true, false, false);
-      assertThat(RoomRanking.rank(scores, mode, false)).noneMatch(RoomRanking.Ranked::winner);
+      assertThat(RoomRanking.rank(scores, mode, false, false))
+          .noneMatch(RoomRanking.Ranked::winner);
     }
   }
 
   @Test
-  void onlyTimeLimitUsesPastPeakAfterCurrentHeightAndUnfinishedLeadersDoNotWin() {
+  void onlyLimitedMatchesUsePastPeakAfterCurrentHeightAndUnfinishedLeadersDoNotWin() {
     var scores =
         List.of(
             score("a", "UNFINISHED", 10.125, 100, null),
             score("b", "UNFINISHED", 10.125, 90, null),
             score("c", "DNF", 10.124, 150, null));
-    assertThat(RoomRanking.rank(scores, "RACE", true))
+    assertThat(RoomRanking.rank(scores, "RACE", false, true))
         .extracting(RoomRanking.Ranked::rank)
         .containsExactly(1, 1, 3);
-    assertThat(RoomRanking.rank(scores, "TIME_LIMIT", true))
+    assertThat(RoomRanking.rank(scores, "RACE", true, true))
         .extracting(RoomRanking.Ranked::rank)
         .containsExactly(1, 2, 3);
-    assertThat(RoomRanking.rank(scores, "TIME_LIMIT", true)).noneMatch(RoomRanking.Ranked::winner);
+    assertThat(RoomRanking.rank(scores, "RACE", true, true)).noneMatch(RoomRanking.Ranked::winner);
     assertThatThrownBy(() -> score("bad", "FINISHED", 0, 0, null))
         .isInstanceOf(IllegalArgumentException.class);
   }
