@@ -478,7 +478,7 @@ class RoomRaceIT {
       a.connect();
       b.connect();
       String id = a.ok("CREATE_ROOM", Map.of()).path("roomId").asText();
-      a.ok("UPDATE_ROOM_SETTINGS", Map.of("mapLevel", RoomSettings.FULL_MAP_LEVEL));
+      a.ok("UPDATE_ROOM_SETTINGS", Map.of("mapLevel", RoomSettings.FINAL_MAP_LEVEL));
       b.ok("JOIN_ROOM", Map.of("roomId", id));
       a.ok("START_GAME", Map.of());
       time.advance(3000);

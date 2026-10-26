@@ -74,6 +74,25 @@ test("a confirmed host can start alone, while an unconfirmed host cannot start",
 	).not.toContain(">Start</button>");
 });
 
+test("time limit and item cooldown choices stop at ten minutes", () => {
+	const configured: RoomState = {
+		...room,
+		settings: {
+			...room.settings,
+			mode: "TIME_LIMIT",
+			timeLimitMinutes: 10,
+			mapLevel: 1,
+			itemsEnabled: true,
+			itemCooldownMinutes: 10,
+		},
+	};
+	const html = markup(configured);
+	expect(
+		html.match(/<option value="10"(?: selected="")?>10 min<\/option>/g),
+	).toHaveLength(2);
+	expect(html).not.toContain('<option value="11">11 min</option>');
+});
+
 test("confirmation controls exist in the first lobby and follow server state", () => {
 	const command = vi.fn();
 	const render = (value: RoomState) =>

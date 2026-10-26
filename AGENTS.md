@@ -26,7 +26,7 @@ Khi yêu cầu, tài liệu và code mâu thuẫn, xác định nguyên nhân v�
 
 ## 3. Quy trình làm việc và Git
 
-1. Đảm bảo làm việc đúng nhánh và chạy `git pull --ff-only` trước khi sửa; nếu thất bại, dừng và báo lại.
+1. Đảm bảo làm việc đúng nhánh và pull code trước khi sửa.
 2. Với tác vụ chỉnh sửa, thực hiện từng phần theo quy trình **Code → Test → Review → Commit**. Không push.
 3. Sau thay đổi cuối, chạy các checks bắt buộc theo `docs/testing.md`.
 4. Rà soát thay đổi qua `git status` và `git diff` để bảo đảm đúng yêu cầu và phạm vi; chỉ stage phần thuộc tác vụ và kiểm tra `git diff --cached` trước khi commit.

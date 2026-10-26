@@ -13,7 +13,7 @@ class RoomSettingsTest {
     var rules = new SharedData(json).rules();
     assertThat(RoomSettings.defaults().itemsEnabled()).isFalse();
     assertThat(RoomSettings.defaults().itemCooldownMinutes()).isEqualTo(3);
-    for (int minutes : java.util.List.of(1, 3, 15)) {
+    for (int minutes : java.util.List.of(1, 3, 10)) {
       var input =
           json.createObjectNode()
               .put("mode", "RACE")
@@ -25,7 +25,7 @@ class RoomSettingsTest {
       assertThat(settings.itemCooldownMinutes()).isEqualTo(minutes);
     }
     for (String invalid :
-        java.util.List.of("0", "16", "1.5", "null", "true", "\"3\"", "4294967297")) {
+        java.util.List.of("0", "11", "1.5", "null", "true", "\"3\"", "4294967297")) {
       var input = json.createObjectNode().put("mode", "RACE").putNull("timeLimitMinutes");
       input.set("itemCooldownMinutes", json.readTree(invalid));
       assertThatThrownBy(() -> RoomSettings.parse(input, rules))
@@ -49,7 +49,7 @@ class RoomSettingsTest {
               RoomSettings.parse(
                   json.readTree("{\"mode\":\"" + mode + "\",\"timeLimitMinutes\":null}"), rules))
           .isEqualTo(new RoomSettings(mode, null, 1, false, 3));
-    for (int minutes : java.util.List.of(1, 30))
+    for (int minutes : java.util.List.of(1, 10))
       assertThat(
               RoomSettings.parse(
                       json.readTree(
@@ -82,7 +82,7 @@ class RoomSettingsTest {
     for (String input :
         java.util.List.of(
             "{\"mode\":\"TIME_LIMIT\",\"timeLimitMinutes\":0}",
-            "{\"mode\":\"TIME_LIMIT\",\"timeLimitMinutes\":31}",
+            "{\"mode\":\"TIME_LIMIT\",\"timeLimitMinutes\":11}",
             "{\"mode\":\"TIME_LIMIT\",\"timeLimitMinutes\":1.5}",
             "{\"mode\":\"TIME_LIMIT\",\"timeLimitMinutes\":\"5\"}",
             "{\"mode\":\"RACE\",\"timeLimitMinutes\":5}",

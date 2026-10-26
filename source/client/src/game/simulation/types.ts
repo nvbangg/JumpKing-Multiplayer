@@ -7,6 +7,7 @@ export interface GameMap {
 	tileSize: number;
 	progressOriginY: number;
 	spawn: { x: number; y: number };
+	roomBottomY?: number;
 	finish: {
 		screen: number;
 		minCenterX: number;

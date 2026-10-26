@@ -31,7 +31,7 @@ Menu, chat, mất focus và disconnect hủy input/charge, không biến hủy t
 
 Main Babe có 43 screens (0–42), mỗi screen 480×360 px. Camera chuyển nguyên screen 4:3 theo vị trí và hướng di chuyển, không smooth-follow. Tải tài nguyên trước khi chơi, chỉ vẽ screen hiện tại; không streaming tài nguyên theo screen.
 
-Một geometry dùng cho mọi kiểu chơi. `source/common/room-maps.json` quy định 10 độ dài Room cộng dồn từ spawn: map 1–9 kết thúc khi đáp đúng nền trong vùng Finish; đáp nền khác cao hơn hoặc bay qua không tính. Map 10 và Community dùng đích full. Cờ FINISH chỉ dẫn vị trí, không thay collision. Geometry, spawn, camera và điều kiện Finish được kiểm chứng bằng fixtures.
+Một geometry dùng cho mọi kiểu chơi. Room chia đường Main Babe thành 10 chặng: map 1 bắt đầu ở spawn gốc; map 2–10 bắt đầu trên nền Finish của map ngay trước và kết thúc tại Finish đã định cho map đó. Map 10 giữ nguyên đích cuối toàn đường; Community vẫn dùng toàn đường từ spawn gốc. Nếu rơi thấp hơn điểm bắt đầu của chặng Room, người chơi trở về spawn chặng và tính một fall. Đáp nền khác hoặc bay qua Finish không tính. Cờ FINISH chỉ dẫn vị trí, không thay collision. Geometry, spawn, camera và điều kiện Finish được kiểm chứng bằng fixtures.
 
 ## Community
 
@@ -61,12 +61,14 @@ Host đã Confirmed có thể Start một mình; không chờ thêm thành viên
 | RACE | Rơi vẫn tiếp tục; không giới hạn thời gian |
 | EASY | Tự nhớ vị trí đứng an toàn gần nhất; SPLAT quay về đó, không phải leo lại |
 | HARDCORE | Splat về spawn; giữ clock, peak và thống kê trận |
-| TIME_LIMIT | Như Race; Host chọn 1–30 phút nguyên, mặc định 5 |
+| TIME_LIMIT | Như Race; Host chọn 1–10 phút nguyên, mặc định 5 |
 | NO_WALK | Chỉ nhảy để di chuyển; input ngang chỉ chọn hướng, đáp nền thường thì dừng. Giữ quán tính băng, gió, bounce và trượt do Items |
 
 Clock chung chạy từ hết countdown. Menu/chat/AFK không dừng physics/clock hoặc đuổi người vì mở menu; không Host Pause. All-offline ngừng tick trong hạn reconnect, không chạy bù thời gian offline.
 
 Easy nhớ riêng vị trí đứng/đáp nền bình thường của từng người, không cần cờ hoặc thao tác lưu; vị trí gần nhất có thể thấp hơn vị trí trước. Không ghi điểm khi SPLAT, trượt, bị hất, Fly hoặc phasing. SPLAT trả về điểm đã nhớ (chưa có thì spawn), xóa vận tốc/charge/trượt và chờ thả Jump trước cú nhảy mới. Clock, jumps/falls, peak, Items/cooldown/bẫy và tiến độ NPC/quạ giữ nguyên; current progress cập nhật theo vị trí quay về. Điểm an toàn theo snapshot, giữ khi reconnect và reset mỗi ván; không lưu dài hạn. Kết quả/crown/Best Finish Time áp dụng như các mode Room khác.
+
+Trong map 2–10, rơi qua ranh giới dưới chặng luôn đưa người chơi về spawn chặng và tính một fall; các lần SPLAT còn lại theo mode đã chọn. Tiến độ và peak Room tính từ đầu chặng, không cộng độ cao của các map trước.
 
 Finish đầu tiên kết thúc trận sau khi xử lý mọi người trong cùng tick; Finish cùng tick đồng thắng. Time Limit chốt tại deadline, xét Finish hợp lệ trước timeout. Host có thể End khi PLAYING.
 
@@ -80,7 +82,7 @@ Play Again giữ room code/settings và thành viên, nhưng reset trạng thái
 
 ## Items trong Room
 
-Host bật tại Lobby, mặc định Off; cooldown 1–15 phút nguyên, mặc định 3. Settings giữ qua Play Again, không đổi giữa trận.
+Host bật tại Lobby, mặc định Off; cooldown 1–10 phút nguyên, mặc định 3. Settings giữ qua Play Again, không đổi giữa trận.
 
 Tối đa 64 bẫy Banana/phòng, cấu hình trong rules. Chạm trần thì hủy chuẩn bị, không đặt thêm, giữ item và không bắt đầu cooldown; bẫy cũ vẫn tồn tại đến khi bị giẫm.
 
