@@ -114,7 +114,6 @@ public class CommunityRuns {
           var run = new PlayRun();
           run.setId(id);
           run.setUserId(owner);
-          run.setKind("COMMUNITY");
           run.setStatus("ACTIVE");
           run.setRevision(1);
           run.setSnapshot(encode(spawn));
@@ -145,7 +144,7 @@ public class CommunityRuns {
         next.owner(),
         owner -> {
           var run = runs.lockById(next.id()).orElse(null);
-          if (run == null || run.getUserId() != owner || !run.getKind().equals("COMMUNITY"))
+          if (run == null || run.getUserId() != owner || run.getMatchId() != null)
             throw new ApiException(409, "CONFLICT", "Community run no longer exists");
           var value =
               new Existing(

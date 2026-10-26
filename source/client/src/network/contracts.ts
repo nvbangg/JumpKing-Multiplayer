@@ -26,7 +26,6 @@ export interface Statistics {
 	totalFalls: number;
 	finishes: number;
 	matchesPlayed: number;
-	wins: number;
 	bestFinishTimeMs: number | null;
 }
 export interface HistoryItem {
@@ -43,13 +42,11 @@ export interface HistoryItem {
 	finishTimeMs: number | null;
 	room: null | {
 		mode: string;
-		mapLevel: number;
-		itemsEnabled: boolean;
-		itemCooldownMinutes: number;
+		mapId: number;
+		itemCooldownMinutes: number | null;
 		roomCode: string;
 		durationMs: number;
 		rank: number;
-		isWinner: boolean;
 	};
 }
 export interface LeaderboardEntry {

@@ -88,12 +88,10 @@ export class OnlineRuntime implements GameRuntime {
 		) => void = () => {},
 	) {
 		this.game = new GameSimulation(
-			room.kind === "ROOM"
-				? roomMap(map, required(room.settings).mapLevel)
-				: map,
+			room.kind === "ROOM" ? roomMap(map, required(room.settings).mapId) : map,
 			flyAllowed,
 			room.settings?.mode === "NO_WALK",
-			room.kind === "ROOM" ? required(room.settings).mapLevel : undefined,
+			room.kind === "ROOM" ? required(room.settings).mapId : undefined,
 		);
 		if (room.kind === "ROOM")
 			this.finishMarker =

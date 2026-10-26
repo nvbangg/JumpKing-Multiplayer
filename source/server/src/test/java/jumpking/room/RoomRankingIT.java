@@ -56,7 +56,7 @@ class RoomRankingIT {
     }
     var settings = new HashMap<String, Object>();
     settings.put("mode", mode);
-    settings.put("mapLevel", RoomSettings.FINAL_MAP_LEVEL);
+    settings.put("mapId", RoomSettings.FINAL_MAP_ID);
     settings.put("timeLimitMinutes", minutes);
     String room =
         clients[0].ok("CREATE_ROOM", Map.of("settings", settings)).path("roomId").asText();
@@ -127,7 +127,6 @@ class RoomRankingIT {
         assertThat(finished.path("reason").asText()).as(mode).isEqualTo("FINISH");
         for (var result : finished.path("results")) {
           assertThat(result.path("rank").asInt()).isEqualTo(1);
-          assertThat(result.path("isWinner").asBoolean()).isTrue();
         }
         saved(a);
         for (var client : List.of(a, b)) {
@@ -146,7 +145,7 @@ class RoomRankingIT {
                 TestDatabase.get()
                     .jdbc
                     .queryForObject(
-                        "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND finish_ticks=16957 AND `rank`=1 AND is_winner=TRUE",
+                        "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND finish_ticks=16957 AND `rank`=1",
                         Integer.class,
                         game.play))
             .as(mode)
@@ -209,7 +208,7 @@ class RoomRankingIT {
           var jdbc = TestDatabase.get().jdbc;
           assertThat(
                   jdbc.queryForObject(
-                      "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND is_winner=TRUE",
+                      "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND status='FINISHED'",
                       Integer.class,
                       game.play))
               .isZero();

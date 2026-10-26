@@ -57,7 +57,7 @@ class SchemaIT {
 
   private void community(long userId) {
     jdbc.update(
-        "INSERT INTO play_runs(id,user_id,kind,status,snapshot,started_at,updated_at) VALUES (?,?,'COMMUNITY','ACTIVE',JSON_OBJECT('codecVersion',1),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+        "INSERT INTO play_runs(id,user_id,status,snapshot,started_at,updated_at) VALUES (?,?,'ACTIVE',JSON_OBJECT('codecVersion',1),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
         UUID.randomUUID().toString(),
         userId);
   }
@@ -306,13 +306,6 @@ class SchemaIT {
       jdbc.execute(
           "ALTER TABLE matches ADD CONSTRAINT ck_matches_ticks CHECK (duration_ticks BETWEEN 0 AND 9007199254740991)");
     }
-    jdbc.execute("ALTER TABLE matches DROP CHECK ck_matches_map_level");
-    try {
-      assertThatThrownBy(() -> schema.validate()).hasMessageContaining("CHECK");
-    } finally {
-      jdbc.execute(
-          "ALTER TABLE matches ADD CONSTRAINT ck_matches_map_level CHECK (map_level BETWEEN 1 AND 9)");
-    }
   }
 
   @Test
@@ -323,7 +316,7 @@ class SchemaIT {
         "INSERT INTO matches(id,room_code,mode,started_at) VALUES (?,'ABCDEF','RACE',UTC_TIMESTAMP(3))",
         match);
     String insert =
-        "INSERT INTO play_runs(id,user_id,kind,match_id,nickname,status,started_at,updated_at) VALUES (?,?,'ROOM',?,'Player','ACTIVE',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))";
+        "INSERT INTO play_runs(id,user_id,match_id,status,started_at,updated_at) VALUES (?,?,?,'ACTIVE',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))";
     jdbc.update(insert, UUID.randomUUID().toString(), owner, match);
     assertThatThrownBy(() -> jdbc.update(insert, UUID.randomUUID().toString(), owner, match))
         .isInstanceOf(org.springframework.dao.DuplicateKeyException.class);
@@ -358,42 +351,15 @@ class SchemaIT {
   }
 
   @Test
-  void validatesRoomModeAndOptionalTimeLimitIndependently() {
+  void databaseStoresRoomOptionsWithoutEmbeddingGameplayRules() {
     assertThatThrownBy(() -> jdbc.update("INSERT INTO users(created_at) VALUES (UTC_TIMESTAMP(3))"))
         .isInstanceOf(org.springframework.dao.DataAccessException.class);
     jdbc.update(
         "INSERT INTO matches(id,room_code,mode,time_limit_minutes,started_at) VALUES (?,'ABCDEF','RACE',10,UTC_TIMESTAMP(3))",
         UUID.randomUUID().toString());
-    for (String mode : new String[] {"TIME_LIMIT", "UNKNOWN"})
-      assertThatThrownBy(
-              () ->
-                  jdbc.update(
-                      "INSERT INTO matches(id,room_code,mode,started_at) VALUES (?,'ABCDEF',?,UTC_TIMESTAMP(3))",
-                      UUID.randomUUID().toString(),
-                      mode))
-          .isInstanceOf(org.springframework.dao.DataAccessException.class);
-    for (int minutes : new int[] {0, 11})
-      assertThatThrownBy(
-              () ->
-                  jdbc.update(
-                      "INSERT INTO matches(id,room_code,mode,time_limit_minutes,started_at) VALUES (?,'ABCDEF','RACE',?,UTC_TIMESTAMP(3))",
-                      UUID.randomUUID().toString(),
-                      minutes))
-          .isInstanceOf(org.springframework.dao.DataAccessException.class);
-    assertThatThrownBy(
-            () ->
-                jdbc.update(
-                    "INSERT INTO matches(id,room_code,mode,started_at) VALUES (?,'ABCDEF','RACE',UTC_TIMESTAMP(3))",
-                    UUID.randomUUID().toString()))
-        .isInstanceOf(org.springframework.dao.DataAccessException.class);
-    for (int level : new int[] {0, 11})
-      assertThatThrownBy(
-              () ->
-                  jdbc.update(
-                      "INSERT INTO matches(id,room_code,mode,map_level,started_at) VALUES (?,'ABCDEF','RACE',?,UTC_TIMESTAMP(3))",
-                      UUID.randomUUID().toString(),
-                      level))
-          .isInstanceOf(org.springframework.dao.DataAccessException.class);
+    jdbc.update(
+        "INSERT INTO matches(id,room_code,mode,map_id,time_limit_minutes,item_cooldown_minutes,started_at) VALUES (?,'ABCDEF','UNKNOWN',0,11,0,UTC_TIMESTAMP(3))",
+        UUID.randomUUID().toString());
   }
 
   @Test
@@ -402,14 +368,14 @@ class SchemaIT {
     assertThatThrownBy(
             () ->
                 jdbc.update(
-                    "INSERT INTO play_runs(id,user_id,kind,status,started_at,updated_at,ended_at) VALUES (?,?,'COMMUNITY','FINISHED',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                    "INSERT INTO play_runs(id,user_id,status,started_at,updated_at,ended_at) VALUES (?,?,'FINISHED',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
                     UUID.randomUUID().toString(),
                     owner))
-        .isInstanceOf(org.springframework.dao.DataAccessException.class);
+        .doesNotThrowAnyException();
     assertThatThrownBy(
             () ->
                 jdbc.update(
-                    "INSERT INTO play_runs(id,user_id,kind,status,snapshot,started_at,updated_at) VALUES (?,?,'COMMUNITY','ACTIVE',JSON_ARRAY(),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                    "INSERT INTO play_runs(id,user_id,status,snapshot,started_at,updated_at) VALUES (?,?,'ACTIVE',JSON_ARRAY(),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
                     UUID.randomUUID().toString(),
                     owner))
         .isInstanceOf(org.springframework.dao.DataAccessException.class);

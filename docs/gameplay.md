@@ -73,9 +73,9 @@ Easy nhớ riêng vị trí đứng/đáp nền bình thường của từng ng�
 
 Trong map 2–9, rơi qua ranh giới dưới chặng luôn đưa người chơi về spawn chặng và tính một fall; các lần SPLAT còn lại theo mode đã chọn. Tiến độ và peak Room tính từ đầu chặng, không cộng độ cao của các map trước.
 
-Finish đầu tiên kết thúc trận sau khi xử lý mọi người trong cùng tick; Finish cùng tick đồng thắng. Time Limit chốt tại deadline, xét Finish hợp lệ trước timeout. Host có thể End khi PLAYING.
+Finish đầu tiên kết thúc trận sau khi xử lý mọi người trong cùng tick; Finish cùng tick đồng hạng đầu. Time Limit chốt tại deadline, xét Finish hợp lệ trước timeout. Host có thể End khi PLAYING. Dù kết thúc vì lý do nào, server đều chốt bảng xếp hạng cho toàn bộ roster.
 
-Finishers xếp trước theo finish time tăng dần. Người khác so current progress giảm dần; khi bật giới hạn thời gian thì thêm peak giảm dần. Bằng các khóa thì đồng hạng. Clock trận là đồng hồ chung, không tạo thêm khóa phân hạng. ID chỉ ổn định thứ tự hiển thị. Chưa ai Finish thì không có winner; DNF không thắng.
+Finishers xếp trước theo finish time tăng dần. Người khác so current progress giảm dần; khi bật giới hạn thời gian thì thêm peak giảm dần. Bằng các khóa thì đồng hạng. Clock trận là đồng hồ chung, không tạo thêm khóa phân hạng. ID chỉ ổn định thứ tự hiển thị. Nếu chưa ai Finish, tất cả vẫn được xếp theo tiến độ; DNF cũng có hạng theo tiến độ cuối.
 
 - Current progress: độ cao tại lần đáp nền hợp lệ gần nhất, không tính splat/phasing; khi trên không giữ giá trị đó.
 - Peak: độ cao tức thời cao nhất từng đạt. Hardcore reset current về spawn, giữ peak/clock/falls.
@@ -85,7 +85,7 @@ Play Again giữ room code/settings và thành viên, nhưng reset trạng thái
 
 ## Items trong Room
 
-Tại Lobby, Host chọn No items hoặc cooldown 1–10 phút; mặc định No items. Chọn số phút sẽ bật Items với cooldown tương ứng. Settings giữ qua Play Again, không đổi giữa trận.
+Tại Lobby, Host chọn No items hoặc cooldown 1–10 phút; mặc định No items. `itemCooldownMinutes=null` nghĩa là tắt Items; chọn số phút sẽ bật Items và đặt cooldown tương ứng. Backend kiểm tra khoảng 1–10 phút. Settings giữ qua Play Again, không đổi giữa trận.
 
 Tối đa 64 bẫy Banana/phòng, cấu hình trong rules. Chạm trần thì hủy chuẩn bị, không đặt thêm, giữ item và không bắt đầu cooldown; bẫy cũ vẫn tồn tại đến khi bị giẫm.
 
@@ -118,7 +118,7 @@ Tên vùng hiện 6 giây khi lần đầu tới màn đầu vùng (Colossal Dra
 
 Quạ đen có 14 điểm đậu, tới gần thì bay tiếp; đuổi hết rồi full Finish trong cùng lượt thì quạ trao vương miện đen thay thiên thần. Quạ trắng có 17 điểm trong Main Babe, bay đi sau điểm cuối; không thưởng/đổi ending. Tiến độ riêng từng người, lưu Community và reset mỗi trận Room.
 
-Full Finish mở crown vàng Account vĩnh viễn; hoàn thành cả chuỗi quạ đen trong lượt đó nhận thẳng crown đen. Tự đeo cấp cao nhất đã nhận, chỉ nâng NONE → GOLD → BLACK; Finish thường không hạ crown đen. Có thể chơi lượt mới để lấy đen sau khi đã có vàng. Hai màu crown cố định, độc lập màu nhân vật. Chỉ Community mới phát ending cho người Finish; mọi Room map kết thúc ở Results, kể cả map 9 The Tower. Người thắng Room map 9 vẫn nhận crown và Best Finish Time full map. Map 1–8 không mở crown/Best Finish Time full map. Giữ cảnh/nhạc/ảnh ending và Skip trong Community; không ảnh hưởng kết quả/clock, không phát lại khi replay hoặc spectate.
+Full Finish mở crown vàng Account vĩnh viễn; hoàn thành cả chuỗi quạ đen trong lượt đó nhận thẳng crown đen. Tự đeo cấp cao nhất đã nhận, chỉ nâng NONE → GOLD → BLACK; Finish thường không hạ crown đen. Có thể chơi lượt mới để lấy đen sau khi đã có vàng. Hai màu crown cố định, độc lập màu nhân vật. Chỉ Community mới phát ending cho người Finish; mọi Room map kết thúc ở Results, kể cả map 9 The Tower. Người Finish Room map 9 vẫn nhận crown và Best Finish Time full map. Map 1–8 không mở crown/Best Finish Time full map. Giữ cảnh/nhạc/ảnh ending và Skip trong Community; không ảnh hưởng kết quả/clock, không phát lại khi replay hoặc spectate.
 
 Server cấp 10 màu riêng theo membership, giữ qua reconnect và nhất quán giữa các client. Bản thân opacity=1, vẽ trên peers opacity=0.7; tên rõ, nằm dưới hội thoại. Ngoại hình không đổi hitbox.
 
@@ -126,7 +126,7 @@ Tutorial Community chỉ hiện khi Account chưa có thời gian chơi, chưa t
 
 ## Thống kê và History
 
-Stats tổng Community/Room: active time, jumps, falls, finishes, số trận/thắng Room và best finish time full map; không lọc kiểu chơi. Jump tính khi launch, fall khi splat; New Game/respawn không xóa tổng. Chưa Finish thì finish time=null. Thời lượng hiển thị theo đồng hồ kèm `s`, ví dụ `01:30 s`; chưa có thành tích hiện `—`.
+Stats tổng Community/Room: active time, jumps, falls, finishes, số trận Room và best finish time full map; không lọc kiểu chơi. Jump tính khi launch, fall khi splat; New Game/respawn không xóa tổng. Chưa Finish thì finish time=null. Thời lượng hiển thị theo đồng hồ kèm `s`, ví dụ `01:30 s`; chưa có thành tích hiện `—`.
 
 History mở từ Account khi nhấn username, gồm lượt Community kết thúc và Room finalize, chỉ chủ lượt/thành viên trận xem; mỗi lượt/trận một mục, Room có chi tiết roster. Pause/Continue/Save & Exit không tạo mục mới. Ownership và chống cộng trùng theo [data](data.md#history-stats-và-leaderboard).
 

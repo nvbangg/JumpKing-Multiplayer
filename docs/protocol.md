@@ -29,7 +29,7 @@ Các path có prefix `/api`. Lỗi dạng `{error:{code,message}}`; không cache
 | POST /auth/logout | → {ok:true} |
 | GET /game-config | → {features:{flyEnabled:boolean},auth:{googleClientId:string|null}} |
 | GET /map | → geometry, spawn và Finish |
-| GET /rooms | → {rooms:[{roomId,mode,mapLevel,playerCount,capacity}]} |
+| GET /rooms | → {rooms:[{roomId,mode,mapId,playerCount,capacity}]} |
 | GET /rooms/{roomId} | → {roomId,kind,joinable} |
 | GET /community/current | Account → {run:RunSummary hoặc null,updatedAt,saveStatus} |
 | GET /leaderboard?limit=100 | → {entries:[LeaderboardEntry]} |
@@ -43,11 +43,11 @@ Danh sách phòng chỉ có Public/WAITING còn chỗ. Room ID là chuỗi 6 ch�
 | --- | --- |
 | RunSummary | id, status, currentProgress, maxProgress, elapsedTimeMs, peakReachedTimeMs, finishTimeMs |
 | LeaderboardEntry | RunSummary và rank, username |
-| Statistics | totalPlayTimeMs, totalJumps, totalFalls, finishes, matchesPlayed, wins, bestFinishTimeMs |
-| History summary | id, kind, status, startedAt, endedAt, playTimeMs, jumps, falls, currentProgress, maxProgress, finishTimeMs, room |
-| History room | mode, mapLevel, itemsEnabled, itemCooldownMinutes, roomCode, durationMs, rank, isWinner; null ở Community |
+| Statistics | totalPlayTimeMs, totalJumps, totalFalls, finishes, matchesPlayed, bestFinishTimeMs |
+| History summary | id, kind (derived from matchId), status, startedAt, endedAt, playTimeMs, jumps, falls, currentProgress, maxProgress, finishTimeMs, room |
+| History room | mode, mapId, itemCooldownMinutes (nullable; null nghĩa là Items tắt), roomCode, durationMs, rank; null ở Community |
 | Room detail | Summary và room.{timeLimitMinutes,endReason,participants} |
-| Participant | runId, nickname, status, rank, isWinner, currentProgress, maxProgress, finishTimeMs, playTimeMs, jumps, falls |
+| Participant | runId, username, status, rank, currentProgress, maxProgress, finishTimeMs, playTimeMs, jumps, falls |
 
 Page là integer 0–100000; size/limit 1–100. Status: 400 validation, 401 xác thực, 403 quyền/CSRF/Origin, 404 không có, 409 conflict, 429 quota, 5xx lỗi nội bộ. Client xử lý error code, không parse message hoặc coi lỗi là dữ liệu rỗng.
 
@@ -71,7 +71,7 @@ Page là integer 0–100000; size/limit 1–100. Status: 400 validation, 401 xá
 | CREATE_ROOM | {settings?} |
 | JOIN_ROOM | {roomId} |
 | LEAVE_ROOM / GET_ROOM_STATE | {} |
-| UPDATE_ROOM_SETTINGS | Patch {mode?,timeLimitMinutes?,mapLevel?,visibility?,itemsEnabled?,itemCooldownMinutes?} |
+| UPDATE_ROOM_SETTINGS | Patch {mode?,timeLimitMinutes?,mapId?,visibility?,itemCooldownMinutes?}; timeLimitMinutes=null là không giới hạn, itemCooldownMinutes=null là tắt Items, số phút bật Items và đặt cooldown |
 | START_GAME / END_MATCH | {} |
 | SET_ROOM_CONFIRMED | {confirmed:boolean}; chỉ thay đổi bản thân trong Room/WAITING |
 | KICK_PLAYER | {playerId}; chỉ Host trong Room/WAITING, không chọn bản thân |
@@ -85,9 +85,11 @@ Page là integer 0–100000; size/limit 1–100. Status: 400 validation, 401 xá
 | CANCEL_INPUT | {playId,generation,seq}; hủy charge/input, không launch |
 | RECONNECT | {roomId,playerId,reconnectToken} |
 
-Room mặc định RACE/không giới hạn/mapLevel=1, PRIVATE; Items theo [gameplay](gameplay.md#items-trong-room). ROOM_STATE của Room luôn trả settings đầy đủ, gồm mapLevel; giá trị mặc định chỉ áp dụng tại đầu vào. Chỉ Host/WAITING được sửa settings; mode và timeLimitMinutes là hai setting độc lập, giới hạn thời gian có thể null hoặc 1–10. Join, Start, End và Play Again tuân thủ lifecycle gameplay.
+Room mặc định RACE/không giới hạn/mapId=1/Items tắt, PRIVATE; Items theo [gameplay](gameplay.md#items-trong-room). ROOM_STATE của Room luôn trả settings đầy đủ, gồm mapId và itemCooldownMinutes; giá trị mặc định chỉ áp dụng tại đầu vào. Chỉ Host/WAITING được sửa settings; `timeLimitMinutes` là độc lập với mode, null nghĩa là không giới hạn và giá trị có hiệu lực là 1–10. `itemCooldownMinutes` null nghĩa là Items tắt; giá trị 1–10 bật Items và đặt cooldown. Backend kiểm tra giới hạn; database chỉ lưu giá trị nullable.
 
 JOIN_COMMUNITY bắt buộc cả hai fields: Continue gửi false và đúng ID ACTIVE; New Game gửi true với ID ACTIVE hoặc null nếu chưa có. Sai ID/trạng thái trả CONFLICT; hết chỗ/lỗi DB giữ save cũ. Muốn thay lượt đang chơi phải Save & Exit trước.
+
+`kind` trong API là giá trị backend suy ra: `matchId` null là COMMUNITY, có giá trị là ROOM. Database không lưu thêm cột kind. Username trong lịch sử Room lấy từ Account hiện tại, không lưu nickname riêng theo lượt. Room Results/History chỉ dùng rank; mọi `endReason` đều chốt thứ hạng và không có trường winner riêng.
 
 Input fields là booleans, field tùy chọn mặc định false; movement chỉ áp dụng trong context ACTIVE. freeFlight là trạng thái mong muốn, chỉ nhận true khi server cho phép; up/down điều khiển bay, jump/Space không bay lên. CANCEL_INPUT/timeout không tự tắt bay. USE_ITEM không nhận loại/target/tọa độ; server quyết định, lỗi không tiêu thụ item.
 
@@ -105,14 +107,14 @@ Input fields là booleans, field tùy chọn mặc định false; movement chỉ
 | ADVENTURE_EVENTS | {roomId,playId,sourcePlayerId,events:[{eventSeq,kind,type,id}]} |
 | SPECTATE_STATE | {roomId,playerId:string hoặc null} |
 | ITEM_USED | {roomId,playId} |
-| PLAYER_FINISHED | {playerId,playId,result,showEnding,ending:{screen,ravenDone,crown}}; riêng owner/winners sau commit; crown=GOLD/BLACK đã sở hữu |
-| GAME_FINISHED | {playId,mapLevel,reason,durationMs,results,saveStatus} |
+| PLAYER_FINISHED | {playerId,playId,result,showEnding,ending:{screen,ravenDone,crown}}; gửi sau khi lưu kết quả đủ điều kiện phát ending; crown=GOLD/BLACK đã sở hữu |
+| GAME_FINISHED | {playId,mapId,reason,durationMs,results,saveStatus} |
 | SAVE_STATUS | {playId,revision,saveStatus}; revision=null cho Room |
 | CHAT_MESSAGE / CHAT_HISTORY | {roomId,messages:[{id,playerId,nickname,text,sentAt,colorSlot}]} |
 | RECONNECT_OK | {roomId,playerId,generation,playId}; tiếp theo là full state |
 | PONG / ERROR | {nonce} / {code,message,playId?,generation?,seq?} |
 
-kind=COMMUNITY/ROOM. Community state=PLAYING, host/settings=null. currentPlay.countdownRemainingMs bằng 0 khi đợi Host tải, >0 khi đếm ngược. Member gồm playerId/nickname/username/colorSlot/connected/paused/nextMatchConfirmed; Room thêm nextMatchJoined để phân biệt người đã vào Lobby ván tiếp theo với trạng thái Confirmed. Create/Join và Play Again đặt nextMatchJoined=true, hết trận đặt false; Cancel Confirm không đổi trường này. Trường không áp dụng là null. Results gồm playerId/nickname/status/rank/currentProgress/maxProgress/isWinner/finishTimeMs; tên giữ lúc tham gia.
+kind=COMMUNITY/ROOM. Community state=PLAYING, host/settings=null. currentPlay.countdownRemainingMs bằng 0 khi đợi Host tải, >0 khi đếm ngược. Member gồm playerId/nickname/username/colorSlot/connected/paused/nextMatchConfirmed; Room thêm nextMatchJoined để phân biệt người đã vào Lobby ván tiếp theo với trạng thái Confirmed. Create/Join và Play Again đặt nextMatchJoined=true, hết trận đặt false; Cancel Confirm không đổi trường này. Trường không áp dụng là null. Results gồm playerId/nickname/status/rank/currentProgress/maxProgress/finishTimeMs; tên lấy từ username.
 
 Snapshot tách rõ:
 

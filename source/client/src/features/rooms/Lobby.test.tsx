@@ -23,9 +23,8 @@ const room: RoomState = {
 	settings: {
 		mode: "RACE",
 		timeLimitMinutes: null,
-		mapLevel: 1,
-		itemsEnabled: false,
-		itemCooldownMinutes: 3,
+		mapId: 1,
+		itemCooldownMinutes: null,
 	},
 	members: [member("host")],
 	currentPlay: null,
@@ -108,8 +107,7 @@ test("time limit and item cooldown choices stop at ten minutes", () => {
 			...room.settings,
 			mode: "RACE",
 			timeLimitMinutes: 10,
-			mapLevel: 1,
-			itemsEnabled: true,
+			mapId: 1,
 			itemCooldownMinutes: 10,
 		},
 	};
@@ -143,14 +141,13 @@ test("dropdowns update unlimited, time limit, and item settings independently", 
 		"Items cooldown",
 	)?.({ target: { value: "OFF" } } as never);
 	expect(command).toHaveBeenLastCalledWith("UPDATE_ROOM_SETTINGS", {
-		itemsEnabled: false,
+		itemCooldownMinutes: null,
 	});
 	findSelect(
 		itemSettings,
 		"Items cooldown",
 	)?.({ target: { value: "2" } } as never);
 	expect(command).toHaveBeenLastCalledWith("UPDATE_ROOM_SETTINGS", {
-		itemsEnabled: true,
 		itemCooldownMinutes: 2,
 	});
 });

@@ -240,21 +240,19 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
                           Set.of(
                               "mode",
                               "timeLimitMinutes",
-                              "mapLevel",
+                              "mapId",
                               "visibility",
-                              "itemsEnabled",
                               "itemCooldownMinutes"));
                       if (command.payload().isEmpty()) throw GameEnvelope.invalid();
                       var settingsInput = ((ObjectNode) command.payload()).deepCopy();
                       settingsInput.remove("visibility");
                       if (!settingsInput.isEmpty()) {
-                        if (!settingsInput.has("itemsEnabled"))
-                          settingsInput.put("itemsEnabled", room.settings.itemsEnabled());
                         if (!settingsInput.has("itemCooldownMinutes"))
-                          settingsInput.put(
-                              "itemCooldownMinutes", room.settings.itemCooldownMinutes());
-                        if (!settingsInput.has("mapLevel"))
-                          settingsInput.put("mapLevel", room.settings.mapLevel());
+                          settingsInput.set(
+                              "itemCooldownMinutes",
+                              json.valueToTree(room.settings.itemCooldownMinutes()));
+                        if (!settingsInput.has("mapId"))
+                          settingsInput.put("mapId", room.settings.mapId());
                         if (!settingsInput.has("mode"))
                           settingsInput.put("mode", room.settings.mode());
                         if (!settingsInput.has("timeLimitMinutes"))
@@ -273,7 +271,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
                       room.settings = settings;
                       room.visibility = visibility;
                       directory.describeRoom(
-                          room.id, visibility, settings.mode(), settings.mapLevel());
+                          room.id, visibility, settings.mode(), settings.mapId());
                       connection.reply(command, "ROOM_STATE", state(room));
                       broadcast(room);
                     }
@@ -393,7 +391,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
                           || racer == null
                           || !racer.status.equals("ACTIVE")
                           || player.watching != null
-                          || !room.match.settings.itemsEnabled())
+                          || room.match.settings.itemCooldownMinutes() == null)
                         throw new ApiException(409, "ITEM_UNAVAILABLE", "Items are unavailable");
                       var connected =
                           room.players.values().stream()
@@ -536,7 +534,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     if (create) {
       room.settings = settings;
       room.visibility = "PRIVATE";
-      directory.describeRoom(room.id, room.visibility, settings.mode(), settings.mapLevel());
+      directory.describeRoom(room.id, room.visibility, settings.mode(), settings.mapId());
     }
     room.players.put(player.id, player);
     chooseHost(room);
@@ -950,8 +948,11 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     var match = room.match;
     if (match == null || !match.saveStatus.equals("SAVED")) return;
     var player = match.players.get(member.id);
-    if (player == null || !player.winner) return;
-    if (player.ending == null && room.settings.mapLevel() != RoomSettings.FINAL_MAP_LEVEL) return;
+    if (player == null
+        || !"FINISH".equals(match.reason)
+        || !"FINISHED".equals(player.status)
+        || !Objects.equals(player.rank, 1)) return;
+    if (player.ending == null && room.settings.mapId() != RoomSettings.FINAL_MAP_ID) return;
     member.crown = member.crown.finish(player.game.adventure().ravenDone());
     if (player.ending == null) return;
     if (member.connection == null || match.id.equals(member.endingNotifiedPlay)) return;
@@ -1106,7 +1107,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
             if (!id.equals(member.id) && Math.abs(saved.screen() - screen) <= 1)
               peers.addPOJO(saved.player());
           });
-      if (match.settings.itemsEnabled())
+      if (match.settings.itemCooldownMinutes() != null)
         snapshot.putPOJO(
             "items",
             match.items.view(member.id, match.ticks, screen, shared.geometry().screenHeight()));

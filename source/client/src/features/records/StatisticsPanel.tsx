@@ -8,7 +8,6 @@ export function StatisticsPanel({ statistics }: { statistics: Statistics }) {
 		["Jumps", statistics.totalJumps.toLocaleString()],
 		["Falls", statistics.totalFalls.toLocaleString()],
 		["Finishes", statistics.finishes.toLocaleString()],
-		["Room Wins", statistics.wins.toLocaleString()],
 	];
 	return (
 		<aside className="statistics" aria-label="Total statistics">

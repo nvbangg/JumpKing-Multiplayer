@@ -70,7 +70,7 @@ class AccountBrowserIT {
             "SELECT id FROM users WHERE username=?", Long.class, fixture.username());
     String id =
         jdbc.queryForObject(
-            "SELECT id FROM play_runs WHERE user_id=? AND kind='COMMUNITY' AND status='ACTIVE'",
+            "SELECT id FROM play_runs WHERE user_id=? AND match_id IS NULL AND status='ACTIVE'",
             String.class,
             owner);
     var snapshot =

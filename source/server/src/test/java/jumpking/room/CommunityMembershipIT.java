@@ -141,7 +141,7 @@ class CommunityMembershipIT {
               TestDatabase.get()
                   .jdbc
                   .queryForObject(
-                      "SELECT COUNT(*) FROM play_runs WHERE user_id=? AND kind='COMMUNITY' AND status='ACTIVE'",
+                      "SELECT COUNT(*) FROM play_runs WHERE user_id=? AND match_id IS NULL AND status='ACTIVE'",
                       Integer.class,
                       first.owner))
           .isEqualTo(1);

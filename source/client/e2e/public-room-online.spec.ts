@@ -190,7 +190,7 @@ test("Public rooms can be discovered and joined while Private rooms remain acces
 		).rooms.find((room: { roomId: string }) => room.roomId === id);
 		expect(listed).toMatchObject({
 			mode: "HARDCORE",
-			mapLevel: 3,
+			mapId: 3,
 			playerCount: 2,
 			capacity: 10,
 		});

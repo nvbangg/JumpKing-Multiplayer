@@ -5,10 +5,9 @@ import { displayLabel, duration } from "./format";
 
 interface Participant {
 	runId: string;
-	nickname: string;
+	username: string;
 	status: string;
 	rank: number;
-	isWinner: boolean;
 	currentProgress: number;
 	maxProgress: number;
 	finishTimeMs: number | null;
@@ -57,15 +56,12 @@ export function HistoryDetail({ item }: { item: HistoryItem }) {
 						<dd>{displayLabel(detail.room.mode)}</dd>
 						<dt>Map</dt>
 						<dd>
-							{detail.room.mapLevel} ·{" "}
-							{
-								ROOM_MAPS.find((map) => map.level === detail.room?.mapLevel)
-									?.name
-							}
+							{detail.room.mapId} ·{" "}
+							{ROOM_MAPS.find((map) => map.level === detail.room?.mapId)?.name}
 						</dd>
 						<dt>Items</dt>
 						<dd>
-							{detail.room.itemsEnabled
+							{detail.room.itemCooldownMinutes !== null
 								? `On · ${detail.room.itemCooldownMinutes} min cooldown`
 								: "Off"}
 						</dd>
@@ -81,8 +77,7 @@ export function HistoryDetail({ item }: { item: HistoryItem }) {
 					{detail.participants.map((player) => (
 						<li key={player.runId}>
 							<span>
-								{player.rank}. {player.nickname}
-								{player.isWinner ? " · Winner" : ""}
+								{player.rank}. {player.username}
 							</span>
 							<strong>
 								{displayLabel(player.status)} ·{" "}

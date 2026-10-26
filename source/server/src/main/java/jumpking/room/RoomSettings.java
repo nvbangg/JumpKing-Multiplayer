@@ -5,22 +5,16 @@ import java.util.Set;
 import jumpking.network.GameEnvelope;
 
 public record RoomSettings(
-    String mode,
-    Integer timeLimitMinutes,
-    int mapLevel,
-    boolean itemsEnabled,
-    int itemCooldownMinutes) {
-  public static final int FINAL_MAP_LEVEL = 9;
+    String mode, Integer timeLimitMinutes, int mapId, Integer itemCooldownMinutes) {
+  public static final int FINAL_MAP_ID = 9;
   private static final Set<String> MODES = Set.of("RACE", "EASY", "HARDCORE", "NO_WALK");
 
   public static RoomSettings defaults() {
-    return new RoomSettings("RACE", null, 1, false, 3);
+    return new RoomSettings("RACE", null, 1, null);
   }
 
   public static RoomSettings parse(JsonNode input, JsonNode rules) {
-    GameEnvelope.fields(
-        input,
-        Set.of("mode", "timeLimitMinutes", "mapLevel", "itemsEnabled", "itemCooldownMinutes"));
+    GameEnvelope.fields(input, Set.of("mode", "timeLimitMinutes", "mapId", "itemCooldownMinutes"));
     String mode = GameEnvelope.text(input, "mode");
     if (!MODES.contains(mode) || !input.has("timeLimitMinutes")) throw GameEnvelope.invalid();
     Integer minutes = null;
@@ -33,23 +27,21 @@ public record RoomSettings(
         throw GameEnvelope.invalid();
       minutes = value.asInt();
     }
-    int level = input.has("mapLevel") ? input.path("mapLevel").asInt(0) : 1;
-    if (input.has("mapLevel")
-            && (!input.path("mapLevel").isIntegralNumber()
-                || !input.path("mapLevel").canConvertToInt())
-        || level < 1
-        || level > FINAL_MAP_LEVEL) throw GameEnvelope.invalid();
-    boolean items = GameEnvelope.bool(input, "itemsEnabled", true);
+    int mapId = input.has("mapId") ? input.path("mapId").asInt(0) : 1;
+    if (input.has("mapId")
+            && (!input.path("mapId").isIntegralNumber() || !input.path("mapId").canConvertToInt())
+        || mapId < 1
+        || mapId > FINAL_MAP_ID) throw GameEnvelope.invalid();
+    Integer itemMinutes = null;
     var cooldown = input.path("itemCooldownMinutes");
-    int itemMinutes =
-        input.has("itemCooldownMinutes")
-            ? cooldown.asInt(0)
-            : rules.path("items").path("cooldownDefaultMinutes").asInt();
-    if (input.has("itemCooldownMinutes")
-            && (!cooldown.isIntegralNumber() || !cooldown.canConvertToInt())
-        || itemMinutes < rules.path("items").path("cooldownMinMinutes").asInt()
-        || itemMinutes > rules.path("items").path("cooldownMaxMinutes").asInt())
-      throw GameEnvelope.invalid();
-    return new RoomSettings(mode, minutes, level, items, itemMinutes);
+    if (input.has("itemCooldownMinutes") && !cooldown.isNull()) {
+      if (!cooldown.isIntegralNumber()
+          || !cooldown.canConvertToInt()
+          || cooldown.asInt() < rules.path("items").path("cooldownMinMinutes").asInt()
+          || cooldown.asInt() > rules.path("items").path("cooldownMaxMinutes").asInt())
+        throw GameEnvelope.invalid();
+      itemMinutes = cooldown.asInt();
+    }
+    return new RoomSettings(mode, minutes, mapId, itemMinutes);
   }
 }

@@ -21,18 +21,13 @@ public class SchemaRepository {
                 "SELECT constraint_name FROM information_schema.table_constraints WHERE constraint_schema=DATABASE() AND constraint_type='CHECK' AND enforced='YES'")
             .containsAll(
                 Set.of(
-                    "ck_matches_mode",
-                    "ck_matches_map_level",
-                    "ck_matches_items",
                     "ck_matches_ticks",
                     "ck_matches_end",
-                    "ck_runs_kind",
                     "ck_runs_counters",
                     "ck_runs_end",
                     "ck_runs_finish",
                     "ck_runs_snapshot",
-                    "ck_runs_rank",
-                    "ck_runs_winner")),
+                    "ck_runs_rank")),
         "Required enforced CHECK constraints missing");
     require(
         names(
@@ -56,7 +51,7 @@ public class SchemaRepository {
         "InnoDB required");
     require(
         count(
-                "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='play_runs' AND column_name='active_community_user_id' AND extra LIKE '%GENERATED%' AND generation_expression LIKE '%COMMUNITY%'")
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='play_runs' AND column_name='active_community_user_id' AND extra LIKE '%GENERATED%' AND generation_expression LIKE '%MATCH_ID%' AND generation_expression LIKE '%ACTIVE%'")
             == 1,
         "Community unique generated column missing");
     require(
@@ -66,7 +61,7 @@ public class SchemaRepository {
                 Set.of(
                     "ix_runs_owner_history:user_id,ended_at,id",
                     "uq_runs_match_user:match_id,user_id",
-                    "ix_runs_leaderboard:kind,status")),
+                    "ix_runs_leaderboard:match_id,status")),
         "Records indexes differ");
   }
 

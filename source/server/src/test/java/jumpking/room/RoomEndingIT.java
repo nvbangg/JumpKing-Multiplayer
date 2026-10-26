@@ -51,7 +51,7 @@ class RoomEndingIT {
     }
     var settings = new HashMap<String, Object>();
     settings.put("mode", mode);
-    settings.put("mapLevel", RoomSettings.FINAL_MAP_LEVEL);
+    settings.put("mapId", RoomSettings.FINAL_MAP_ID);
     settings.put("timeLimitMinutes", null);
     String room =
         clients[0].ok("CREATE_ROOM", Map.of("settings", settings)).path("roomId").asText();
@@ -166,7 +166,7 @@ class RoomEndingIT {
           .isEmpty();
       assertThat(
               jdbc.queryForObject(
-                  "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND is_winner=TRUE",
+                  "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND status='FINISHED' AND `rank`=1",
                   Integer.class,
                   game.play))
           .isEqualTo(1);

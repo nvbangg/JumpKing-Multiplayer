@@ -8,32 +8,28 @@ import org.junit.jupiter.api.Test;
 
 class RoomSettingsTest {
   @Test
-  void itemSettingsUseThreeMinutesAndRejectCoercion() throws Exception {
+  void nullableCooldownControlsItemsAndRejectsInvalidMinutes() throws Exception {
     var json = new ObjectMapper();
     var rules = new SharedData(json).rules();
-    assertThat(RoomSettings.defaults().itemsEnabled()).isFalse();
-    assertThat(RoomSettings.defaults().itemCooldownMinutes()).isEqualTo(3);
+    assertThat(RoomSettings.defaults().itemCooldownMinutes()).isNull();
     for (int minutes : java.util.List.of(1, 3, 10)) {
       var input =
           json.createObjectNode()
               .put("mode", "RACE")
               .putNull("timeLimitMinutes")
-              .put("itemsEnabled", true)
               .put("itemCooldownMinutes", minutes);
       var settings = RoomSettings.parse(input, rules);
-      assertThat(settings.itemsEnabled()).isTrue();
       assertThat(settings.itemCooldownMinutes()).isEqualTo(minutes);
     }
-    for (String invalid :
-        java.util.List.of("0", "11", "1.5", "null", "true", "\"3\"", "4294967297")) {
+    var disabled =
+        json.createObjectNode()
+            .put("mode", "RACE")
+            .putNull("timeLimitMinutes")
+            .putNull("itemCooldownMinutes");
+    assertThat(RoomSettings.parse(disabled, rules).itemCooldownMinutes()).isNull();
+    for (String invalid : java.util.List.of("0", "11", "1.5", "true", "\"3\"", "4294967297")) {
       var input = json.createObjectNode().put("mode", "RACE").putNull("timeLimitMinutes");
       input.set("itemCooldownMinutes", json.readTree(invalid));
-      assertThatThrownBy(() -> RoomSettings.parse(input, rules))
-          .isInstanceOf(jumpking.exception.ApiException.class);
-    }
-    for (String invalid : java.util.List.of("0", "null", "\"true\"")) {
-      var input = json.createObjectNode().put("mode", "RACE").putNull("timeLimitMinutes");
-      input.set("itemsEnabled", json.readTree(invalid));
       assertThatThrownBy(() -> RoomSettings.parse(input, rules))
           .isInstanceOf(jumpking.exception.ApiException.class);
     }
@@ -43,12 +39,12 @@ class RoomSettingsTest {
   void validatesModesAndWholeMinuteBoundsWithoutCoercion() throws Exception {
     var json = new ObjectMapper();
     var rules = new SharedData(json).rules();
-    assertThat(RoomSettings.defaults()).isEqualTo(new RoomSettings("RACE", null, 1, false, 3));
+    assertThat(RoomSettings.defaults()).isEqualTo(new RoomSettings("RACE", null, 1, null));
     for (String mode : java.util.List.of("RACE", "EASY", "HARDCORE", "NO_WALK"))
       assertThat(
               RoomSettings.parse(
                   json.readTree("{\"mode\":\"" + mode + "\",\"timeLimitMinutes\":null}"), rules))
-          .isEqualTo(new RoomSettings(mode, null, 1, false, 3));
+          .isEqualTo(new RoomSettings(mode, null, 1, null));
     for (String mode : java.util.List.of("RACE", "EASY", "HARDCORE", "NO_WALK"))
       for (int minutes : java.util.List.of(1, 10))
         assertThat(
@@ -62,11 +58,9 @@ class RoomSettingsTest {
       assertThat(
               RoomSettings.parse(
                       json.readTree(
-                          "{\"mode\":\"RACE\",\"timeLimitMinutes\":null,\"mapLevel\":"
-                              + level
-                              + "}"),
+                          "{\"mode\":\"RACE\",\"timeLimitMinutes\":null,\"mapId\":" + level + "}"),
                       rules)
-                  .mapLevel())
+                  .mapId())
           .isEqualTo(level);
     for (String level :
         java.util.List.of("0", "10", "1.5", "\"5\"", "null", "true", "4294967297")) {
@@ -74,9 +68,7 @@ class RoomSettingsTest {
               () ->
                   RoomSettings.parse(
                       json.readTree(
-                          "{\"mode\":\"RACE\",\"timeLimitMinutes\":null,\"mapLevel\":"
-                              + level
-                              + "}"),
+                          "{\"mode\":\"RACE\",\"timeLimitMinutes\":null,\"mapId\":" + level + "}"),
                       rules))
           .isInstanceOf(jumpking.exception.ApiException.class);
     }

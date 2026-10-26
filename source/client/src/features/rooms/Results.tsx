@@ -20,20 +20,12 @@ export function Results({
 	const confirmed =
 		room?.members.find((member) => member.playerId === selfId)
 			?.nextMatchConfirmed === true;
-	const winners = result.results
-		.filter((row) => row.isWinner)
-		.map((row) => row.nickname);
 	return (
 		<>
-			{winners.length > 0 && (
-				<p className="winner">
-					{winners.length > 1 ? "Winners" : "Winner"}: {winners.join(", ")}
-				</p>
-			)}
 			<p>Time: {duration(result.durationMs)}</p>
 			<p>
-				Map {result.mapLevel} ·{" "}
-				{ROOM_MAPS.find((map) => map.level === result.mapLevel)?.name}
+				Map {result.mapId} ·{" "}
+				{ROOM_MAPS.find((map) => map.level === result.mapId)?.name}
 			</p>
 			<div className="results-table">
 				<table>

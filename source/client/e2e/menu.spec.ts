@@ -173,7 +173,6 @@ test("one auth flow keeps credentials errors and submits new usernames only to l
 					totalFalls: 0,
 					finishes: 0,
 					matchesPlayed: 0,
-					wins: 0,
 					bestFinishTimeMs: null,
 				},
 			},

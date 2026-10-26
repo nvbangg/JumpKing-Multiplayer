@@ -93,11 +93,11 @@ export function Lobby({
 						Map
 						<select
 							aria-label="Map"
-							value={room.settings.mapLevel}
+							value={room.settings.mapId}
 							disabled={!host || room.state !== "WAITING" || pending}
 							onChange={(event) =>
 								command("UPDATE_ROOM_SETTINGS", {
-									mapLevel: Number(event.target.value),
+									mapId: Number(event.target.value),
 								})
 							}
 						>

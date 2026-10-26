@@ -61,7 +61,7 @@ export function HistoryList({
 				>
 					<span className="kind-label">
 						{displayLabel(item.kind)}
-						{item.room && ` · Map ${item.room.mapLevel}`}
+						{item.room && ` · Map ${item.room.mapId}`}
 					</span>
 					<span>
 						{new Date(item.endedAt).toLocaleString(undefined, {

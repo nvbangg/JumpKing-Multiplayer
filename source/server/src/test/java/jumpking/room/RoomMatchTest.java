@@ -53,7 +53,7 @@ class RoomMatchTest {
   @Test
   void preparedBananaDropsOnlyOnJumpInEveryMode() {
     for (var mode : List.of("RACE", "EASY", "HARDCORE", "NO_WALK")) {
-      var match = match(new RoomSettings(mode, null, 1, true, 3));
+      var match = match(new RoomSettings(mode, null, 1, 3));
       var now = Instant.parse("2026-01-01T00:00:00Z");
       match.start(now);
       for (int i = 0; i < 30; i++) match.tick(1, now);
@@ -119,10 +119,10 @@ class RoomMatchTest {
 
   @Test
   void roomFinishKeepsRavenProgressWithoutStartingAnEndingAndResetsProgress() throws Exception {
-    var match = match(new RoomSettings("RACE", null, RoomSettings.FINAL_MAP_LEVEL, false, 3));
+    var match = match(new RoomSettings("RACE", null, RoomSettings.FINAL_MAP_ID, null));
     var now = Instant.parse("2026-01-01T00:00:00Z");
     match.start(now);
-    var point = landing(RoomSettings.FINAL_MAP_LEVEL);
+    var point = landing(RoomSettings.FINAL_MAP_ID);
     match.ticks = point.ticks;
     for (var player : match.players.values()) player.game.physics().restore(point);
     var first = match.players.get("first");
@@ -251,7 +251,7 @@ class RoomMatchTest {
 
   @Test
   void hardcoreSplatRespawnsCurrentProgressWithoutResettingPeakOrCounters() {
-    var match = match(new RoomSettings("HARDCORE", null, 1, false, 3));
+    var match = match(new RoomSettings("HARDCORE", null, 1, null));
     var start = Instant.parse("2026-01-01T00:00:00Z");
     var player = match.players.get("first");
     match.start(start);
@@ -273,7 +273,7 @@ class RoomMatchTest {
 
   @Test
   void easySplatRestoresOnlyTheFallingPlayersSafeLandingAndKeepsPeakAndCounters() {
-    var match = match(new RoomSettings("EASY", null, 1, false, 3));
+    var match = match(new RoomSettings("EASY", null, 1, null));
     var start = Instant.parse("2026-01-01T00:00:00Z");
     var player = match.players.get("first");
     var other = match.players.get("second");
@@ -300,7 +300,7 @@ class RoomMatchTest {
     match.finish("HOST_ENDED", start.plusSeconds(1));
     assertThat(match.write(1).mode()).isEqualTo("EASY");
     assertThat(match.write(1).runs().getFirst().progress()).isEqualTo(144);
-    var again = match(new RoomSettings("EASY", null, 1, false, 3));
+    var again = match(new RoomSettings("EASY", null, 1, null));
     again.start(start);
     place(again.players.get("first"), 231, 300, shared.tuning().maxFall, false);
     again.tick(1_000_000_000L, start);
@@ -311,14 +311,14 @@ class RoomMatchTest {
   void everyLengthFinalizesOnItsOwnLandingAndOnlyFullMapOffersAnEnding() throws Exception {
     for (var goal : shared.roomMaps()) {
       var point = landing(goal.level());
-      var match = match(new RoomSettings("RACE", null, goal.level(), false, 3));
+      var match = match(new RoomSettings("RACE", null, goal.level(), null));
       var now = Instant.parse("2026-01-01T00:00:00Z");
       match.start(now);
       for (var player : match.players.values()) player.game.physics().restore(point);
       match.ticks = point.ticks;
       match.tick(1_000_000_000L, now.plusSeconds(300));
       assertThat(match.reason).as("map %s", goal.level()).isEqualTo("FINISH");
-      assertThat(match.results().get("mapLevel")).isEqualTo(goal.level());
+      assertThat(match.results().get("mapId")).isEqualTo(goal.level());
       for (var player : match.players.values()) assertThat(player.ending).isNull();
     }
   }
@@ -335,7 +335,7 @@ class RoomMatchTest {
     assertThat(match.players.get("second").game.physics().snapshot().ticks).isEqualTo(4);
     match.finish("HOST_ENDED", start.plusSeconds(2));
     assertThat(match.players.get("first").status).isEqualTo("UNFINISHED");
-    assertThat(match.players.values()).noneMatch(player -> player.winner);
+    assertThat(match.players.values()).allMatch(player -> player.rank != null);
     var write = match.write(1);
     assertThat(write.duration()).isEqualTo(7);
     assertThat(write.runs().get(1).status()).isEqualTo("DNF");
@@ -357,8 +357,8 @@ class RoomMatchTest {
 
   @Test
   void allPlayersOfTheFinishingTickAreProcessedBeforeResultsAndTies() throws Exception {
-    var match = match(new RoomSettings("RACE", null, RoomSettings.FINAL_MAP_LEVEL, false, 3));
-    var before = landing(RoomSettings.FINAL_MAP_LEVEL);
+    var match = match(new RoomSettings("RACE", null, RoomSettings.FINAL_MAP_ID, null));
+    var before = landing(RoomSettings.FINAL_MAP_ID);
     var start = Instant.parse("2026-01-01T00:00:00Z");
     match.start(start);
     match.ticks = before.ticks;
@@ -371,7 +371,7 @@ class RoomMatchTest {
     assertThat(match.ticks).isEqualTo(before.ticks + 1);
     assertThat(match.reason).isEqualTo("FINISH");
     assertThat(match.players.values())
-        .allMatch(player -> player.winner && player.rank == 1 && player.finish == before.ticks + 1);
+        .allMatch(player -> player.rank == 1 && player.finish == before.ticks + 1);
     assertThat(match.write(1).runs())
         .allMatch(
             run ->

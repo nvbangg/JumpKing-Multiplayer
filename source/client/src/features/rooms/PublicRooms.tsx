@@ -4,7 +4,7 @@ import { displayLabel } from "../records/format";
 interface PublicRoom {
 	roomId: string;
 	mode: string;
-	mapLevel: number;
+	mapId: number;
 	playerCount: number;
 	capacity: number;
 }
@@ -34,7 +34,7 @@ export function PublicRooms({
 							disabled={loading || pending}
 							onClick={() => onJoin(room.roomId)}
 						>
-							{room.roomId} · {displayLabel(room.mode)} · Map {room.mapLevel} ·{" "}
+							{room.roomId} · {displayLabel(room.mode)} · Map {room.mapId} ·{" "}
 							{room.playerCount}/{room.capacity}
 						</button>
 					</li>
