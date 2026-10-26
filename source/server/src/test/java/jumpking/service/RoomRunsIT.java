@@ -23,7 +23,7 @@ class RoomRunsIT {
   @Test
   void shortFinishesCountWinsWithoutGrantingTheFullMapCrownOrBestTime() throws Exception {
     var jdbc = TestDatabase.get().jdbc;
-    for (int level = 1; level <= 10; level++) {
+    for (int level = 1; level <= 9; level++) {
       var owners = new ArrayList<Long>();
       String match = UUID.randomUUID().toString();
       try {
@@ -84,13 +84,13 @@ class RoomRunsIT {
         assertThat(
                 jdbc.queryForObject(
                     "SELECT crown FROM users WHERE id=?", String.class, owners.getFirst()))
-            .isEqualTo(level == 10 ? "GOLD" : "NONE");
+            .isEqualTo(level == 9 ? "GOLD" : "NONE");
         var stats = history.statistics(owners.getFirst());
         assertThat(stats.wins()).isEqualTo(1);
         assertThat(stats.finishes()).isEqualTo(1);
         assertThat(stats.totalJumps()).isEqualTo(5);
-        assertThat(stats.bestFinishTimeMs()).isEqualTo(level == 10 ? 10000L : null);
-        int changedLevel = level == 10 ? 1 : 10;
+        assertThat(stats.bestFinishTimeMs()).isEqualTo(level == 9 ? 10000L : null);
+        int changedLevel = level == 9 ? 1 : 9;
         assertThatThrownBy(
                 () ->
                     records.save(

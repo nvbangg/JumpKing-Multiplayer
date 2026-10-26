@@ -2,6 +2,7 @@ import { Children, isValidElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, test, vi } from "vitest";
 import type { RoomMember, RoomState } from "../../network/GameSocket";
+import { ItemSettings } from "./ItemSettings";
 import { Lobby } from "./Lobby";
 
 const member = (playerId: string): RoomMember => ({
@@ -57,6 +58,26 @@ function findButton(node: ReactNode, label: string): (() => void) | undefined {
 	}
 }
 
+function findSelect(
+	node: ReactNode,
+	label: string,
+): ((event: never) => void) | undefined {
+	for (const child of Children.toArray(node)) {
+		if (
+			!isValidElement<{
+				children?: ReactNode;
+				"aria-label"?: string;
+				onChange?: (event: never) => void;
+			}>(child)
+		)
+			continue;
+		if (child.type === "select" && child.props["aria-label"] === label)
+			return child.props.onChange;
+		const match = findSelect(child.props.children, label);
+		if (match) return match;
+	}
+}
+
 test("a confirmed host can start alone, while an unconfirmed host cannot start", () => {
 	expect(markup()).toContain('<button type="button">Start</button>');
 	const waiting = {
@@ -75,11 +96,17 @@ test("a confirmed host can start alone, while an unconfirmed host cannot start",
 });
 
 test("time limit and item cooldown choices stop at ten minutes", () => {
+	expect(markup()).toContain(
+		'<option value="UNLIMITED" selected="">Unlimited</option>',
+	);
+	expect(markup()).toContain(
+		'<option value="OFF" selected="">No items</option>',
+	);
 	const configured: RoomState = {
 		...room,
 		settings: {
 			...room.settings,
-			mode: "TIME_LIMIT",
+			mode: "RACE",
 			timeLimitMinutes: 10,
 			mapLevel: 1,
 			itemsEnabled: true,
@@ -87,10 +114,45 @@ test("time limit and item cooldown choices stop at ten minutes", () => {
 		},
 	};
 	const html = markup(configured);
+	expect(html).toContain('<option value="10" selected="">10 min</option>');
 	expect(
 		html.match(/<option value="10"(?: selected="")?>10 min<\/option>/g),
 	).toHaveLength(2);
 	expect(html).not.toContain('<option value="11">11 min</option>');
+});
+
+test("dropdowns update unlimited, time limit, and item settings independently", () => {
+	const command = vi.fn();
+	const tree = Lobby({ room, selfId: "host", pending: false, command });
+	if (!room.settings) throw new Error("Room settings are missing");
+	const itemSettings = ItemSettings({
+		value: room.settings,
+		disabled: false,
+		onChange: (patch) => command("UPDATE_ROOM_SETTINGS", patch),
+	});
+	findSelect(tree, "Time Limit")?.({ target: { value: "UNLIMITED" } } as never);
+	expect(command).toHaveBeenLastCalledWith("UPDATE_ROOM_SETTINGS", {
+		timeLimitMinutes: null,
+	});
+	findSelect(tree, "Time Limit")?.({ target: { value: "7" } } as never);
+	expect(command).toHaveBeenLastCalledWith("UPDATE_ROOM_SETTINGS", {
+		timeLimitMinutes: 7,
+	});
+	findSelect(
+		itemSettings,
+		"Items cooldown",
+	)?.({ target: { value: "OFF" } } as never);
+	expect(command).toHaveBeenLastCalledWith("UPDATE_ROOM_SETTINGS", {
+		itemsEnabled: false,
+	});
+	findSelect(
+		itemSettings,
+		"Items cooldown",
+	)?.({ target: { value: "2" } } as never);
+	expect(command).toHaveBeenLastCalledWith("UPDATE_ROOM_SETTINGS", {
+		itemsEnabled: true,
+		itemCooldownMinutes: 2,
+	});
 });
 
 test("confirmation controls exist in the first lobby and follow server state", () => {
@@ -214,10 +276,10 @@ test("mode descriptions use the requested text and preserve protocol values", ()
 		["RACE", "RACE – Default"],
 		["EASY", "EASY – Respawn at Last Position"],
 		["HARDCORE", "HARDCORE – Restart on Death"],
-		["TIME_LIMIT", "TIME LIMIT – Beat the Clock"],
 		["NO_WALK", "NO WALK – Jump Only"],
 	])
 		expect(html).toMatch(
 			new RegExp(`<option value="${value}"[^>]*>${text}</option>`),
 		);
+	expect(html).not.toContain('<option value="TIME_LIMIT">');
 });

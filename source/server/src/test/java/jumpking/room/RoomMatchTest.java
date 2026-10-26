@@ -8,7 +8,6 @@ import java.util.List;
 import jumpking.config.NetworkSettings;
 import jumpking.game.*;
 import jumpking.network.GameEnvelope;
-import jumpking.support.MainBabeRoute;
 import org.junit.jupiter.api.Test;
 
 class RoomMatchTest {
@@ -53,8 +52,8 @@ class RoomMatchTest {
 
   @Test
   void preparedBananaDropsOnlyOnJumpInEveryMode() {
-    for (var mode : List.of("RACE", "EASY", "HARDCORE", "TIME_LIMIT", "NO_WALK")) {
-      var match = match(new RoomSettings(mode, mode.equals("TIME_LIMIT") ? 5 : null, 1, true, 3));
+    for (var mode : List.of("RACE", "EASY", "HARDCORE", "NO_WALK")) {
+      var match = match(new RoomSettings(mode, null, 1, true, 3));
       var now = Instant.parse("2026-01-01T00:00:00Z");
       match.start(now);
       for (int i = 0; i < 30; i++) match.tick(1, now);
@@ -119,11 +118,11 @@ class RoomMatchTest {
   }
 
   @Test
-  void eachWinnerKeepsTheirOwnRavenEndingAndANewMatchResetsProgress() throws Exception {
+  void roomFinishKeepsRavenProgressWithoutStartingAnEndingAndResetsProgress() throws Exception {
     var match = match(new RoomSettings("RACE", null, RoomSettings.FINAL_MAP_LEVEL, false, 3));
     var now = Instant.parse("2026-01-01T00:00:00Z");
     match.start(now);
-    var point = landing(10);
+    var point = landing(RoomSettings.FINAL_MAP_LEVEL);
     match.ticks = point.ticks;
     for (var player : match.players.values()) player.game.physics().restore(point);
     var first = match.players.get("first");
@@ -137,8 +136,8 @@ class RoomMatchTest {
         .put("y", perch.path("y").asDouble() - perch.path("screen").asInt() * 360);
     first.game.adventure().restore(saved);
     match.tick(1_000_000_000L, now);
-    assertThat(first.ending).containsEntry("ravenDone", true);
-    assertThat(match.players.get("second").ending).containsEntry("ravenDone", false);
+    assertThat(first.ending).isNull();
+    assertThat(match.players.get("second").ending).isNull();
     assertThat(match.write(1).ravenFinishers()).containsExactly(first.spec.owner());
     assertThat(match().players.get("first").game.adventure().ravenDone()).isFalse();
   }
@@ -320,8 +319,7 @@ class RoomMatchTest {
       match.tick(1_000_000_000L, now.plusSeconds(300));
       assertThat(match.reason).as("map %s", goal.level()).isEqualTo("FINISH");
       assertThat(match.results().get("mapLevel")).isEqualTo(goal.level());
-      for (var player : match.players.values())
-        assertThat(player.ending != null).isEqualTo(goal.level() == 10);
+      for (var player : match.players.values()) assertThat(player.ending).isNull();
     }
   }
 
@@ -360,27 +358,39 @@ class RoomMatchTest {
   @Test
   void allPlayersOfTheFinishingTickAreProcessedBeforeResultsAndTies() throws Exception {
     var match = match(new RoomSettings("RACE", null, RoomSettings.FINAL_MAP_LEVEL, false, 3));
-    var before = MainBabeRoute.beforeFinish(shared, json);
+    var before = landing(RoomSettings.FINAL_MAP_LEVEL);
     var start = Instant.parse("2026-01-01T00:00:00Z");
     match.start(start);
-    match.ticks = before.physics().ticks;
+    match.ticks = before.ticks;
     for (var player : match.players.values()) {
-      player.game.restore(before);
+      player.game.physics().restore(before);
       player.maximum = player.game.physics().progress();
-      player.peak = before.physics().ticks;
+      player.peak = before.ticks;
     }
     match.tick(1_000_000_000L, start.plusSeconds(283));
-    assertThat(match.ticks).isEqualTo(16957);
+    assertThat(match.ticks).isEqualTo(before.ticks + 1);
     assertThat(match.reason).isEqualTo("FINISH");
     assertThat(match.players.values())
-        .allMatch(player -> player.winner && player.rank == 1 && player.finish == 16957);
+        .allMatch(player -> player.winner && player.rank == 1 && player.finish == before.ticks + 1);
     assertThat(match.write(1).runs())
         .allMatch(
-            run -> run.status().equals("FINISHED") && run.ticks() == 16957 && run.rank() == 1);
+            run ->
+                run.status().equals("FINISHED")
+                    && run.ticks() == before.ticks + 1
+                    && run.rank() == 1);
   }
 
   private PlayerState landing(int level) throws Exception {
-    var sim = new Simulation(shared.roomMap(level), shared.tuning(), false, false);
+    var map = shared.roomMap(level);
+    if (level < 9) {
+      var state = new Simulation(map, shared.tuning(), false, false).snapshot();
+      state.screen = map.finish().screen();
+      state.x = map.finish().minCenterX() - shared.tuning().bodyWidth / 2.0;
+      state.y = map.progressOriginY() - shared.tuning().bodyHeight - map.finish().minProgress();
+      state.grounded = true;
+      return state;
+    }
+    var sim = new Simulation(map, shared.tuning(), false, false);
     try (var input =
         new org.springframework.core.io.ClassPathResource("fixtures/main-babe-checkpoints.json")
             .getInputStream()) {

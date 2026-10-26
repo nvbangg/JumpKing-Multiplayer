@@ -69,7 +69,7 @@ final class RoomMatch {
         new RoomItems(
             physics, shared.rules().path("items"), java.util.random.RandomGenerator.getDefault());
     limitTicks =
-        settings.mode().equals("TIME_LIMIT") ? settings.timeLimitMinutes() * 60L * tickRate : 0;
+        settings.timeLimitMinutes() == null ? 0 : settings.timeLimitMinutes() * 60L * tickRate;
     JsonNode adventure = shared.adventure();
     for (var spec : roster) {
       var input = new InputFrames(limits.inputFrames(), limits.inputTimeoutMs());
@@ -116,9 +116,6 @@ final class RoomMatch {
       if (player.game.finished()) {
         player.status = "FINISHED";
         player.finish = ticks;
-        if (settings.mapLevel() == RoomSettings.FINAL_MAP_LEVEL)
-          player.ending =
-              Map.of("screen", state.screen, "ravenDone", player.game.adventure().ravenDone());
       }
     }
     if (players.values().stream().anyMatch(player -> player.finish != null))
@@ -169,7 +166,12 @@ final class RoomMatch {
                         player.maximum,
                         player.finish))
             .toList();
-    for (var result : RoomRanking.rank(scores, settings.mode(), reason.equals("FINISH"))) {
+    for (var result :
+        RoomRanking.rank(
+            scores,
+            settings.mode(),
+            settings.timeLimitMinutes() != null,
+            reason.equals("FINISH"))) {
       var player = players.get(result.score().playerId());
       player.rank = result.rank();
       player.winner = result.winner();
@@ -273,7 +275,8 @@ final class RoomMatch {
                         player.maximum,
                         player.finish))
             .toList();
-    return RoomRanking.rank(scores, settings.mode(), false).stream()
+    return RoomRanking.rank(scores, settings.mode(), settings.timeLimitMinutes() != null, false)
+        .stream()
         .map(
             row -> {
               var spec = players.get(row.score().playerId()).spec;

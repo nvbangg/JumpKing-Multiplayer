@@ -10,9 +10,8 @@ public record RoomSettings(
     int mapLevel,
     boolean itemsEnabled,
     int itemCooldownMinutes) {
-  public static final int FINAL_MAP_LEVEL = 10;
-  private static final Set<String> MODES =
-      Set.of("RACE", "EASY", "HARDCORE", "TIME_LIMIT", "NO_WALK");
+  public static final int FINAL_MAP_LEVEL = 9;
+  private static final Set<String> MODES = Set.of("RACE", "EASY", "HARDCORE", "NO_WALK");
 
   public static RoomSettings defaults() {
     return new RoomSettings("RACE", null, 1, false, 3);
@@ -25,15 +24,15 @@ public record RoomSettings(
     String mode = GameEnvelope.text(input, "mode");
     if (!MODES.contains(mode) || !input.has("timeLimitMinutes")) throw GameEnvelope.invalid();
     Integer minutes = null;
-    if (mode.equals("TIME_LIMIT")) {
-      var value = input.path("timeLimitMinutes");
+    var value = input.path("timeLimitMinutes");
+    if (!value.isNull()) {
       if (!value.isIntegralNumber()
           || !value.canConvertToInt()
           || value.asInt() < rules.path("timeLimitMinutesMin").asInt()
           || value.asInt() > rules.path("timeLimitMinutesMax").asInt())
         throw GameEnvelope.invalid();
       minutes = value.asInt();
-    } else if (!input.path("timeLimitMinutes").isNull()) throw GameEnvelope.invalid();
+    }
     int level = input.has("mapLevel") ? input.path("mapLevel").asInt(0) : 1;
     if (input.has("mapLevel")
             && (!input.path("mapLevel").isIntegralNumber()

@@ -8,6 +8,7 @@ import jumpking.exception.ApiException;
 import jumpking.game.RoomRanking;
 import jumpking.repository.MatchRepository;
 import jumpking.repository.PlayRunRepository;
+import jumpking.room.RoomSettings;
 import org.springframework.stereotype.Service;
 
 /** Một bản ghi tích lũy của toàn roster; match và metrics được commit cùng transaction. */
@@ -197,7 +198,7 @@ public class RoomRuns {
             entity.setFinishTicks(run.finish);
             entity.setRank(run.rank);
             entity.setWinner(run.winner);
-            if (run.status.equals("FINISHED") && write.mapLevel == 10)
+            if (run.status.equals("FINISHED") && write.mapLevel == RoomSettings.FINAL_MAP_LEVEL)
               crowns.unlock(run.owner, write.ravenFinishers.contains(run.owner));
             entity.setEndedAt(run.endedAt);
             entity.setUpdatedAt(clock.instant());
@@ -229,7 +230,7 @@ public class RoomRuns {
                         run.id, run.nickname, "DNF", run.progress, run.maximum, null);
                   })
               .toList();
-      var ranks = RoomRanking.rank(scores, match.mode, false);
+      var ranks = RoomRanking.rank(scores, match.mode, match.minutes != null, false);
       var abandoned =
           stored.stream()
               .map(
@@ -317,7 +318,7 @@ public class RoomRuns {
 
   private void validate(Write value) {
     if (value.mapLevel < 1
-        || value.mapLevel > 10
+        || value.mapLevel > RoomSettings.FINAL_MAP_LEVEL
         || value.itemCooldownMinutes < 1
         || value.itemCooldownMinutes > 10
         || value.revision < 1
@@ -355,7 +356,7 @@ public class RoomRuns {
       if (value.endedAt != null && run.status.equals("ACTIVE")) throw conflict();
     }
     var fullFinishers = new HashSet<Long>();
-    if (value.mapLevel == 10)
+    if (value.mapLevel == RoomSettings.FINAL_MAP_LEVEL)
       for (var run : value.runs) if (run.status.equals("FINISHED")) fullFinishers.add(run.owner);
     if (!fullFinishers.containsAll(value.ravenFinishers)) throw conflict();
     if (value.endedAt != null) {
@@ -366,7 +367,9 @@ public class RoomRuns {
                       new RoomRanking.Score(
                           run.id, run.nickname, run.status, run.progress, run.maximum, run.finish))
               .toList();
-      var ranks = RoomRanking.rank(scores, value.mode, value.reason.equals("FINISH"));
+      var ranks =
+          RoomRanking.rank(
+              scores, value.mode, value.minutes != null, value.reason.equals("FINISH"));
       for (var run : value.runs) {
         var ranked =
             ranks.stream()

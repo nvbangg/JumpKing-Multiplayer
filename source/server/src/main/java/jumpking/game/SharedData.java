@@ -33,7 +33,7 @@ public class SharedData {
             mapper.convertValue(
                 read(mapper, "room-maps.json"),
                 new com.fasterxml.jackson.core.type.TypeReference<List<RoomMap>>() {}));
-    if (roomMaps.size() != 10) throw new IOException("Expected ten Room maps");
+    if (roomMaps.size() != 9) throw new IOException("Expected nine Room maps");
     for (int index = 0; index < roomMaps.size(); index++) {
       var goal = roomMaps.get(index);
       if (goal.level() != index + 1
@@ -46,7 +46,11 @@ public class SharedData {
               && (!Double.isFinite(goal.finish().maxCenterX())
                   || goal.finish().maxCenterX() < goal.finish().minCenterX()
                   || goal.finish().maxCenterX() > map.path("width").asInt())
-          || index > 0 && goal.finish().screen() <= roomMaps.get(index - 1).finish().screen())
+          || index > 0
+              && (goal.finish().screen() < roomMaps.get(index - 1).finish().screen()
+                  || goal.finish().screen() == roomMaps.get(index - 1).finish().screen()
+                      && goal.finish().minProgress()
+                          <= roomMaps.get(index - 1).finish().minProgress()))
         throw new IOException("Invalid Room finish boundary");
     }
     if (map.path("width").asInt() != 480

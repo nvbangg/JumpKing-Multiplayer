@@ -51,7 +51,7 @@ class JpaPersistenceIT {
     var match = new Match();
     match.setId(UUID.randomUUID().toString());
     match.setRoomCode("ABCDEF");
-    match.setMode("TIME_LIMIT");
+    match.setMode("RACE");
     match.setTimeLimitMinutes(5);
     match.setStartedAt(now);
     matches.saveAndFlush(match);

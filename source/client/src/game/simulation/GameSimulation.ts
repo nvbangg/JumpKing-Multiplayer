@@ -160,6 +160,7 @@ export class GameSimulation {
 		const adventure: AdventureEvent[] = this.adventure.tick(player, input);
 		if (
 			this.physics.finished &&
+			this.map.roomBottomY === undefined &&
 			this.map.finish.screen === this.map.screens.length - 1
 		)
 			this.adventure.complete();

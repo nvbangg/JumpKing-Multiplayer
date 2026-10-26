@@ -45,7 +45,7 @@ public class RecordsRepository {
                 .createNativeQuery(
                     """
             SELECT COALESCE(SUM(play_ticks),0) AS ticks,COALESCE(SUM(jumps),0) AS jumps,COALESCE(SUM(falls),0) AS falls,
-              COALESCE(SUM(status='FINISHED'),0) AS finishes,MIN(CASE WHEN kind<>'ROOM' OR m.map_level=10 THEN finish_ticks END) AS best,
+              COALESCE(SUM(status='FINISHED'),0) AS finishes,MIN(CASE WHEN kind<>'ROOM' OR m.map_level>=9 THEN finish_ticks END) AS best,
               COUNT(CASE WHEN kind='ROOM' THEN match_id END) AS matches,
               COUNT(CASE WHEN kind='ROOM' AND is_winner=TRUE THEN match_id END) AS wins
             FROM play_runs p LEFT JOIN matches m ON m.id=p.match_id WHERE p.user_id=:owner

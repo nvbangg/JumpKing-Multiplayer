@@ -255,12 +255,12 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
                               "itemCooldownMinutes", room.settings.itemCooldownMinutes());
                         if (!settingsInput.has("mapLevel"))
                           settingsInput.put("mapLevel", room.settings.mapLevel());
-                        if (!settingsInput.has("mode") && !settingsInput.has("timeLimitMinutes")) {
+                        if (!settingsInput.has("mode"))
                           settingsInput.put("mode", room.settings.mode());
+                        if (!settingsInput.has("timeLimitMinutes"))
                           settingsInput.set(
                               "timeLimitMinutes",
                               json.valueToTree(room.settings.timeLimitMinutes()));
-                        }
                       }
                       var settings =
                           settingsInput.isEmpty()
@@ -950,8 +950,10 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     var match = room.match;
     if (match == null || !match.saveStatus.equals("SAVED")) return;
     var player = match.players.get(member.id);
-    if (player == null || !player.winner || player.ending == null) return;
+    if (player == null || !player.winner) return;
+    if (player.ending == null && room.settings.mapLevel() != RoomSettings.FINAL_MAP_LEVEL) return;
     member.crown = member.crown.finish(player.game.adventure().ravenDone());
+    if (player.ending == null) return;
     if (member.connection == null || match.id.equals(member.endingNotifiedPlay)) return;
     var ending = new LinkedHashMap<>(player.ending);
     ending.put("crown", member.crown);

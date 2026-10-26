@@ -270,7 +270,7 @@ test("short Room finish shows Results and History without ending or full-map rew
 		await second.close();
 	}
 });
-for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"])
+for (const mode of ["RACE", "HARDCORE", "NO_WALK"])
 	test(`two browsers can enable and cancel flight in ${mode}`, async ({
 		browser,
 	}) => {
