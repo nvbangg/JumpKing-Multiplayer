@@ -36,7 +36,7 @@ public class SharedData {
             mapper.convertValue(
                 read(mapper, "room-maps.json"),
                 new com.fasterxml.jackson.core.type.TypeReference<List<RoomMap>>() {}));
-    if (roomMaps.size() != 9) throw new IOException("Expected nine Room maps");
+    if (roomMaps.size() != 8) throw new IOException("Expected eight Room maps");
     for (int index = 0; index < roomMaps.size(); index++) {
       var goal = roomMaps.get(index);
       if (goal.level() != index + 1

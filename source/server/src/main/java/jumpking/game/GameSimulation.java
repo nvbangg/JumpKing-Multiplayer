@@ -53,7 +53,7 @@ public final class GameSimulation {
     this.p = p;
     this.data = data;
     this.sceneMarkers = List.copyOf(sceneMarkers);
-    if (initialMapLevel != null && (initialMapLevel < 1 || initialMapLevel > 9))
+    if (initialMapLevel != null && (initialMapLevel < 1 || initialMapLevel > 8))
       throw new IllegalArgumentException("Invalid initial Room map level");
     this.initialMapLevel = initialMapLevel;
     this.flyAllowed = flyAllowed;
@@ -138,7 +138,7 @@ public final class GameSimulation {
     if (w.has("mapIntro")) {
       var intro = w.path("mapIntro");
       int level = intro.path("level").asInt();
-      boolean knownLevel = level >= 1 && level <= 9;
+      boolean knownLevel = level >= 1 && level <= 8;
       if (!knownLevel
           || !intro.path("tick").isIntegralNumber()
           || intro.path("tick").asLong() < 0

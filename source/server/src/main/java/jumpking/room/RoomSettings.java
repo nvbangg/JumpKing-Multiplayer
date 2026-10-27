@@ -6,7 +6,7 @@ import jumpking.network.GameEnvelope;
 
 public record RoomSettings(
     String mode, Integer timeLimitMinutes, int mapId, Integer itemCooldownMinutes) {
-  public static final int FINAL_MAP_ID = 9;
+  public static final int FINAL_MAP_ID = 8;
   private static final Set<String> MODES = Set.of("RACE", "EASY", "HARDCORE", "NO_WALK");
 
   public static RoomSettings defaults() {

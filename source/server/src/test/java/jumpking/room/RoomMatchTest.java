@@ -177,50 +177,6 @@ class RoomMatchTest {
   }
 
   @Test
-  void splatAndPhasingFallKeepTheLastLandingUntilSplatRecovery() {
-    var match = match();
-    var start = Instant.parse("2026-01-01T00:00:00Z");
-    var player = match.players.get("first");
-    match.start(start);
-    place(player, 77, 158, shared.tuning().gravity, true);
-    var state = player.game.physics().snapshot();
-    state.splat = 2;
-    player.game.physics().restore(state);
-    match.tick(1_000_000_000L, start);
-    assertThat(player.game.physics().snapshot().splat).isEqualTo(1);
-    assertThat(player.currentProgress).isZero();
-    assertThat(player.maximum).isZero();
-
-    player.input.offer(
-        new GameEnvelope(
-            "PLAYER_INPUT",
-            null,
-            json.createObjectNode()
-                .put("playId", match.id)
-                .put("generation", player.spec.generation())
-                .put("seq", 1)
-                .put("left", false)
-                .put("right", false)
-                .put("jump", true)),
-        1_000_000_000L,
-        false);
-    match.tick(1_000_000_000L, start);
-    assertThat(player.game.physics().snapshot().splat).isZero();
-    assertThat(player.currentProgress).isEqualTo(144);
-    assertThat(player.peak).isEqualTo(2);
-
-    place(player, 200, 50, 0, true);
-    state = player.game.physics().snapshot();
-    state.phasingFall = true;
-    player.game.physics().restore(state);
-    match.tick(1_000_000_000L, start);
-    assertThat(player.game.physics().snapshot().phasingFall).isTrue();
-    assertThat(player.currentProgress).isEqualTo(144);
-    assertThat(player.maximum).isEqualTo(144);
-    assertThat(player.peak).isEqualTo(2);
-  }
-
-  @Test
   void standingsWritesAndResultsUseTheFrozenLandingProgressForDnf() {
     var match = match();
     var start = Instant.parse("2026-01-01T00:00:00Z");

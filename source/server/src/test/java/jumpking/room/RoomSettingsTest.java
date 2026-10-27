@@ -54,7 +54,7 @@ class RoomSettingsTest {
                         rules)
                     .timeLimitMinutes())
             .isEqualTo(minutes);
-    for (int level = 1; level <= 9; level++)
+    for (int level = 1; level <= 8; level++)
       assertThat(
               RoomSettings.parse(
                       json.readTree(

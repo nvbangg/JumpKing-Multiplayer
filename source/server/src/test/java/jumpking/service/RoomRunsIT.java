@@ -23,7 +23,7 @@ class RoomRunsIT {
   @Test
   void shortFinishesCountWinsWithoutGrantingTheFullMapCrownOrBestTime() throws Exception {
     var jdbc = TestDatabase.get().jdbc;
-    for (int level = 1; level <= 9; level++) {
+    for (int level = 1; level <= 8; level++) {
       var owners = new ArrayList<Long>();
       String match = UUID.randomUUID().toString();
       try {
@@ -75,12 +75,12 @@ class RoomRunsIT {
         assertThat(
                 jdbc.queryForObject(
                     "SELECT crown FROM users WHERE id=?", String.class, owners.getFirst()))
-            .isEqualTo(level == 9 ? "GOLD" : "NONE");
+            .isEqualTo(level == 8 ? "GOLD" : "NONE");
         var stats = history.statistics(owners.getFirst());
         assertThat(stats.finishes()).isEqualTo(1);
         assertThat(stats.totalJumps()).isEqualTo(5);
-        assertThat(stats.bestFinishTimeMs()).isEqualTo(level == 9 ? 10000L : null);
-        int changedLevel = level == 9 ? 1 : 9;
+        assertThat(stats.bestFinishTimeMs()).isEqualTo(level == 8 ? 10000L : null);
+        int changedLevel = level == 8 ? 1 : 8;
         assertThatThrownBy(
                 () ->
                     records.save(
@@ -135,7 +135,7 @@ class RoomRunsIT {
               "ABCDEF",
               "RACE",
               null,
-              9,
+              8,
               3,
               1,
               started,
@@ -152,7 +152,7 @@ class RoomRunsIT {
               "ABCDEF",
               "RACE",
               null,
-              9,
+              8,
               3,
               2,
               started,
@@ -173,7 +173,7 @@ class RoomRunsIT {
               "ABCDEF",
               "RACE",
               null,
-              9,
+              8,
               3,
               3,
               started,
@@ -238,7 +238,7 @@ class RoomRunsIT {
                           "ABCDEF",
                           "RACE",
                           null,
-                          9,
+                          8,
                           3,
                           4,
                           started,

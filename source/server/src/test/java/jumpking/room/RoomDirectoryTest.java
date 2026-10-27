@@ -40,7 +40,7 @@ class RoomDirectoryTest {
     var publicRoom = directory.createRoom();
     directory.community();
     assertThat(directory.publicRooms()).isEmpty();
-    directory.describeRoom(publicRoom.roomId(), "PUBLIC", new RoomSettings("HARDCORE", 5, 9, 3));
+    directory.describeRoom(publicRoom.roomId(), "PUBLIC", new RoomSettings("HARDCORE", 5, RoomSettings.FINAL_MAP_ID, 3));
     assertThat(directory.publicRooms())
         .extracting(RoomDirectory.PublicRoom::roomId)
         .containsExactly(publicRoom.roomId());
@@ -50,7 +50,7 @@ class RoomDirectoryTest {
     directory.joinable(publicRoom.roomId(), false);
     assertThat(directory.publicRooms()).isEmpty();
     directory.joinable(publicRoom.roomId(), true);
-    directory.describeRoom(publicRoom.roomId(), "PRIVATE", new RoomSettings("RACE", null, 9, null));
+    directory.describeRoom(publicRoom.roomId(), "PRIVATE", new RoomSettings("RACE", null, RoomSettings.FINAL_MAP_ID, null));
     assertThat(directory.publicRooms()).isEmpty();
   }
 
@@ -58,7 +58,7 @@ class RoomDirectoryTest {
   void concurrentReservationsNeverExceedCapacityOrShareAColor() throws Exception {
     var directory = directory();
     var host = directory.createRoom();
-    directory.describeRoom(host.roomId(), "PUBLIC", new RoomSettings("RACE", null, 9, null));
+    directory.describeRoom(host.roomId(), "PUBLIC", new RoomSettings("RACE", null, RoomSettings.FINAL_MAP_ID, null));
     int capacity = directory.publicRooms().getFirst().capacity();
     var slots = new ArrayList<RoomDirectory.Slot>();
     slots.add(host);

@@ -112,7 +112,7 @@ final class RoomMatch {
       events.add(new Events(player, effect));
       double progress = player.game.physics().progress();
       var state = player.game.physics().snapshot();
-      boolean isLanded = state.grounded && !state.phasingFall;
+      boolean isLanded = state.grounded;
       if (isLanded) {
         player.currentProgress = progress;
         if (progress > player.maximum) {

@@ -16,9 +16,8 @@ class RoomMapsTest {
         .containsExactly(
             new GameMap.Finish(3, 136, true, 1088, null),
             new GameMap.Finish(5, 152, true, 1800, null),
-            new GameMap.Finish(9, 152, true, 3464, null),
+            new GameMap.Finish(9, 8, true, 3384, null),
             new GameMap.Finish(25, 208, true, 9016, null),
-            new GameMap.Finish(25, 200, true, 9136, null),
             new GameMap.Finish(32, 72, true, 11504, 160.0),
             new GameMap.Finish(36, 416, true, 12960, null),
             new GameMap.Finish(39, 304, true, 14096, null),
@@ -30,7 +29,7 @@ class RoomMapsTest {
   void roomMapsAfterTheFirstStartAtThePreviousFinish() throws Exception {
     var shared = new SharedData(new ObjectMapper());
     var physics = shared.tuning();
-    for (int level = 2; level <= 9; level++) {
+    for (int level = 2; level <= 8; level++) {
       var previous = shared.roomMaps().get(level - 2);
       var previousMap =
           new GameMap(
@@ -53,7 +52,7 @@ class RoomMapsTest {
       assertThat(stage.spawn()).isEqualTo(expectedSpawn);
       assertThat(stage.roomBottomY()).isEqualTo(expectedSpawn.y());
       assertThat(stage.progressOriginY()).isEqualTo(expectedSpawn.y() + physics.bodyHeight);
-      if (level < 9)
+      if (level < 8)
         assertThat(stage.progressOriginY() - stage.finish().minProgress())
             .isEqualTo(
                 shared.geometry().progressOriginY()
@@ -74,7 +73,7 @@ class RoomMapsTest {
     }
 
     var first = shared.roomMap(1);
-    var full = shared.roomMap(9);
+    var full = shared.roomMap(8);
     assertThat(first.spawn()).isEqualTo(shared.geometry().spawn());
     assertThat(first.roomBottomY()).isNull();
     assertThat(full.spawn()).isEqualTo(new GameMap.Spawn(311, -13794));
@@ -87,9 +86,8 @@ class RoomMapsTest {
             shared.geometry().spawn(),
             new GameMap.Spawn(163, -786),
             new GameMap.Spawn(231, -1498),
-            new GameMap.Spawn(167, -3162),
+            new GameMap.Spawn(23, -3082),
             new GameMap.Spawn(239, -8714),
-            new GameMap.Spawn(235, -8834),
             new GameMap.Spawn(107, -11202),
             new GameMap.Spawn(435, -12658),
             new GameMap.Spawn(311, -13794));
@@ -98,7 +96,7 @@ class RoomMapsTest {
   @Test
   void fallingBelowAShortRoomReturnsToItsSpawnAndCountsOneFall() throws Exception {
     var shared = new SharedData(new ObjectMapper());
-    for (int level = 2; level <= 9; level++) {
+    for (int level = 2; level <= 8; level++) {
       var stage = shared.roomMap(level);
       var game = new GameSimulation(stage, shared.tuning(), shared.adventure(), false, false);
       var state = game.physics().snapshot();
@@ -204,7 +202,7 @@ class RoomMapsTest {
   @Test
   void leftBrazierFinishRejectsTheRestOfTheWalkway() throws Exception {
     var shared = new SharedData(new ObjectMapper());
-    var sim = new Simulation(shared.roomMap(6), shared.tuning(), false, false);
+    var sim = new Simulation(shared.roomMap(5), shared.tuning(), false, false);
     var state = sim.snapshot();
     state.screen = 32;
     state.y = -11176 - shared.tuning().bodyHeight;
@@ -218,7 +216,7 @@ class RoomMapsTest {
   @Test
   void finalRoomStopsAtTheTowerBeforeTheCommunityFinish() throws Exception {
     var shared = new SharedData(new ObjectMapper());
-    var room = shared.roomMap(9);
+    var room = shared.roomMap(8);
     assertThat(room.finish().screen()).isEqualTo(40);
     var roomSim = new Simulation(room, shared.tuning(), false, false);
     var roomState = roomSim.snapshot();
@@ -248,7 +246,7 @@ class RoomMapsTest {
       route = json.readTree(input);
     }
     for (var goal :
-        shared.roomMaps().stream().filter(g -> g.level() <= 2 || g.level() == 9).toList()) {
+        shared.roomMaps().stream().filter(g -> g.level() <= 2 || g.level() == 8).toList()) {
       var map =
           new GameMap(
               shared.geometry().width(),
@@ -284,19 +282,17 @@ class RoomMapsTest {
           }
         }
         // Bước tới tâm cột cờ sau cú nhảy cuối của đoạn leo.
-        if (goal.level() == 5 && game.physics().snapshot().ticks == 9469)
-          for (int tick = 0; tick < 4; tick++) game.tick(new PlayerInput(false, true, false));
         if (game.finished()) break;
       }
       var state = game.physics().snapshot();
       assertThat(game.finished()).as("level %s", goal.level()).isTrue();
       assertThat(state.screen).isEqualTo(goal.finish().screen());
-      if (goal.level() < 9)
+      if (goal.level() < 8)
         assertThat(state.y + physics.bodyHeight)
             .isEqualTo(map.progressOriginY() - goal.finish().minProgress());
       assertThat(state.ticks)
           .isEqualTo(
-              new int[] {1021, 1815, 4078, 5524, 7538, 9253, 12908, 14058, 16036}
+              new int[] {1021, 1815, 4078, 5524, 9253, 12908, 14058, 16036}
                   [goal.level() - 1]);
       assertThat(state.falls).isZero();
       assertThat(state.freeFlight).isFalse();
@@ -305,7 +301,7 @@ class RoomMapsTest {
       game.physics().restore(state);
       assertThat(game.finished()).isFalse();
     }
-    var roomGame = new GameSimulation(shared.roomMap(9), physics, shared.adventure(), false, false);
+    var roomGame = new GameSimulation(shared.roomMap(8), physics, shared.adventure(), false, false);
     var finishState = checkpoint(json, 16036);
     roomGame.physics().restore(finishState);
     roomGame.tick(PlayerInput.NEUTRAL, "RACE");

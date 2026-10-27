@@ -34,13 +34,12 @@ test("Room maps keep the nine approved Finish boundaries", () => {
 	).toEqual([
 		[1, 3, 136, 1088, true],
 		[2, 5, 152, 1800, true],
-		[3, 9, 152, 3464, true],
+		[3, 9, 8, 3384, true],
 		[4, 25, 208, 9016, true],
-		[5, 25, 200, 9136, true],
-		[6, 32, 72, 11504, true],
-		[7, 36, 416, 12960, true],
-		[8, 39, 304, 14096, true],
-		[9, 40, 328, 14560, true],
+		[5, 32, 72, 11504, true],
+		[6, 36, 416, 12960, true],
+		[7, 39, 304, 14096, true],
+		[8, 40, 328, 14560, true],
 	]);
 });
 
@@ -50,7 +49,6 @@ test("Room labels follow the asset regions and requested early split", () => {
 		"Red Tree",
 		"Colossal Drain",
 		"Bargainburg",
-		"Windswept Bluff",
 		"Stormwall Pass",
 		"Chapel Perilous",
 		"Blue Ruin",
@@ -95,8 +93,8 @@ test("each Room map after the first starts on the previous map's Finish platform
 	}
 
 	expect(roomMap(map, 1).roomBottomY).toBeUndefined();
-	const lastMap = roomMap(map, 9);
-	const lastGoal = required(ROOM_MAPS[8]);
+	const lastMap = roomMap(map, 8);
+	const lastGoal = required(ROOM_MAPS[7]);
 	expect(lastMap.spawn).toEqual({ x: 311, y: -13794 });
 	expect(lastMap.progressOriginY).toBe(-13768);
 	expect(lastMap.roomBottomY).toBe(lastMap.spawn.y);
@@ -107,12 +105,11 @@ test("each Room map after the first starts on the previous map's Finish platform
 		[1, { x: 231, y: 302 }],
 		[2, { x: 163, y: -786 }],
 		[3, { x: 231, y: -1498 }],
-		[4, { x: 167, y: -3162 }],
+		[4, { x: 23, y: -3082 }],
 		[5, { x: 239, y: -8714 }],
-		[6, { x: 235, y: -8834 }],
-		[7, { x: 107, y: -11202 }],
-		[8, { x: 435, y: -12658 }],
-		[9, { x: 311, y: -13794 }],
+		[6, { x: 107, y: -11202 }],
+		[7, { x: 435, y: -12658 }],
+		[8, { x: 311, y: -13794 }],
 	]);
 });
 
@@ -200,8 +197,8 @@ test("a higher grounded platform in the Finish screen does not end a short Room"
 	expect(game.finished).toBe(false);
 });
 
-test("Room 6 requires reaching the left brazier rather than the rest of the walkway", () => {
-	const game = new GameSimulation(roomMap(map, 6));
+test("Room 5 requires reaching the left brazier rather than the rest of the walkway", () => {
+	const game = new GameSimulation(roomMap(map, 5));
 	for (const [x, finished] of [
 		[63, true],
 		[152, false],
@@ -217,8 +214,8 @@ test("Room 6 requires reaching the left brazier rather than the rest of the walk
 	}
 });
 
-test("Room 9 finishes at The Tower while Community keeps the Main Babe finish", () => {
-	const room = new GameSimulation(roomMap(map, 9)),
+test("Room 8 finishes at The Tower while Community keeps the Main Babe finish", () => {
+	const room = new GameSimulation(roomMap(map, 8)),
 		marker = required(findFinishPlatform(room.map)),
 		state = {
 			...room.physics.snapshot(),
@@ -235,7 +232,7 @@ test("Room 9 finishes at The Tower while Community keeps the Main Babe finish", 
 	expect(community.finished).toBe(false);
 });
 
-for (const goal of ROOM_MAPS.filter(({ level }) => [1, 2, 9].includes(level)))
+for (const goal of ROOM_MAPS.filter(({ level }) => [1, 2, 8].includes(level)))
 	test(`Room ${goal.level}: Finish marker is reachable from the native spawn`, () => {
 		const world = { ...map, finish: goal.finish },
 			game = new GameSimulation(world);
@@ -276,8 +273,6 @@ for (const goal of ROOM_MAPS.filter(({ level }) => [1, 2, 9].includes(level)))
 				}
 			}
 			// Bước tới tâm cột cờ sau cú nhảy cuối của đoạn leo.
-			if (goal.level === 5 && game.physics.snapshot().ticks === 9469)
-				repeat(4, { ...NEUTRAL_INPUT, right: true });
 			if (game.finished) break;
 			expect(game.physics.snapshot(), `route checkpoint ${index}`).toEqual(
 				checkpoints[index],
@@ -289,21 +284,21 @@ for (const goal of ROOM_MAPS.filter(({ level }) => [1, 2, 9].includes(level)))
 		expect(state.falls).toBe(0);
 		expect(state.freeFlight).toBe(false);
 		expect(game.adventure.completed).toBe(false);
-		if (goal.level < 9) {
+		if (goal.level < 8) {
 			expect(game.physics.progress).toBe(goal.finish.minProgress);
 			expect(state.x).toBeLessThan(required(floorEnds[goal.level - 1]));
 		}
 		expect(state.x + PHYSICS.bodyWidth).toBeGreaterThan(goal.finish.minCenterX);
 		expect(state.ticks).toBe(
-			[1021, 1815, 4078, 5524, 7538, 9253, 12908, 14058, 16036][goal.level - 1],
+			[1021, 1815, 4078, 5524, 9253, 12908, 14058, 16036][goal.level - 1],
 		);
 		const airborne = { ...state, grounded: false };
 		game.physics.restore(airborne);
 		expect(game.finished).toBe(false);
 	});
 
-test("Room 9 finishes without starting the Community ending", () => {
-	const world = roomMap(map, 9),
+test("Room 8 finishes without starting the Community ending", () => {
+	const world = roomMap(map, 8),
 		marker = required(findFinishPlatform(world)),
 		game = new GameSimulation(world);
 	game.physics.restore({
