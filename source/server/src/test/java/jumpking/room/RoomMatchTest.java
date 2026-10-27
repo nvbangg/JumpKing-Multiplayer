@@ -177,7 +177,7 @@ class RoomMatchTest {
   }
 
   @Test
-  void splatAndPhasingFallKeepTheLastLandingUntilSplatRecovery() {
+  void groundedSplatUpdatesProgressButPhasingFallKeepsTheLastLanding() {
     var match = match();
     var start = Instant.parse("2026-01-01T00:00:00Z");
     var player = match.players.get("first");
@@ -188,8 +188,9 @@ class RoomMatchTest {
     player.game.physics().restore(state);
     match.tick(1_000_000_000L, start);
     assertThat(player.game.physics().snapshot().splat).isEqualTo(1);
-    assertThat(player.currentProgress).isZero();
-    assertThat(player.maximum).isZero();
+    assertThat(player.currentProgress).isEqualTo(144);
+    assertThat(player.maximum).isEqualTo(144);
+    assertThat(player.peak).isEqualTo(1);
 
     player.input.offer(
         new GameEnvelope(
@@ -207,7 +208,7 @@ class RoomMatchTest {
     match.tick(1_000_000_000L, start);
     assertThat(player.game.physics().snapshot().splat).isZero();
     assertThat(player.currentProgress).isEqualTo(144);
-    assertThat(player.peak).isEqualTo(2);
+    assertThat(player.peak).isEqualTo(1);
 
     place(player, 200, 50, 0, true);
     state = player.game.physics().snapshot();
@@ -217,7 +218,7 @@ class RoomMatchTest {
     assertThat(player.game.physics().snapshot().phasingFall).isTrue();
     assertThat(player.currentProgress).isEqualTo(144);
     assertThat(player.maximum).isEqualTo(144);
-    assertThat(player.peak).isEqualTo(2);
+    assertThat(player.peak).isEqualTo(1);
   }
 
   @Test
