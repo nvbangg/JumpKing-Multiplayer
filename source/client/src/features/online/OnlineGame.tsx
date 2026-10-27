@@ -526,7 +526,11 @@ export function OnlineGame({
 						);
 					}
 					audio.current?.setScreen(view?.player.state.screen ?? state.screen);
-					if (snapshot.self.paused && !session.menu && !view) {
+					if (
+						snapshot.self.paused &&
+						!session.menu &&
+						(!view || room.kind === "ROOM")
+					) {
 						if (room.kind === "ROOM") hostPausedRef.current = true;
 						session.menu = true;
 						controls.cancel();
@@ -540,9 +544,9 @@ export function OnlineGame({
 						hostPausedRef.current
 					) {
 						hostPausedRef.current = false;
-						if (session.menu && !view) {
+						if (session.menu) {
 							session.menu = false;
-							controls.resume();
+							if (!view) controls.resume();
 							audio.current?.pause(false);
 							setMenu(false);
 							focusGame();

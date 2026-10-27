@@ -291,7 +291,11 @@ export function App() {
 							resultRef.current = next.result as MatchResult;
 							setResult(next.result as MatchResult);
 						}
-						if (next.state === "PLAYING" || next.state === "COUNTDOWN") {
+						if (
+							next.state === "PLAYING" ||
+							next.state === "COUNTDOWN" ||
+							next.state === "PAUSED"
+						) {
 							setScreen("online");
 							return;
 						}
