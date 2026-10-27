@@ -3,6 +3,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { NETWORK } from "../../network/config";
 import type { ChatMessage } from "../../network/contracts";
 
+const CHAT_HISTORY_IDLE_MS = 15_000;
+
 export function ChatMessages({
 	messages,
 	colors,
@@ -126,7 +128,10 @@ export function ChatPanel({
 		setHistoryVisible(true);
 		clearTimeout(timer.current);
 		if (autoHide && !hovered.current)
-			timer.current = setTimeout(() => setHistoryVisible(false), 5000);
+			timer.current = setTimeout(
+				() => setHistoryVisible(false),
+				CHAT_HISTORY_IDLE_MS,
+			);
 		return () => clearTimeout(timer.current);
 	}, [latestMessage, autoHide]);
 	const input = useRef<HTMLInputElement>(null);
@@ -141,11 +146,11 @@ export function ChatPanel({
 			aria-label="Room chat"
 			onFocus={() => {
 				setHistoryVisible(true);
-				hideLater(5000);
+				hideLater(CHAT_HISTORY_IDLE_MS);
 			}}
 			onBlur={(event) => {
 				if (!event.currentTarget.contains(event.relatedTarget)) {
-					hideLater(2000);
+					hideLater(CHAT_HISTORY_IDLE_MS);
 					onBlur?.();
 				}
 			}}
@@ -172,7 +177,7 @@ export function ChatPanel({
 					aria-expanded={historyVisible}
 					onClick={() => {
 						setHistoryVisible(true);
-						hideLater(5000);
+						hideLater(CHAT_HISTORY_IDLE_MS);
 					}}
 				>
 					<MessageCircle className="tone-cyan" aria-hidden="true" />
@@ -192,7 +197,7 @@ export function ChatPanel({
 					}}
 					onPointerLeave={() => {
 						hovered.current = false;
-						hideLater(2000);
+						hideLater(CHAT_HISTORY_IDLE_MS);
 					}}
 				>
 					<ChatMessages messages={messages} colors={colors} />
