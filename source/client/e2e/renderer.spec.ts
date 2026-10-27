@@ -230,30 +230,40 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 						failures.push(`Crown ${screen}`);
 					if (scene.cameras.main.scrollY !== -screen * 360)
 						failures.push(`Camera ${screen}`);
-					const labels = scene.children.list.filter(
-						(child: { type: string; name: string }) =>
-							child.type === "Text" && child.name !== "room-finish",
-					);
-					if (
-						labels.length !== 2 ||
-						labels.some(
-							(label: { alpha: number; visible: boolean }) =>
-								label.alpha !== 1 || !label.visible,
-						)
-					)
+					const labels = [
+						...parent.querySelectorAll<HTMLElement>(".player-names span"),
+					];
+					if (labels.length !== 2 || labels.some((label) => label.hidden))
 						failures.push(`Names ${screen}`);
-					const ownName = scene.children.getByName("nickname:self"),
-						peerName = scene.children.getByName("nickname:peer");
+					const ownName = parent.querySelector<HTMLElement>(
+							'[data-player-id="self"]',
+						),
+						peerName = parent.querySelector<HTMLElement>(
+							'[data-player-id="peer"]',
+						);
 					if (
 						!ownName ||
 						!peerName ||
-						ownName.style.strokeThickness !== 1 ||
-						ownName.style.resolution !== 2
+						!getComputedStyle(ownName).fontFamily.includes("Segoe UI") ||
+						getComputedStyle(ownName).imageRendering !== "auto" ||
+						Number.parseFloat(getComputedStyle(ownName).fontSize) < 11 ||
+						scene.children.getByName("nickname:self")
 					)
 						failures.push(`Name font ${screen}`);
 					if (ownName && peerName) {
-						const a = ownName.getBounds(),
-							b = peerName.getBounds();
+						const rgb = (hex: string) => {
+							const color = Number.parseInt(hex.slice(1), 16);
+							return `rgb(${color >> 16}, ${(color >> 8) & 255}, ${color & 255})`;
+						};
+						if (
+							getComputedStyle(ownName).color !==
+								rgb(required(colors[ownColor])) ||
+							getComputedStyle(peerName).color !==
+								rgb(required(colors[(ownColor + 1) % colors.length]))
+						)
+							failures.push(`Name color ${screen}`);
+						const a = ownName.getBoundingClientRect(),
+							b = peerName.getBoundingClientRect();
 						if (
 							a.left < b.right &&
 							a.right > b.left &&
@@ -275,6 +285,9 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 				return { screens, failures };
 			} finally {
 				game.destroy(true);
+				await frames();
+				if (parent.querySelector(".player-names"))
+					failures.push("Name layer retained after destroying the game");
 				parent.remove();
 			}
 		},

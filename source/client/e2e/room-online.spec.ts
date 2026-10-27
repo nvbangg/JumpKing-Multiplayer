@@ -173,7 +173,7 @@ test("Account lobby, permanent chat, selected settings and Host transfer", async
 		await a.getByLabel("Mode", { exact: true }).focus();
 		await expect(a.getByLabel("Mode", { exact: true })).toHaveCSS(
 			"outline-style",
-			"none",
+			"solid",
 		);
 		await expect(a.getByLabel("Time Limit", { exact: true })).toHaveValue("5");
 		const fields = await a
@@ -333,12 +333,12 @@ for (const mode of ["RACE", "HARDCORE", "NO_WALK"] as const)
 			).json();
 			expect(
 				detail.participants.find(
-					(p: { nickname: string }) => p.nickname === host,
+					(p: { username: string }) => p.username === host,
 				).jumps,
 			).toBe(1);
 			expect(
 				detail.participants.some(
-					(p: { nickname: string }) => p.nickname === peer,
+					(p: { username: string }) => p.username === peer,
 				),
 			).toBe(true);
 			await a.getByRole("button", { name: "Play Again", exact: true }).click();
@@ -426,7 +426,7 @@ for (const mode of ["RACE", "HARDCORE", "NO_WALK"] as const)
 						!!button &&
 						!!(
 							button.compareDocumentPosition(help) &
-							Node.DOCUMENT_POSITION_FOLLOWING
+							Node.DOCUMENT_POSITION_PRECEDING
 						)
 					);
 				}),

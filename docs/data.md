@@ -119,9 +119,11 @@ Phòng hết người giữ payload chưa commit để retry trong quota. Shutdo
 | --- | --- |
 | History | Community terminal theo run ID; Room đã finalize theo match ID; mới nhất trước theo ended_at rồi ID |
 | Chi tiết Room | Account từng tham gia xem roster/kết quả; username lấy từ `users` |
-| Stats tổng | SUM counters/ticks đã commit; số Finish, số trận Room; MIN finish_ticks của lượt full map |
+| Stats tổng | SUM counters/ticks đã commit; số Finish, số trận Room, số Room Wins; MIN finish_ticks của lượt full map |
 | Leaderboard | Chỉ Community, một best run/Account; comparator theo [gameplay](gameplay.md#community) |
 
 ACTIVE/match chưa finalize không vào History; metrics đã commit vẫn góp Stats/leaderboard. Room ngắn góp counters/finishes, không góp Best Finish Time/crown. Không lưu thêm tổng cộng dồn trong users; giữ các hàng metrics làm nguồn tổng và lịch sử.
+
+Room Wins đếm lượt Room hạng 1 trong trận đã finalize, kể cả đồng hạng; chỉ nhận FINISHED/UNFINISHED và loại trận ABORTED. Tính trực tiếp từ rank/status/match, không lưu thêm cờ winner hoặc bộ đếm trong database.
 
 Query dùng tham số/projection, kiểm tra owner, không lộ snapshot. Leaderboard chọn best run mỗi Account, tính RANK trước LIMIT; ID chỉ ổn định hiển thị, không phá đồng hạng.

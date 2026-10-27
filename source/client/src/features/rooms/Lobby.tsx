@@ -1,5 +1,17 @@
+import {
+	Check,
+	Crown,
+	Eye,
+	LogOut,
+	Map as MapIcon,
+	Play,
+	Settings2,
+	Timer,
+	Users,
+	X,
+} from "lucide-react";
+import ROOM_MAPS from "../../../../common/room-maps.json";
 import rules from "../../../../common/rules.json";
-import { ROOM_MAPS } from "../../game/simulation/roomMaps";
 import type { RoomState } from "../../network/GameSocket";
 import { ItemSettings } from "./ItemSettings";
 import { RoomCode } from "./RoomCode";
@@ -24,16 +36,35 @@ export function Lobby({
 	return (
 		<div className="lobby-layout">
 			<section className="lobby-roster" aria-label="Room players">
-				<RoomCode roomId={room.roomId} />
+				<header className="lobby-header">
+					<h3>
+						<Users className="tone-blue" aria-hidden="true" />
+						Lobby
+					</h3>
+					<RoomCode roomId={room.roomId} />
+				</header>
+				<p className="muted">
+					Players ({members.length}/{rules.capacity})
+				</p>
 				{room.state === "COUNTDOWN" && <p role="status">Starting…</p>}
 				<ul className="players">
 					{members.map((member) => (
 						<li key={member.playerId}>
 							<span>{member.nickname}</span>
-							<span>
-								{member.playerId === room.hostPlayerId ? "Host" : ""}
-								{!member.connected ? " · Offline" : ""}
-								{member.nextMatchConfirmed ? " · Confirmed" : ""}
+							<span className="player-badges">
+								{member.playerId === room.hostPlayerId && (
+									<span className="tone-amber">
+										<Crown aria-hidden="true" />
+										Host
+									</span>
+								)}
+								{!member.connected && <span className="muted">Offline</span>}
+								{member.nextMatchConfirmed && (
+									<span className="tone-green">
+										<Check aria-hidden="true" />
+										Confirmed
+									</span>
+								)}
 								{host &&
 									room.state === "WAITING" &&
 									member.playerId !== selfId && (
@@ -52,45 +83,68 @@ export function Lobby({
 						</li>
 					))}
 				</ul>
-				{self && room.state === "WAITING" && (
+				<div className="lobby-actions">
+					{host && room.state === "WAITING" && (
+						<button
+							type="button"
+							className="button-primary start-button"
+							aria-label="Start"
+							disabled={
+								pending ||
+								!confirmed ||
+								members.filter(
+									(member) =>
+										member.connected && member.nextMatchConfirmed !== false,
+								).length < rules.minimumRoomPlayers
+							}
+							onClick={() => command("START_GAME")}
+						>
+							<Play aria-hidden="true" />
+							Start
+						</button>
+					)}
+					{self && room.state === "WAITING" && (
+						<button
+							type="button"
+							aria-label={confirmed ? "Cancel" : "Confirm"}
+							title={confirmed ? "Cancel" : "Confirm"}
+							disabled={pending}
+							onClick={() =>
+								command("SET_ROOM_CONFIRMED", { confirmed: !confirmed })
+							}
+						>
+							{confirmed ? (
+								<X aria-hidden="true" />
+							) : (
+								<Check aria-hidden="true" />
+							)}
+							<span className="confirm-label">
+								{confirmed ? "Cancel" : "Confirm"}
+							</span>
+						</button>
+					)}
 					<button
 						type="button"
+						className="button-danger"
 						disabled={pending}
-						onClick={() =>
-							command("SET_ROOM_CONFIRMED", { confirmed: !confirmed })
-						}
+						onClick={() => command("LEAVE_ROOM")}
 					>
-						{confirmed ? "Cancel Confirm" : "Confirm"}
+						<LogOut aria-hidden="true" />
+						Leave
 					</button>
-				)}
-				{host && room.state === "WAITING" && (
-					<button
-						type="button"
-						disabled={
-							pending ||
-							!confirmed ||
-							members.filter(
-								(member) =>
-									member.connected && member.nextMatchConfirmed !== false,
-							).length < rules.minimumRoomPlayers
-						}
-						onClick={() => command("START_GAME")}
-					>
-						Start
-					</button>
-				)}
-				<button
-					type="button"
-					disabled={pending}
-					onClick={() => command("LEAVE_ROOM")}
-				>
-					Leave
-				</button>
+				</div>
 			</section>
 			{room.settings && (
 				<section className="lobby-settings" aria-label="Room settings">
+					<h3>
+						<Settings2 aria-hidden="true" />
+						Room Settings
+					</h3>
 					<label className="mode-setting">
-						Map
+						<span className="setting-label">
+							<MapIcon className="tone-cyan" aria-hidden="true" />
+							Map
+						</span>
 						<select
 							aria-label="Map"
 							value={room.settings.mapId}
@@ -109,7 +163,10 @@ export function Lobby({
 						</select>
 					</label>
 					<label className="mode-setting">
-						Visibility
+						<span className="setting-label">
+							<Eye aria-hidden="true" />
+							Visibility
+						</span>
 						<select
 							aria-label="Visibility"
 							value={room.visibility || "PRIVATE"}
@@ -125,7 +182,10 @@ export function Lobby({
 						</select>
 					</label>
 					<label className="mode-setting">
-						Mode
+						<span className="setting-label">
+							<Users className="tone-blue" aria-hidden="true" />
+							Mode
+						</span>
 						<select
 							aria-label="Mode"
 							value={room.settings.mode}
@@ -143,7 +203,10 @@ export function Lobby({
 						</select>
 					</label>
 					<label className="mode-setting">
-						Time Limit
+						<span className="setting-label">
+							<Timer className="tone-amber" aria-hidden="true" />
+							Time Limit
+						</span>
 						<select
 							aria-label="Time Limit"
 							value={room.settings.timeLimitMinutes ?? "UNLIMITED"}

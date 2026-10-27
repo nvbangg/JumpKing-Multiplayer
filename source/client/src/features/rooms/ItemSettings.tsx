@@ -1,3 +1,4 @@
+import { Box } from "lucide-react";
 import rules from "../../../../common/rules.json";
 import type { RoomItemSettings } from "../../game/items";
 
@@ -12,7 +13,10 @@ export function ItemSettings({
 }) {
 	return (
 		<label className="mode-setting">
-			Items cooldown
+			<span className="setting-label">
+				<Box aria-hidden="true" />
+				Items cooldown
+			</span>
 			<select
 				aria-label="Items cooldown"
 				value={value.itemCooldownMinutes ?? "OFF"}

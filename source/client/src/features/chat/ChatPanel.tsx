@@ -1,3 +1,4 @@
+import { MessageCircle, Send } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { NETWORK } from "../../network/config";
 import type { ChatMessage } from "../../network/contracts";
@@ -157,6 +158,12 @@ export function ChatPanel({
 				}
 			}}
 		>
+			{!autoHide && (
+				<h3 className="chat-title">
+					<MessageCircle className="tone-cyan" aria-hidden="true" />
+					Chat
+				</h3>
+			)}
 			{autoHide && messages.length > 0 && (
 				<button
 					className="chat-history-toggle"
@@ -168,6 +175,7 @@ export function ChatPanel({
 						hideLater(5000);
 					}}
 				>
+					<MessageCircle className="tone-cyan" aria-hidden="true" />
 					Chat
 				</button>
 			)}
@@ -234,8 +242,13 @@ export function ChatPanel({
 						onChange={(event) => setText(event.currentTarget.value)}
 						autoComplete="off"
 					/>
-					<button type="submit" disabled={sending || !text.trim()}>
-						Send
+					<button
+						className="icon-button"
+						type="submit"
+						aria-label="Send"
+						disabled={sending || !text.trim()}
+					>
+						<Send aria-hidden="true" />
 					</button>
 				</form>
 				{error && <p role="alert">{error}</p>}

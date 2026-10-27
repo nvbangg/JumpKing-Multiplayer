@@ -76,12 +76,9 @@ test("solo host is confirmed immediately, can cancel, sees 3-2-1 and returns to 
 			"RACE – Default",
 			"EASY – Respawn at Last Position",
 			"HARDCORE – Restart on Death",
-			"TIME LIMIT – Beat the Clock",
 			"NO WALK – Jump Only",
 		]);
-		await page
-			.getByRole("button", { name: "Cancel Confirm", exact: true })
-			.click();
+		await page.getByRole("button", { name: "Cancel", exact: true }).click();
 		await expect(
 			page.getByRole("button", { name: "Start", exact: true }),
 		).toBeDisabled();
@@ -99,9 +96,7 @@ test("solo host is confirmed immediately, can cancel, sees 3-2-1 and returns to 
 		await endMatch(page);
 		await page.getByRole("button", { name: "Play Again", exact: true }).click();
 		await expect(page.locator(".room-code code")).toHaveText(roomId);
-		await page
-			.getByRole("button", { name: "Cancel Confirm", exact: true })
-			.click();
+		await page.getByRole("button", { name: "Cancel", exact: true }).click();
 		await expect(
 			page.getByRole("heading", { name: "Lobby", exact: true }),
 		).toBeVisible();
@@ -140,9 +135,7 @@ test("Lobby automatically reconnects once online, preserves cancellation and Lea
 		const peerName = await registerOnline(peer, "auto_peer");
 		const roomId = await createRoom(host);
 		await joinRoom(peer, roomId);
-		await peer
-			.getByRole("button", { name: "Cancel Confirm", exact: true })
-			.click();
+		await peer.getByRole("button", { name: "Cancel", exact: true }).click();
 		const row = host
 			.getByRole("region", { name: "Room players" })
 			.getByRole("listitem")
@@ -306,9 +299,7 @@ test("the next Lobby only lists players who chose Play Again, including those wh
 		).toBeVisible();
 		await peer.getByRole("button", { name: "Play Again", exact: true }).click();
 		await expect(roster.getByRole("listitem")).toHaveCount(2);
-		await peer
-			.getByRole("button", { name: "Cancel Confirm", exact: true })
-			.click();
+		await peer.getByRole("button", { name: "Cancel", exact: true }).click();
 		await expect(roster.getByRole("listitem")).toHaveCount(2);
 		await expect(
 			roster.getByRole("listitem").filter({ hasText: peerName }),
@@ -380,7 +371,7 @@ test("game offers manual Reconnect and restores the same match without duplicate
 	}
 });
 
-test("copy notice expires three seconds after the latest successful copy", async ({
+test("copy icon becomes a check for two seconds after the latest successful copy", async ({
 	page,
 }) => {
 	await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -393,15 +384,18 @@ test("copy notice expires three seconds after the latest successful copy", async
 			}),
 			notice = page.locator(".room-code").getByRole("status");
 		await copy.click();
+		await expect(copy.locator(".lucide-check")).toBeVisible();
+		await expect(notice).toHaveClass("visually-hidden");
 		await expect(notice).toHaveText("Copied");
 		expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
 			roomId,
 		);
-		await page.waitForTimeout(1600);
+		await page.waitForTimeout(1100);
 		await copy.click();
-		await page.waitForTimeout(1600);
+		await page.waitForTimeout(1100);
 		await expect(notice).toHaveText("Copied");
-		await expect(notice).toHaveText("", { timeout: 3000 });
+		await expect(copy.locator(".lucide-check")).toBeVisible();
+		await expect(copy.locator(".lucide-copy")).toBeVisible({ timeout: 1500 });
 	} finally {
 		await leaveOnline(page);
 	}

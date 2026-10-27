@@ -270,8 +270,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
                               : room.visibility;
                       room.settings = settings;
                       room.visibility = visibility;
-                      directory.describeRoom(
-                          room.id, visibility, settings.mode(), settings.mapId());
+                      directory.describeRoom(room.id, visibility, settings);
                       connection.reply(command, "ROOM_STATE", state(room));
                       broadcast(room);
                     }
@@ -534,7 +533,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     if (create) {
       room.settings = settings;
       room.visibility = "PRIVATE";
-      directory.describeRoom(room.id, room.visibility, settings.mode(), settings.mapId());
+      directory.describeRoom(room.id, room.visibility, settings);
     }
     room.players.put(player.id, player);
     chooseHost(room);

@@ -23,6 +23,7 @@ Simulation độc lập React, Phaser, Spring và database. Phaser không quyế
 source/
 ├── client/
 │   ├── public/assets/
+│   ├── public/ui/           # Background và logo giao diện do chủ dự án cung cấp
 │   ├── src/
 │   │   ├── app/
 │   │   ├── components/
@@ -63,10 +64,12 @@ source/
 
 Unit tests đặt cạnh code TypeScript và trong `server/src/test/java`; E2E ở `client/e2e`. Sơ đồ ở `statics/`, báo cáo ở `report/`. Chỉ tách module khi có trách nhiệm riêng; không thêm lớp chỉ để chuyển tiếp lời gọi.
 
+Giao diện dùng React/CSS và Lucide; background/logo nằm trong `public/ui/`, tách khỏi manifest gameplay. Các màn dùng chung nút Back, trường mật khẩu, dòng dữ liệu và Chat. Style ứng dụng ở `styles/main.css`, bố cục gameplay ở `styles/game.css`; điện thoại ẩn logo và thu gọn bảng/danh sách, desktop giữ logo.
+
 ## Simulation và dữ liệu dùng chung
 
 - Java chạy simulation chính thức; TypeScript prediction/reconciliation cho nhân vật bản thân và interpolation cho peers.
-- Phaser đọc view chỉ đọc trong frame hiện tại; snapshot riêng dành cho lưu/restore. HUD cập nhật khi giá trị hiển thị đổi, không chạy theo từng frame render.
+- Phaser đọc view chỉ đọc trong frame hiện tại; snapshot riêng dành cho lưu/restore. Tên người chơi dùng lớp HTML theo vị trí nhân vật, ở độ phân giải màn hình để không chịu phóng pixel của canvas; hội thoại và tên vùng giữ font game. HUD cập nhật khi giá trị hiển thị đổi, không chạy theo từng frame render.
 - Hai phía dùng chung map/tuning/rules JSON, có mã thực thi riêng. Thứ tự tính toán và điểm ép float32 phải tương đương; kiểm chứng bằng fixtures/replay theo [testing](testing.md#tiêu-chí-nghiệm-thu).
 - Định nghĩa bất biến nạp một lần và dùng chung, không deep-copy qua nhiều lớp; mỗi lượt giữ state riêng. Common chứa geometry, trigger và ID adventure; lời thoại, đường dẫn assets, font và âm thanh thuộc client, tra bằng ID.
 - Client/server dùng cùng bản phát hành dữ liệu. Địa chỉ và secrets theo [deployment](deployment.md#cấu-hình); luật chức năng theo [gameplay](gameplay.md).

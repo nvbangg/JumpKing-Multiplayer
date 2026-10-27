@@ -1,4 +1,11 @@
-import { ROOM_MAPS } from "../../game/simulation/roomMaps";
+import {
+	CircleCheck,
+	Clock3,
+	LogOut,
+	Map as MapIcon,
+	Play,
+} from "lucide-react";
+import ROOM_MAPS from "../../../../common/room-maps.json";
 import type { MatchResult, RoomState } from "../../network/GameSocket";
 import { duration } from "../records/format";
 
@@ -22,11 +29,29 @@ export function Results({
 			?.nextMatchConfirmed === true;
 	return (
 		<>
-			<p>Time: {duration(result.durationMs)}</p>
-			<p>
-				Map {result.mapId} ·{" "}
-				{ROOM_MAPS.find((map) => map.level === result.mapId)?.name}
-			</p>
+			<small
+				className="save-status"
+				data-status={result.saveStatus}
+				role="status"
+			>
+				{result.saveStatus === "SAVED" && <CircleCheck aria-hidden="true" />}
+				{result.saveStatus === "SAVED"
+					? "Results saved"
+					: result.saveStatus === "PENDING"
+						? "Saving results…"
+						: "Results could not be saved"}
+			</small>
+			<div className="result-overview">
+				<span>
+					<MapIcon className="tone-cyan" aria-hidden="true" />
+					Map {result.mapId} ·{" "}
+					{ROOM_MAPS.find((map) => map.level === result.mapId)?.name}
+				</span>
+				<span>
+					<Clock3 aria-hidden="true" />
+					Time: {duration(result.durationMs)}
+				</span>
+			</div>
 			<div className="results-table">
 				<table>
 					<thead>
@@ -43,39 +68,42 @@ export function Results({
 								key={row.playerId}
 								className={row.playerId === selfId ? "self-result" : undefined}
 							>
-								<td>{row.rank}</td>
-								<td>
+								<td data-label="Rank">{row.rank}</td>
+								<td data-label="Player">
 									{row.nickname}
 									{row.status === "DNF" ? " · DNF" : ""}
 								</td>
-								<td>{row.currentProgress.toFixed(1)}</td>
-								<td>{duration(row.finishTimeMs)}</td>
+								<td data-label="Height">{row.currentProgress.toFixed(1)}</td>
+								<td data-label="Finish Time">{duration(row.finishTimeMs)}</td>
 							</tr>
 						))}
 					</tbody>
 				</table>
 			</div>
-			<button
-				type="button"
-				disabled={pending || confirmed || result.saveStatus === "PENDING"}
-				onClick={onAgain}
-			>
-				{confirmed
-					? "Confirmed for Next Game"
-					: result.saveStatus === "FAILED"
-						? "Retry Save"
-						: "Play Again"}
-			</button>
-			<button type="button" disabled={pending} onClick={onLeave}>
-				Leave
-			</button>
-			<small role="status">
-				{result.saveStatus === "SAVED"
-					? "Results saved"
-					: result.saveStatus === "PENDING"
-						? "Saving results…"
-						: "Results could not be saved"}
-			</small>
+			<footer className="panel-actions">
+				<button
+					type="button"
+					className="button-primary"
+					disabled={pending || confirmed || result.saveStatus === "PENDING"}
+					onClick={onAgain}
+				>
+					<Play aria-hidden="true" />
+					{confirmed
+						? "Confirmed for Next Game"
+						: result.saveStatus === "FAILED"
+							? "Retry Save"
+							: "Play Again"}
+				</button>
+				<button
+					type="button"
+					className="button-danger"
+					disabled={pending}
+					onClick={onLeave}
+				>
+					<LogOut aria-hidden="true" />
+					Leave
+				</button>
+			</footer>
 		</>
 	);
 }

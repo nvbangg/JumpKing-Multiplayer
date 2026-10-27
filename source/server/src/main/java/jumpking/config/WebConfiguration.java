@@ -29,6 +29,8 @@ public class WebConfiguration implements WebMvcConfigurer {
                     || path.startsWith("ws/")
                     || path.equals("assets")
                     || path.startsWith("assets/")
+                    || path.equals("ui")
+                    || path.startsWith("ui/")
                     || path.contains(".")
                     || path.contains("..")) return null;
                 return super.getResource("index.html", location);

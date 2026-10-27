@@ -205,7 +205,13 @@ test("short Room finish shows Results and History without ending or full-map rew
 		await expect(
 			a.getByRole("button", { name: "Play Again", exact: true }),
 		).toBeEnabled({ timeout: 10_000 });
-		await expect(a.locator(".winner")).toContainText(hostName);
+		await expect(
+			a
+				.getByRole("row")
+				.filter({ hasText: hostName })
+				.getByRole("cell")
+				.first(),
+		).toHaveText("1");
 		await expect(
 			a.getByText("Map 1 · Green Woods", { exact: true }),
 		).toBeVisible();
@@ -231,7 +237,7 @@ test("short Room finish shows Results and History without ending or full-map rew
 		await a.getByRole("button", { name: "Leave", exact: true }).click();
 		await a.locator(".account-actions button").click();
 		await a.getByRole("button", { name: "History", exact: true }).click();
-		await a.locator(".history-list > button").first().click();
+		await a.locator(".history-rows > button").first().click();
 		await expect(a.getByText("1 · Green Woods", { exact: true })).toBeVisible();
 		expect(errors).toEqual([]);
 	} finally {

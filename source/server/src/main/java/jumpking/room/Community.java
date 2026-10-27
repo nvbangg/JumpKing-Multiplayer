@@ -995,29 +995,31 @@ public class Community implements GameCommandHandler, AutoCloseable {
                 player.slot.color(),
                 player.finished ? "FINISHED" : "ACTIVE",
                 player.crown));
-    var scores = tower.players.values().stream()
-        .filter(player -> !player.loading)
-        .map(
-            player -> new RoomRanking.Score(
-                player.id,
-                player.identity.username(),
-                player.finished ? "FINISHED" : "ACTIVE",
-                player.currentProgress,
-                player.maximum,
-                player.finished ? captured.get(player.id).ticks() : null))
-        .toList();
-    var standings = RoomRanking.currentHeight(scores).stream()
-        .map(
-            row -> {
-              var player = tower.players.get(row.score().playerId());
-              return new jumpking.dto.PlayerStanding(
-                  player.id,
-                  player.identity.username(),
-                  player.slot.color(),
-                  row.rank(),
-                  row.score().currentProgress());
-            })
-        .toList();
+    var scores =
+        tower.players.values().stream()
+            .filter(player -> !player.loading)
+            .map(
+                player ->
+                    new RoomRanking.Score(
+                        player.id,
+                        player.finished ? "FINISHED" : "ACTIVE",
+                        player.currentProgress,
+                        player.maximum,
+                        player.finished ? captured.get(player.id).ticks() : null))
+            .toList();
+    var standings =
+        RoomRanking.currentHeight(scores).stream()
+            .map(
+                row -> {
+                  var player = tower.players.get(row.score().playerId());
+                  return new jumpking.dto.PlayerStanding(
+                      player.id,
+                      player.identity.username(),
+                      player.slot.color(),
+                      row.rank(),
+                      row.score().currentProgress());
+                })
+            .toList();
     for (Member self : tower.players.values()) {
       if (self.loading || self.connection == null)
         continue;

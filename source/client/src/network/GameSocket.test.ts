@@ -578,11 +578,11 @@ test("manual and automatic reconnect share one socket and one restore request", 
 	game.close();
 });
 
-test("chat errors reject the sending form without duplicating them in the app", async () => {
+test("chat and item errors reject their caller without duplicating them in the app", async () => {
 	const received = vi.fn(),
 		game = new GameSocket(received, vi.fn()),
 		socket = await open(game);
-	for (const type of ["CHAT_SEND", "START_GAME"]) {
+	for (const type of ["CHAT_SEND", "USE_ITEM", "START_GAME"]) {
 		const command = game.command(type),
 			rejected = expect(command).rejects.toMatchObject({
 				code: "RATE_LIMITED",
@@ -595,7 +595,7 @@ test("chat errors reject the sending form without duplicating them in the app", 
 			payload: { code: "RATE_LIMITED", message: "Wait before sending" },
 		});
 		await rejected;
-		if (type === "CHAT_SEND") expect(received).not.toHaveBeenCalled();
+		if (type !== "START_GAME") expect(received).not.toHaveBeenCalled();
 		else
 			expect(received).toHaveBeenCalledExactlyOnceWith(
 				"ERROR",
