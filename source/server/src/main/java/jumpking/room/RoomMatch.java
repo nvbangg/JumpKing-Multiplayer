@@ -59,7 +59,7 @@ final class RoomMatch {
       NetworkSettings limits,
       boolean flyAllowed) {
     if (roster.size() < shared.rules().path("minimumRoomPlayers").asInt()
-        || roster.size() > shared.rules().path("capacity").asInt()
+        || roster.size() > shared.rules().path("roomCapacity").asInt()
         || roster.stream().map(Spec::playerId).distinct().count() != roster.size())
       throw new IllegalArgumentException("Invalid Room roster");
     this.roomId = roomId;

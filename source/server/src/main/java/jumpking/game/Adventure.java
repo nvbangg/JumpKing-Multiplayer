@@ -351,9 +351,8 @@ public final class Adventure {
               && s.path("line").asInt() < readable.path("lineLengths").size()
               && s.path("done").isBoolean());
     }
-    var birds = JSON.objectNode();
     for (String bird : List.of("raven", "whiteRaven")) {
-      var raven = saved.has(bird) ? saved.path(bird) : freshRaven(bird);
+      var raven = saved.path(bird);
       counts(raven, "index", "ticks");
       int last = data.path(bird).path("positions").size() - 1;
       require(
@@ -368,14 +367,14 @@ public final class Adventure {
       require(
           !raven.path("done").asBoolean()
               || (raven.path("index").asInt() == last && !raven.path("flying").asBoolean()));
-      birds.set(bird, raven.deepCopy());
     }
     var next = JSON.objectNode().put("codecVersion", 2);
     var flags = next.putArray("flags");
     if (seen.contains("CompletedNormalGame")) flags.add("CompletedNormalGame");
     next.set("dialogue", saved.path("dialogue").deepCopy());
     next.set("readables", saved.path("readables").deepCopy());
-    next.setAll(birds);
+    next.set("raven", saved.path("raven").deepCopy());
+    next.set("whiteRaven", saved.path("whiteRaven").deepCopy());
     state = next;
   }
 }

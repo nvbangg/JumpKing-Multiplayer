@@ -1,5 +1,4 @@
 {
-  "regionStarts": [0, 5, 10, 14, 19, 25, 26, 32, 36, 39],
   "tuning": {
     "npcBusyTicks": 1800,
     "speechHoldTicks": 132,

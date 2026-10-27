@@ -24,7 +24,6 @@ const room: RoomState = {
 		{
 			playerId: "self",
 			nickname: "Player",
-			username: "Player",
 			colorSlot: 0,
 			connected: true,
 			paused: false,

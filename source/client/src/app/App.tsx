@@ -19,7 +19,6 @@ import { OnlineGame } from "../features/online/OnlineGame";
 import { HistoryDetail } from "../features/records/HistoryDetail";
 import { HistoryList } from "../features/records/HistoryList";
 import { StatisticsPanel } from "../features/records/StatisticsPanel";
-import { roomFinishScreen } from "../features/rooms/ending";
 import { Lobby } from "../features/rooms/Lobby";
 import { PublicRooms } from "../features/rooms/PublicRooms";
 import { Results } from "../features/rooms/Results";
@@ -89,7 +88,6 @@ export function App() {
 	const [room, setRoom] = useState<RoomState | null>(null);
 	const [result, setResult] = useState<MatchResult | null>(null);
 	const resultRef = useRef<MatchResult | null>(null);
-	const viewedEnding = useRef<string | null>(null);
 	const [options, setOptions] = useState(readOptions);
 	const [error, setError] = useState("");
 	const [pending, setPending] = useState(false);
@@ -305,24 +303,14 @@ export function App() {
 							resultRef.current &&
 								self?.nextMatchJoined !== true &&
 								(next.state === "WAITING" || next.state === "FINISHED")
-								? roomFinishScreen(
-										resultRef.current,
-										socket.current?.selfId || null,
-										viewedEnding.current,
-									)
+								? "results"
 								: "lobby",
 						);
 					} else if (type === "GAME_FINISHED") {
 						const finished = payload as unknown as MatchResult;
 						resultRef.current = finished;
 						setResult(finished);
-						setScreen(
-							roomFinishScreen(
-								finished,
-								socket.current?.selfId || null,
-								viewedEnding.current,
-							),
-						);
+						setScreen("results");
 					} else if (type === "GAME_STARTED") {
 						resultRef.current = null;
 						setResult(null);
@@ -339,13 +327,7 @@ export function App() {
 						resultRef.current = updated;
 						setResult(updated);
 						setScreenState((current) =>
-							current === "lobby"
-								? current
-								: roomFinishScreen(
-										updated,
-										socket.current?.selfId || null,
-										viewedEnding.current,
-									),
+							current === "lobby" ? current : "results",
 						);
 					} else if (type === "ROOM_LEFT") {
 						const next = exitScreen.current;
@@ -473,10 +455,6 @@ export function App() {
 						home.statistics.totalPlayTimeMs === 0 &&
 						home.statistics.matchesPlayed === 0
 					}
-					onResults={() => {
-						viewedEnding.current = resultRef.current?.playId || null;
-						setScreen("results");
-					}}
 					onHome={(message) => {
 						setNavigationError("");
 						socket.current?.close();

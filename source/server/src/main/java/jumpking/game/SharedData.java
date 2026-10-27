@@ -90,16 +90,7 @@ public class SharedData {
       Double roomBottomY = null;
       if (goal.level() > 1) {
         var previous = roomMaps.get(goal.level() - 2);
-        var previousMap =
-            new GameMap(
-                geometry.width(),
-                geometry.screenHeight(),
-                geometry.tileSize(),
-                geometry.progressOriginY(),
-                geometry.spawn(),
-                previous.finish(),
-                geometry.screens());
-        var platform = FinishPlatform.find(previousMap);
+        var platform = FinishPlatform.find(geometry, previous.finish());
         if (platform == null || platform.width() <= 0)
           throw new IOException("Room Finish cannot provide a safe next-map spawn");
         spawn =

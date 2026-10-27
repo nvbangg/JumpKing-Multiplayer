@@ -25,7 +25,7 @@ export function StatisticsPanel({ statistics }: { statistics: Statistics }) {
 		},
 		{
 			label: "Room Wins",
-			value: (statistics.roomWins ?? 0).toLocaleString(),
+			value: statistics.roomWins.toLocaleString(),
 			icon: <Flag />,
 			tone: "tone-purple",
 		},

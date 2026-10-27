@@ -71,8 +71,9 @@ export function AuthForm({
 		reload,
 	} = useResource<GameConfig>("/game-config", {
 		features: { flyEnabled: false },
+		auth: { googleClientId: null },
 	});
-	const googleClientId = config.auth?.googleClientId;
+	const googleClientId = config.auth.googleClientId;
 	const googleBtnRef = useRef<HTMLDivElement | null>(null);
 	const mounted = useRef(false);
 	const submitting = useRef(false);

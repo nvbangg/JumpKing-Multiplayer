@@ -189,10 +189,6 @@ public class PlayRun {
     startedAt = value;
   }
 
-  public Instant getUpdatedAt() {
-    return updatedAt;
-  }
-
   public void setUpdatedAt(Instant value) {
     updatedAt = value;
   }

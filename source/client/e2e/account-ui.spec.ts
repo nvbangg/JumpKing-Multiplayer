@@ -34,6 +34,7 @@ async function mockAccount(
 					totalFalls: 0,
 					finishes: 0,
 					matchesPlayed: 0,
+					roomWins: 0,
 					bestFinishTimeMs: null,
 				},
 			},

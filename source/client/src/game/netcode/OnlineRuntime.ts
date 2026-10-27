@@ -131,14 +131,14 @@ export class OnlineRuntime implements GameRuntime {
 			ending.screen !== this.game.physics.map.finish.screen
 		)
 			throw new Error("Invalid ending state");
-		if (ending.ravenDone !== undefined && typeof ending.ravenDone !== "boolean")
+		if (typeof ending.ravenDone !== "boolean")
 			throw new Error("Invalid ending state");
 		if (ending.crown !== "GOLD" && ending.crown !== "BLACK")
 			throw new Error("Invalid ending state");
 		this.ending ??= {
 			id: payload.playId,
 			screen: required(ending.screen),
-			ravenDone: ending.ravenDone === true,
+			ravenDone: ending.ravenDone,
 			crown: ending.crown,
 		};
 	}
@@ -284,7 +284,7 @@ export class OnlineRuntime implements GameRuntime {
 				(member) => member.playerId === this.socket.selfId,
 			);
 		const color = (slot: number) =>
-			rules.appearanceColors[slot] || required(rules.appearanceColors[0]);
+			required(rules.appearanceColors[slot % rules.appearanceColors.length]);
 		const peers: RenderPlayer[] = this.peers
 			.frame(performance.now())
 			.map((peer) => ({

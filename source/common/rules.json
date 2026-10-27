@@ -1,6 +1,7 @@
 {
   "snapshotRate": 20,
-  "capacity": 10,
+  "roomCapacity": 10,
+  "communityCapacity": 10,
   "minimumRoomPlayers": 1,
   "roomCodeAlphabet": "0123456789",
   "roomCodeLength": 6,

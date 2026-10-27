@@ -144,7 +144,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
           new SerialExecutor(
               workers.executor(),
               limits.commandQueue(),
-              database.completionCapacity(rules.path("capacity").asInt()),
+              database.completionCapacity(rules.path("roomCapacity").asInt()),
               error ->
                   players
                       .values()
@@ -710,18 +710,15 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     }
     var members = state.putArray("members");
     for (var player : room.players.values()) {
-      var member =
-          members
-              .addObject()
-              .put("playerId", player.id)
-              .put("nickname", player.nickname)
-              .put("colorSlot", player.slot.color())
-              .put("connected", player.connection != null)
-              .putNull("paused")
-              .put("nextMatchConfirmed", player.confirmed)
-              .put("nextMatchJoined", player.nextMatchJoined);
-      if (player.identity.username() == null) member.putNull("username");
-      else member.put("username", player.identity.username());
+      members
+          .addObject()
+          .put("playerId", player.id)
+          .put("nickname", player.nickname)
+          .put("colorSlot", player.slot.color())
+          .put("connected", player.connection != null)
+          .putNull("paused")
+          .put("nextMatchConfirmed", player.confirmed)
+          .put("nextMatchJoined", player.nextMatchJoined);
     }
     return state;
   }
