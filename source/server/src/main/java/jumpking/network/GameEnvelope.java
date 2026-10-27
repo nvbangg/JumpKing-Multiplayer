@@ -22,6 +22,7 @@ public record GameEnvelope(String type, String requestId, JsonNode payload) {
           "END_MATCH",
           "PLAY_AGAIN",
           "SET_COMMUNITY_PAUSED",
+          "SET_ROOM_PAUSED",
           "SET_SPECTATE",
           "USE_ITEM",
           "CHAT_SEND",
