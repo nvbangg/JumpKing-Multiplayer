@@ -124,17 +124,6 @@ public final class GameSimulation {
           || y < -(double) map.screenHeight() * map.screens().size()
           || y > map.screenHeight()) throw new IllegalArgumentException("Invalid safe position");
     }
-    if (w.has("regionIntro")) {
-      var intro = w.path("regionIntro");
-      boolean known = false;
-      for (JsonNode start : data.path("regionStarts"))
-        if (start.equals(intro.path("screen"))) known = true;
-      if (!known
-          || !intro.path("tick").isIntegralNumber()
-          || intro.path("tick").asLong() < 0
-          || intro.path("tick").asLong() > saved.physics().ticks)
-        throw new IllegalArgumentException("Invalid region intro");
-    }
     if (w.has("mapIntro")) {
       var intro = w.path("mapIntro");
       int level = intro.path("level").asInt();

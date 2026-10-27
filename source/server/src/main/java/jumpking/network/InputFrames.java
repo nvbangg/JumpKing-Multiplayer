@@ -1,11 +1,16 @@
 package jumpking.network;
 
 import java.util.ArrayDeque;
+import java.util.Set;
 import jumpking.exception.ApiException;
 import jumpking.game.PlayerInput;
 
 /** Chỉ ACK frame đã xử lý; timeout hủy charge, không giả lập thả Jump. */
 public final class InputFrames {
+  private static final Set<String> CANCEL_FIELDS = Set.of("playId", "generation", "seq");
+  private static final Set<String> INPUT_FIELDS =
+      Set.of("playId", "generation", "seq", "left", "right", "jump", "up", "down", "freeFlight");
+
   public record Frame(long seq, PlayerInput input, boolean cancel) {}
 
   private record Queued(Frame frame, long receivedAt) {}
@@ -32,20 +37,7 @@ public final class InputFrames {
   public PlayerInput offer(GameEnvelope envelope, long now, boolean flyAllowed) {
     var p = envelope.payload();
     boolean cancel = envelope.type().equals("CANCEL_INPUT");
-    GameEnvelope.fields(
-        p,
-        cancel
-            ? java.util.Set.of("playId", "generation", "seq")
-            : java.util.Set.of(
-                "playId",
-                "generation",
-                "seq",
-                "left",
-                "right",
-                "jump",
-                "up",
-                "down",
-                "freeFlight"));
+    GameEnvelope.fields(p, cancel ? CANCEL_FIELDS : INPUT_FIELDS);
     String id = GameEnvelope.text(p, "playId");
     long gen = GameEnvelope.integer(p, "generation"), seq = GameEnvelope.integer(p, "seq");
     if (!id.equals(playId) || gen != generation)

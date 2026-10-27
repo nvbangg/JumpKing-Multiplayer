@@ -170,23 +170,26 @@ class CommunityLifecycleIT {
   }
 
   @Test
-  void currentProgressTracksGroundedHeightAndPeakKeepsAirborneHeight() throws Exception {
+  void currentProgressAndPeakOnlyRecordGroundedHeightAndKeepTheFirstPeakTime() throws Exception {
     try (var client = new GameClient(port)) {
       client.register();
       client.connect();
       var joined = client.ok("JOIN_COMMUNITY", client.communityRequest());
       client.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
-      assertCurrentProgress(client, tickAt(client, 77, 158, true, 0, false), 144);
+      var landed = tickAt(client, 77, 158, true, 0, false);
+      assertCurrentProgress(client, landed, 144);
+      long peakTicks =
+          landed.path("self").path("simulation").path("physics").path("ticks").asLong();
       var airborne = tickAt(client, 200, 50, false, 0, false);
       assertCurrentProgress(client, airborne, 144);
       assertThat(
               airborne.path("self").path("simulation").path("physics").path("grounded").asBoolean())
           .isFalse();
-      double maximum =
+      double airborneHeight =
           shared.geometry().progressOriginY()
               - airborne.path("self").path("simulation").path("physics").path("y").asDouble()
               - shared.tuning().bodyHeight;
-      assertThat(maximum).isGreaterThan(144);
+      assertThat(airborneHeight).isGreaterThan(144);
       var splatted = tickAt(client, 231, 302, true, 3, false);
       assertCurrentProgress(client, splatted, 0);
       assertThat(splatted.path("self").path("simulation").path("physics").path("splat").asInt())
@@ -201,13 +204,16 @@ class CommunityLifecycleIT {
                   .path("phasingFall")
                   .asBoolean())
           .isTrue();
+      assertCurrentProgress(client, tickAt(client, 77, 158, true, 0, false), 144);
       var lowerLanding = tickAt(client, 231, 302, true, 0, false);
       assertCurrentProgress(client, lowerLanding, 0);
       client.ok("LEAVE_ROOM", Map.of());
       var current = client.request("/community/current", "GET", null).path("run");
       assertThat(current.path("id").asText()).isEqualTo(joined.path("playId").asText());
       assertThat(current.path("currentProgress").asDouble()).isZero();
-      assertThat(current.path("maxProgress").asDouble()).isEqualTo(maximum);
+      assertThat(current.path("maxProgress").asDouble()).isEqualTo(144);
+      assertThat(current.path("peakReachedTimeMs").asLong())
+          .isEqualTo(peakTicks * 1000 / shared.tuning().tickRate);
     }
   }
 
@@ -472,7 +478,9 @@ class CommunityLifecycleIT {
       long peak = 0;
       for (int tick = 0; tick < 40; tick++) {
         game.tick(new PlayerInput(false, false, true));
-        if (game.physics().progress() > maximum) {
+        if (game.physics().snapshot().grounded
+            && !game.physics().snapshot().phasingFall
+            && game.physics().progress() > maximum) {
           maximum = game.physics().progress();
           peak = game.physics().snapshot().ticks;
         }

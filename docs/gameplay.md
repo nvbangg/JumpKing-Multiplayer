@@ -42,17 +42,11 @@ Community New Game hiện Green Woods trong 3 giây. Sau đó, mỗi lần đáp
 - Pause chỉ tác động bản thân: hủy charge, tiếp tục physics/clock tới khi đáp nền ổn định rồi dừng. Fly được Pause ngay; phasing fall phải thoát khối. Save & Exit/disconnect cũng chờ ổn định rồi lưu, không hoàn tác cú rơi.
 - Paused/offline không tính active time. Pause liên tục 15 phút khi còn kết nối thì lưu, trả về menu và giải phóng slot; vẫn Continue được.
 
-Leaderboard chỉ xét Community đã commit, lấy một best run/Account. Finish đứng trước, so finish time tăng dần; chưa Finish so peak giảm dần rồi active time lần đầu đạt peak tăng dần. Xét cả ACTIVE/ABANDONED, không ghép dữ liệu của nhiều lượt; bằng khóa đồng hạng 1,1,3.
+Leaderboard chỉ xét Community đã commit, lấy một best run/Account. Current progress và Peak chỉ tính khi đứng trên nền, không phasing fall. Finish đứng trước, so finish time tăng dần; chưa Finish so peak giảm dần rồi active time lần đầu đạt peak tăng dần. Xét cả ACTIVE/ABANDONED, không ghép dữ liệu của nhiều lượt; bằng khóa đồng hạng 1,1,3.
 
 ## Room và xếp hạng
 
 Room ID là chuỗi 6 chữ số, giữ số 0 đầu, ví dụ `001234`. Room mặc định Public, Race và map 1; biết ID thì Join được. Public chỉ xuất hiện khi WAITING và còn chỗ. Lobby tách ID/danh sách người chơi và settings thành hai phần, màn hẹp xếp dọc. Host đổi settings khi WAITING; Time Limit chọn Unlimited hoặc 1–10 phút, Items cooldown chọn No items hoặc 1–5 phút. Thành viên mặc định Confirmed khi tạo/Join phòng; trong WAITING có thể Cancel Confirm và Confirm lại. Server giữ trạng thái này qua cập nhật Lobby và reconnect.
-
-```text
-WAITING → COUNTDOWN → PLAYING → FINISHED
-   ↑                              |
-   └──────── Play Again ───────────┘
-```
 
 Host Start cần ít nhất một người connected. Chốt roster, renderer của Host sẵn sàng thì đếm ngược 3 giây, không chờ renderer của người khác. Host chưa tải xong quá 30 giây hoặc có người Leave trong lúc chuẩn bị thì về Lobby, không ghi trận. Người tải chậm nhận state hiện tại khi sẵn sàng, không khởi động lại countdown. Ngoài WAITING chỉ nhận reconnect của roster.
 
@@ -73,12 +67,12 @@ Easy nhớ riêng vị trí đứng/đáp nền bình thường của từng ng�
 
 Trong map 2–9, rơi qua ranh giới dưới chặng luôn đưa người chơi về spawn chặng và tính một fall; các lần SPLAT còn lại theo mode đã chọn. Tiến độ và peak Room tính từ đầu chặng, không cộng độ cao của các map trước.
 
-Finish đầu tiên kết thúc trận sau khi xử lý mọi người trong cùng tick; Finish cùng tick đồng hạng đầu. Time Limit chốt tại deadline, xét Finish hợp lệ trước timeout. Host có thể End khi PLAYING. Dù kết thúc vì lý do nào, server đều chốt bảng xếp hạng cho toàn bộ roster.
+Finish đầu tiên kết thúc trận sau khi xử lý mọi người trong cùng tick; Finish cùng tick đồng hạng đầu. Time Limit chốt tại deadline, xét Finish hợp lệ trước timeout. Host có thể End khi PLAYING hoặc PAUSED. Dù kết thúc vì lý do nào, server đều chốt bảng xếp hạng cho toàn bộ roster.
 
 Finishers xếp trước theo finish time tăng dần. Người khác so current progress giảm dần; khi bật giới hạn thời gian thì thêm peak giảm dần. Bằng các khóa thì đồng hạng. Clock trận là đồng hồ chung, không tạo thêm khóa phân hạng. ID chỉ ổn định thứ tự hiển thị. Nếu chưa ai Finish, tất cả vẫn được xếp theo tiến độ; DNF cũng có hạng theo tiến độ cuối.
 
 - Current progress: độ cao tại lần đáp nền hợp lệ gần nhất, không tính splat/phasing; khi trên không giữ giá trị đó.
-- Peak: độ cao tức thời cao nhất từng đạt. Hardcore reset current về spawn, giữ peak/clock/falls.
+- Peak: độ cao cao nhất từng đứng trên nền, không tính phasing fall hoặc độ cao đang bay. Hardcore reset current về spawn, giữ peak/clock/falls.
 - Không làm tròn trước xếp hạng. Rock chọn theo độ cao tức thời, không dùng current của lần đáp nền.
 
 Play Again giữ room code/settings và thành viên, nhưng reset trạng thái ván, clock, bẫy và xác nhận. Người chọn đầu tiên đưa phòng về WAITING; danh sách Lobby chỉ hiển thị người đã chọn Play Again hoặc Join mới. Người còn ở Results giữ membership để có thể Play Again sau; Cancel Confirm không ẩn người đã vào Lobby. Từng người xác nhận lại, người Join mới được tính đã xác nhận. Host đã xác nhận mới Start; chỉ người connected đã xác nhận vào roster, người khác về menu. Mỗi Start dùng ID mới; chỉ ghi match/runs sau countdown.
@@ -115,7 +109,7 @@ Host Leave/disconnect chuyển ngay cho người connected có joinOrder nhỏ n
 
 Giữ nhân vật, NPC/hội thoại, readables, đạo cụ, animation, ambience và âm thanh Main Babe. Hội thoại không Pause. Không intro/Press Start, Inventory, merchant, quest nhận đồ hoặc ending credit; Items Room độc lập với adventure.
 
-Tên vùng hiện 6 giây khi lần đầu tới màn đầu vùng (Colossal Drain từ screen index 5). Tiến độ thuộc lượt/checkpoint, không phát lại khi rơi/respawn/Continue/reconnect; lượt mới reset, lên vượt bỏ qua vùng thấp. Menu giữ hiệu ứng, ending ẩn tên vùng.
+Tên vùng theo mốc đáp nền và thời lượng tại [Map và camera](#map-và-camera); tiến độ thuộc lượt/checkpoint. Menu giữ hiệu ứng, ending ẩn tên vùng.
 
 Quạ đen có 14 điểm đậu, tới gần thì bay tiếp; đuổi hết rồi full Finish trong cùng lượt thì quạ trao vương miện đen thay thiên thần. Quạ trắng có 17 điểm trong Main Babe, bay đi sau điểm cuối; không thưởng/đổi ending. Tiến độ riêng từng người, lưu Community và reset mỗi trận Room.
 
@@ -143,7 +137,7 @@ Game ở giữa, giữ đủ screen 4:3 và camera gốc; dành hai cột riêng
 
 Sound và hướng dẫn phím chỉ ở Pause Menu. Nút cảm ứng/hướng dẫn touch theo khả năng chạm, không theo chiều rộng cửa sổ; desktop hẹp vẫn dùng hướng dẫn bàn phím. Trang chủ có Create Room, Join Public Room và ô Room ID kèm Join trực tiếp, không submenu Room hoặc Options. Mũi tên chọn mục hiện khi hover hoặc focus bàn phím; Tab/Shift+Tab đi qua cả ô Room ID. Mã mời nằm cuối bên phải, cùng hàng tiêu đề Lobby; không có nhãn ROOM ID. Nhấn mã để sao chép, icon Copy đổi thành Check trong 2 giây kể từ lần sao chép thành công gần nhất; không hiện chữ Copied, vẫn cho kéo chọn mã thủ công. Start đứng trước Cancel Confirm và Leave. Danh sách thành viên giữ chiều cao tối thiểu trên mobile và cuộn khi dài. Khi clipboard bị chặn, hiện hướng dẫn sao chép thủ công. F11 do trình duyệt xử lý, không nút Fullscreen. Chỉ ô nhập/mã phòng cho chọn chữ. New Game Community chỉ tại menu sau Save & Exit.
 
-Trên thiết bị có con trỏ chính là cảm ứng (`pointer: coarse`), cụm Left/Right khớp chiều rộng và hai mép ngoài với khung nhập chat (ô nhập và Send); Jump khớp với khung Leaderboard, hoặc Players khi chơi Room. Left/Right chia đều chiều rộng còn lại sau khoảng cách 8 px; nút hướng cao 54 px. Hai cụm thẳng mép trên/dưới, cách khung chat và vùng bảng 8 px khi bảng dùng hết chiều cao được cấp, chừa đáy theo safe area. Khi Fly bật, bốn nút hướng chia hai hàng và Jump giãn bằng chiều cao cả cụm. Các quy tắc này không áp dụng cho desktop có con trỏ chính là chuột.
+Trên thiết bị có con trỏ chính là cảm ứng (`pointer: coarse`), cụm Left/Right khớp chiều rộng và hai mép ngoài với khung chat bao quanh lịch sử, ô nhập và Send; Jump khớp với khung Leaderboard, hoặc Players khi chơi Room. Left/Right chia đều chiều rộng còn lại sau khoảng cách 8 px; nút hướng cao 54 px. Hai cụm thẳng mép trên/dưới, cách khung chat và vùng bảng 8 px khi bảng dùng hết chiều cao được cấp, chừa đáy theo safe area. Khi Fly bật, bốn nút hướng chia hai hàng và Jump giãn bằng chiều cao cả cụm. Các quy tắc này không áp dụng cho desktop có con trỏ chính là chuột.
 
 ## Xem người chơi khác
 

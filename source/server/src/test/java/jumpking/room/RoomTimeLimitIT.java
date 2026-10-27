@@ -147,7 +147,7 @@ class RoomTimeLimitIT {
     try (var a = new GameClient(port);
         var b = new GameClient(port)) {
       var game = start(a, b, 5);
-      var before = MainBabeRoute.beforeFinish(shared, json);
+      var before = MainBabeRoute.beforeRoomFinish(shared, json);
       before.physics().ticks = 17_999;
       ((ObjectNode) before.world()).put("lastTick", 17_999);
       arrange(

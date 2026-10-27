@@ -48,8 +48,7 @@ class CommunityFlyIT {
   }
 
   @Test
-  void serverPermittedFlightIsSavedRestoredAndContributesToTheSameCommunityMetrics()
-      throws Exception {
+  void flightCheckpointRestoresWithoutAwardingAirborneProgress() throws Exception {
     assertThat(flags.flyEnabled()).isTrue();
     try (var client = new GameClient(port)) {
       client.register();
@@ -110,7 +109,7 @@ class CommunityFlyIT {
       assertThat(
               jdbc.queryForObject(
                   "SELECT max_progress FROM play_runs WHERE id=?", Double.class, run))
-          .isGreaterThan(0);
+          .isZero();
       var continued = client.ok("JOIN_COMMUNITY", client.communityRequest());
       assertThat(continued.path("playId").asText()).isEqualTo(run);
       client.await(

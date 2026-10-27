@@ -4,6 +4,8 @@ import java.util.*;
 
 /** Comparator không dùng ID để phá đồng hạng; người chưa Finish dùng cùng clock trận. */
 public final class RoomRanking {
+  private static final Set<String> STATUSES = Set.of("ACTIVE", "FINISHED", "UNFINISHED", "DNF");
+
   private RoomRanking() {}
 
   public record Score(
@@ -13,7 +15,7 @@ public final class RoomRanking {
       double maxProgress,
       Long finishTicks) {
     public Score {
-      if (!Set.of("ACTIVE", "FINISHED", "UNFINISHED", "DNF").contains(status)
+      if (!STATUSES.contains(status)
           || !Double.isFinite(currentProgress)
           || !Double.isFinite(maxProgress)
           || currentProgress < 0
@@ -26,9 +28,7 @@ public final class RoomRanking {
 
   public record Ranked(Score score, int rank) {}
 
-  public static List<Ranked> rank(List<Score> scores, String mode, boolean hasTimeLimit) {
-    if (!Set.of("RACE", "EASY", "HARDCORE", "NO_WALK").contains(mode))
-      throw new IllegalArgumentException("Invalid Room mode");
+  public static List<Ranked> rank(List<Score> scores, boolean hasTimeLimit) {
     Comparator<Score> comparator =
         (a, b) -> {
           if (a.finishTicks != null || b.finishTicks != null) {

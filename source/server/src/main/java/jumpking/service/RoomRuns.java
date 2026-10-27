@@ -220,7 +220,7 @@ public class RoomRuns {
                     return new RoomRanking.Score(run.id, "DNF", run.progress, run.maximum, null);
                   })
               .toList();
-      var ranks = RoomRanking.rank(scores, match.mode, match.minutes != null);
+      var ranks = RoomRanking.rank(scores, match.minutes != null);
       var abandoned =
           stored.stream()
               .map(
@@ -301,7 +301,8 @@ public class RoomRuns {
   }
 
   private void validate(Write value) {
-    if (value.mapId < 1
+    if (!RoomSettings.MODES.contains(value.mode)
+        || value.mapId < 1
         || value.mapId > RoomSettings.FINAL_MAP_ID
         || value.itemCooldownMinutes != null
             && (value.itemCooldownMinutes < itemCooldownMin
@@ -350,7 +351,7 @@ public class RoomRuns {
                       new RoomRanking.Score(
                           run.id, run.status, run.progress, run.maximum, run.finish))
               .toList();
-      var ranks = RoomRanking.rank(scores, value.mode, value.minutes != null);
+      var ranks = RoomRanking.rank(scores, value.minutes != null);
       for (var run : value.runs) {
         var ranked =
             ranks.stream()

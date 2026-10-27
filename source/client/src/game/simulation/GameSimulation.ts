@@ -13,7 +13,6 @@ import type { GameMap, PlayerInput, PlayerState, ReadView } from "./types";
 export interface WorldState {
 	lastTick: number;
 	safePosition?: { x: number; y: number };
-	regionIntro?: { screen: number; tick: number };
 	mapIntro?: { level: number; tick: number };
 	registeredScreens: number[];
 	weatherWind: number;
@@ -97,11 +96,6 @@ export class GameSimulation {
 					saved.world.safePosition.y <
 						-this.map.screenHeight * this.map.screens.length ||
 					saved.world.safePosition.y > this.map.screenHeight)) ||
-			(saved.world.regionIntro !== undefined &&
-				(!ADVENTURE.regionStarts.includes(saved.world.regionIntro.screen) ||
-					!Number.isSafeInteger(saved.world.regionIntro.tick) ||
-					saved.world.regionIntro.tick < 0 ||
-					saved.world.regionIntro.tick > saved.physics.ticks)) ||
 			(saved.world.mapIntro !== undefined &&
 				(!ROOM_MAPS.some(
 					(roomMap) => roomMap.level === saved.world.mapIntro?.level,

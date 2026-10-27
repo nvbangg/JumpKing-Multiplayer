@@ -11,7 +11,7 @@ export async function expectTouchLayout(page: Page) {
 			return { x, y, width, height, right, bottom };
 		};
 		return {
-			chat: box(".game-chat .chat-input-box"),
+			chat: box(".game-chat .chat-panel"),
 			panel: box(
 				root.querySelector(".records-panel")
 					? ".records-panel"

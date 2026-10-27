@@ -98,7 +98,7 @@ class RoomEndingIT {
   }
 
   @Test
-  void roomFinalCommitDoesNotStartAnEndingAndRetryOrReconnectKeepsTheSameWinner() throws Exception {
+  void roomCommitKeepsItsCrownAcrossRetryAndReconnectWithoutAnEnding() throws Exception {
     var jdbc = TestDatabase.get().jdbc;
     String trigger = "ending_" + UUID.randomUUID().toString().replace("-", "");
     try (var a = new GameClient(port);
@@ -117,7 +117,7 @@ class RoomEndingIT {
               + " BEFORE UPDATE ON matches FOR EACH ROW BEGIN IF NEW.id='"
               + game.play
               + "' AND NEW.ended_at IS NOT NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='injected ending commit failure'; END IF; END");
-      var before = MainBabeRoute.beforeFinish(shared, json);
+      var before = MainBabeRoute.beforeRoomFinish(shared, json);
       arrange(
           game.room,
           match -> {
@@ -181,11 +181,10 @@ class RoomEndingIT {
               joined.path("playerId").asText(),
               "reconnectToken",
               joined.path("reconnectToken").asText()));
-      assertThat(
-              a.messages.stream()
-                  .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED")))
-          .isEmpty();
-      a.ok("GET_ROOM_STATE", Map.of());
+      a.await(
+          message ->
+              message.path("type").asText().equals("GAME_SNAPSHOT")
+                  && message.path("payload").path("self").path("crown").asText().equals("BLACK"));
       assertThat(
               a.messages.stream()
                   .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED")))
