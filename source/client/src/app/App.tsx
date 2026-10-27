@@ -35,7 +35,6 @@ import {
 import { loadReconnect } from "../network/reconnect";
 import { required } from "../required";
 import { LoadErrorNotice, usePreloadError } from "./LoadErrorNotice";
-import { useMobileDisplay } from "./useMobileDisplay";
 
 type Screen =
 	| "home"
@@ -68,7 +67,6 @@ function locationScreen(): Screen {
 			)?.[0] as Screen | undefined) || "home";
 }
 export function App() {
-	useMobileDisplay();
 	const loadError = usePreloadError();
 	const [screen, setScreenState] = useState<Screen>(locationScreen);
 	const [identity, setIdentityState] = useState<Identity>(initialIdentity);
