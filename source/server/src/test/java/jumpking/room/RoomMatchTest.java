@@ -341,7 +341,7 @@ class RoomMatchTest {
     if (level < 9) {
       var state = new Simulation(map, shared.tuning(), false, false).snapshot();
       state.screen = map.finish().screen();
-      state.x = map.finish().minCenterX() - shared.tuning().bodyWidth / 2.0;
+      state.x = map.finish().minCenterX();
       state.y = map.progressOriginY() - shared.tuning().bodyHeight - map.finish().minProgress();
       state.grounded = true;
       return state;
