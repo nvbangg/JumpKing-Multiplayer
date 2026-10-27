@@ -391,19 +391,16 @@
 }
 .region-caption {
 	position: absolute;
-	top: calc(50% - min(22.5cqw, 30cqh));
-	left: 50%;
+	left: 1.667%;
+	bottom: 0;
 	z-index: 1;
-	transform: translate(-50%, -50%);
-	width: 90%;
 	margin: 0;
-	text-align: center;
 	font-family: JumpKing, monospace;
-	font-size: clamp(16px, 3vw, 28px);
-	text-shadow: 2px 2px #000;
+	font-size: calc(var(--game-width, 480px) * 11 / 480);
+	text-shadow: 1px 1px #000;
 	pointer-events: none;
 	opacity: 0;
-	animation: region-caption forwards;
+	animation: region-caption 6s forwards;
 }
 @keyframes region-caption {
 	0%,
@@ -412,7 +409,7 @@
 	}
 	16%,
 	50% {
-		opacity: 0.7;
+		opacity: 0.25;
 	}
 }
 .game-message {
@@ -871,6 +868,7 @@ button.sound-switch {
 }
 @media (prefers-reduced-motion: reduce) {
 	.region-caption {
-		animation-timing-function: steps(1, end);
+		animation: none;
+		opacity: 0.25;
 	}
 }

@@ -32,13 +32,7 @@ public final class MainBabeRoute {
   private static GameSimulation.Snapshot beforeFinish(
       SharedData shared, ObjectMapper json, long target, GameMap goal) throws Exception {
     var game =
-        new GameSimulation(
-            shared.geometry(),
-            shared.tuning(),
-            shared.adventure(),
-            shared.roomScenes(),
-            false,
-            false);
+        new GameSimulation(shared.geometry(), shared.tuning(), shared.adventure(), false, false);
     java.util.function.Consumer<PlayerInput> step =
         input -> {
           if (game.physics().snapshot().ticks < target) game.tick(input);
@@ -67,9 +61,7 @@ public final class MainBabeRoute {
     if (game.physics().snapshot().ticks != target)
       throw new IllegalStateException("Route did not reach the pre-Finish checkpoint");
     var snapshot = game.snapshot();
-    var check =
-        new GameSimulation(
-            goal, shared.tuning(), shared.adventure(), shared.roomScenes(), false, false);
+    var check = new GameSimulation(goal, shared.tuning(), shared.adventure(), false, false);
     check.restore(snapshot);
     if (check.finished()) throw new IllegalStateException("Route checkpoint already finished");
     check.tick(PlayerInput.NEUTRAL);

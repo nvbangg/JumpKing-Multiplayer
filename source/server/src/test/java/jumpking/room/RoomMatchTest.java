@@ -356,10 +356,10 @@ class RoomMatchTest {
 
   private PlayerState landing(int level) throws Exception {
     var map = shared.roomMap(level);
-    if (level < 9) {
+    if (level < RoomSettings.FINAL_MAP_ID) {
       var state = new Simulation(map, shared.tuning(), false, false).snapshot();
       state.screen = map.finish().screen();
-      state.x = map.finish().minCenterX() - shared.tuning().bodyWidth / 2.0;
+      state.x = map.finish().minCenterX();
       state.y = map.progressOriginY() - shared.tuning().bodyHeight - map.finish().minProgress();
       state.grounded = true;
       return state;
@@ -370,8 +370,6 @@ class RoomMatchTest {
             .getInputStream()) {
       for (var checkpoint : json.readTree(input)) {
         sim.restore(json.treeToValue(checkpoint, PlayerState.class));
-        if (level == 6 && sim.snapshot().ticks == 9469)
-          for (int tick = 0; tick < 4; tick++) sim.tick(new PlayerInput(false, true, false));
         if (sim.finished()) return sim.snapshot();
       }
     }

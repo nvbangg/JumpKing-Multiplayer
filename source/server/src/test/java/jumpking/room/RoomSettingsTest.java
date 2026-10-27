@@ -54,7 +54,7 @@ class RoomSettingsTest {
                         rules)
                     .timeLimitMinutes())
             .isEqualTo(minutes);
-    for (int level = 1; level <= 9; level++)
+    for (int level = 1; level <= RoomSettings.FINAL_MAP_ID; level++)
       assertThat(
               RoomSettings.parse(
                       json.readTree(
@@ -63,7 +63,7 @@ class RoomSettingsTest {
                   .mapId())
           .isEqualTo(level);
     for (String level :
-        java.util.List.of("0", "10", "1.5", "\"5\"", "null", "true", "4294967297")) {
+        java.util.List.of("0", "11", "1.5", "\"5\"", "null", "true", "4294967297")) {
       assertThatThrownBy(
               () ->
                   RoomSettings.parse(

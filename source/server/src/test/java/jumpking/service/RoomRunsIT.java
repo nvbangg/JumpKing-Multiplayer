@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import java.time.*;
 import java.util.*;
+import jumpking.room.RoomSettings;
 import jumpking.support.TestDatabase;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +24,7 @@ class RoomRunsIT {
   @Test
   void shortFinishesCountWinsWithoutGrantingTheFullMapCrownOrBestTime() throws Exception {
     var jdbc = TestDatabase.get().jdbc;
-    for (int level = 1; level <= 9; level++) {
+    for (int level = 1; level <= RoomSettings.FINAL_MAP_ID; level++) {
       var owners = new ArrayList<Long>();
       String match = UUID.randomUUID().toString();
       try {
@@ -75,12 +76,13 @@ class RoomRunsIT {
         assertThat(
                 jdbc.queryForObject(
                     "SELECT crown FROM users WHERE id=?", String.class, owners.getFirst()))
-            .isEqualTo(level == 9 ? "GOLD" : "NONE");
+            .isEqualTo(level == RoomSettings.FINAL_MAP_ID ? "GOLD" : "NONE");
         var stats = history.statistics(owners.getFirst());
         assertThat(stats.finishes()).isZero();
         assertThat(stats.totalJumps()).isEqualTo(5);
-        assertThat(stats.bestFinishTimeMs()).isEqualTo(level == 9 ? 10000L : null);
-        int changedLevel = level == 9 ? 1 : 9;
+        assertThat(stats.bestFinishTimeMs())
+            .isEqualTo(level == RoomSettings.FINAL_MAP_ID ? 10000L : null);
+        int changedLevel = level == RoomSettings.FINAL_MAP_ID ? 1 : RoomSettings.FINAL_MAP_ID;
         assertThatThrownBy(
                 () ->
                     records.save(
@@ -135,7 +137,7 @@ class RoomRunsIT {
               "ABCDEF",
               "RACE",
               null,
-              9,
+              RoomSettings.FINAL_MAP_ID,
               3,
               1,
               started,
@@ -152,7 +154,7 @@ class RoomRunsIT {
               "ABCDEF",
               "RACE",
               null,
-              9,
+              RoomSettings.FINAL_MAP_ID,
               3,
               2,
               started,
@@ -173,7 +175,7 @@ class RoomRunsIT {
               "ABCDEF",
               "RACE",
               null,
-              9,
+              RoomSettings.FINAL_MAP_ID,
               3,
               3,
               started,
@@ -238,7 +240,7 @@ class RoomRunsIT {
                           "ABCDEF",
                           "RACE",
                           null,
-                          9,
+                          RoomSettings.FINAL_MAP_ID,
                           3,
                           4,
                           started,

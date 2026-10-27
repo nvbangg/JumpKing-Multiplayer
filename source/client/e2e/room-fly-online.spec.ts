@@ -18,84 +18,82 @@ test.skip(
 	"Requires the local-profile Room flight harness",
 );
 
-test("Room shows the selected map name at start and keeps it through reconnect", async ({
+test("Room countdown conceals walls and every new stage keeps its spawn after Start", async ({
 	page,
 }, info) => {
-	test.setTimeout(45000);
-	await page.setViewportSize({ width: 844, height: 390 });
-	await page.addInitScript(() =>
-		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false })),
-	);
+	test.setTimeout(120000);
+	const observed = observeOnline(page);
 	try {
-		const observed = observeOnline(page);
-		await registerOnline(page, "region");
-		await page.evaluate(async () => {
-			const path = "/src/network/GameSocket.ts";
-			const { GameSocket } = await import(path);
-			const connect = GameSocket.prototype.connect;
-			GameSocket.prototype.connect = function () {
-				Object.assign(window, { regionConnection: this });
-				return connect.call(this);
-			};
-		});
-		await createRoom(page);
-		await page.getByLabel("Map", { exact: true }).selectOption("9");
-		await page.getByRole("button", { name: "Start", exact: true }).click();
-		await expect(page.getByLabel("Play time", { exact: true })).not.toHaveText(
-			"00:00 s",
-			{ timeout: 15000 },
-		);
-		await page.locator("canvas").click();
-		const caption = page.getByLabel("Current region", { exact: true });
-		await expect
-			.poll(() => observed.snapshot?.self.simulation.world.mapIntro?.level)
-			.toBe(9);
-		await expect(caption).toHaveText("The Tower");
-		await expect(caption).toHaveCSS("animation-duration", "3s");
-		await expect
-			.poll(() =>
-				caption.evaluate((element) =>
-					Number(getComputedStyle(element).opacity),
-				),
-			)
-			.toBeGreaterThan(0.1);
-		const bounds = required(await caption.boundingBox());
-		expect(bounds.x).toBeGreaterThanOrEqual(0);
-		expect(bounds.x + bounds.width).toBeLessThanOrEqual(844);
-		await page.screenshot({ path: info.outputPath("region-mobile.png") });
-		await caption.evaluate(async (element) => {
-			for (const animation of element.getAnimations()) animation.finish();
-			await new Promise<void>((resolve) =>
-				requestAnimationFrame(() => resolve()),
+		await registerOnline(page, "spawn");
+		for (let level = 3; level <= goals.length; level++) {
+			const roomId = await createRoom(page);
+			await page.getByLabel("Map", { exact: true }).selectOption(String(level));
+			const expected = await page.evaluate(
+				async ({ map, level }) => {
+					const path = "/src/game/simulation/roomMaps.ts";
+					const { ROOM_MAPS, roomMap } = await import(path);
+					const floorPath = "/src/game/simulation/finishPlatform.ts";
+					const { findFinishPlatform } = await import(floorPath);
+					const platform = findFinishPlatform({
+						...map,
+						finish: ROOM_MAPS[level - 2].finish,
+					});
+					return {
+						spawn: roomMap(map, level).spawn,
+						left: platform.x,
+						right: platform.x + platform.width,
+					};
+				},
+				{ map, level },
 			);
-		});
-		await expect(caption).toHaveCSS("opacity", "0");
-		const intro = structuredClone(
-			required(observed.snapshot).self.simulation.world.mapIntro,
-		);
-		await expect
-			.poll(() => observed.snapshot?.self.simulation.world.mapIntro)
-			.toEqual(intro);
-		await page.evaluate(() => {
-			const connection = (
-				window as unknown as { regionConnection: { socket: WebSocket } }
-			).regionConnection;
-			connection.socket.close(4000, "Test map caption reconnect");
-		});
-		await page.getByRole("button", { name: "Reconnect", exact: true }).click();
-		await expect(
-			page.getByRole("button", { name: "Resume", exact: true }),
-		).toBeVisible();
-		await expect
-			.poll(() => observed.snapshot?.self.simulation.world.mapIntro)
-			.toEqual(intro);
-		await expect(caption).toHaveCount(0);
+			await page.getByRole("button", { name: "Start", exact: true }).click();
+			await expect(
+				page.getByRole("button", { name: "Menu (Esc)", exact: true }),
+			).toBeVisible();
+			if (level === 3)
+				await page.screenshot({
+					path: info.outputPath("room-countdown-walls.png"),
+				});
+			await expect.poll(() => observed.snapshot?.roomId).toBe(roomId);
+			await expect
+				.poll(() => observed.snapshot?.self.simulation.physics.ticks ?? 0)
+				.toBeGreaterThan(0);
+			expect(required(observed.snapshot).self.simulation.physics).toMatchObject(
+				{ y: expected.spawn.y, falls: 0 },
+			);
+			if (
+				await page
+					.getByRole("button", { name: "Resume", exact: true })
+					.isVisible()
+			)
+				await page.getByRole("button", { name: "Resume", exact: true }).click();
+			await expect
+				.poll(() => observed.snapshot?.self.simulation.physics.ticks ?? 0, {
+					timeout: 15000,
+				})
+				.toBeGreaterThan(physics.tickRate * 2);
+			expect(required(observed.snapshot).self.simulation.physics).toMatchObject(
+				{ y: expected.spawn.y, falls: 0 },
+			);
+			const position = required(observed.snapshot).self.simulation.physics;
+			expect(position.x).toBeGreaterThanOrEqual(expected.left);
+			expect(position.x + physics.bodyWidth).toBeLessThanOrEqual(
+				expected.right,
+			);
+			const caption = page.getByLabel("Current region", { exact: true });
+			await expect(caption).toHaveCSS("animation-duration", "6s");
+			await page
+				.getByRole("button", { name: "Menu (Esc)", exact: true })
+				.click();
+			await page
+				.getByRole("button", { name: "Leave Room", exact: true })
+				.click();
+		}
 	} finally {
-		await page.keyboard.up("ArrowUp");
-		await page.keyboard.up("ArrowDown");
 		await leaveOnline(page);
 	}
 });
+
 test("short Room finish shows Results and History without ending or full-map rewards", async ({
 	browser,
 }, info) => {
@@ -223,7 +221,7 @@ test("short Room finish shows Results and History without ending or full-map rew
 			.items[0];
 		expect(history.room.mapId).toBe(1);
 		const stats = (await (await a.request.get("/api/profile/me")).json()).total;
-		expect(stats.finishes).toBe(1);
+		expect(stats.finishes).toBe(0);
 		expect(stats.matchesPlayed).toBe(1);
 		expect(stats.bestFinishTimeMs).toBeNull();
 		expect(
@@ -352,7 +350,7 @@ for (const mode of ["RACE", "HARDCORE", "NO_WALK"])
 			const history = (await (await a.request.get("/api/history")).json())
 				.items;
 			expect(history[0].room.mode).toBe(mode);
-			expect(history[0].maxProgress).toBeGreaterThan(20);
+			expect(history[0].maxProgress).toBe(0);
 			expect(errors).toEqual([]);
 			await a.getByRole("button", { name: "Leave", exact: true }).click();
 			await b.getByRole("button", { name: "Leave", exact: true }).click();

@@ -7,7 +7,6 @@ export const PRESENTATION = Object.freeze({
 	peerOpacity: 0.7,
 	maxFrameMs: 250,
 	hudIntervalMs: 100,
-	mapCaptionMs: 3000,
 	afkPollMs: 1000,
 	nameFontSize: 10,
 	nameGap: 3,

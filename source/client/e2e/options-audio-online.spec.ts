@@ -31,7 +31,7 @@ test("Sound moves into the game menu, controls remain visible and the timer is a
 	);
 	await expect(page.getByRole("switch", { name: /^Sound:/ })).toHaveCount(0);
 	const region = page.getByLabel("Current region", { exact: true });
-	await expect(region).toHaveText("Green Woods");
+	await expect(region).toHaveText("Redcrown Woods");
 	await expect(page.getByText(/^Jumps:/)).toHaveCount(0);
 	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await expect(

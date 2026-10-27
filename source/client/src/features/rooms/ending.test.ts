@@ -3,7 +3,7 @@ import type { MatchResult } from "../../network/GameSocket";
 import { roomFinishScreen } from "./ending";
 
 const result: MatchResult = {
-	mapId: 9,
+	mapId: 10,
 	playId: "match",
 	reason: "FINISH",
 	durationMs: 1000,
@@ -30,7 +30,7 @@ const result: MatchResult = {
 	],
 };
 test("Room map finishes always go to Results without playing an ending", () => {
-	for (let mapId = 1; mapId <= 9; mapId++)
+	for (let mapId = 1; mapId <= 10; mapId++)
 		expect(roomFinishScreen({ ...result, mapId }, "winner", null)).toBe(
 			"results",
 		);

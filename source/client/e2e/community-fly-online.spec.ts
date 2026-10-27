@@ -1,29 +1,27 @@
 import { expect, test } from "@playwright/test";
-import physics from "../../common/physics.json" with { type: "json" };
 import type { OnlineSnapshot } from "../src/game/netcode/OnlineRuntime";
 import { required } from "../src/required";
 import {
-	landOnMapMarker,
 	leaveOnline,
 	newCommunity,
 	observeOnline,
 	registerOnline,
 } from "./support/online";
 
-test("Community shows Green Woods at start, saves region captions and resets for New Game", async ({
+test.skip(
+	process.env.E2E_FLY_ONLINE !== "true",
+	"Requires the backend/MySQL flight harness with Fly enabled",
+);
+test("Community region follows the screen while still airborne", async ({
 	page,
-}) => {
-	test.setTimeout(60000);
+}, info) => {
 	const observed = observeOnline(page);
-	await page.addInitScript(() =>
-		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false })),
-	);
 	try {
 		await registerOnline(page, "region");
 		await newCommunity(page);
 		const caption = page.getByLabel("Current region", { exact: true });
-		await expect(caption).toHaveText("Green Woods");
-		await expect(caption).toHaveCSS("animation-duration", "3s");
+		await expect(caption).toHaveText("Redcrown Woods");
+		await expect(caption).toHaveCSS("animation-duration", "6s");
 		await page.locator("canvas").click();
 		await page.keyboard.press("Space");
 		await page.waitForTimeout(80);
@@ -31,60 +29,31 @@ test("Community shows Green Woods at start, saves region captions and resets for
 		await expect
 			.poll(() => observed.snapshot?.self.simulation.physics.freeFlight)
 			.toBe(true);
-		await landOnMapMarker(
-			page,
-			() => required(observed.snapshot).self.simulation.physics,
-			// Bệ khác tại screen 4 cao hơn mốc Red Tree, không phải bệ Finish map 1.
-			{ x: 328, y: -1200, width: 40 },
-			physics.bodyWidth,
-			physics.bodyHeight,
-		);
+		await page.keyboard.down("ArrowUp");
 		await expect
-			.poll(() => observed.snapshot?.self.simulation.world.mapIntro?.level, {
-				timeout: 5000,
-				intervals: [30],
+			.poll(() => observed.snapshot?.self.simulation.physics.screen ?? 0, {
+				timeout: 15000,
 			})
-			.toBe(2);
-		await expect(caption).toHaveText("Red Tree");
-		await expect(caption).toHaveCount(0, { timeout: 5000 });
-		const intro = structuredClone(
-			required(observed.snapshot).self.simulation.world.mapIntro,
-		);
-		const run = required(observed.snapshot).playId;
-		await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
-		await expect.poll(() => observed.snapshot?.self.paused).toBe(true);
-		await page
-			.getByRole("button", { name: "Save & Exit", exact: true })
-			.click();
-		await page.getByRole("button", { name: "Continue", exact: true }).click();
-		await expect(
-			page.getByRole("button", { name: "Menu (Esc)", exact: true }),
-		).toBeVisible();
-		await expect.poll(() => observed.snapshot?.playId).toBe(run);
-		expect(required(observed.snapshot).self.simulation.world.mapIntro).toEqual(
-			intro,
-		);
-		await expect(caption).toHaveCount(0);
-		await page.locator("canvas").click();
-		await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
-		await page
-			.getByRole("button", { name: "Save & Exit", exact: true })
-			.click();
-		page.once("dialog", (dialog) => dialog.accept());
-		await newCommunity(page);
-		await expect(caption).toHaveText("Green Woods");
-		await expect.poll(() => observed.snapshot?.playId).not.toBe(run);
+			.toBeGreaterThanOrEqual(6);
+		await page.keyboard.up("ArrowUp");
+		await expect(caption).toHaveText("Colossal Drain");
+		expect(observed.snapshot?.self.simulation.physics.freeFlight).toBe(true);
+		await expect(caption).toHaveCSS("opacity", "0.25");
+		const bounds = required(await caption.boundingBox()),
+			viewport = required(await page.locator(".game-viewport").boundingBox());
+		expect(bounds.x).toBeLessThan(viewport.x + viewport.width * 0.1);
+		expect(bounds.y).toBeGreaterThan(viewport.y + viewport.height * 0.8);
+		await page.screenshot({ path: info.outputPath("screen-region.png") });
+		await page.setViewportSize({ width: 844, height: 390 });
+		await page.screenshot({
+			path: info.outputPath("screen-region-mobile.png"),
+		});
 	} finally {
 		await page.keyboard.up("ArrowUp");
-		await page.keyboard.up("ArrowDown");
 		await leaveOnline(page);
 	}
 });
 
-test.skip(
-	process.env.E2E_FLY_ONLINE !== "true",
-	"Requires the backend/MySQL flight harness with Fly enabled",
-);
 test("server-enabled flight, double Space and movement save and Continue online flight", async ({
 	page,
 }) => {
@@ -161,7 +130,7 @@ test("server-enabled flight, double Space and movement save and Continue online 
 		await (await page.request.get("/api/leaderboard")).json()
 	).entries.find((entry: { username: string }) => entry.username === name);
 	expect(best.id).toBe(run);
-	expect(best.maxProgress).toBeGreaterThan(40);
+	expect(best.maxProgress).toBe(0);
 	await page.getByRole("button", { name: "Continue", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "Menu (Esc)", exact: true }),

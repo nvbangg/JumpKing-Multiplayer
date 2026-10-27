@@ -1,28 +1,36 @@
 import { expect, test } from "vitest";
-import adventure from "../../../../common/adventure.json";
 import checkpoints from "../../../../common/fixtures/main-babe-checkpoints.json";
 import route from "../../../../common/fixtures/main-babe-route.json";
 import map from "../../../../common/maps/main-babe.json";
 import manifest from "../../../public/assets/manifest.json";
 import { required } from "../../required";
+import { ADVENTURE } from "./Adventure";
 import { findFinishPlatform } from "./finishPlatform";
 import { GameSimulation } from "./GameSimulation";
-import { ROOM_MAPS, roomMap } from "./roomMaps";
+import { ROOM_MAPS, regionName, roomMap } from "./roomMaps";
 import { PHYSICS } from "./tuning";
 import { NEUTRAL_INPUT, type PlayerInput } from "./types";
 
-const floorEnds = [208, 328, 56, 280, 176, 280, 72, 384, 288];
+const floorEnds = [208, 328];
 
-test("region boundaries match the manifest and Colossal Drain starts on screen six", () => {
-	const starts = manifest.screens.flatMap((screen, index) =>
-		screen.location !== manifest.screens[index - 1]?.location ? [index] : [],
-	);
-	expect(starts).toEqual(adventure.regionStarts);
-	expect(manifest.screens[4]?.location).toBe("REDCROWN WOODS");
-	expect(manifest.screens[5]?.location).toBe("COLOSSAL DRAIN");
+test("region names follow original screens with Windswept merged into Stormwall", () => {
+	expect([0, 5, 6, 9, 10, 14, 19, 25, 31, 32, 36, 39].map(regionName)).toEqual([
+		"Redcrown Woods",
+		"Redcrown Woods",
+		"Colossal Drain",
+		"Colossal Drain",
+		"False Kings' Keep",
+		"Bargainburg",
+		"Great Frontier",
+		"Stormwall Pass",
+		"Stormwall Pass",
+		"Chapel Perilous",
+		"Blue Ruin",
+		"The Tower",
+	]);
 });
 
-test("Room maps keep the nine approved Finish boundaries", () => {
+test("Room maps keep the ten approved Finish boundaries", () => {
 	expect(
 		ROOM_MAPS.map(({ level, finish }) => [
 			level,
@@ -34,13 +42,14 @@ test("Room maps keep the nine approved Finish boundaries", () => {
 	).toEqual([
 		[1, 3, 136, 1088, true],
 		[2, 5, 152, 1800, true],
-		[3, 9, 152, 3464, true],
-		[4, 25, 208, 9016, true],
-		[5, 25, 200, 9136, true],
-		[6, 32, 72, 11504, true],
-		[7, 36, 416, 12960, true],
-		[8, 39, 304, 14096, true],
-		[9, 40, 328, 14560, true],
+		[3, 9, 8, 3384, true],
+		[4, 14, 96, 5040, true],
+		[5, 19, 216, 6896, true],
+		[6, 25, 208, 9016, true],
+		[7, 32, 72, 11504, true],
+		[8, 36, 416, 12960, true],
+		[9, 39, 304, 14096, true],
+		[10, 40, 328, 14560, true],
 	]);
 });
 
@@ -49,8 +58,9 @@ test("Room labels follow the asset regions and requested early split", () => {
 		"Green Woods",
 		"Red Tree",
 		"Colossal Drain",
+		"False Kings' Keep",
 		"Bargainburg",
-		"Windswept Bluff",
+		"Great Frontier",
 		"Stormwall Pass",
 		"Chapel Perilous",
 		"Blue Ruin",
@@ -74,6 +84,11 @@ test("each Room map after the first starts on the previous map's Finish platform
 			},
 			stage = roomMap(map, goal.level),
 			game = new GameSimulation(stage);
+		expect(
+			Object.values(game.snapshot().world.walls).every(
+				(w) => w.fadeTicks === ADVENTURE.tuning.wallFadeTicks,
+			),
+		).toBe(true);
 		expect(stage.spawn).toEqual(spawn);
 		expect(stage.roomBottomY).toBe(spawn.y);
 		expect(stage.progressOriginY).toBe(spawn.y + PHYSICS.bodyHeight);
@@ -84,7 +99,8 @@ test("each Room map after the first starts on the previous map's Finish platform
 		);
 		expect(game.physics.progress).toBe(0);
 		expect(game.physics.snapshot().grounded).toBe(true);
-		game.tick(NEUTRAL_INPUT);
+		for (let tick = 0; tick < PHYSICS.tickRate * 3; tick++)
+			game.tick(NEUTRAL_INPUT);
 		const grounded = game.physics.snapshot();
 		expect(grounded.x).toBeGreaterThanOrEqual(platform.x);
 		expect(grounded.x + PHYSICS.bodyWidth).toBeLessThanOrEqual(
@@ -95,8 +111,8 @@ test("each Room map after the first starts on the previous map's Finish platform
 	}
 
 	expect(roomMap(map, 1).roomBottomY).toBeUndefined();
-	const lastMap = roomMap(map, 9);
-	const lastGoal = required(ROOM_MAPS[8]);
+	const lastMap = roomMap(map, 10);
+	const lastGoal = required(ROOM_MAPS[9]);
 	expect(lastMap.spawn).toEqual({ x: 311, y: -13794 });
 	expect(lastMap.progressOriginY).toBe(-13768);
 	expect(lastMap.roomBottomY).toBe(lastMap.spawn.y);
@@ -107,12 +123,13 @@ test("each Room map after the first starts on the previous map's Finish platform
 		[1, { x: 231, y: 302 }],
 		[2, { x: 163, y: -786 }],
 		[3, { x: 231, y: -1498 }],
-		[4, { x: 167, y: -3162 }],
-		[5, { x: 239, y: -8714 }],
-		[6, { x: 235, y: -8834 }],
-		[7, { x: 107, y: -11202 }],
-		[8, { x: 435, y: -12658 }],
-		[9, { x: 311, y: -13794 }],
+		[4, { x: 23, y: -3082 }],
+		[5, { x: 119, y: -4738 }],
+		[6, { x: 231, y: -6594 }],
+		[7, { x: 239, y: -8714 }],
+		[8, { x: 107, y: -11202 }],
+		[9, { x: 435, y: -12658 }],
+		[10, { x: 311, y: -13794 }],
 	]);
 });
 
@@ -200,8 +217,8 @@ test("a higher grounded platform in the Finish screen does not end a short Room"
 	expect(game.finished).toBe(false);
 });
 
-test("Room 6 requires reaching the left brazier rather than the rest of the walkway", () => {
-	const game = new GameSimulation(roomMap(map, 6));
+test("Room 7 requires reaching the left brazier rather than the rest of the walkway", () => {
+	const game = new GameSimulation(roomMap(map, 7));
 	for (const [x, finished] of [
 		[63, true],
 		[152, false],
@@ -217,8 +234,8 @@ test("Room 6 requires reaching the left brazier rather than the rest of the walk
 	}
 });
 
-test("Room 9 finishes at The Tower while Community keeps the Main Babe finish", () => {
-	const room = new GameSimulation(roomMap(map, 9)),
+test("Room 10 finishes at The Tower while Community keeps the Main Babe finish", () => {
+	const room = new GameSimulation(roomMap(map, 10)),
 		marker = required(findFinishPlatform(room.map)),
 		state = {
 			...room.physics.snapshot(),
@@ -235,7 +252,7 @@ test("Room 9 finishes at The Tower while Community keeps the Main Babe finish", 
 	expect(community.finished).toBe(false);
 });
 
-for (const goal of ROOM_MAPS.filter(({ level }) => [1, 2, 9].includes(level)))
+for (const goal of ROOM_MAPS.filter(({ level }) => [1, 2, 10].includes(level)))
 	test(`Room ${goal.level}: Finish marker is reachable from the native spawn`, () => {
 		const world = { ...map, finish: goal.finish },
 			game = new GameSimulation(world);
@@ -275,9 +292,6 @@ for (const goal of ROOM_MAPS.filter(({ level }) => [1, 2, 9].includes(level)))
 					if (game.physics.snapshot().grounded && i > 0) break;
 				}
 			}
-			// Bước tới tâm cột cờ sau cú nhảy cuối của đoạn leo.
-			if (goal.level === 5 && game.physics.snapshot().ticks === 9469)
-				repeat(4, { ...NEUTRAL_INPUT, right: true });
 			if (game.finished) break;
 			expect(game.physics.snapshot(), `route checkpoint ${index}`).toEqual(
 				checkpoints[index],
@@ -289,21 +303,21 @@ for (const goal of ROOM_MAPS.filter(({ level }) => [1, 2, 9].includes(level)))
 		expect(state.falls).toBe(0);
 		expect(state.freeFlight).toBe(false);
 		expect(game.adventure.completed).toBe(false);
-		if (goal.level < 9) {
+		if (goal.level < 10) {
 			expect(game.physics.progress).toBe(goal.finish.minProgress);
 			expect(state.x).toBeLessThan(required(floorEnds[goal.level - 1]));
 		}
 		expect(state.x + PHYSICS.bodyWidth).toBeGreaterThan(goal.finish.minCenterX);
 		expect(state.ticks).toBe(
-			[1021, 1815, 4078, 5524, 7538, 9253, 12908, 14058, 16036][goal.level - 1],
+			goal.level === 1 ? 1021 : goal.level === 2 ? 1815 : 16036,
 		);
 		const airborne = { ...state, grounded: false };
 		game.physics.restore(airborne);
 		expect(game.finished).toBe(false);
 	});
 
-test("Room 9 finishes without starting the Community ending", () => {
-	const world = roomMap(map, 9),
+test("Room 10 finishes without starting the Community ending", () => {
+	const world = roomMap(map, 10),
 		marker = required(findFinishPlatform(world)),
 		game = new GameSimulation(world);
 	game.physics.restore({
@@ -319,6 +333,6 @@ test("Room 9 finishes without starting the Community ending", () => {
 });
 
 test("invalid Room map numbers fail closed", () => {
-	for (const level of [0, 10, 1.5, NaN])
+	for (const level of [0, 11, 1.5, NaN])
 		expect(() => roomMap(map, level)).toThrow();
 });

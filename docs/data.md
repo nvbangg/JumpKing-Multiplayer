@@ -101,7 +101,7 @@ Writer nhận payload bất biến, xử lý theo thứ tự lượt/trận; có
 
 Save thuộc run/Account, không thuộc room code. Continue yêu cầu đúng owner, COMMUNITY/ACTIVE và expectedRunId; sai trả CONFLICT, không tự tạo lượt. New Game kiểm tra expectedRunId, chốt lượt cũ ABANDONED/xóa snapshot và tạo lượt mới revision=1 trong một transaction; rollback giữ save cũ.
 
-Checkpoint gồm physics/adventure/world đủ Continue: position/velocity/buffers, Fly/phasing fall, hội thoại theo ID, tiến độ quạ, screen events/hidden walls/gió và mốc tên vùng. Codec version kiểm tra cấu trúc; không lưu shared definitions hoặc nội dung hiển thị. Metrics/snapshot/revision nhất quán trong một lần ghi; restore lỗi không tự thay save bằng spawn.
+Checkpoint gồm physics/adventure/world đủ Continue: position/velocity/buffers, Fly/phasing fall, hội thoại theo ID, tiến độ quạ, screen events/hidden walls/gió. Codec version kiểm tra cấu trúc; không lưu shared definitions hoặc nội dung hiển thị. Metrics/snapshot/revision nhất quán trong một lần ghi; restore lỗi không tự thay save bằng spawn.
 
 Autosave chỉ cập nhật đúng run đang ACTIVE. Finish chốt status/finish_ticks/ended_at và xóa snapshot atomically. Điều kiện ổn định trước Pause/Leave, Resume và Fly theo [gameplay](gameplay.md).
 

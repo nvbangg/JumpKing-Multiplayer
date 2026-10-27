@@ -50,7 +50,6 @@ class CommunityRunsIT {
                 shared.physics(),
                 new com.fasterxml.jackson.core.type.TypeReference<Map<String, Number>>() {})),
         shared.adventure(),
-        shared.roomScenes(),
         false,
         false);
   }
@@ -104,17 +103,12 @@ class CommunityRunsIT {
     var whiteRaven = game.adventure().snapshot().path("whiteRaven");
     assertThat(whiteRaven.path("flying").asBoolean()).isTrue();
     raven = game.adventure().snapshot().path("raven");
-    var mapIntro = game.snapshot().world().path("mapIntro");
-    assertThat(mapIntro.path("level").asInt()).isEqualTo(2);
     var stored = records.open(owner, true, null, game.snapshot());
     var continued = records.open(owner, false, stored.id(), game().snapshot());
     var restored = game();
     restored.restore(continued.snapshot());
     assertThat(restored.adventure().snapshot().path("raven")).isEqualTo(raven);
     assertThat(restored.adventure().snapshot().path("whiteRaven")).isEqualTo(whiteRaven);
-    var restoredIntro = restored.snapshot().world().path("mapIntro");
-    assertThat(restoredIntro.path("level").asInt()).isEqualTo(mapIntro.path("level").asInt());
-    assertThat(restoredIntro.path("tick").asLong()).isEqualTo(mapIntro.path("tick").asLong());
     var other = records.open(account(), true, null, game().snapshot());
     assertThat(other.snapshot().adventure().path("raven").path("flying").asBoolean()).isFalse();
     assertThat(other.snapshot().adventure().path("whiteRaven").path("flying").asBoolean())
@@ -124,8 +118,6 @@ class CommunityRunsIT {
     assertThat(next.snapshot().adventure().path("raven").path("flying").asBoolean()).isFalse();
     assertThat(next.snapshot().adventure().path("whiteRaven").path("index").asInt()).isZero();
     assertThat(next.snapshot().adventure().path("whiteRaven").path("flying").asBoolean()).isFalse();
-    assertThat(next.snapshot().world().path("mapIntro").path("level").asInt()).isEqualTo(1);
-    assertThat(next.snapshot().world().path("mapIntro").path("tick").asLong()).isZero();
   }
 
   @Test

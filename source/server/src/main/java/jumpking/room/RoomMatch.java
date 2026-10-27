@@ -81,13 +81,7 @@ final class RoomMatch {
           new Player(
               spec,
               new GameSimulation(
-                  map,
-                  physics,
-                  adventure,
-                  shared.roomScenes(),
-                  settings.mapId(),
-                  flyAllowed,
-                  settings.mode().equals("NO_WALK")),
+                  map, physics, adventure, flyAllowed, settings.mode().equals("NO_WALK")),
               input));
     }
   }
