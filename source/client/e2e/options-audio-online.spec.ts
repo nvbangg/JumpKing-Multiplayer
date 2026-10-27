@@ -72,7 +72,7 @@ test("Sound moves into the game menu, controls remain visible and the timer is a
 				!!button &&
 				!!(
 					button.compareDocumentPosition(help) &
-					Node.DOCUMENT_POSITION_FOLLOWING
+					Node.DOCUMENT_POSITION_PRECEDING
 				)
 			);
 		}),

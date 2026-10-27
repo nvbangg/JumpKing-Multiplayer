@@ -6,7 +6,7 @@ test.skip(
 	!process.env.E2E_ROOM_FINISH,
 	"Requires the isolated Room ending fixture",
 );
-test("only the committed Room winner sees ending while peers can confirm the next game", async ({
+test("committed Room Finish opens Results directly and both players can join the next game", async ({
 	browser,
 }, info) => {
 	const fixture = JSON.parse(required(process.env.E2E_ROOM_FINISH));
@@ -66,19 +66,25 @@ test("only the committed Room winner sees ending while peers can confirm the nex
 			}, credential);
 			await page.reload();
 			await expect(
-				page.getByRole("button", { name: /^(Menu|Skip|Play Again)$/ }),
+				page.getByRole("button", { name: /^(Menu \(Esc\)|Play Again)$/ }),
 			).toBeVisible({ timeout: 15_000 });
 		}
 		await restore(winner, fixture.winner);
 		await restore(peer, fixture.peer);
 		await expect(
+			winner.getByRole("button", { name: "Play Again", exact: true }),
+		).toBeEnabled({ timeout: 15_000 });
+		await expect(
 			winner.getByRole("button", { name: "Skip", exact: true }),
-		).toBeVisible({ timeout: 15_000 });
+		).toHaveCount(0);
+		await expect(
+			winner.getByRole("button", { name: "View Results", exact: true }),
+		).toHaveCount(0);
 		await expect(
 			peer.getByRole("button", { name: "Play Again", exact: true }),
 		).toBeEnabled();
 		expect(peerFinishes).toEqual([]);
-		expect(winnerFinishes).toHaveLength(1);
+		expect(winnerFinishes).toEqual([]);
 		const history = await (
 			await winner.request.get(`/api/history/ROOM/${fixture.playId}`)
 		).json();
@@ -93,18 +99,11 @@ test("only the committed Room winner sees ending while peers can confirm the nex
 			peer.getByRole("heading", { name: "Lobby", exact: true }),
 		).toBeVisible();
 		await expect(
-			winner.getByRole("button", { name: "Skip", exact: true }),
+			winner.getByRole("heading", { name: "Results", exact: true }),
 		).toBeVisible();
-		await winner.getByRole("button", { name: "Skip", exact: true }).click();
-		await expect(
-			winner.getByRole("button", { name: "View Results", exact: true }),
-		).toBeEnabled();
 		await winner.screenshot({
-			path: info.outputPath("room-winner-ending.png"),
+			path: info.outputPath("room-winner-results.png"),
 		});
-		await winner
-			.getByRole("button", { name: "View Results", exact: true })
-			.click();
 		await expect(
 			winner.getByRole("button", { name: "Play Again", exact: true }),
 		).toBeEnabled();
@@ -129,7 +128,7 @@ test("only the committed Room winner sees ending while peers can confirm the nex
 		await expect(
 			winner.getByRole("button", { name: "Play Again", exact: true }),
 		).toBeEnabled();
-		expect(winnerFinishes).toHaveLength(1);
+		expect(winnerFinishes).toEqual([]);
 		expect(peerFinishes).toEqual([]);
 		expect(errors).toEqual([]);
 		await winner.getByRole("button", { name: "Leave", exact: true }).click();

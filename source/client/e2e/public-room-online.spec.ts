@@ -13,21 +13,14 @@ async function checkLobbyLayout(page: Page) {
 	if (!viewport) throw new Error("Lobby checks require a viewport");
 	await expect(panel).toBeVisible();
 	await expect(chat).toBeVisible();
-	await expect(page.locator(".room-code-label")).toHaveText("ROOM ID:");
-	const labelBounds = await page.locator(".room-code-label").boundingBox(),
-		idBounds = await page.locator(".room-code code").boundingBox();
-	if (!labelBounds || !idBounds) throw new Error("Room ID is missing");
-	expect(idBounds.x - labelBounds.x - labelBounds.width).toBeGreaterThanOrEqual(
-		12,
-	);
-	await expect
-		.poll(async () => {
-			const bounds = await panel.boundingBox();
-			return bounds
-				? Math.abs(bounds.x + bounds.width / 2 - viewport.width / 2)
-				: Infinity;
-		})
-		.toBeLessThanOrEqual(1);
+	await expect(page.locator(".room-code-label")).toHaveCount(0);
+	const title = await page.locator(".lobby-header h3").boundingBox(),
+		copy = await page.locator(".room-code-copy").boundingBox();
+	if (!title || !copy) throw new Error("Lobby header is missing");
+	expect(title.x + title.width).toBeLessThan(copy.x);
+	expect(
+		Math.abs(title.y + title.height / 2 - copy.y - copy.height / 2),
+	).toBeLessThan(1);
 	const panelBounds = await panel.boundingBox(),
 		chatBounds = await chat.boundingBox();
 	if (!panelBounds || !chatBounds) throw new Error("Lobby or chat is missing");
@@ -44,7 +37,7 @@ async function checkLobbyLayout(page: Page) {
 	const message = chat.getByRole("textbox", { name: "Message", exact: true });
 	await message.focus();
 	await message.fill("Chat remains separate from the lobby");
-	await expect(message).toHaveCSS("outline-style", "none");
+	await expect(message).toHaveCSS("outline-style", "solid");
 	await message.clear();
 }
 
@@ -141,18 +134,23 @@ test("Public rooms can be discovered and joined while Private rooms remain acces
 		await a.evaluate(() => window.getSelection()?.removeAllRanges());
 		await expect(
 			a.getByLabel("Map", { exact: true }).locator("option"),
-		).toHaveCount(10);
-		for (let level = 1; level <= 10; level++) {
+		).toHaveCount(9);
+		for (let level = 1; level <= 9; level++) {
 			await a.getByLabel("Map", { exact: true }).selectOption(String(level));
 			await expect(a.getByLabel("Map", { exact: true })).toHaveValue(
 				String(level),
 			);
 		}
 		await a.getByLabel("Map", { exact: true }).selectOption("3");
+		await a.getByLabel("Time Limit", { exact: true }).selectOption("5");
+		await a.getByLabel("Items cooldown", { exact: true }).selectOption("3");
 		await b
 			.getByRole("button", { name: "Join Public Room", exact: true })
 			.click();
 		await expect(b.getByRole("button", { name: new RegExp(id) })).toBeVisible();
+		const publicRow = b.getByRole("row").filter({ hasText: id });
+		await expect(publicRow).toContainText("3 min cooldown");
+		await expect(publicRow).toContainText("5 min");
 		await b.getByRole("button", { name: "Back", exact: true }).click();
 		await expect(
 			b.getByRole("button", { name: "Create Room", exact: true }),
@@ -191,6 +189,8 @@ test("Public rooms can be discovered and joined while Private rooms remain acces
 		expect(listed).toMatchObject({
 			mode: "HARDCORE",
 			mapId: 3,
+			itemCooldownMinutes: 3,
+			timeLimitMinutes: 5,
 			playerCount: 2,
 			capacity: 10,
 		});

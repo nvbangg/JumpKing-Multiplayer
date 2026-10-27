@@ -32,6 +32,20 @@ export class ConversationVisuals {
 		private scene: Phaser.Scene,
 		private manifest: AssetManifest,
 	) {}
+	get bounds() {
+		return [...this.bubbles.values()]
+			.filter((bubble) => bubble.text.visible)
+			.map((bubble) => {
+				const box = bubble.text.getBounds();
+				const padding = bubble.frame ? V.bubblePadding : 0;
+				return {
+					x: box.x - padding,
+					y: box.y - padding,
+					width: box.width + padding * 2,
+					height: box.height + padding * 2,
+				};
+			});
+	}
 	private bubble(id: string, font: string, framed: boolean): Bubble {
 		let bubble = this.bubbles.get(id);
 		if (!bubble) {

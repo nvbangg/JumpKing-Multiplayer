@@ -1,9 +1,11 @@
+import { Check, Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 export function RoomCode({ roomId }: { roomId: string }) {
 	const [notice, setNotice] = useState("");
 	const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const copyRevision = useRef(0);
+	const copied = notice === "Copied";
 	useEffect(
 		() => () => {
 			copyRevision.current++;
@@ -13,11 +15,11 @@ export function RoomCode({ roomId }: { roomId: string }) {
 	);
 	return (
 		<span className="room-code">
-			<span className="room-code-label">ROOM ID:</span>
 			<button
 				type="button"
 				className="room-code-copy"
 				aria-label="Copy room ID"
+				data-copied={copied}
 				onClick={async (event) => {
 					// Kéo chọn mã thủ công không kích hoạt thao tác sao chép.
 					if (event.detail > 0 && window.getSelection()?.isCollapsed === false)
@@ -29,7 +31,7 @@ export function RoomCode({ roomId }: { roomId: string }) {
 						await navigator.clipboard.writeText(roomId);
 						if (copyRevision.current !== revision) return;
 						setNotice("Copied");
-						noticeTimer.current = setTimeout(() => setNotice(""), 3000);
+						noticeTimer.current = setTimeout(() => setNotice(""), 2000);
 					} catch {
 						if (copyRevision.current !== revision) return;
 						setNotice("Unable to copy. Select the ID to copy.");
@@ -37,8 +39,12 @@ export function RoomCode({ roomId }: { roomId: string }) {
 				}}
 			>
 				<code>{roomId}</code>
+				{copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
 			</button>
-			<span className="room-code-status" role="status">
+			<span
+				className={copied ? "visually-hidden" : "room-code-status"}
+				role="status"
+			>
 				{notice}
 			</span>
 		</span>

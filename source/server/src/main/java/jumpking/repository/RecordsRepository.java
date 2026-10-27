@@ -46,7 +46,9 @@ public class RecordsRepository {
                     """
             SELECT COALESCE(SUM(play_ticks),0) AS ticks,COALESCE(SUM(jumps),0) AS jumps,COALESCE(SUM(falls),0) AS falls,
               COALESCE(SUM(status='FINISHED'),0) AS finishes,MIN(CASE WHEN p.match_id IS NULL OR m.map_id=9 THEN finish_ticks END) AS best,
-              COUNT(CASE WHEN p.match_id IS NOT NULL THEN 1 END) AS matches
+              COUNT(CASE WHEN p.match_id IS NOT NULL THEN 1 END) AS matches,
+              COALESCE(SUM(m.ended_at IS NOT NULL AND m.end_reason<>'ABORTED'
+                AND p.`rank`=1 AND p.status IN ('FINISHED','UNFINISHED')),0) AS wins
             FROM play_runs p LEFT JOIN matches m ON m.id=p.match_id WHERE p.user_id=:owner
             """,
                     Tuple.class)
@@ -59,6 +61,7 @@ public class RecordsRepository {
         number(row, "falls"),
         number(row, "finishes"),
         number(row, "matches"),
+        number(row, "wins"),
         optionalMs(row, "best"));
   }
 

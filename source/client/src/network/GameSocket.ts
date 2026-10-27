@@ -484,8 +484,11 @@ export class GameSocket {
 					this.playContext = { playId, generation };
 				}
 			}
-			// Lỗi gửi chat thuộc form chat đang chờ Promise, không hiện lại ở Lobby.
-			if (message.type !== "ERROR" || request?.type !== "CHAT_SEND")
+			// Form chat và thao tác item tự hiển thị lỗi từ Promise, không lặp lại ở màn hình khác.
+			if (
+				message.type !== "ERROR" ||
+				!["CHAT_SEND", "USE_ITEM"].includes(request?.type || "")
+			)
 				this.onMessage(
 					message.type,
 					message.payload,

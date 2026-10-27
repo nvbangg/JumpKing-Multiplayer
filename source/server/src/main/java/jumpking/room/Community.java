@@ -980,7 +980,6 @@ public class Community implements GameCommandHandler, AutoCloseable {
                 player ->
                     new RoomRanking.Score(
                         player.id,
-                        player.identity.username(),
                         player.finished ? "FINISHED" : "ACTIVE",
                         player.currentProgress,
                         player.maximum,

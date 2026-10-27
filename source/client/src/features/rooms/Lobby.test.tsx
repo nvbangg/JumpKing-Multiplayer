@@ -78,16 +78,18 @@ function findSelect(
 }
 
 test("a confirmed host can start alone, while an unconfirmed host cannot start", () => {
-	expect(markup()).toContain('<button type="button">Start</button>');
+	expect(markup()).toMatch(
+		/<button(?=[^>]*aria-label="Start")(?![^>]*disabled)[^>]*>/,
+	);
 	const waiting = {
 		...room,
 		members: [{ ...member("host"), nextMatchConfirmed: false }, member("peer")],
 	};
-	expect(markup(waiting)).toContain(
-		'<button type="button" disabled="">Start</button>',
+	expect(markup(waiting)).toMatch(
+		/<button(?=[^>]*aria-label="Start")[^>]*disabled/,
 	);
-	expect(markup(room, "host", true)).toContain(
-		'<button type="button" disabled="">Start</button>',
+	expect(markup(room, "host", true)).toMatch(
+		/<button(?=[^>]*aria-label="Start")[^>]*disabled/,
 	);
 	expect(
 		markup({ ...room, members: [...room.members, member("peer")] }, "peer"),
@@ -156,9 +158,9 @@ test("confirmation controls exist in the first lobby and follow server state", (
 	const command = vi.fn();
 	const render = (value: RoomState) =>
 		Lobby({ room: value, selfId: "host", pending: false, command });
-	expect(markup()).toContain(">Cancel Confirm</button>");
+	expect(markup()).toContain('aria-label="Cancel"');
 	expect(markup()).not.toContain("Play Again");
-	findButton(render(room), "Cancel Confirm")?.();
+	findButton(render(room), "Cancel")?.();
 	expect(command).toHaveBeenLastCalledWith("SET_ROOM_CONFIRMED", {
 		confirmed: false,
 	});
@@ -167,8 +169,8 @@ test("confirmation controls exist in the first lobby and follow server state", (
 		members: [{ ...member("host"), nextMatchConfirmed: false }],
 	};
 	for (let update = 0; update < 2; update++) {
-		expect(markup(cancelled)).toContain(">Confirm</button>");
-		expect(markup(cancelled)).not.toContain(">Cancel Confirm</button>");
+		expect(markup(cancelled)).toContain('aria-label="Confirm"');
+		expect(markup(cancelled)).not.toContain('aria-label="Cancel"');
 	}
 	findButton(render(cancelled), "Confirm")?.();
 	expect(command).toHaveBeenLastCalledWith("SET_ROOM_CONFIRMED", {
@@ -229,7 +231,7 @@ test("new members and returned members who cancel confirmation remain in the Lob
 	const html = markup(value);
 	expect(html).toContain(">new-peer</span>");
 	expect(html).toContain(">cancelled-peer</span>");
-	expect(markup(value, "cancelled-peer")).toContain(">Confirm</button>");
+	expect(markup(value, "cancelled-peer")).toContain('aria-label="Confirm"');
 });
 
 test("a host still at Results neither appears nor grants host controls to the Lobby", () => {
@@ -248,11 +250,11 @@ test("a host still at Results neither appears nor grants host controls to the Lo
 	expect(peer).not.toContain(">host</span>");
 	expect(peer).not.toContain(">Start</button>");
 	expect(peer).not.toContain('aria-label="Kick');
-	expect(peer).toContain(">Cancel Confirm</button>");
+	expect(peer).toContain('aria-label="Cancel"');
 	const absentHost = markup(value);
 	expect(absentHost).not.toContain(">Start</button>");
-	expect(absentHost).not.toContain(">Confirm</button>");
-	expect(absentHost).not.toContain(">Cancel Confirm</button>");
+	expect(absentHost).not.toContain('aria-label="Confirm"');
+	expect(absentHost).not.toContain('aria-label="Cancel"');
 	expect(absentHost).not.toContain('aria-label="Kick');
 });
 
@@ -262,7 +264,7 @@ test("countdown hides confirmation, kick and start controls", () => {
 		state: "COUNTDOWN",
 		members: [member("host"), member("peer")],
 	});
-	expect(html).not.toContain(">Cancel Confirm</button>");
+	expect(html).not.toContain('aria-label="Cancel"');
 	expect(html).not.toContain('aria-label="Kick');
 	expect(html).not.toContain(">Start</button>");
 });

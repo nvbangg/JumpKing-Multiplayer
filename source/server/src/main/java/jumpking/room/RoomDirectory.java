@@ -18,7 +18,14 @@ public class RoomDirectory {
 
   public record Slot(String roomId, String kind, int color) {}
 
-  public record PublicRoom(String roomId, String mode, int mapId, int playerCount, int capacity) {}
+  public record PublicRoom(
+      String roomId,
+      String mode,
+      int mapId,
+      Integer itemCooldownMinutes,
+      Integer timeLimitMinutes,
+      int playerCount,
+      int capacity) {}
 
   private static class Entry {
     final String kind;
@@ -26,6 +33,7 @@ public class RoomDirectory {
     boolean joinable = true;
     String visibility = "PRIVATE", mode = "RACE";
     int mapId = 1;
+    Integer itemCooldownMinutes, timeLimitMinutes;
 
     Entry(String kind) {
       this.kind = kind;
@@ -69,17 +77,21 @@ public class RoomDirectory {
                     value.getKey(),
                     value.getValue().mode,
                     value.getValue().mapId,
+                    value.getValue().itemCooldownMinutes,
+                    value.getValue().timeLimitMinutes,
                     value.getValue().slots.cardinality(),
                     capacity))
         .toList();
   }
 
-  public synchronized void describeRoom(String id, String visibility, String mode, int mapId) {
+  public synchronized void describeRoom(String id, String visibility, RoomSettings settings) {
     var entry = entries.get(id);
     if (entry != null && entry.kind.equals("ROOM")) {
       entry.visibility = visibility;
-      entry.mode = mode;
-      entry.mapId = mapId;
+      entry.mode = settings.mode();
+      entry.mapId = settings.mapId();
+      entry.itemCooldownMinutes = settings.itemCooldownMinutes();
+      entry.timeLimitMinutes = settings.timeLimitMinutes();
     }
   }
 

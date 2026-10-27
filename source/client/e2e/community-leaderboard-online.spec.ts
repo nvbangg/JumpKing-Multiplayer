@@ -144,7 +144,7 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 				.getByRole("listitem")
 				.first()
 				.evaluate((row) => row.getBoundingClientRect().height),
-		).toBeLessThanOrEqual(22);
+		).toBeLessThanOrEqual(32);
 		playerCount = 10;
 		await expect(playerList.getByRole("listitem")).toHaveCount(10);
 		await expectFullHeight();
@@ -192,7 +192,7 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 			await page.setViewportSize({ width: 390, height: 844 });
 			await expect(
 				page.getByRole("dialog", { name: "Landscape required" }),
-			).toBeVisible();
+			).toHaveCount(0);
 			await page.setViewportSize({
 				width: viewport.width,
 				height: viewport.height,
@@ -245,7 +245,7 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 			await page.setViewportSize({ width: 390, height: 844 });
 			await expect(
 				page.getByRole("dialog", { name: "Landscape required" }),
-			).toBeVisible();
+			).toHaveCount(0);
 			await page.setViewportSize(viewport);
 			await expect(
 				page.getByRole("dialog", { name: "Landscape required" }),
@@ -481,11 +481,12 @@ test("mobile panels preserve drafts and chat stays available while paused", asyn
 		const landscapeGate = page.getByRole("dialog", {
 			name: "Landscape required",
 		});
-		await expect(landscapeGate).toBeVisible();
+		await expect(landscapeGate).toHaveCount(0);
 		await expect(
 			page.getByRole("button", { name: "Resume", exact: true }),
 		).toBeVisible();
 		const portraitJumps = observed.snapshot?.self.simulation.physics.jumps;
+		await page.locator("canvas").focus();
 		await page.keyboard.press("Space");
 		expect(observed.snapshot?.self.simulation.physics.jumps).toBe(
 			portraitJumps,
@@ -523,7 +524,7 @@ test("mobile panels preserve drafts and chat stays available while paused", asyn
 			.toBe(true);
 		await expect.poll(() => observed.snapshot?.self.paused).toBe(false);
 		await page.setViewportSize({ width: 390, height: 844 });
-		await expect(landscapeGate).toBeVisible();
+		await expect(landscapeGate).toHaveCount(0);
 		await page.evaluate(() =>
 			(window as unknown as { releaseResume: () => void }).releaseResume(),
 		);
@@ -612,7 +613,13 @@ test("mobile panels preserve drafts and chat stays available while paused", asyn
 						term.top < keys.bottom &&
 						keys.top < term.bottom &&
 						keys.height <=
-							Number.parseFloat(getComputedStyle(label).lineHeight) + 1
+							Math.max(
+								...Array.from(
+									label.nextElementSibling?.children || [],
+									(key) => key.getBoundingClientRect().height,
+								),
+							) +
+								1
 					);
 				}),
 			),

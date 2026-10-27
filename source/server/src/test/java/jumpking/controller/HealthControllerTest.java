@@ -53,7 +53,13 @@ class HealthControllerTest {
   void missingAssetsAndWebSocketDoNotReceiveHtml() {
     for (String path :
         new String[] {
-          "/assets/missing", "/assets/missing.png", "/ws/game", "/api", "/api/missing"
+          "/assets/missing",
+          "/assets/missing.png",
+          "/ui/missing",
+          "/ui/missing.png",
+          "/ws/game",
+          "/api",
+          "/api/missing"
         }) {
       assertThat(http.getForEntity(path, String.class).getStatusCode())
           .as(path)

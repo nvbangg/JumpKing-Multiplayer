@@ -40,7 +40,7 @@ class AccountBrowserIT {
             "adventure_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12),
         password = java.util.UUID.randomUUID().toString();
     jdbc.update(
-        "INSERT INTO users(username,password_hash,created_at) VALUES (?,?,UTC_TIMESTAMP(3))",
+        "INSERT INTO users(username,password_hash,crown,created_at) VALUES (?,?,'NONE',UTC_TIMESTAMP(3))",
         name,
         passwords.encode(password));
     long owner = jdbc.queryForObject("SELECT id FROM users WHERE username=?", Long.class, name);
@@ -88,7 +88,7 @@ class AccountBrowserIT {
         name = "finish_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12),
         password = java.util.UUID.randomUUID().toString();
     jdbc.update(
-        "INSERT INTO users(username,password_hash,created_at) VALUES (?,?,UTC_TIMESTAMP(3))",
+        "INSERT INTO users(username,password_hash,crown,created_at) VALUES (?,?,'NONE',UTC_TIMESTAMP(3))",
         name,
         passwords.encode(password));
     long owner = jdbc.queryForObject("SELECT id FROM users WHERE username=?", Long.class, name);
