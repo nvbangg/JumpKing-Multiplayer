@@ -170,7 +170,7 @@ class CommunityLifecycleIT {
   }
 
   @Test
-  void currentProgressChangesOnlyOnValidLandingWhilePeakKeepsAirborneHeight() throws Exception {
+  void currentProgressTracksGroundedHeightAndPeakKeepsAirborneHeight() throws Exception {
     try (var client = new GameClient(port)) {
       client.register();
       client.connect();
@@ -188,11 +188,11 @@ class CommunityLifecycleIT {
               - shared.tuning().bodyHeight;
       assertThat(maximum).isGreaterThan(144);
       var splatted = tickAt(client, 231, 302, true, 3, false);
-      assertCurrentProgress(client, splatted, 144);
+      assertCurrentProgress(client, splatted, 0);
       assertThat(splatted.path("self").path("simulation").path("physics").path("splat").asInt())
           .isPositive();
       var phasing = tickAt(client, 231, 328, true, 0, true);
-      assertCurrentProgress(client, phasing, 144);
+      assertCurrentProgress(client, phasing, 0);
       assertThat(
               phasing
                   .path("self")
