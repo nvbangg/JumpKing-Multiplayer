@@ -284,12 +284,10 @@ public class Community implements GameCommandHandler, AutoCloseable {
           }
           var pose = player.game.physics().snapshot();
           boolean isLanded = pose.grounded && !pose.phasingFall;
-          if (isLanded) {
-            player.currentProgress = progress;
-            if (progress > player.maximum) {
-              player.maximum = progress;
-              player.peakTicks = pose.ticks;
-            }
+          if (isLanded) player.currentProgress = progress;
+          if (progress > player.maximum) {
+            player.maximum = progress;
+            player.peakTicks = pose.ticks;
           }
           for (String effect : events.movement())
             effects.add(
