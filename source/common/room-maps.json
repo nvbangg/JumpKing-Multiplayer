@@ -24,14 +24,34 @@
     "name": "Colossal Drain",
     "finish": {
       "screen": 9,
-      "minCenterX": 152,
+      "minCenterX": 8,
       "requiresGrounded": true,
-      "minProgress": 3464
+      "minProgress": 3384
     }
   },
   {
     "level": 4,
+    "name": "False Kings' Keep",
+    "finish": {
+      "screen": 14,
+      "minCenterX": 96,
+      "requiresGrounded": true,
+      "minProgress": 5040
+    }
+  },
+  {
+    "level": 5,
     "name": "Bargainburg",
+    "finish": {
+      "screen": 19,
+      "minCenterX": 216,
+      "requiresGrounded": true,
+      "minProgress": 6896
+    }
+  },
+  {
+    "level": 6,
+    "name": "Great Frontier",
     "finish": {
       "screen": 25,
       "minCenterX": 208,
@@ -40,17 +60,7 @@
     }
   },
   {
-    "level": 5,
-    "name": "Windswept Bluff",
-    "finish": {
-      "screen": 25,
-      "minCenterX": 200,
-      "requiresGrounded": true,
-      "minProgress": 9136
-    }
-  },
-  {
-    "level": 6,
+    "level": 7,
     "name": "Stormwall Pass",
     "finish": {
       "screen": 32,
@@ -61,7 +71,7 @@
     }
   },
   {
-    "level": 7,
+    "level": 8,
     "name": "Chapel Perilous",
     "finish": {
       "screen": 36,
@@ -71,7 +81,7 @@
     }
   },
   {
-    "level": 8,
+    "level": 9,
     "name": "Blue Ruin",
     "finish": {
       "screen": 39,
@@ -81,7 +91,7 @@
     }
   },
   {
-    "level": 9,
+    "level": 10,
     "name": "The Tower",
     "finish": {
       "screen": 40,

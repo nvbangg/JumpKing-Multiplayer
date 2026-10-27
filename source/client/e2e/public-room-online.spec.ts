@@ -92,7 +92,7 @@ test("Public rooms can be discovered and joined while Private rooms remain acces
 		}
 		await a.setViewportSize({ width: 1280, height: 720 });
 		await expect(a.getByLabel("Visibility", { exact: true })).toHaveValue(
-			"PRIVATE",
+			"PUBLIC",
 		);
 		await a.getByLabel("Visibility", { exact: true }).selectOption("PUBLIC");
 		const id = await a.locator(".room-code code").innerText();
@@ -134,8 +134,8 @@ test("Public rooms can be discovered and joined while Private rooms remain acces
 		await a.evaluate(() => window.getSelection()?.removeAllRanges());
 		await expect(
 			a.getByLabel("Map", { exact: true }).locator("option"),
-		).toHaveCount(9);
-		for (let level = 1; level <= 9; level++) {
+		).toHaveCount(10);
+		for (let level = 1; level <= 10; level++) {
 			await a.getByLabel("Map", { exact: true }).selectOption(String(level));
 			await expect(a.getByLabel("Map", { exact: true })).toHaveValue(
 				String(level),

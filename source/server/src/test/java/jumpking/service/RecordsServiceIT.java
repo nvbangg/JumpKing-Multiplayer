@@ -32,7 +32,7 @@ class RecordsServiceIT {
     long peer = TestDatabase.get().account();
     try {
       jdbc.update(
-          "INSERT INTO matches(id,room_code,mode,map_id,started_at,ended_at,duration_ticks,end_reason) VALUES (?,'ABCDEF','RACE',9,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),180,'FINISH')",
+          "INSERT INTO matches(id,room_code,mode,map_id,started_at,ended_at,duration_ticks,end_reason) VALUES (?,'ABCDEF','RACE',10,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),180,'FINISH')",
           match);
       for (boolean room : java.util.List.of(false, true)) {
         long ticks = room ? 180 : 61;
@@ -72,7 +72,7 @@ class RecordsServiceIT {
                   .map(RecordsDto.History::kind))
           .containsExactlyInAnyOrder("COMMUNITY", "ROOM");
       var detail = records.detail(owner, "ROOM", match);
-      assertThat(detail.path("room").path("mapId").asInt()).isEqualTo(9);
+      assertThat(detail.path("room").path("mapId").asInt()).isEqualTo(10);
       assertThat(detail.path("participants").size()).isEqualTo(2);
       assertThat(detail.path("participants").get(0).path("username").asText()).isNotBlank();
       assertThat(detail.has("snapshot")).isFalse();

@@ -5,7 +5,6 @@ import {
 	type AdventureEvent,
 	type AdventureState,
 } from "./Adventure";
-import { ROOM_MAPS, ROOM_SCENE_MARKERS } from "./roomMaps";
 import { Simulation } from "./Simulation";
 import { PHYSICS as P } from "./tuning";
 import type { GameMap, PlayerInput, PlayerState, ReadView } from "./types";
@@ -13,7 +12,6 @@ import type { GameMap, PlayerInput, PlayerState, ReadView } from "./types";
 export interface WorldState {
 	lastTick: number;
 	safePosition?: { x: number; y: number };
-	mapIntro?: { level: number; tick: number };
 	registeredScreens: number[];
 	weatherWind: number;
 	walls: Record<
@@ -35,15 +33,12 @@ export interface WorldEvent {
 export class GameSimulation {
 	readonly physics: Simulation;
 	readonly adventure: Adventure;
-	private readonly roomMode: boolean;
 	private world: WorldState;
 	constructor(
 		readonly map: GameMap,
 		flyAllowed = false,
 		noWalk = false,
-		initialMapLevel?: number,
 	) {
-		this.roomMode = initialMapLevel !== undefined;
 		this.physics = new Simulation(map, flyAllowed, noWalk);
 		this.adventure = new Adventure(map);
 		this.world = {
@@ -53,15 +48,14 @@ export class GameSimulation {
 			walls: Object.fromEntries(
 				ADVENTURE.walls.map((wall) => [
 					wall.id,
-					{ touching: false, canPlay: true, fadeTicks: 0 },
+					{
+						touching: false,
+						canPlay: true,
+						fadeTicks: ADVENTURE.tuning.wallFadeTicks,
+					},
 				]),
 			),
 		};
-		if (initialMapLevel !== undefined) {
-			if (!ROOM_MAPS.some((roomMap) => roomMap.level === initialMapLevel))
-				throw new Error("Invalid initial Room map level");
-		}
-		this.world.mapIntro = { level: initialMapLevel ?? 1, tick: 0 };
 	}
 	view() {
 		return {
@@ -96,13 +90,6 @@ export class GameSimulation {
 					saved.world.safePosition.y <
 						-this.map.screenHeight * this.map.screens.length ||
 					saved.world.safePosition.y > this.map.screenHeight)) ||
-			(saved.world.mapIntro !== undefined &&
-				(!ROOM_MAPS.some(
-					(roomMap) => roomMap.level === saved.world.mapIntro?.level,
-				) ||
-					!Number.isSafeInteger(saved.world.mapIntro.tick) ||
-					saved.world.mapIntro.tick < 0 ||
-					saved.world.mapIntro.tick > saved.physics.ticks)) ||
 			!Array.isArray(saved.world.registeredScreens) ||
 			new Set(saved.world.registeredScreens).size !==
 				saved.world.registeredScreens.length ||
@@ -171,7 +158,6 @@ export class GameSimulation {
 		const adventure: AdventureEvent[] = this.adventure.tick(player, input);
 		if (
 			this.physics.finished &&
-			!this.roomMode &&
 			this.map.finish.screen === this.map.screens.length - 1
 		)
 			this.adventure.complete();
@@ -185,16 +171,6 @@ export class GameSimulation {
 			? this.world.weatherWind - (force * 2) / 3
 			: 0;
 		this.world.lastTick = player.ticks;
-		// Community ghi nhận vùng cao nhất đã đáp an toàn, kể cả đi đường khác qua mốc.
-		if (!this.roomMode && movement.includes("LAND") && !player.freeFlight) {
-			const currentFeetY = player.y + P.bodyHeight;
-			let reached = this.world.mapIntro?.level ?? 0;
-			for (const marker of ROOM_SCENE_MARKERS)
-				if (marker.level > reached && currentFeetY <= marker.y)
-					reached = marker.level;
-			if (reached > (this.world.mapIntro?.level ?? 0))
-				this.world.mapIntro = { level: reached, tick: player.ticks };
-		}
 		if (
 			player.grounded &&
 			!this.world.registeredScreens.includes(player.screen)

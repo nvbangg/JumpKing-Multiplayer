@@ -53,7 +53,8 @@ export class AdventureVisuals {
 						wall.texture,
 					)
 					.setOrigin(0)
-					.setDepth(23),
+					.setDepth(23)
+					.setVisible(false),
 			);
 	}
 	render(frame: WorldFrame): void {

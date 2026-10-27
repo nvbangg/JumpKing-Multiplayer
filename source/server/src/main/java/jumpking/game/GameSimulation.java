@@ -20,42 +20,15 @@ public final class GameSimulation {
   private final GameMap map;
   private final Physics p;
   private final JsonNode data;
-  private final List<SharedData.RoomScene> sceneMarkers;
-  private final Integer initialMapLevel;
   private final boolean flyAllowed, noWalk;
   private Simulation physics;
   private Adventure adventure;
   private ObjectNode world;
 
   public GameSimulation(GameMap map, Physics p, JsonNode data, boolean flyAllowed, boolean noWalk) {
-    this(map, p, data, List.of(), flyAllowed, noWalk);
-  }
-
-  public GameSimulation(
-      GameMap map,
-      Physics p,
-      JsonNode data,
-      List<SharedData.RoomScene> sceneMarkers,
-      boolean flyAllowed,
-      boolean noWalk) {
-    this(map, p, data, sceneMarkers, null, flyAllowed, noWalk);
-  }
-
-  public GameSimulation(
-      GameMap map,
-      Physics p,
-      JsonNode data,
-      List<SharedData.RoomScene> sceneMarkers,
-      Integer initialMapLevel,
-      boolean flyAllowed,
-      boolean noWalk) {
     this.map = map;
     this.p = p;
     this.data = data;
-    this.sceneMarkers = List.copyOf(sceneMarkers);
-    if (initialMapLevel != null && (initialMapLevel < 1 || initialMapLevel > 9))
-      throw new IllegalArgumentException("Invalid initial Room map level");
-    this.initialMapLevel = initialMapLevel;
     this.flyAllowed = flyAllowed;
     this.noWalk = noWalk;
     physics = new Simulation(map, p, flyAllowed, noWalk);
@@ -68,11 +41,7 @@ public final class GameSimulation {
           .putObject(wall.path("id").asText())
           .put("touching", false)
           .put("canPlay", true)
-          .put("fadeTicks", 0);
-    world
-        .putObject("mapIntro")
-        .put("level", initialMapLevel == null ? 1 : initialMapLevel)
-        .put("tick", 0);
+          .put("fadeTicks", data.path("tuning").path("wallFadeTicks").asInt());
   }
 
   public Simulation physics() {
@@ -124,16 +93,6 @@ public final class GameSimulation {
           || y < -(double) map.screenHeight() * map.screens().size()
           || y > map.screenHeight()) throw new IllegalArgumentException("Invalid safe position");
     }
-    if (w.has("mapIntro")) {
-      var intro = w.path("mapIntro");
-      int level = intro.path("level").asInt();
-      boolean knownLevel = level >= 1 && level <= 9;
-      if (!knownLevel
-          || !intro.path("tick").isIntegralNumber()
-          || intro.path("tick").asLong() < 0
-          || intro.path("tick").asLong() > saved.physics().ticks)
-        throw new IllegalArgumentException("Invalid map intro");
-    }
     for (JsonNode wall : data.path("walls")) {
       var state = w.path("walls").path(wall.path("id").asText());
       if (!state.path("touching").isBoolean()
@@ -143,8 +102,7 @@ public final class GameSimulation {
           || state.path("fadeTicks").asInt() > data.path("tuning").path("wallFadeTicks").asInt())
         throw new IllegalArgumentException("Invalid wall snapshot");
     }
-    var candidate =
-        new GameSimulation(map, p, data, sceneMarkers, initialMapLevel, flyAllowed, noWalk);
+    var candidate = new GameSimulation(map, p, data, flyAllowed, noWalk);
     candidate.physics.restore(saved.physics());
     candidate.adventure.restore(saved.adventure());
     physics = candidate.physics;
@@ -198,15 +156,6 @@ public final class GameSimulation {
     world
         .put("weatherWind", player.wind ? world.path("weatherWind").asDouble() - force * 2 / 3 : 0)
         .put("lastTick", player.ticks);
-    // Community ghi nhận vùng cao nhất đã đáp an toàn, kể cả đi đường khác qua mốc.
-    if (initialMapLevel == null && movement.contains("LAND") && !player.freeFlight) {
-      double currentFeetY = player.y + p.bodyHeight;
-      int previousLevel = world.path("mapIntro").path("level").asInt(0), reached = previousLevel;
-      for (var marker : sceneMarkers)
-        if (marker.level() > reached && currentFeetY <= marker.y()) reached = marker.level();
-      if (reached > previousLevel)
-        world.putObject("mapIntro").put("level", reached).put("tick", player.ticks);
-    }
     var registered = (ArrayNode) world.path("registeredScreens");
     boolean seen = false;
     for (JsonNode screen : registered) if (screen.asInt() == player.screen) seen = true;

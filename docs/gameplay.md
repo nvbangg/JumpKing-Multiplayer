@@ -31,9 +31,9 @@ Menu, chat, mất focus và disconnect hủy input/charge, không biến hủy t
 
 Main Babe có 43 screens (0–42), mỗi screen 480×360 px. Camera chuyển nguyên screen 4:3 theo vị trí và hướng di chuyển, không smooth-follow. Tải tài nguyên trước khi chơi, chỉ vẽ screen hiện tại; không streaming tài nguyên theo screen.
 
-Một geometry dùng cho mọi kiểu chơi. Room chia đường Main Babe thành 9 chặng: map 1 bắt đầu ở spawn gốc; map 2–9 bắt đầu trên nền Finish của map ngay trước và kết thúc tại Finish đã định cho map đó. Map 4 gộp cả đoạn Great Frontier; map 5 bắt đầu tại bệ mở đầu Windswept Bluff. Map 9 kết thúc tại đích The Tower; Community vẫn dùng toàn đường từ spawn gốc. Nếu rơi thấp hơn điểm bắt đầu của chặng Room, người chơi trở về spawn chặng và tính một fall. Đáp nền khác hoặc bay qua Finish không tính. Cờ FINISH chỉ dẫn vị trí, không thay collision. Geometry, spawn, camera và điều kiện Finish được kiểm chứng bằng fixtures.
+Một geometry dùng cho mọi kiểu chơi. Room chia đường Main Babe thành 10 chặng: map 1 bắt đầu ở spawn gốc; map 2–10 bắt đầu trên nền Finish của map ngay trước và kết thúc tại Finish đã định cho map đó. Map 4 là False Kings’ Keep, map 5 Bargainburg, map 6 Great Frontier; map 7 Stormwall Pass gộp Windswept Bluff. Map 10 kết thúc tại đích The Tower; Community vẫn dùng toàn đường từ spawn gốc. Nếu rơi thấp hơn điểm bắt đầu của chặng Room, người chơi trở về spawn chặng và tính một fall. Đáp nền khác hoặc bay qua Finish không tính. Cờ FINISH chỉ dẫn vị trí, không thay collision. Geometry, spawn, camera và điều kiện Finish được kiểm chứng bằng fixtures.
 
-Community New Game hiện Green Woods trong 3 giây. Sau đó, mỗi lần đáp an toàn lên bất kỳ bệ nào có cao độ bằng hoặc cao hơn mốc Finish của map N, hiển thị tên map N+1 trong 3 giây; nếu vượt nhiều mốc, dùng tên vùng cao nhất đã tới. Chỉ xét cao độ chân khi tiếp đất, không giới hạn bệ hoặc vị trí ngang. Bay qua cao độ, đáp SPLAT hoặc respawn không kích hoạt caption; rơi xuống rồi leo lại không phát lại tên vùng đã tới. Continue giữ tiến độ caption của lượt. Trong Room chỉ hiện tên map đã chọn khi trận bắt đầu; không đổi caption ở đích.
+Tên vùng hiện mờ ở góc dưới trái trong 6 giây khi vào vùng khác, xác định theo screen như bản gốc cho cả Community và Room; Stormwall Pass gộp screen 26–32 (đếm từ 1). Không lưu trạng thái caption vào checkpoint.
 
 ## Community
 
@@ -65,7 +65,7 @@ Clock chung chạy từ hết countdown. Menu/chat/AFK của từng cá nhân kh
 
 Easy nhớ riêng vị trí đứng/đáp nền bình thường của từng người, không cần cờ hoặc thao tác lưu; vị trí gần nhất có thể thấp hơn vị trí trước. Không ghi điểm khi SPLAT, trượt, bị hất, Fly hoặc phasing. SPLAT trả về điểm đã nhớ (chưa có thì spawn), xóa vận tốc/charge/trượt và chờ thả Jump trước cú nhảy mới. Clock, jumps/falls, peak, Items/cooldown/bẫy và tiến độ NPC/quạ giữ nguyên; current progress cập nhật theo vị trí quay về. Điểm an toàn theo snapshot, giữ khi reconnect và reset mỗi ván; không lưu dài hạn. Kết quả/crown/Best Finish Time áp dụng như các mode Room khác.
 
-Trong map 2–9, rơi qua ranh giới dưới chặng luôn đưa người chơi về spawn chặng và tính một fall; các lần SPLAT còn lại theo mode đã chọn. Tiến độ và peak Room tính từ đầu chặng, không cộng độ cao của các map trước.
+Trong map 2–10, rơi qua ranh giới dưới chặng luôn đưa người chơi về spawn chặng và tính một fall; các lần SPLAT còn lại theo mode đã chọn. Tiến độ và peak Room tính từ đầu chặng, không cộng độ cao của các map trước.
 
 Finish đầu tiên kết thúc trận sau khi xử lý mọi người trong cùng tick; Finish cùng tick đồng hạng đầu. Time Limit chốt tại deadline, xét Finish hợp lệ trước timeout. Host có thể End khi PLAYING hoặc PAUSED. Dù kết thúc vì lý do nào, server đều chốt bảng xếp hạng cho toàn bộ roster.
 
@@ -109,11 +109,11 @@ Host Leave/disconnect chuyển ngay cho người connected có joinOrder nhỏ n
 
 Giữ nhân vật, NPC/hội thoại, readables, đạo cụ, animation, ambience và âm thanh Main Babe. Hội thoại không Pause. Không intro/Press Start, Inventory, merchant, quest nhận đồ hoặc ending credit; Items Room độc lập với adventure.
 
-Tên vùng theo mốc đáp nền và thời lượng tại [Map và camera](#map-và-camera); tiến độ thuộc lượt/checkpoint. Menu giữ hiệu ứng, ending ẩn tên vùng.
+Menu giữ hiệu ứng tên vùng tại [Map và camera](#map-và-camera); ending ẩn tên vùng.
 
 Quạ đen có 14 điểm đậu, tới gần thì bay tiếp; đuổi hết rồi full Finish trong cùng lượt thì quạ trao vương miện kim cương thay thiên thần. Quạ trắng có 17 điểm trong Main Babe, bay đi sau điểm cuối; không thưởng/đổi ending. Tiến độ riêng từng người, lưu Community và reset mỗi trận Room.
 
-Full Finish mở crown vàng Account vĩnh viễn; hoàn thành cả chuỗi quạ đen trong lượt đó nhận thẳng crown kim cương. Tự đeo cấp cao nhất đã nhận, chỉ nâng không đeo → vàng → kim cương; Finish thường không hạ crown kim cương. Có thể chơi lượt mới để lấy kim cương sau khi đã có vàng. Hai loại crown có màu cố định, độc lập màu nhân vật. Chỉ Community mới phát ending cho người Finish; mọi Room map kết thúc ở Results, kể cả map 9 The Tower. Người Finish Room map 9 vẫn nhận crown và Best Finish Time full map. Map 1–8 không mở crown/Best Finish Time full map. Giữ cảnh/nhạc/ảnh ending và Skip trong Community; không ảnh hưởng kết quả/clock, không phát lại khi replay hoặc spectate.
+Full Finish mở crown vàng Account vĩnh viễn; hoàn thành cả chuỗi quạ đen trong lượt đó nhận thẳng crown kim cương. Tự đeo cấp cao nhất đã nhận, chỉ nâng không đeo → vàng → kim cương; Finish thường không hạ crown kim cương. Có thể chơi lượt mới để lấy kim cương sau khi đã có vàng. Hai loại crown có màu cố định, độc lập màu nhân vật. Chỉ Community mới phát ending cho người Finish; mọi Room map kết thúc ở Results, kể cả map 10 The Tower. Người Finish Room map 10 vẫn nhận crown và Best Finish Time full map. Map 1–9 không mở crown/Best Finish Time full map. Giữ cảnh/nhạc/ảnh ending và Skip trong Community; không ảnh hưởng kết quả/clock, không phát lại khi replay hoặc spectate.
 
 Server cấp 10 màu riêng theo membership, giữ qua reconnect và nhất quán giữa các client. Bản thân opacity=1, vẽ trên peers opacity=0.7; tên rõ, nằm dưới hội thoại. Tên trên nhân vật dùng font sans-serif như giao diện và cùng màu nhân vật/bảng Players; font hội thoại, tên map và các nội dung gameplay khác giữ nguyên. Ngoại hình không đổi hitbox.
 

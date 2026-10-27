@@ -17,14 +17,11 @@ public class SharedData {
   private final JsonNode rules;
   private final JsonNode adventure;
   private final List<RoomMap> roomMaps;
-  private final List<RoomScene> roomScenes;
   private final GameMap geometry;
   private final Physics tuning;
   private final List<GameMap> playableMaps;
 
   public record RoomMap(int level, String name, GameMap.Finish finish) {}
-
-  public record RoomScene(int level, String name, double x, double y, double width) {}
 
   public SharedData(ObjectMapper mapper) throws IOException {
     map = read(mapper, "maps/main-babe.json");
@@ -36,7 +33,7 @@ public class SharedData {
             mapper.convertValue(
                 read(mapper, "room-maps.json"),
                 new com.fasterxml.jackson.core.type.TypeReference<List<RoomMap>>() {}));
-    if (roomMaps.size() != 9) throw new IOException("Expected nine Room maps");
+    if (roomMaps.size() != 10) throw new IOException("Expected ten Room maps");
     for (int index = 0; index < roomMaps.size(); index++) {
       var goal = roomMaps.get(index);
       if (goal.level() != index + 1
@@ -84,27 +81,6 @@ public class SharedData {
             mapper.convertValue(
                 physics,
                 new com.fasterxml.jackson.core.type.TypeReference<Map<String, Number>>() {}));
-    var scenes = new ArrayList<RoomScene>();
-    for (int index = 0; index + 1 < roomMaps.size(); index++) {
-      var goal = roomMaps.get(index);
-      var nextMap = roomMaps.get(index + 1);
-      var markerMap =
-          new GameMap(
-              geometry.width(),
-              geometry.screenHeight(),
-              geometry.tileSize(),
-              geometry.progressOriginY(),
-              geometry.spawn(),
-              goal.finish(),
-              geometry.screens());
-      var platform = FinishPlatform.find(markerMap);
-      if (platform == null || platform.width() <= 0)
-        throw new IOException("Room scene marker has no finish platform");
-      scenes.add(
-          new RoomScene(
-              nextMap.level(), nextMap.name(), platform.x(), platform.y(), platform.width()));
-    }
-    roomScenes = List.copyOf(scenes);
     // Định nghĩa bất biến dùng chung; state của mỗi người thuộc simulation riêng.
     var stages = new ArrayList<GameMap>();
     for (var goal : roomMaps) {
@@ -183,10 +159,6 @@ public class SharedData {
 
   public List<RoomMap> roomMaps() {
     return roomMaps;
-  }
-
-  public List<RoomScene> roomScenes() {
-    return roomScenes;
   }
 
   public JsonNode physics() {

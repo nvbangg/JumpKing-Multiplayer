@@ -32,8 +32,7 @@ import { PlayerEffects } from "../../game/netcode/PlayerEffects";
 import { AudioBus } from "../../game/presentation/AudioBus";
 import { PRESENTATION } from "../../game/presentation/config";
 import { parseMap } from "../../game/simulation/map";
-import { ROOM_MAPS } from "../../game/simulation/roomMaps";
-import { PHYSICS } from "../../game/simulation/tuning";
+import { regionName } from "../../game/simulation/roomMaps";
 import { ApiError, api } from "../../network/api";
 import type {
 	GameConfig,
@@ -70,7 +69,6 @@ export function OnlineGame({
 	onOptionsChange,
 	accountId,
 	firstGame,
-	newCommunityRun,
 	onHome,
 	onResults,
 }: {
@@ -81,7 +79,6 @@ export function OnlineGame({
 	onOptionsChange: (key: keyof Options) => void;
 	accountId?: string;
 	firstGame: boolean;
-	newCommunityRun: boolean;
 	onHome: (message: string) => void;
 	onResults: () => void;
 }) {
@@ -122,11 +119,7 @@ export function OnlineGame({
 	const viewedPlayer = useRef<string | null>(null);
 	// ACK hủy xem có thể tới trước snapshot; tránh nhầm với việc mất mục tiêu.
 	const returningToSelf = useRef(false);
-	const [caption, setCaption] = useState<{
-		id: string;
-		name: string;
-		delayMs: number;
-	} | null>(null);
+	const [region, setRegion] = useState("");
 	const [disconnected, setDisconnected] = useState(false);
 	const [networkQuality, setNetworkQuality] = useState<NetworkQuality>(() =>
 		socket.getNetworkQuality(),
@@ -312,8 +305,6 @@ export function OnlineGame({
 	useEffect(() => {
 		let disposed = false,
 			game: { destroy(removeCanvas: boolean): void } | undefined;
-		let initialCaptionTick: number | undefined;
-		let rendererReady = false;
 		const controller = new AbortController();
 		const effects = new PlayerEffects(),
 			adventureEffects = new AdventureEffects();
@@ -487,44 +478,7 @@ export function OnlineGame({
 							: view;
 					});
 					if (view) controls.cancel();
-					const intro = (view?.world ?? snapshot.self.simulation.world)
-						.mapIntro;
-					if (intro) {
-						const id = `${view?.playId ?? snapshot.playId}:${intro.level}:${intro.tick}`;
-						const initialIntro =
-							!view &&
-							newCommunityRun &&
-							latestRoom.current.kind === "COMMUNITY" &&
-							intro.level === 1 &&
-							intro.tick === 0;
-						if (
-							initialIntro &&
-							rendererReady &&
-							initialCaptionTick === undefined &&
-							!socket.resumeRequired
-						)
-							initialCaptionTick = snapshot.self.simulation.physics.ticks;
-						const introTick = initialIntro ? initialCaptionTick : intro.tick;
-						const age =
-							introTick === undefined
-								? PRESENTATION.mapCaptionMs
-								: (((view?.player.state.ticks ??
-										snapshot.self.simulation.physics.ticks) -
-										introTick) *
-										1000) /
-									PHYSICS.tickRate;
-						setCaption((previous) =>
-							age >= PRESENTATION.mapCaptionMs
-								? null
-								: previous?.id === id
-									? previous
-									: {
-											id,
-											name: ROOM_MAPS[intro.level - 1]?.name || "",
-											delayMs: -age,
-										},
-						);
-					}
+					setRegion(regionName(view?.player.state.screen ?? state.screen));
 					audio.current?.setScreen(view?.player.state.screen ?? state.screen);
 					if (
 						snapshot.self.paused &&
@@ -608,27 +562,8 @@ export function OnlineGame({
 				manifest,
 				session,
 				() => {
-					rendererReady = true;
 					setReady(true);
 					const current = latestRoom.current;
-					const snapshot = session.latest;
-					const intro = snapshot?.self.simulation.world.mapIntro;
-					if (
-						newCommunityRun &&
-						current.kind === "COMMUNITY" &&
-						!socket.resumeRequired &&
-						snapshot &&
-						intro?.level === 1 &&
-						intro.tick === 0
-					) {
-						// Caption đầu lượt đủ 3 giây sau khi tải màn chơi; Continue không phát lại.
-						initialCaptionTick = snapshot.self.simulation.physics.ticks;
-						setCaption({
-							id: `${snapshot.playId}:1:0`,
-							name: required(ROOM_MAPS[0]).name,
-							delayMs: 0,
-						});
-					}
 					if (
 						current.kind === "ROOM" &&
 						current.state === "COUNTDOWN" &&
@@ -675,7 +610,7 @@ export function OnlineGame({
 			audio.current?.dispose();
 			audio.current = null;
 		};
-	}, [socket, room.roomId, chat.closeChat, newCommunityRun]);
+	}, [socket, room.roomId, chat.closeChat]);
 	const command = async (
 		type: string,
 		payload: Record<string, unknown> = {},
@@ -796,19 +731,17 @@ export function OnlineGame({
 				<section className="game-viewport" aria-label="Online Main Babe game">
 					{/* Phaser quản lý canvas; React giữ overlay ở phần tử anh em. */}
 					<div className="game-surface" ref={container} />
-					{ready && caption?.name && !ending && (
+					{ready && region && !ending && (
 						<output
-							key={caption.id}
+							key={region}
 							className="region-caption"
 							aria-label="Current region"
 							style={{
 								visibility: captionPaused ? "hidden" : "visible",
 								animationPlayState: captionPaused ? "paused" : "running",
-								animationDuration: `${PRESENTATION.mapCaptionMs}ms`,
-								animationDelay: `${caption.delayMs}ms`,
 							}}
 						>
-							{caption.name}
+							{region}
 						</output>
 					)}
 				</section>
