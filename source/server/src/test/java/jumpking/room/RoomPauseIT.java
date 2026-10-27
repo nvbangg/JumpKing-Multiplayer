@@ -53,24 +53,25 @@ class RoomPauseIT {
       host.connect();
       peer.connect();
 
-      var room = host.ok("CREATE_ROOM", Map.of("visibility", "PRIVATE"));
+      var room = host.ok("CREATE_ROOM", Map.of());
       String roomId = room.path("roomId").asText();
       peer.ok("JOIN_ROOM", Map.of("roomId", roomId));
-      // Attempting to pause in WAITING state fails with CONFLICT
+      // Tạm dừng khi phòng còn WAITING phải bị từ chối.
       var earlyPause = host.command("SET_ROOM_PAUSED", Map.of("paused", true));
       assertThat(earlyPause.path("payload").path("code").asText()).isEqualTo("CONFLICT");
 
       started(host);
 
-      // Non-host attempting to pause fails with FORBIDDEN
+      // Thành viên không phải Host không được tạm dừng trận.
       var peerAttempt = peer.command("SET_ROOM_PAUSED", Map.of("paused", true));
       assertThat(peerAttempt.path("payload").path("code").asText()).isEqualTo("FORBIDDEN");
 
-      // Host pauses match successfully
+      // Host tạm dừng trận thành công.
       var pauseResult = host.ok("SET_ROOM_PAUSED", Map.of("paused", true));
       assertThat(pauseResult.path("state").asText()).isEqualTo("PAUSED");
+      long pausedElapsed = pauseResult.path("currentPlay").path("elapsedTimeMs").asLong();
 
-      // Peer receives snapshot with paused = true
+      // Thành viên khác nhận snapshot báo đang tạm dừng.
       var peerSnapshot =
           peer.await(
               message ->
@@ -78,19 +79,34 @@ class RoomPauseIT {
                       && message.path("payload").path("self").path("paused").asBoolean());
       assertThat(peerSnapshot).isNotNull();
 
-      // Host resumes match successfully
+      time.advance(5000);
+      assertThat(
+              host.ok("GET_ROOM_STATE", Map.of())
+                  .path("currentPlay")
+                  .path("elapsedTimeMs")
+                  .asLong())
+          .isEqualTo(pausedElapsed);
+
+      // Host tiếp tục trận thành công.
+      peer.messages.clear();
       var resumeResult = host.ok("SET_ROOM_PAUSED", Map.of("paused", false));
       assertThat(resumeResult.path("state").asText()).isEqualTo("PLAYING");
 
-      // Peer receives snapshot with paused = false
+      // Thành viên khác nhận snapshot báo trận đã tiếp tục.
       var peerResumedSnapshot =
           peer.await(
               message ->
                   message.path("type").asText().equals("GAME_SNAPSHOT")
                       && !message.path("payload").path("self").path("paused").asBoolean());
       assertThat(peerResumedSnapshot).isNotNull();
+      long resumedElapsed = resumeResult.path("currentPlay").path("elapsedTimeMs").asLong();
+      time.advance(250);
+      host.await(
+          message ->
+              message.path("type").asText().equals("GAME_SNAPSHOT")
+                  && message.path("payload").path("elapsedTimeMs").asLong() > resumedElapsed);
 
-      // Host can end match while paused
+      // Host vẫn có thể kết thúc trận khi đang tạm dừng.
       host.ok("SET_ROOM_PAUSED", Map.of("paused", true));
       var endResult = host.ok("END_MATCH", Map.of());
       assertThat(endResult.path("reason").asText()).isEqualTo("HOST_ENDED");

@@ -536,7 +536,7 @@ export function OnlineGame({
 					if (
 						room.kind === "ROOM" &&
 						!snapshot.self.paused &&
-						room.state === "PLAYING" &&
+						latestRoom.current.state === "PLAYING" &&
 						hostPausedRef.current
 					) {
 						hostPausedRef.current = false;
