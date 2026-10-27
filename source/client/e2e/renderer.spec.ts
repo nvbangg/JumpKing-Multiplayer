@@ -111,15 +111,25 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 					return context.getImageData(0, 0, canvas.width, canvas.height).data;
 				};
 				const goldPixels = readPixels(manifest.crown),
-					blackPixels = readPixels(`${manifest.crown}/black`);
+					diamondPixels = readPixels(`${manifest.crown}/diamond`);
 				if (
-					goldPixels.length !== blackPixels.length ||
-					!goldPixels.some((value, i) => value !== blackPixels[i]) ||
-					goldPixels.some((value, i) => i % 4 === 3 && value !== blackPixels[i])
+					goldPixels.length !== diamondPixels.length ||
+					!goldPixels.some((value, i) => value !== diamondPixels[i]) ||
+					goldPixels.some(
+						(value, i) => i % 4 === 3 && value !== diamondPixels[i],
+					)
 				)
 					failures.push(
-						"Black crown must change color and preserve transparency",
+						"Diamond crown must change color and preserve transparency",
 					);
+				for (let i = 0; i < diamondPixels.length; i += 4) {
+					if (diamondPixels[i] === goldPixels[i]) continue;
+					const [r = 0, g = 0, b = 0] = diamondPixels.slice(i, i + 3);
+					if (g < 90 || b < g || b - r < 80) {
+						failures.push("Diamond crown must have saturated blue facets");
+						break;
+					}
+				}
 				if (scene.children.getByName("room-finish"))
 					failures.push("Finish marker outside Room");
 				runtime.finishMarker = findFinishPlatform(roomMap(map, 1));
@@ -198,7 +208,7 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 					const crowns = scene.children.list.filter(
 						(child: { type: string; texture?: { key: string } }) =>
 							child.type === "Sprite" &&
-							[manifest.crown, `${manifest.crown}/black`].includes(
+							[manifest.crown, `${manifest.crown}/diamond`].includes(
 								child.texture?.key,
 							),
 					);
@@ -223,7 +233,7 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 								(crown.visible &&
 									crown.texture.key !==
 										(screen % 3 === 2
-											? `${manifest.crown}/black`
+											? `${manifest.crown}/diamond`
 											: manifest.crown)),
 						)
 					)
@@ -279,7 +289,7 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 								captureCrownScreen(name: string): Promise<void>;
 							}
 						).captureCrownScreen(
-							`crown-${screen === 1 ? "gold" : "black"}.png`,
+							`crown-${screen === 1 ? "gold" : "diamond"}.png`,
 						);
 				}
 				return { screens, failures };

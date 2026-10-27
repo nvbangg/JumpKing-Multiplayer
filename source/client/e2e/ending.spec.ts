@@ -19,9 +19,12 @@ for (const { ravenDone, crown } of [
 				errors.push(message.text());
 		});
 		await page.goto("/");
-		await page.exposeFunction("captureCrownEnding", async () => {
-			await page.screenshot({ path: info.outputPath("ending-crown.png") });
-		});
+		await page.exposeFunction(
+			"captureCrownEnding",
+			async (name = "ending-crown.png") => {
+				await page.screenshot({ path: info.outputPath(name) });
+			},
+		);
 		const result = await page.evaluate(
 			async ({ physics, ravenDone, crown }) => {
 				const renderer = "/src/game/presentation/createGame.ts";
@@ -90,11 +93,19 @@ for (const { ravenDone, crown } of [
 					await loaded;
 					const scene = game.scene.getScene("Tower");
 					const wornTexture =
-						crown === "BLACK" ? `${manifest.crown}/black` : manifest.crown;
+						crown === "BLACK" ? `${manifest.crown}/diamond` : manifest.crown;
 					type ObjectTree = {
 						texture?: { key: string };
+						frame?: { name: string };
 						list?: ObjectTree[];
 					};
+					const descendants = (objects: ObjectTree[]): ObjectTree[] =>
+						objects.flatMap((object) => [
+							object,
+							...descendants(object.list ?? []),
+						]);
+					const normalTextures = new Set<string>();
+					let wornCapture: Promise<void> | undefined;
 					const wearsCrown = (objects: ObjectTree[]): boolean =>
 						objects.some(
 							(object) =>
@@ -103,6 +114,28 @@ for (const { ravenDone, crown } of [
 						);
 					let woreCrown = false;
 					scene.events.on("postupdate", () => {
+						const normal = descendants(scene.children.list).filter((object) =>
+							object.frame?.name.startsWith("ending:normal."),
+						);
+						for (const object of normal)
+							if (object.texture) normalTextures.add(object.texture.key);
+						if (
+							!wornCapture &&
+							normal.some(
+								(object) => object.frame?.name === "ending:normal.idle_right",
+							)
+						) {
+							scene.time.timeScale = scene.tweens.timeScale = 0;
+							wornCapture = (
+								window as unknown as {
+									captureCrownEnding(name: string): Promise<void>;
+								}
+							)
+								.captureCrownEnding("ending-worn-crown.png")
+								.finally(() => {
+									scene.time.timeScale = scene.tweens.timeScale = 32;
+								});
+						}
 						woreCrown ||= wearsCrown(
 							scene.children.list.filter(
 								(object: ObjectTree) => object.list !== undefined,
@@ -120,12 +153,17 @@ for (const { ravenDone, crown } of [
 					const carrierTexture = carrier?.list[0]?.texture.key;
 					if (
 						carrierTexture !==
-						(ravenDone ? "props/textures/raven/raven_crown/black" : "king/base")
+						(ravenDone
+							? "props/textures/raven/raven_crown/diamond"
+							: crown === "BLACK"
+								? "king/base/diamond"
+								: "king/base")
 					)
 						failures.push("Wrong crown carrier texture");
 					scene.time.timeScale = 32;
 					scene.tweens.timeScale = 32;
 					await completed;
+					await wornCapture;
 					await new Promise<void>((resolve) =>
 						requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
 					);
@@ -142,9 +180,12 @@ for (const { ravenDone, crown } of [
 					return {
 						completions,
 						woreCrown,
+						normalTextures: [...normalTextures],
 						picture: image.texture.key,
 						camera: scene.cameras.main.scrollY,
 						texts,
+						namesHidden:
+							parent.querySelector<HTMLElement>(".player-names")?.hidden,
 						failures,
 					};
 				} finally {
@@ -156,11 +197,16 @@ for (const { ravenDone, crown } of [
 		);
 		expect(result.completions).toBe(1);
 		expect(result.woreCrown).toBe(true);
+		expect(result.normalTextures).toEqual([
+			crown === "BLACK" ? "king/base/diamond" : "king/base",
+			crown === "BLACK" ? "king/crown/diamond" : "king/crown",
+		]);
 		expect(result.picture).toBe(
-			crown === "BLACK" ? "ending/imagecrown/black" : "ending/imagecrown",
+			crown === "BLACK" ? "ending/imagecrown/diamond" : "ending/imagecrown",
 		);
 		expect(result.camera).toBe(-42 * 360);
-		expect(result.texts).toEqual(["Player"]);
+		expect(result.texts).toEqual([]);
+		expect(result.namesHidden).toBe(true);
 		expect(result.failures).toEqual([]);
 		expect(errors).toEqual([]);
 	});
