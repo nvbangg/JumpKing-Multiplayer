@@ -113,10 +113,12 @@ final class RoomMatch {
       double progress = player.game.physics().progress();
       var state = player.game.physics().snapshot();
       boolean isLanded = state.grounded && state.splat == 0 && !state.phasingFall;
-      if (isLanded) player.currentProgress = progress;
-      if (progress > player.maximum) {
-        player.maximum = progress;
-        player.peak = state.ticks;
+      if (isLanded) {
+        player.currentProgress = progress;
+        if (progress > player.maximum) {
+          player.maximum = progress;
+          player.peak = state.ticks;
+        }
       }
       if (player.game.finished()) {
         player.status = "FINISHED";
