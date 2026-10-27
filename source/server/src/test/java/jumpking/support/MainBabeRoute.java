@@ -2,7 +2,6 @@ package jumpking.support;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.file.Path;
-import java.util.Map;
 import jumpking.game.*;
 
 /** Tạo checkpoint trước Finish bằng toàn tuyến input hợp lệ, không bay/teleport. */
@@ -14,13 +13,28 @@ public final class MainBabeRoute {
     var checkpoints =
         json.readTree(Path.of("../common/fixtures/main-babe-checkpoints.json").toFile());
     long target = checkpoints.get(checkpoints.size() - 1).path("ticks").asLong() - 1;
+    return beforeFinish(shared, json, target, shared.geometry());
+  }
+
+  public static GameSimulation.Snapshot beforeRoomFinish(SharedData shared, ObjectMapper json)
+      throws Exception {
+    var goal = shared.roomMap(shared.roomMaps().size());
+    var probe = new Simulation(goal, shared.tuning(), false, false);
+    for (var checkpoint :
+        json.readTree(Path.of("../common/fixtures/main-babe-checkpoints.json").toFile())) {
+      probe.restore(json.treeToValue(checkpoint, PlayerState.class));
+      if (probe.finished())
+        return beforeFinish(shared, json, checkpoint.path("ticks").asLong() - 1, goal);
+    }
+    throw new IllegalStateException("Route has no Room Finish checkpoint");
+  }
+
+  private static GameSimulation.Snapshot beforeFinish(
+      SharedData shared, ObjectMapper json, long target, GameMap goal) throws Exception {
     var game =
         new GameSimulation(
-            json.treeToValue(shared.map(), GameMap.class),
-            new Physics(
-                json.convertValue(
-                    shared.physics(),
-                    new com.fasterxml.jackson.core.type.TypeReference<Map<String, Number>>() {})),
+            shared.geometry(),
+            shared.tuning(),
             shared.adventure(),
             shared.roomScenes(),
             false,
@@ -50,11 +64,16 @@ public final class MainBabeRoute {
       }
       if (game.physics().snapshot().ticks >= target) break;
     }
-    if (game.physics().snapshot().ticks != target || game.finished())
+    if (game.physics().snapshot().ticks != target)
       throw new IllegalStateException("Route did not reach the pre-Finish checkpoint");
     var snapshot = game.snapshot();
-    game.tick(PlayerInput.NEUTRAL);
-    if (!game.finished())
+    var check =
+        new GameSimulation(
+            goal, shared.tuning(), shared.adventure(), shared.roomScenes(), false, false);
+    check.restore(snapshot);
+    if (check.finished()) throw new IllegalStateException("Route checkpoint already finished");
+    check.tick(PlayerInput.NEUTRAL);
+    if (!check.finished())
       throw new IllegalStateException("Route checkpoint does not Finish on the next tick");
     return snapshot;
   }

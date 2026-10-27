@@ -22,13 +22,16 @@ final class RoomMatch {
     long peak;
     Long finish;
     Integer rank;
-    Map<String, Object> ending;
     Instant endedAt;
 
     Player(Spec spec, GameSimulation game, InputFrames input) {
       this.spec = spec;
       this.game = game;
       this.input = input;
+    }
+
+    RoomRanking.Score score() {
+      return new RoomRanking.Score(spec.playerId, status, currentProgress, maximum, finish);
     }
   }
 
@@ -161,19 +164,8 @@ final class RoomMatch {
       if (player.status.equals("ACTIVE")) player.status = "UNFINISHED";
       if (player.endedAt == null) player.endedAt = endedAt;
     }
-    var scores =
-        players.values().stream()
-            .map(
-                player ->
-                    new RoomRanking.Score(
-                        player.spec.playerId,
-                        player.status,
-                        player.currentProgress,
-                        player.maximum,
-                        player.finish))
-            .toList();
-    for (var result :
-        RoomRanking.rank(scores, settings.mode(), settings.timeLimitMinutes() != null)) {
+    var scores = players.values().stream().map(Player::score).toList();
+    for (var result : RoomRanking.rank(scores, settings.timeLimitMinutes() != null)) {
       var player = players.get(result.score().playerId());
       player.rank = result.rank();
     }
@@ -262,16 +254,9 @@ final class RoomMatch {
     var scores =
         players.values().stream()
             .filter(player -> members.contains(player.spec.playerId))
-            .map(
-                player ->
-                    new RoomRanking.Score(
-                        player.spec.playerId,
-                        player.status,
-                        player.currentProgress,
-                        player.maximum,
-                        player.finish))
+            .map(Player::score)
             .toList();
-    return RoomRanking.rank(scores, settings.mode(), settings.timeLimitMinutes() != null).stream()
+    return RoomRanking.rank(scores, settings.timeLimitMinutes() != null).stream()
         .map(
             row -> {
               var spec = players.get(row.score().playerId()).spec;

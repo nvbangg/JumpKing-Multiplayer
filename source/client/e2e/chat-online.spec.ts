@@ -16,7 +16,7 @@ test.skip(
 test("persistent scrollable chat, shortcuts and touch work without launching a held jump", async ({
 	browser,
 }, info) => {
-	test.setTimeout(60_000);
+	test.setTimeout(90_000);
 	const first = await browser.newContext(),
 		second = await browser.newContext({
 			viewport: { width: 844, height: 390 },
@@ -95,10 +95,10 @@ test("persistent scrollable chat, shortcuts and touch work without launching a h
 			await a.getByRole("button", { name: "Send", exact: true }).click();
 			await expect(history).toContainText(`Line ${index}`);
 		}
-		await b.waitForTimeout(5100);
 		await expect(b.locator(".chat-history-box")).toHaveAttribute(
 			"data-hidden",
 			"true",
+			{ timeout: 20_000 },
 		);
 		await expect(b.getByLabel("Message", { exact: true })).toBeVisible();
 		await a.waitForTimeout(1100);

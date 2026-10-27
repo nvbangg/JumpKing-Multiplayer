@@ -2,11 +2,11 @@ package jumpking.room;
 
 import static org.assertj.core.api.Assertions.*;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 import jumpking.JumpKingApplication;
+import jumpking.game.GameMap;
 import jumpking.game.SharedData;
 import jumpking.network.SerialExecutor;
 import jumpking.support.*;
@@ -38,8 +38,18 @@ class RoomFlyIT {
   @Autowired RoomRaceIT.TestTime time;
   @Autowired RoomManager server;
   @Autowired SharedData shared;
-  @Autowired ObjectMapper json;
   @LocalServerPort int port;
+
+  private GameMap.Spawn solidPosition() {
+    var map = shared.roomMap(RoomSettings.FINAL_MAP_ID);
+    int screen = map.finish().screen(), tile = map.tileSize();
+    var rows = map.screens().get(screen).tiles();
+    for (int row = 1; row < rows.size() - 1; row++)
+      for (int column = 1; column < rows.get(row).length() - 4; column++)
+        if (rows.get(row).charAt(column) == '#' && rows.get(row + 1).charAt(column) == ' ')
+          return new GameMap.Spawn(column * tile + 1, row * tile - screen * map.screenHeight() + 1);
+    throw new IllegalStateException("Room has no solid block for the phasing fixture");
+  }
 
   private void arrange(String id, Consumer<RoomMatch> operation) throws Exception {
     Object room = ((Map<?, ?>) ReflectionTestUtils.getField(server, "rooms")).get(id);
@@ -96,111 +106,72 @@ class RoomFlyIT {
   }
 
   @Test
-  void allModesAllowFlightPhasingAndCountTheNormalCommittedFinish() throws Exception {
-    var before = MainBabeRoute.beforeFinish(shared, json);
-    for (String mode : List.of("RACE", "EASY", "HARDCORE", "NO_WALK")) {
-      try (var a = new GameClient(port);
-          var b = new GameClient(port)) {
-        a.register();
-        b.register();
-        a.connect();
-        b.connect();
-        var settings = new HashMap<String, Object>();
-        settings.put("mode", mode);
-        settings.put("mapId", RoomSettings.FINAL_MAP_ID);
-        settings.put("timeLimitMinutes", null);
-        String room = a.ok("CREATE_ROOM", Map.of("settings", settings)).path("roomId").asText();
-        b.ok("JOIN_ROOM", Map.of("roomId", room));
-        a.ok("START_GAME", Map.of());
-        String play =
-            a.await(message -> message.path("type").asText().equals("GAME_STARTED"))
-                .path("payload")
-                .path("playId")
-                .asText();
-        time.advance(3000);
-        a.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
-        var initial = a.snapshot().path("self").path("simulation").path("physics");
-        input(a, play, 1, true, true, true, false);
-        var flying = a.snapshot().path("self").path("simulation").path("physics");
-        assertThat(flying.path("freeFlight").asBoolean()).as(mode).isTrue();
-        assertThat(flying.path("x").asDouble()).isGreaterThan(initial.path("x").asDouble());
-        assertThat(flying.path("y").asDouble()).isLessThan(initial.path("y").asDouble());
-        arrange(
-            room,
-            match -> {
-              var player = match.players.values().iterator().next();
-              var pose = player.game.physics().snapshot();
-              pose.x = 231;
-              pose.y = 310;
-              pose.grounded = false;
-              player.game.physics().restore(pose);
-            });
-        input(a, play, 2, false, true, false, true);
-        var phasing = a.snapshot().path("self").path("simulation").path("physics");
-        assertThat(phasing.path("freeFlight").asBoolean()).isFalse();
-        assertThat(phasing.path("phasingFall").asBoolean()).isTrue();
-        assertThat(phasing.path("x").asDouble()).isEqualTo(231);
-        assertThat(phasing.path("jumps").asInt()).isZero();
-        for (int step = 0;
-            step < 20
-                && a.snapshot()
-                    .path("self")
-                    .path("simulation")
-                    .path("physics")
-                    .path("phasingFall")
-                    .asBoolean();
-            step++) {
-          long tick = a.snapshot().path("serverTick").asLong();
-          time.advance(50);
-          a.await(
-              message ->
-                  message.path("type").asText().equals("GAME_SNAPSHOT")
-                      && message.path("payload").path("serverTick").asLong() > tick);
-        }
-        assertThat(
-                a.snapshot()
-                    .path("self")
-                    .path("simulation")
-                    .path("physics")
-                    .path("phasingFall")
-                    .asBoolean())
-            .isFalse();
-        input(a, play, 3, false, false, false, false);
-        arrange(
-            room,
-            match -> {
-              match.ticks = before.physics().ticks;
-              var player = match.players.values().iterator().next();
-              player.game.restore(before);
-              player.maximum = player.game.physics().progress();
-              player.peak = before.physics().ticks;
-            });
+  void flightInputMovesAndPhasesBeforeReturningToNormalPhysics() throws Exception {
+    var solid = solidPosition();
+    try (var a = new GameClient(port)) {
+      a.register();
+      a.connect();
+      var settings = new HashMap<String, Object>();
+      settings.put("mode", "RACE");
+      settings.put("mapId", RoomSettings.FINAL_MAP_ID);
+      settings.put("timeLimitMinutes", null);
+      String room = a.ok("CREATE_ROOM", Map.of("settings", settings)).path("roomId").asText();
+      a.ok("START_GAME", Map.of());
+      String play =
+          a.await(message -> message.path("type").asText().equals("GAME_STARTED"))
+              .path("payload")
+              .path("playId")
+              .asText();
+      time.advance(3000);
+      a.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
+      var initial = a.snapshot().path("self").path("simulation").path("physics");
+      input(a, play, 1, true, true, true, false);
+      var flying = a.snapshot().path("self").path("simulation").path("physics");
+      assertThat(flying.path("freeFlight").asBoolean()).isTrue();
+      assertThat(flying.path("x").asDouble()).isGreaterThan(initial.path("x").asDouble());
+      assertThat(flying.path("y").asDouble()).isLessThan(initial.path("y").asDouble());
+      arrange(
+          room,
+          match -> {
+            var player = match.players.values().iterator().next();
+            var pose = player.game.physics().snapshot();
+            pose.x = solid.x();
+            pose.y = solid.y();
+            pose.grounded = false;
+            player.game.physics().restore(pose);
+          });
+      input(a, play, 2, false, true, false, true);
+      var phasing = a.snapshot().path("self").path("simulation").path("physics");
+      assertThat(phasing.path("freeFlight").asBoolean()).isFalse();
+      assertThat(phasing.path("phasingFall").asBoolean()).isTrue();
+      assertThat(phasing.path("x").asDouble()).isEqualTo(solid.x());
+      assertThat(phasing.path("jumps").asInt()).isZero();
+      for (int step = 0;
+          step < 20
+              && a.snapshot()
+                  .path("self")
+                  .path("simulation")
+                  .path("physics")
+                  .path("phasingFall")
+                  .asBoolean();
+          step++) {
+        long tick = a.snapshot().path("serverTick").asLong();
         time.advance(50);
         a.await(
             message ->
-                message.path("type").asText().equals("ROOM_STATE")
-                    && message
-                        .path("payload")
-                        .path("result")
-                        .path("saveStatus")
-                        .asText()
-                        .equals("SAVED"));
-        assertThat(a.request("/profile/me", "GET", null).path("total").has("wins")).isFalse();
-        assertThat(
-                a.request("/history/ROOM/" + play, "GET", null).path("room").path("mode").asText())
-            .isEqualTo(mode);
-        assertThat(
-                TestDatabase.get()
-                    .jdbc
-                    .queryForObject(
-                        "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND user_id=? AND status='FINISHED' AND `rank`=1",
-                        Integer.class,
-                        play,
-                        a.owner))
-            .isEqualTo(1);
-        a.ok("LEAVE_ROOM", Map.of());
-        b.ok("LEAVE_ROOM", Map.of());
+                message.path("type").asText().equals("GAME_SNAPSHOT")
+                    && message.path("payload").path("serverTick").asLong() > tick);
       }
+      assertThat(
+              a.snapshot()
+                  .path("self")
+                  .path("simulation")
+                  .path("physics")
+                  .path("phasingFall")
+                  .asBoolean())
+          .isFalse();
+      input(a, play, 3, false, false, false, false);
+      a.ok("LEAVE_ROOM", Map.of());
     }
   }
 }

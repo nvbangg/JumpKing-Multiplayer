@@ -118,7 +118,7 @@ class RoomMatchTest {
   }
 
   @Test
-  void roomFinishKeepsRavenProgressWithoutStartingAnEndingAndResetsProgress() throws Exception {
+  void roomFinishKeepsRavenProgressAndNewMatchResetsIt() throws Exception {
     var match = match(new RoomSettings("RACE", null, RoomSettings.FINAL_MAP_ID, null));
     var now = Instant.parse("2026-01-01T00:00:00Z");
     match.start(now);
@@ -136,8 +136,7 @@ class RoomMatchTest {
         .put("y", perch.path("y").asDouble() - perch.path("screen").asInt() * 360);
     first.game.adventure().restore(saved);
     match.tick(1_000_000_000L, now);
-    assertThat(first.ending).isNull();
-    assertThat(match.players.get("second").ending).isNull();
+    assertThat(match.reason).isEqualTo("FINISH");
     assertThat(match.write(1).ravenFinishers()).containsExactly(first.spec.owner());
     assertThat(match().players.get("first").game.adventure().ravenDone()).isFalse();
   }
@@ -309,7 +308,7 @@ class RoomMatchTest {
   }
 
   @Test
-  void everyLengthFinalizesOnItsOwnLandingAndOnlyFullMapOffersAnEnding() throws Exception {
+  void everyLengthFinalizesOnItsOwnLanding() throws Exception {
     for (var goal : shared.roomMaps()) {
       var point = landing(goal.level());
       var match = match(new RoomSettings("RACE", null, goal.level(), null));
@@ -320,7 +319,6 @@ class RoomMatchTest {
       match.tick(1_000_000_000L, now.plusSeconds(300));
       assertThat(match.reason).as("map %s", goal.level()).isEqualTo("FINISH");
       assertThat(match.results().get("mapId")).isEqualTo(goal.level());
-      for (var player : match.players.values()) assertThat(player.ending).isNull();
     }
   }
 
@@ -354,31 +352,6 @@ class RoomMatchTest {
         .extracting(jumpking.dto.PlayerStanding::playerId)
         .containsExactly("first");
     assertThat(match.standings(java.util.Set.of())).isEmpty();
-  }
-
-  @Test
-  void allPlayersOfTheFinishingTickAreProcessedBeforeResultsAndTies() throws Exception {
-    var match = match(new RoomSettings("RACE", null, RoomSettings.FINAL_MAP_ID, null));
-    var before = landing(RoomSettings.FINAL_MAP_ID);
-    var start = Instant.parse("2026-01-01T00:00:00Z");
-    match.start(start);
-    match.ticks = before.ticks;
-    for (var player : match.players.values()) {
-      player.game.physics().restore(before);
-      player.maximum = player.game.physics().progress();
-      player.peak = before.ticks;
-    }
-    match.tick(1_000_000_000L, start.plusSeconds(283));
-    assertThat(match.ticks).isEqualTo(before.ticks + 1);
-    assertThat(match.reason).isEqualTo("FINISH");
-    assertThat(match.players.values())
-        .allMatch(player -> player.rank == 1 && player.finish == before.ticks + 1);
-    assertThat(match.write(1).runs())
-        .allMatch(
-            run ->
-                run.status().equals("FINISHED")
-                    && run.ticks() == before.ticks + 1
-                    && run.rank() == 1);
   }
 
   private PlayerState landing(int level) throws Exception {

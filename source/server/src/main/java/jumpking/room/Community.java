@@ -114,14 +114,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
         lastPhysical = time.nanos(),
         lastSave = time.nanos();
     double currentProgress, maximum;
-    boolean loading = true,
-        paused,
-        pausePending,
-        leaving,
-        finished,
-        saving,
-        terminalQueued,
-        operation;
+    boolean loading = true, paused, pausePending, leaving, finished, terminalQueued, operation;
     final List<Runnable> terminalActions = new ArrayList<>();
     java.time.Instant finishedAt;
     Map<String, Object> ending;
@@ -284,10 +277,12 @@ public class Community implements GameCommandHandler, AutoCloseable {
           }
           var pose = player.game.physics().snapshot();
           boolean isLanded = pose.grounded && !pose.phasingFall;
-          if (isLanded) player.currentProgress = progress;
-          if (progress > player.maximum) {
-            player.maximum = progress;
-            player.peakTicks = pose.ticks;
+          if (isLanded) {
+            player.currentProgress = progress;
+            if (progress > player.maximum) {
+              player.maximum = progress;
+              player.peakTicks = pose.ticks;
+            }
           }
           for (String effect : events.movement())
             effects.add(
@@ -325,7 +320,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
         }
         if (!player.loading
             && !player.finished
-            && !player.saving
+            && player.pendingWrites == 0
             && !player.paused
             && !player.pausePending
             && !player.saveStatus.equals("FAILED")
@@ -664,7 +659,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
   private void save(Tower tower, Member player, boolean flush, Runnable committed) {
     if (player.loading) return;
     if (player.finished && player.terminalQueued) {
-      if (player.savedRevision == player.revision && !player.saving) committed.run();
+      if (player.savedRevision == player.revision && player.pendingWrites == 0) committed.run();
       else player.terminalActions.add(committed);
       return;
     }
@@ -672,7 +667,6 @@ public class Community implements GameCommandHandler, AutoCloseable {
     var snapshot = player.game.snapshot();
     long revision = ++player.revision;
     player.saveStatus = "PENDING";
-    player.saving = true;
     player.pendingWrites++;
     player.lastSave = time.nanos();
     var write =
@@ -702,14 +696,14 @@ public class Community implements GameCommandHandler, AutoCloseable {
               return;
             }
             if (outcome == CheckpointWriter.Outcome.SUPERSEDED) {
-              tower.actor.complete(() -> player.saving = --player.pendingWrites > 0);
+              tower.actor.complete(() -> player.pendingWrites--);
               return;
             }
             if (outcome == CheckpointWriter.Outcome.SAVED) {
               tower.actor.complete(
                   () -> {
                     player.savedRevision = Math.max(player.savedRevision, revision);
-                    player.saving = --player.pendingWrites > 0;
+                    player.pendingWrites--;
                     player.saveStatus =
                         player.savedRevision == player.revision ? "SAVED" : "PENDING";
                     if (player.connection != null)
@@ -728,7 +722,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
             } else {
               tower.actor.complete(
                   () -> {
-                    player.saving = --player.pendingWrites > 0;
+                    player.pendingWrites--;
                     player.saveStatus = "FAILED";
                     if (write.status().equals("FINISHED")) player.terminalQueued = false;
                     pause(player);
@@ -756,7 +750,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
             }
           });
     } catch (RejectedExecutionException busy) {
-      player.saving = --player.pendingWrites > 0;
+      player.pendingWrites--;
       player.terminalQueued = false;
       player.saveStatus = "FAILED";
       pause(player);

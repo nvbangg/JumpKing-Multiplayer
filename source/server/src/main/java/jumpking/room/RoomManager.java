@@ -109,7 +109,6 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     String watching;
     boolean confirmed = true, nextMatchJoined = true;
     Crown crown = Crown.NONE;
-    String endingNotifiedPlay;
     long disconnectedAt, generation;
 
     Member(GameConnection connection, RoomDirectory.Slot slot, String nickname, long order) {
@@ -351,29 +350,21 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
                       GameEnvelope.fields(command.payload(), Set.of("paused"));
                       requireHost(room, player);
                       boolean paused = GameEnvelope.bool(command.payload(), "paused", false);
-                      if (paused) {
-                        if (!room.state.equals("PLAYING"))
-                          throw new ApiException(
-                              409, "CONFLICT", "Match can only be paused while playing");
-                        room.state = "PAUSED";
-                        for (var member : room.players.values()) {
-                          var racer = room.match.players.get(member.id);
-                          if (racer != null) {
-                            racer.input.clear();
-                            racer.game.physics().cancelInput();
-                          }
-                        }
-                      } else {
-                        if (!room.state.equals("PAUSED"))
-                          throw new ApiException(409, "CONFLICT", "Match is not paused");
-                        room.state = "PLAYING";
-                        long step = 1_000_000_000L / room.match.tickRate;
-                        room.nextTick = time.nanos() + step;
-                        for (var member : room.players.values()) {
-                          var racer = room.match.players.get(member.id);
-                          if (racer != null) {
-                            racer.input.clear();
-                          }
+                      if (!room.state.equals(paused ? "PLAYING" : "PAUSED"))
+                        throw new ApiException(
+                            409,
+                            "CONFLICT",
+                            paused
+                                ? "Match can only be paused while playing"
+                                : "Match is not paused");
+                      room.state = paused ? "PAUSED" : "PLAYING";
+                      if (!paused)
+                        room.nextTick = time.nanos() + 1_000_000_000L / room.match.tickRate;
+                      for (var member : room.players.values()) {
+                        var racer = room.match.players.get(member.id);
+                        if (racer != null) {
+                          racer.input.clear();
+                          if (paused) racer.game.physics().cancelInput();
                         }
                       }
                       connection.reply(command, "ROOM_STATE", state(room));
@@ -619,8 +610,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     broadcast(room);
     chatHistory(room, player);
     snapshots(room);
-    player.endingNotifiedPlay = null;
-    finishNotice(room, player);
+    updateCrown(room, player);
   }
 
   private void chooseHost(Room room) {
@@ -924,8 +914,9 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     room.state = "FINISHED";
     directory.joinable(room.id, false);
     save(room, true);
+    var result = room.match.results();
     for (var player : room.players.values())
-      if (player.connection != null) player.connection.send("GAME_FINISHED", room.match.results());
+      if (player.connection != null) player.connection.send("GAME_FINISHED", result);
     broadcast(room);
     snapshots(room);
   }
@@ -956,7 +947,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
                     match.durable.complete(null);
                     if (room.retired) dispose(room);
                     if (room.match == match)
-                      for (var player : room.players.values()) finishNotice(room, player);
+                      for (var player : room.players.values()) updateCrown(room, player);
                   }
                   var status =
                       json.createObjectNode()
@@ -977,34 +968,17 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     }
   }
 
-  private void finishNotice(Room room, Member member) {
+  private void updateCrown(Room room, Member member) {
     var match = room.match;
-    if (match == null || !match.saveStatus.equals("SAVED")) return;
+    if (match == null
+        || match.settings.mapId() != RoomSettings.FINAL_MAP_ID
+        || !match.saveStatus.equals("SAVED")) return;
     var player = match.players.get(member.id);
     if (player == null
         || !"FINISH".equals(match.reason)
         || !"FINISHED".equals(player.status)
         || !Objects.equals(player.rank, 1)) return;
-    if (player.ending == null && room.settings.mapId() != RoomSettings.FINAL_MAP_ID) return;
     member.crown = member.crown.finish(player.game.adventure().ravenDone());
-    if (player.ending == null) return;
-    if (member.connection == null || match.id.equals(member.endingNotifiedPlay)) return;
-    var ending = new LinkedHashMap<>(player.ending);
-    ending.put("crown", member.crown);
-    member.connection.send(
-        "PLAYER_FINISHED",
-        Map.of(
-            "playerId",
-            member.id,
-            "playId",
-            match.id,
-            "result",
-            match.results(),
-            "showEnding",
-            true,
-            "ending",
-            ending));
-    member.endingNotifiedPlay = match.id;
   }
 
   private void emit(Room room, List<RoomMatch.Events> events) {

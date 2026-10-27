@@ -34,14 +34,9 @@ public class Memberships {
     var owners = new HashSet<Long>();
     if (current != null) owners.add(current);
     if (target != null) owners.add(target);
-    return change(
-        owners, current != null && !current.equals(target) ? Set.of(current) : Set.of(), action);
-  }
-
-  private <T> T change(Set<Long> owners, Set<Long> vacant, Supplier<T> action) {
     synchronized (this) {
       if (owners.stream().anyMatch(changing::contains)) throw busy();
-      if (vacant.stream().anyMatch(members::containsKey))
+      if (current != null && !current.equals(target) && members.containsKey(current))
         throw new ApiException(409, "CONFLICT", "Leave your current room before changing identity");
       changing.addAll(owners);
     }
