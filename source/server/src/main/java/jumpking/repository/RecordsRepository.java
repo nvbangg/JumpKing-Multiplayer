@@ -45,7 +45,7 @@ public class RecordsRepository {
                 .createNativeQuery(
                     """
             SELECT COALESCE(SUM(play_ticks),0) AS ticks,COALESCE(SUM(jumps),0) AS jumps,COALESCE(SUM(falls),0) AS falls,
-              COALESCE(SUM(status='FINISHED'),0) AS finishes,MIN(CASE WHEN p.match_id IS NULL OR m.map_id=8 THEN finish_ticks END) AS best,
+              COALESCE(SUM(p.match_id IS NULL AND p.status='FINISHED'),0) AS finishes,MIN(CASE WHEN p.match_id IS NULL OR m.map_id=8 THEN finish_ticks END) AS best,
               COUNT(CASE WHEN p.match_id IS NOT NULL THEN 1 END) AS matches,
               COALESCE(SUM(m.ended_at IS NOT NULL AND m.end_reason<>'ABORTED'
                 AND p.`rank`=1 AND p.status IN ('FINISHED','UNFINISHED')),0) AS wins

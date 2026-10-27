@@ -55,7 +55,7 @@ class RecordsServiceIT {
       assertThat(total.totalPlayTimeMs()).isEqualTo(BigInteger.valueOf(4016));
       assertThat(total.totalJumps()).isEqualTo(4);
       assertThat(total.totalFalls()).isEqualTo(2);
-      assertThat(total.finishes()).isEqualTo(2);
+      assertThat(total.finishes()).isEqualTo(1);
       assertThat(total.bestFinishTimeMs()).isEqualTo(1016);
       assertThat(total.matchesPlayed()).isEqualTo(1);
       assertThat(total.roomWins()).isEqualTo(1);

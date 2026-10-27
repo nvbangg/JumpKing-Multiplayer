@@ -25,7 +25,7 @@
   "roomLoadTimeoutMs": 30000,
   "items": {
     "cooldownMinMinutes": 1,
-    "cooldownMaxMinutes": 10,
+    "cooldownMaxMinutes": 5,
     "maximumBananas": 64,
     "bananaWidth": 12,
     "rockEffectTicks": 18

@@ -55,7 +55,15 @@ class RoomPauseIT {
 
       var room = host.ok("CREATE_ROOM", Map.of());
       String roomId = room.path("roomId").asText();
+      host.ok("UPDATE_ROOM_SETTINGS", Map.of("visibility", "PRIVATE"));
+      assertThat(host.request("/rooms", "GET", null).path("rooms").findValuesAsText("roomId"))
+          .doesNotContain(roomId);
+      assertThat(peer.request("/rooms/" + roomId, "GET", null).path("joinable").asBoolean())
+          .isTrue();
       peer.ok("JOIN_ROOM", Map.of("roomId", roomId));
+      var joined = peer.ok("GET_ROOM_STATE", Map.of());
+      assertThat(joined.path("visibility").asText()).isEqualTo("PRIVATE");
+      assertThat(joined.path("members")).hasSize(2);
       // Tạm dừng khi phòng còn WAITING phải bị từ chối.
       var earlyPause = host.command("SET_ROOM_PAUSED", Map.of("paused", true));
       assertThat(earlyPause.path("payload").path("code").asText()).isEqualTo("CONFLICT");
@@ -91,6 +99,9 @@ class RoomPauseIT {
       peer.messages.clear();
       var resumeResult = host.ok("SET_ROOM_PAUSED", Map.of("paused", false));
       assertThat(resumeResult.path("state").asText()).isEqualTo("PLAYING");
+      long resumedElapsed = resumeResult.path("currentPlay").path("elapsedTimeMs").asLong();
+      // Snapshot đang chạy được gộp vào tick kế tiếp; virtual clock phải được tiến trước khi đợi.
+      time.advance(250);
 
       // Thành viên khác nhận snapshot báo trận đã tiếp tục.
       var peerResumedSnapshot =
@@ -99,8 +110,6 @@ class RoomPauseIT {
                   message.path("type").asText().equals("GAME_SNAPSHOT")
                       && !message.path("payload").path("self").path("paused").asBoolean());
       assertThat(peerResumedSnapshot).isNotNull();
-      long resumedElapsed = resumeResult.path("currentPlay").path("elapsedTimeMs").asLong();
-      time.advance(250);
       host.await(
           message ->
               message.path("type").asText().equals("GAME_SNAPSHOT")

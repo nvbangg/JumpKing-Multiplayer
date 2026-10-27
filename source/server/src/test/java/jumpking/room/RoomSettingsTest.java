@@ -12,7 +12,7 @@ class RoomSettingsTest {
     var json = new ObjectMapper();
     var rules = new SharedData(json).rules();
     assertThat(RoomSettings.defaults().itemCooldownMinutes()).isNull();
-    for (int minutes : java.util.List.of(1, 3, 10)) {
+    for (int minutes : java.util.List.of(1, 3, 5)) {
       var input =
           json.createObjectNode()
               .put("mode", "RACE")
@@ -27,7 +27,7 @@ class RoomSettingsTest {
             .putNull("timeLimitMinutes")
             .putNull("itemCooldownMinutes");
     assertThat(RoomSettings.parse(disabled, rules).itemCooldownMinutes()).isNull();
-    for (String invalid : java.util.List.of("0", "11", "1.5", "true", "\"3\"", "4294967297")) {
+    for (String invalid : java.util.List.of("0", "6", "11", "1.5", "true", "\"3\"", "4294967297")) {
       var input = json.createObjectNode().put("mode", "RACE").putNull("timeLimitMinutes");
       input.set("itemCooldownMinutes", json.readTree(invalid));
       assertThatThrownBy(() -> RoomSettings.parse(input, rules))

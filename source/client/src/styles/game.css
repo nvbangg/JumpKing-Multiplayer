@@ -787,17 +787,6 @@ button.sound-switch {
 	}
 }
 @media (pointer: coarse) {
-	.game-chat .chat-panel {
-		padding: 0;
-		border: 0;
-		background: none;
-	}
-	.game-chat .chat-history-box {
-		padding: 6px;
-		border: 1px solid var(--line);
-		border-radius: 7px;
-		background: var(--surface);
-	}
 	.play-page {
 		--touch-button-height: 54px;
 		--touch-gap: 8px;

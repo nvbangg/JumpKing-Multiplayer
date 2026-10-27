@@ -77,7 +77,7 @@ class RoomRunsIT {
                     "SELECT crown FROM users WHERE id=?", String.class, owners.getFirst()))
             .isEqualTo(level == 8 ? "GOLD" : "NONE");
         var stats = history.statistics(owners.getFirst());
-        assertThat(stats.finishes()).isEqualTo(1);
+        assertThat(stats.finishes()).isZero();
         assertThat(stats.totalJumps()).isEqualTo(5);
         assertThat(stats.bestFinishTimeMs()).isEqualTo(level == 8 ? 10000L : null);
         int changedLevel = level == 8 ? 1 : 8;

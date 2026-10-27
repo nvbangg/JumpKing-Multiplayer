@@ -46,7 +46,7 @@ Leaderboard chỉ xét Community đã commit, lấy một best run/Account. Fini
 
 ## Room và xếp hạng
 
-Room ID là chuỗi 6 chữ số, giữ số 0 đầu, ví dụ `001234`. Room mặc định Private, Race và map 1; biết ID thì Join được. Public chỉ xuất hiện khi WAITING và còn chỗ. Lobby tách ID/danh sách người chơi và settings thành hai phần, màn hẹp xếp dọc. Host đổi settings khi WAITING; Time Limit chọn Unlimited hoặc 1–10 phút, Items cooldown chọn No items hoặc 1–10 phút. Thành viên mặc định Confirmed khi tạo/Join phòng; trong WAITING có thể Cancel Confirm và Confirm lại. Server giữ trạng thái này qua cập nhật Lobby và reconnect.
+Room ID là chuỗi 6 chữ số, giữ số 0 đầu, ví dụ `001234`. Room mặc định Public, Race và map 1; biết ID thì Join được. Public chỉ xuất hiện khi WAITING và còn chỗ. Lobby tách ID/danh sách người chơi và settings thành hai phần, màn hẹp xếp dọc. Host đổi settings khi WAITING; Time Limit chọn Unlimited hoặc 1–10 phút, Items cooldown chọn No items hoặc 1–5 phút. Thành viên mặc định Confirmed khi tạo/Join phòng; trong WAITING có thể Cancel Confirm và Confirm lại. Server giữ trạng thái này qua cập nhật Lobby và reconnect.
 
 ```text
 WAITING → COUNTDOWN → PLAYING → FINISHED
@@ -67,7 +67,7 @@ Host đã Confirmed có thể Start một mình; không chờ thêm thành viên
 
 Giới hạn thời gian là tùy chọn độc lập với mode, mặc định không giới hạn. Khi chọn 1–10 phút và hết giờ, trận kết thúc theo luật TIME_LIMIT.
 
-Clock chung chạy từ hết countdown. Menu/chat/AFK của từng cá nhân không dừng physics/clock của phòng. Trong lúc trận đang diễn ra (PLAYING), Host có quyền tạm dừng trận đấu (Host Pause) qua lệnh SET_ROOM_PAUSED. Khi tạm dừng, trạng thái phòng chuyển sang PAUSED, đồng hồ trận và mô phỏng vật lý của tất cả người chơi dừng lại tại thời điểm hiện tại, input của người chơi bị khóa và client hiển thị thông báo tạm dừng. Khi Host chọn tiếp tục (Resume), trạng thái phòng trở lại PLAYING, mốc thời gian tick kế tiếp được đồng bộ lại theo thời gian thực (không bù dồn tick) và trận đấu tiếp tục bình thường cho toàn bộ thành viên. All-offline ngừng tick trong hạn reconnect, không chạy bù thời gian offline.
+Clock chung chạy từ hết countdown. Menu/chat/AFK của từng cá nhân không dừng physics/clock của phòng. Trong lúc trận đang diễn ra (PLAYING), Host có quyền tạm dừng trận đấu (Host Pause) qua lệnh SET_ROOM_PAUSED. Khi tạm dừng, trạng thái phòng chuyển sang PAUSED, đồng hồ trận và mô phỏng vật lý của tất cả người chơi dừng lại tại thời điểm hiện tại, input của người chơi bị khóa, client giữ màn chơi và mở menu Match Paused cho mọi thành viên, kể cả người đang spectate. Chỉ Host có nút Resume Match; thành viên khác chờ Host tiếp tục. Khi Host chọn tiếp tục (Resume), trạng thái phòng trở lại PLAYING, mốc thời gian tick kế tiếp được đồng bộ lại theo thời gian thực (không bù dồn tick) và trận đấu tiếp tục bình thường cho toàn bộ thành viên. All-offline ngừng tick trong hạn reconnect, không chạy bù thời gian offline.
 
 Easy nhớ riêng vị trí đứng/đáp nền bình thường của từng người, không cần cờ hoặc thao tác lưu; vị trí gần nhất có thể thấp hơn vị trí trước. Không ghi điểm khi SPLAT, trượt, bị hất, Fly hoặc phasing. SPLAT trả về điểm đã nhớ (chưa có thì spawn), xóa vận tốc/charge/trượt và chờ thả Jump trước cú nhảy mới. Clock, jumps/falls, peak, Items/cooldown/bẫy và tiến độ NPC/quạ giữ nguyên; current progress cập nhật theo vị trí quay về. Điểm an toàn theo snapshot, giữ khi reconnect và reset mỗi ván; không lưu dài hạn. Kết quả/crown/Best Finish Time áp dụng như các mode Room khác.
 
@@ -85,7 +85,7 @@ Play Again giữ room code/settings và thành viên, nhưng reset trạng thái
 
 ## Items trong Room
 
-Tại Lobby, Host chọn No items hoặc cooldown 1–10 phút; mặc định No items. `itemCooldownMinutes=null` nghĩa là tắt Items; chọn số phút sẽ bật Items và đặt cooldown tương ứng. Backend kiểm tra khoảng 1–10 phút. Settings giữ qua Play Again, không đổi giữa trận.
+Tại Lobby, Host chọn No items hoặc cooldown 1–5 phút; mặc định No items. `itemCooldownMinutes=null` nghĩa là tắt Items; chọn số phút sẽ bật Items và đặt cooldown tương ứng. Backend kiểm tra khoảng 1–5 phút. Settings giữ qua Play Again, không đổi giữa trận.
 
 Tối đa 64 bẫy Banana/phòng, cấu hình trong rules. Chạm trần thì hủy chuẩn bị, không đặt thêm, giữ item và không bắt đầu cooldown; bẫy cũ vẫn tồn tại đến khi bị giẫm.
 
@@ -127,7 +127,7 @@ Tutorial Community chỉ hiện khi Account chưa có thời gian chơi, chưa t
 
 ## Thống kê và History
 
-Stats tổng Community/Room: active time, jumps, falls, finishes, số trận Room và best finish time full map; không lọc kiểu chơi. Jump tính khi launch, fall khi splat; New Game/respawn không xóa tổng. Chưa Finish thì finish time=null. Thời lượng hiển thị theo đồng hồ kèm `s`, ví dụ `01:30 s`; chưa có thành tích hiện `—`.
+Stats tổng Community/Room: active time, jumps, falls, số lần phá đảo Community (Finishes), số trận Room, Room Wins và best finish time full map. Room Finish chỉ được tính trong Room Wins, không cộng vào Finishes. Jump tính khi launch, fall khi splat; New Game/respawn không xóa tổng. Chưa Finish thì finish time=null. Thời lượng hiển thị theo đồng hồ kèm `s`, ví dụ `01:30 s`; chưa có thành tích hiện `—`.
 
 History mở từ Account khi nhấn username, gồm lượt Community kết thúc và Room finalize, chỉ chủ lượt/thành viên trận xem; mỗi lượt/trận một mục, Room có chi tiết roster. Pause/Continue/Save & Exit không tạo mục mới. Ownership và chống cộng trùng theo [data](data.md#history-stats-và-leaderboard).
 
