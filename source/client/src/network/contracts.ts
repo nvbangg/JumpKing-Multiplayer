@@ -26,6 +26,7 @@ export interface Statistics {
 	totalFalls: number;
 	finishes: number;
 	matchesPlayed: number;
+	roomWins: number;
 	bestFinishTimeMs: number | null;
 }
 export interface HistoryItem {

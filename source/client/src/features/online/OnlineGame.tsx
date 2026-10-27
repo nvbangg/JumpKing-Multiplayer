@@ -1,4 +1,15 @@
 import {
+	Banana,
+	Clock3,
+	Footprints,
+	LogOut,
+	Menu,
+	Mountain,
+	Play,
+	Square,
+	Timer,
+} from "lucide-react";
+import {
 	type CSSProperties,
 	useCallback,
 	useEffect,
@@ -37,7 +48,6 @@ import { duration } from "../records/format";
 import type { Options } from "../settings/options";
 import { SoundButton } from "../settings/SoundButton";
 import { createGameControls } from "./gameControls";
-import { LandscapeGate } from "./LandscapeGate";
 import { NetworkStatusBadge } from "./NetworkStatusBadge";
 import { PlayersPanel } from "./PlayersPanel";
 import { TouchControls } from "./TouchControls";
@@ -49,6 +59,7 @@ import {
 	type TutorialStep,
 } from "./tutorial";
 import { useGameWidth } from "./useGameWidth";
+import { usePortraitPause } from "./usePortraitPause";
 
 export function OnlineGame({
 	socket,
@@ -94,6 +105,14 @@ export function OnlineGame({
 		"held" | "bananaArmed" | "cooldownMs"
 	> | null>(null);
 	const [itemPending, setItemPending] = useState(false);
+	const [itemNotice, setItemNotice] = useState<{ message: string } | null>(
+		null,
+	);
+	useEffect(() => {
+		if (!itemNotice) return;
+		const timer = setTimeout(() => setItemNotice(null), 2000);
+		return () => clearTimeout(timer);
+	}, [itemNotice]);
 	const [jumpBoost, setJumpBoost] = useState(false);
 	const placingItem = useRef(false);
 	const [remaining, setRemaining] = useState<number | null>(null);
@@ -180,12 +199,26 @@ export function OnlineGame({
 			return;
 		placingItem.current = true;
 		setItemPending(true);
+		setItemNotice(null);
 		setError("");
 		void socket
 			.command("USE_ITEM", socket.playContext)
-			.catch((cause) =>
-				setError(cause instanceof Error ? cause.message : "Could not use item"),
-			)
+			.catch((cause) => {
+				if (
+					cause instanceof ApiError &&
+					[
+						"NO_ITEM_TARGET",
+						"ITEM_COOLDOWN",
+						"ITEM_UNAVAILABLE",
+						"INVALID_ITEM_POSITION",
+					].includes(cause.code)
+				)
+					setItemNotice({ message: cause.message });
+				else
+					setError(
+						cause instanceof Error ? cause.message : "Could not use item",
+					);
+			})
 			.finally(() => {
 				placingItem.current = false;
 				setItemPending(false);
@@ -248,6 +281,7 @@ export function OnlineGame({
 		}
 	};
 	pauseRef.current = pause;
+	usePortraitPause(ready && !ending, () => pauseRef.current());
 	useEffect(() => {
 		runtime.current?.updateRoom(room);
 	}, [room]);
@@ -667,6 +701,10 @@ export function OnlineGame({
 			input.current?.resume();
 		audio.current?.pause(false);
 		setMenu(false);
+		focusGame();
+	};
+	const focusGame = () => {
+		container.current?.querySelector("canvas")?.focus({ preventScroll: true });
 	};
 	const watch = async (playerId: string | null) => {
 		const session = runtime.current;
@@ -845,36 +883,42 @@ export function OnlineGame({
 							) : (
 								<button
 									type="button"
+									className="button-primary"
 									disabled={pending}
 									onClick={() => void resume()}
 								>
+									<Play aria-hidden="true" />
 									Resume
 								</button>
 							)}
-							<SoundButton
-								options={options}
-								onChange={onOptionsChange}
-								onError={setError}
-							/>
 							{room.kind === "ROOM" &&
 								room.hostPlayerId === socket.selfId &&
 								room.state === "PLAYING" && (
 									<button
 										type="button"
+										className="button-warning end-match"
 										disabled={pending || disconnected}
 										onClick={() => void command("END_MATCH")}
 									>
+										<Square aria-hidden="true" />
 										End Match
 									</button>
 								)}
+							<SoundButton
+								options={options}
+								onChange={onOptionsChange}
+								onError={setError}
+							/>
+							<ControlsHelp />
 							<button
 								type="button"
+								className="button-danger"
 								disabled={pending || disconnected}
 								onClick={() => void command("LEAVE_ROOM")}
 							>
+								<LogOut aria-hidden="true" />
 								{room.kind === "COMMUNITY" ? "Save & Exit" : "Leave Room"}
 							</button>
-							<ControlsHelp />
 							{displayedError && <p role="alert">{displayedError}</p>}
 						</MenuPanel>
 					</section>
@@ -883,6 +927,9 @@ export function OnlineGame({
 					<p className="save-error" role="alert">
 						{displayedError}
 					</p>
+				)}
+				{itemNotice && (
+					<output className="item-notice">{itemNotice.message}</output>
 				)}
 			</div>
 			{ready && !ending && (
@@ -908,7 +955,11 @@ export function OnlineGame({
 							</div>
 							{room.kind === "COMMUNITY" && (
 								<div className="game-panel-pane" data-panel="leaderboard">
-									<InGameLeaderboard />
+									<InGameLeaderboard
+										onRefresh={() => {
+											if (!menu) focusGame();
+										}}
+									/>
 								</div>
 							)}
 						</div>
@@ -942,7 +993,14 @@ export function OnlineGame({
 								onPointerDown={(event) => event.preventDefault()}
 								onClick={useItem}
 							>
-								<span>E / Click · </span>
+								<kbd>E</kbd>
+								{items?.held === "BANANA" ? (
+									<Banana className="tone-amber" aria-hidden="true" />
+								) : items?.held === "BOOTS" ? (
+									<Footprints className="tone-purple" aria-hidden="true" />
+								) : items?.held === "ROCK" ? (
+									<Mountain aria-hidden="true" />
+								) : null}
 								{items?.held === "BANANA"
 									? items.bananaArmed
 										? "Banana · Jump to drop"
@@ -965,22 +1023,21 @@ export function OnlineGame({
 			{ready && !ending && (
 				<aside className="game-left" aria-label="Game controls and chat">
 					<div className="game-hud">
-						<span>
-							<span className="timer" role="timer" aria-label="Play time">
-								{duration(watching?.elapsedTimeMs ?? elapsed)}
+						<span className="timer" role="timer" aria-label="Play time">
+							<Clock3 aria-hidden="true" />
+							{duration(watching?.elapsedTimeMs ?? elapsed)}
+						</span>
+						{remaining !== null && (
+							<span className="timer" role="timer" aria-label="Time left">
+								<Timer aria-hidden="true" />
+								Time Left: {duration(Math.ceil(remaining / 1000) * 1000)}
 							</span>
-							{remaining !== null && (
-								<span className="timer" role="timer" aria-label="Time left">
-									Time Left: {duration(Math.ceil(remaining / 1000) * 1000)}
-								</span>
-							)}
-						</span>
-						<span>
-							<NetworkStatusBadge quality={networkQuality} />
-							<button type="button" onClick={pause}>
-								Menu (Esc)
-							</button>
-						</span>
+						)}
+						<NetworkStatusBadge quality={networkQuality} />
+						<button type="button" onClick={pause}>
+							<Menu aria-hidden="true" />
+							Menu (Esc)
+						</button>
 					</div>
 					{watching && !menu && (
 						<div className="spectator-bar" role="status">
@@ -1007,9 +1064,6 @@ export function OnlineGame({
 			)}
 			{ready && !ending && !menu && !chat.open && !watching && (
 				<TouchControls input={input} flying={flying} />
-			)}
-			{ready && !ending && (
-				<LandscapeGate onPortrait={() => pauseRef.current()} />
 			)}
 		</main>
 	);

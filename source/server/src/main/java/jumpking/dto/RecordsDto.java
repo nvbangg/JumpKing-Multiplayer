@@ -15,6 +15,7 @@ public final class RecordsDto {
       long totalFalls,
       long finishes,
       long matchesPlayed,
+      long roomWins,
       Long bestFinishTimeMs) {}
 
   public record Room(

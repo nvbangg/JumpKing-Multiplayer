@@ -37,7 +37,7 @@ class CommunityRunsIT {
   long account() {
     String name = "checkpoint_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
     jdbc.update(
-        "INSERT INTO users(username,password_hash,created_at) VALUES (?,'unused-test-hash',UTC_TIMESTAMP(3))",
+        "INSERT INTO users(username,password_hash,crown,created_at) VALUES (?,'unused-test-hash','NONE',UTC_TIMESTAMP(3))",
         name);
     return jdbc.queryForObject("SELECT id FROM users WHERE username=?", Long.class, name);
   }

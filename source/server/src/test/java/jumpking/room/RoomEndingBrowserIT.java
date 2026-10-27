@@ -36,8 +36,8 @@ class RoomEndingBrowserIT {
   @LocalServerPort int port;
 
   @Test
-  void winnerEndingAndPeerResultsUseTwoIndependentBrowsers() throws Exception {
-    try (var fixture = new RoomBrowserFixture(port, rooms, memberships, shared, json)) {
+  void roomFinishAndNextGameUseTwoIndependentBrowsersWithoutEnding() throws Exception {
+    try (var fixture = new RoomBrowserFixture(port, rooms, memberships, shared)) {
       String state =
           json.writeValueAsString(
               Map.of(

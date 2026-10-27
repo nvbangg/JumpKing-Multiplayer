@@ -141,7 +141,7 @@ test("Easy returns only the falling player to their last safe platform and reset
 		).json();
 		expect(
 			detail.participants.find(
-				(player: { nickname: string }) => player.nickname === name,
+				(player: { username: string }) => player.username === name,
 			),
 		).toMatchObject({ jumps: 3, falls: 1 });
 		await a.getByRole("button", { name: "Play Again", exact: true }).click();

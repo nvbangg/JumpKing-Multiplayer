@@ -51,7 +51,7 @@ public class SchemaRepository {
         "InnoDB required");
     require(
         count(
-                "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='play_runs' AND column_name='active_community_user_id' AND extra LIKE '%GENERATED%' AND generation_expression LIKE '%MATCH_ID%' AND generation_expression LIKE '%ACTIVE%'")
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='play_runs' AND column_name='active_community_user_id' AND extra LIKE '%GENERATED%' AND UPPER(generation_expression) LIKE '%MATCH_ID%' AND UPPER(generation_expression) LIKE '%ACTIVE%'")
             == 1,
         "Community unique generated column missing");
     require(

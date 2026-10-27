@@ -1,10 +1,17 @@
 export function ControlsHelp() {
 	return (
-		<dl className="record-detail controls-help">
-			<dt>Move</dt>
-			<dd>A / D or ← / →</dd>
-			<dt>Jump</dt>
-			<dd>Space / W / ↑</dd>
-		</dl>
+		<section className="controls-help">
+			<h3>Controls</h3>
+			<dl>
+				<dt>Move</dt>
+				<dd>
+					<kbd>A</kbd> / <kbd>D</kbd> or <kbd>←</kbd> / <kbd>→</kbd>
+				</dd>
+				<dt>Jump</dt>
+				<dd>
+					<kbd>Space</kbd> / <kbd>W</kbd> / <kbd>↑</kbd>
+				</dd>
+			</dl>
+		</section>
 	);
 }

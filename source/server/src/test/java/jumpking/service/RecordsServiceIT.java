@@ -26,7 +26,7 @@ class RecordsServiceIT {
     String name = "totals_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12),
         match = UUID.randomUUID().toString();
     jdbc.update(
-        "INSERT INTO users(username,password_hash,created_at) VALUES (?,'test-hash',UTC_TIMESTAMP(3))",
+        "INSERT INTO users(username,password_hash,crown,created_at) VALUES (?,'test-hash','NONE',UTC_TIMESTAMP(3))",
         name);
     long owner = jdbc.queryForObject("SELECT id FROM users WHERE username=?", Long.class, name);
     long peer = TestDatabase.get().account();
@@ -58,6 +58,8 @@ class RecordsServiceIT {
       assertThat(total.finishes()).isEqualTo(2);
       assertThat(total.bestFinishTimeMs()).isEqualTo(1016);
       assertThat(total.matchesPlayed()).isEqualTo(1);
+      assertThat(total.roomWins()).isEqualTo(1);
+      assertThat(records.statistics(peer).roomWins()).isEqualTo(1);
       assertThat(records.statistics(Long.MAX_VALUE).totalPlayTimeMs()).isEqualTo(BigInteger.ZERO);
       var first = records.history(owner, 0, 1);
       var second = records.history(owner, 1, 1);
@@ -80,6 +82,49 @@ class RecordsServiceIT {
       jdbc.update("DELETE FROM play_runs WHERE user_id=? OR match_id=?", owner, match);
       jdbc.update("DELETE FROM matches WHERE id=?", match);
       jdbc.update("DELETE FROM users WHERE id IN (?,?)", owner, peer);
+    }
+  }
+
+  @Test
+  void roomWinsCountFinalizedFirstPlacesWithoutDnfOrAbortedMatches() {
+    var jdbc = TestDatabase.get().jdbc;
+    long owner = TestDatabase.get().account();
+    var matches = new java.util.ArrayList<String>();
+    record Scenario(String reason, String status, int rank) {}
+    try {
+      for (var scenario :
+          java.util.List.of(
+              new Scenario("FINISH", "FINISHED", 1),
+              new Scenario("TIME_LIMIT", "UNFINISHED", 1),
+              new Scenario("HOST_ENDED", "UNFINISHED", 1),
+              new Scenario("ABORTED", "UNFINISHED", 1),
+              new Scenario("FINISH", "DNF", 1),
+              new Scenario("FINISH", "FINISHED", 2),
+              new Scenario(null, "ACTIVE", 1))) {
+        String match = UUID.randomUUID().toString();
+        matches.add(match);
+        var endedAt =
+            scenario.reason() == null ? null : java.sql.Timestamp.from(java.time.Instant.now());
+        jdbc.update(
+            "INSERT INTO matches(id,room_code,mode,map_id,started_at,ended_at,duration_ticks,end_reason) VALUES (?,'001234','RACE',1,UTC_TIMESTAMP(3)-INTERVAL 1 MINUTE,?,60,?)",
+            match,
+            endedAt,
+            scenario.reason());
+        jdbc.update(
+            "INSERT INTO play_runs(id,user_id,match_id,status,play_ticks,finish_ticks,`rank`,started_at,updated_at,ended_at) VALUES (?,?,?,?,60,?,?,UTC_TIMESTAMP(3)-INTERVAL 1 MINUTE,UTC_TIMESTAMP(3),?)",
+            UUID.randomUUID().toString(),
+            owner,
+            match,
+            scenario.status(),
+            scenario.status().equals("FINISHED") ? 60L : null,
+            scenario.rank(),
+            endedAt);
+      }
+      assertThat(records.statistics(owner).roomWins()).isEqualTo(3);
+    } finally {
+      jdbc.update("DELETE FROM play_runs WHERE user_id=?", owner);
+      for (var match : matches) jdbc.update("DELETE FROM matches WHERE id=?", match);
+      jdbc.update("DELETE FROM users WHERE id=?", owner);
     }
   }
 }

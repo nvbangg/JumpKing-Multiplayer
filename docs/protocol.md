@@ -29,7 +29,7 @@ Các path có prefix `/api`. Lỗi dạng `{error:{code,message}}`; không cache
 | POST /auth/logout | → {ok:true} |
 | GET /game-config | → {features:{flyEnabled:boolean},auth:{googleClientId:string|null}} |
 | GET /map | → geometry, spawn và Finish |
-| GET /rooms | → {rooms:[{roomId,mode,mapId,playerCount,capacity}]} |
+| GET /rooms | → {rooms:[{roomId,mode,mapId,itemCooldownMinutes,timeLimitMinutes,playerCount,capacity}]} |
 | GET /rooms/{roomId} | → {roomId,kind,joinable} |
 | GET /community/current | Account → {run:RunSummary hoặc null,updatedAt,saveStatus} |
 | GET /leaderboard?limit=100 | → {entries:[LeaderboardEntry]} |
@@ -43,10 +43,10 @@ Danh sách phòng chỉ có Public/WAITING còn chỗ. Room ID là chuỗi 6 ch�
 | --- | --- |
 | RunSummary | id, status, currentProgress, maxProgress, elapsedTimeMs, peakReachedTimeMs, finishTimeMs |
 | LeaderboardEntry | RunSummary và rank, username |
-| Statistics | totalPlayTimeMs, totalJumps, totalFalls, finishes, matchesPlayed, bestFinishTimeMs |
+| Statistics | totalPlayTimeMs, totalJumps, totalFalls, finishes, matchesPlayed, roomWins, bestFinishTimeMs |
 | History summary | id, kind (derived from matchId), status, startedAt, endedAt, playTimeMs, jumps, falls, currentProgress, maxProgress, finishTimeMs, room |
 | History room | mode, mapId, itemCooldownMinutes (nullable; null nghĩa là Items tắt), roomCode, durationMs, rank; null ở Community |
-| Room detail | Summary và room.{timeLimitMinutes,endReason,participants} |
+| Room detail | Summary và timeLimitMinutes, endReason, participants ở cấp ngoài cùng |
 | Participant | runId, username, status, rank, currentProgress, maxProgress, finishTimeMs, playTimeMs, jumps, falls |
 
 Page là integer 0–100000; size/limit 1–100. Status: 400 validation, 401 xác thực, 403 quyền/CSRF/Origin, 404 không có, 409 conflict, 429 quota, 5xx lỗi nội bộ. Client xử lý error code, không parse message hoặc coi lỗi là dữ liệu rỗng.

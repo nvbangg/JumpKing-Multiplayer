@@ -1,24 +1,9 @@
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from "lucide-react";
 import type { ReactNode, RefObject } from "react";
 import type {
 	InputController,
 	TouchAction,
 } from "../../game/input/InputController";
-
-function Arrow({ rotation = 0 }: { rotation?: number }) {
-	return (
-		<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
-			<path
-				d="M19 12H5m7-7-7 7 7 7"
-				transform={`rotate(${rotation} 12 12)`}
-				fill="none"
-				stroke="currentColor"
-				strokeWidth="2"
-				strokeLinecap="round"
-				strokeLinejoin="round"
-			/>
-		</svg>
-	);
-}
 
 export function TouchControls({
 	input,
@@ -54,12 +39,12 @@ export function TouchControls({
 	return (
 		<section className="touch-controls" aria-label="Touch controls">
 			<div>
-				{button("left", "Move Left", <Arrow />)}
-				{button("right", "Move Right", <Arrow rotation={180} />)}
+				{button("left", "Move Left", <ArrowLeft aria-hidden="true" />)}
+				{button("right", "Move Right", <ArrowRight aria-hidden="true" />)}
 				{flying && (
 					<>
-						{button("up", "Move Up", <Arrow rotation={90} />)}
-						{button("down", "Move Down", <Arrow rotation={270} />)}
+						{button("up", "Move Up", <ArrowUp aria-hidden="true" />)}
+						{button("down", "Move Down", <ArrowDown aria-hidden="true" />)}
 					</>
 				)}
 			</div>

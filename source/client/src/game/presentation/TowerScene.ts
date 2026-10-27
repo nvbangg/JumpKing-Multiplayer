@@ -14,6 +14,7 @@ import { PLAYER_FRAMES, PRESENTATION as V } from "./config";
 import { createCrownTextures, crownTexture } from "./crownTextures";
 import { ENDING_FRAMES, endingFrameName } from "./endingFrames";
 import { MainBabeEnding } from "./MainBabeEnding";
+import { PlayerNames } from "./PlayerNames";
 import { playerFrame } from "./playerFrame";
 import type {
 	GameRuntime,
@@ -25,11 +26,11 @@ import type {
 interface Avatar {
 	color?: string;
 	sprite: Phaser.GameObjects.Sprite;
-	name: Phaser.GameObjects.Text;
 	crown: Phaser.GameObjects.Sprite;
 }
 export class TowerScene extends Phaser.Scene {
 	private avatars = new Map<string, Avatar>();
+	private names?: PlayerNames;
 	private visuals: Phaser.GameObjects.GameObject[] = [];
 	private background: {
 		sprite: Phaser.GameObjects.TileSprite;
@@ -77,6 +78,15 @@ export class TowerScene extends Phaser.Scene {
 	}
 	create(): void {
 		if (this.loadFailed) return;
+		this.names = new PlayerNames(required(this.game.canvas.parentElement));
+		const destroyNames = () => {
+			this.names?.destroy();
+			this.names = undefined;
+			this.events.off(Phaser.Scenes.Events.SHUTDOWN, destroyNames);
+			this.events.off(Phaser.Scenes.Events.DESTROY, destroyNames);
+		};
+		this.events.once(Phaser.Scenes.Events.SHUTDOWN, destroyNames);
+		this.events.once(Phaser.Scenes.Events.DESTROY, destroyNames);
 		createCrownTextures(this, this.manifest.crown);
 		for (const key of [
 			"king/base",
@@ -157,19 +167,6 @@ export class TowerScene extends Phaser.Scene {
 					.sprite(0, 0, "king/base", "idle")
 					.setOrigin(0.5, 1)
 					.setName(`player:${player.id}`),
-				name: this.add
-					.text(0, 0, "", {
-						fontFamily: "Arial, sans-serif",
-						fontSize: V.nameFontSize,
-						fontStyle: "bold",
-						color: "#ffffff",
-						stroke: "#000000",
-						strokeThickness: V.nameStrokeThickness,
-					})
-					.setResolution(V.nameResolution)
-					.setName(`nickname:${player.id}`)
-					.setOrigin(0.5, 1)
-					.setDepth(V.nameDepth),
 				crown: this.add
 					.sprite(0, 0, this.manifest.crown, "idle")
 					.setOrigin(0.5, 1)
@@ -194,19 +191,6 @@ export class TowerScene extends Phaser.Scene {
 			.setFlipX(s.direction === -1)
 			.setAlpha(self ? 1 : V.peerOpacity)
 			.setDepth(self ? V.selfDepth : V.peerDepth)
-			.setVisible(visible);
-		avatar.name.setText(player.nickname);
-		avatar.name
-			.setPosition(
-				Math.round(
-					Phaser.Math.Clamp(
-						s.x + PHYSICS.bodyWidth / 2,
-						avatar.name.width / 2,
-						V.width - avatar.name.width / 2,
-					),
-				),
-				Math.round(s.y - V.nameGap),
-			)
 			.setVisible(visible);
 		avatar.crown
 			.setPosition(avatar.sprite.x, avatar.sprite.y)
@@ -256,42 +240,23 @@ export class TowerScene extends Phaser.Scene {
 		for (const [id, avatar] of this.avatars)
 			if (!present.has(id)) {
 				avatar.sprite.destroy();
-				avatar.name.destroy();
 				avatar.crown.destroy();
 				this.avatars.delete(id);
 			}
 		for (const peer of frame.peers) this.avatar(peer, false);
 		this.avatar(frame.self, true);
-		// Ưu tiên tên bản thân; xếp lệch theo chiều dọc khi nhiều người đứng sát nhau.
-		const occupied: Phaser.Geom.Rectangle[] = [];
-		for (const player of [frame.self, ...frame.peers]) {
-			const name = this.avatars.get(player.id)?.name;
-			if (!name?.visible) continue;
-			name.y = Math.max(name.y, this.cameras.main.scrollY + name.height);
-			const bounds = name.getBounds(),
-				initialY = name.y;
-			let row = 0;
-			while (
-				occupied.some((other) =>
-					Phaser.Geom.Intersects.RectangleToRectangle(bounds, other),
-				)
-			) {
-				const offset = ++row * (bounds.height + V.nameGap);
-				name.y =
-					initialY - offset - bounds.height >= this.cameras.main.scrollY
-						? initialY - offset
-						: initialY + offset;
-				bounds.y = name.y - bounds.height;
-			}
-			occupied.push(bounds);
-		}
 		this.adventureVisuals?.render(frame);
 		this.conversations?.render(frame, this.npcSprites);
+		this.names?.render(
+			[frame.self, ...frame.peers],
+			this.screen,
+			this.conversations?.bounds || [],
+			Boolean(frame.ending),
+		);
 		if (frame.ending && !this.ending) {
 			this.endingId = frame.ending.id;
 			for (const avatar of this.avatars.values()) {
 				avatar.sprite.setVisible(false);
-				avatar.name.setVisible(false);
 				avatar.crown.setVisible(false);
 			}
 			this.babe?.setVisible(false);

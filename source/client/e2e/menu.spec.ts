@@ -32,31 +32,31 @@ test("home keeps the required menu and one account form", async ({
 		await page
 			.getByLabel("Room ID", { exact: true })
 			.evaluate((input) => input.getBoundingClientRect().width),
-	).toBeLessThanOrEqual(200);
+	).toBeLessThanOrEqual(400);
 	const newGame = page.getByRole("button", { name: "New Game", exact: true });
 	const roomId = page.getByLabel("Room ID", { exact: true });
 	await roomId.focus();
-	await expect(roomId).toHaveCSS("outline-style", "none");
+	await expect(roomId).toHaveCSS("outline-style", "solid");
 	await roomId.hover();
-	await expect(roomId).toHaveCSS("background-color", "rgb(22, 22, 22)");
+	await expect(roomId).toHaveCSS("background-color", "rgb(15, 22, 29)");
 	expect(
 		await page
 			.locator(".room-join-form")
 			.evaluate((form) => getComputedStyle(form, "::before").content),
-	).toBe('""');
+	).toBe("none");
 	await page.mouse.move(0, 0);
 	const restingBackground = await newGame.evaluate(
 		(button) => getComputedStyle(button).backgroundColor,
 	);
 	await newGame.hover();
-	await expect(newGame).toHaveCSS("background-color", "rgb(28, 25, 17)");
-	await expect(newGame).toHaveCSS("color", "rgb(246, 202, 109)");
+	await expect(newGame).toHaveCSS("background-color", "rgb(42, 53, 64)");
+	await expect(newGame).toHaveCSS("color", "rgb(238, 240, 243)");
 	expect(
 		await newGame.evaluate(
 			(button) => getComputedStyle(button, "::before").content,
 		),
-	).toBe('""');
-	expect(restingBackground).not.toBe("rgb(28, 25, 17)");
+	).toBe("none");
+	expect(restingBackground).not.toBe("rgb(42, 53, 64)");
 	await expect(
 		page.getByRole("button", { name: "Join", exact: true }),
 	).toBeVisible();
@@ -285,7 +285,7 @@ test("room ID supports Tab order and arrow navigation without capturing text edi
 		await page
 			.locator(".room-join-form")
 			.evaluate((form) => getComputedStyle(form, "::before").content),
-	).toBe('""');
+	).toBe("none");
 	await page.keyboard.press("Tab");
 	await expect(join).toBeFocused();
 	await page.keyboard.press("Shift+Tab");
@@ -328,7 +328,7 @@ test("keyboard navigation restores focus and offline actions report real errors"
 		await page
 			.getByRole("heading", { name: "Sign In / Log In", exact: true })
 			.evaluate((element) => getComputedStyle(element).userSelect),
-	).toBe("none");
+	).toBe("auto");
 	expect(
 		await page
 			.getByLabel("Username", { exact: true })

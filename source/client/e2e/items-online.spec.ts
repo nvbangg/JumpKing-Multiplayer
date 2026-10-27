@@ -99,9 +99,13 @@ for (const mobile of [false, true])
 			const lobbyViewport = host.viewportSize();
 			if (!lobbyViewport) throw new Error("Viewport is missing");
 			expect(chatBounds.x).toBeLessThan(lobbyViewport.width / 4);
-			expect(
-				lobbyViewport.height - chatBounds.y - chatBounds.height,
-			).toBeCloseTo(12, 0);
+			expect(chatBounds.x).toBeGreaterThanOrEqual(0);
+			expect(chatBounds.x + chatBounds.width).toBeLessThanOrEqual(
+				lobbyViewport.width,
+			);
+			expect(chatBounds.y + chatBounds.height).toBeLessThanOrEqual(
+				await host.evaluate(() => document.documentElement.scrollHeight),
+			);
 			expect(
 				mobile
 					? menuBounds.y + menuBounds.height <= chatBounds.y

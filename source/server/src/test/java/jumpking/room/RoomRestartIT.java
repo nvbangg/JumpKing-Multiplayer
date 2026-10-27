@@ -107,7 +107,6 @@ class RoomRestartIT {
             new jumpking.service.RoomRuns.Run(
                 java.util.UUID.randomUUID().toString(),
                 owner,
-                "Peer " + index,
                 "ACTIVE",
                 120,
                 3,
@@ -117,7 +116,6 @@ class RoomRestartIT {
                 100,
                 null,
                 null,
-                false,
                 null));
       }
       first
@@ -129,8 +127,7 @@ class RoomRestartIT {
                   "RACE",
                   null,
                   1,
-                  false,
-                  3,
+                  null,
                   1,
                   started,
                   null,

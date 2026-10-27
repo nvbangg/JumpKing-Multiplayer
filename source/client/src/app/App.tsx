@@ -1,3 +1,15 @@
+import {
+	ChevronRight,
+	FilePlus2,
+	History,
+	LockKeyhole,
+	LogIn,
+	LogOut,
+	Play,
+	Search,
+	UserRound,
+	UserRoundPlus,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MenuPanel } from "../components/MenuPanel";
 import { AuthForm } from "../features/account/AuthForm";
@@ -23,6 +35,7 @@ import {
 import { loadReconnect } from "../network/reconnect";
 import { required } from "../required";
 import { LoadErrorNotice, usePreloadError } from "./LoadErrorNotice";
+import { useMobileDisplay } from "./useMobileDisplay";
 
 type Screen =
 	| "home"
@@ -55,6 +68,7 @@ function locationScreen(): Screen {
 			)?.[0] as Screen | undefined) || "home";
 }
 export function App() {
+	useMobileDisplay();
 	const loadError = usePreloadError();
 	const [screen, setScreenState] = useState<Screen>(locationScreen);
 	const [identity, setIdentityState] = useState<Identity>(initialIdentity);
@@ -510,13 +524,11 @@ export function App() {
 					screen === "home" && !room && !pending && !socket.current?.selfId
 				}
 			/>
-			{screen !== "detail" && (
-				<header className="brand">
-					<h1>
-						<img src="/assets/title_logo.png" alt="JumpKing" />
-					</h1>
-				</header>
-			)}
+			<header className="brand">
+				<h1>
+					<img src="/ui/logo.png" alt="JumpKing" width="1903" height="815" />
+				</h1>
+			</header>
 			<div
 				className={
 					screen === "home" && home
@@ -527,6 +539,8 @@ export function App() {
 				}
 			>
 				<MenuPanel
+					label={screen === "lobby" ? "Lobby" : undefined}
+					showBack={screen !== "history"}
 					title={
 						screen === "home"
 							? undefined
@@ -538,8 +552,7 @@ export function App() {
 										history: "History",
 										detail: "Game Details",
 
-										"public-rooms": "Join Public Room",
-										lobby: "Lobby",
+										"public-rooms": "Public Rooms",
 										results: "Results",
 									} as Partial<Record<Screen, string>>
 								)[screen]
@@ -555,35 +568,43 @@ export function App() {
 							{home?.run && (
 								<button
 									type="button"
+									className="button-primary home-action"
 									onClick={() => enterCommunity(false)}
 									disabled={pending || (!!accountId && (homeLoading || !home))}
 								>
+									<Play aria-hidden="true" />
 									Continue
 								</button>
 							)}
 							<button
 								type="button"
+								className="home-action"
 								onClick={() => enterCommunity(true)}
 								disabled={pending || (!!accountId && (homeLoading || !home))}
 							>
+								<FilePlus2 className="tone-purple" aria-hidden="true" />
 								New Game
 							</button>
 							<button
 								type="button"
+								className="home-action"
 								disabled={pending}
 								onClick={() => {
 									if (!identity.account) setScreen("sign-in");
 									else command("CREATE_ROOM");
 								}}
 							>
+								<UserRoundPlus className="tone-amber" aria-hidden="true" />
 								Create Room
 							</button>
 							<button
 								type="button"
+								className="home-action"
 								onClick={() =>
 									setScreen(identity.account ? "public-rooms" : "sign-in")
 								}
 							>
+								<Search className="tone-cyan" aria-hidden="true" />
 								Join Public Room
 							</button>
 							<form
@@ -611,17 +632,27 @@ export function App() {
 									autoComplete="off"
 									pattern="[0-9]{6}"
 								/>
-								<button type="submit" disabled={pending}>
+								<button
+									type="submit"
+									className="button-primary"
+									disabled={pending}
+								>
 									Join
 								</button>
 							</form>
 							<div className="account-actions">
 								{identity.account ? (
 									<button type="button" onClick={() => setScreen("account")}>
-										{identity.account.username}
+										<UserRound aria-hidden="true" />
+										<span>{identity.account.username}</span>
+										<ChevronRight
+											className="trailing-icon"
+											aria-hidden="true"
+										/>
 									</button>
 								) : (
 									<button type="button" onClick={() => setScreen("sign-in")}>
+										<LogIn aria-hidden="true" />
 										Sign In / Log In
 									</button>
 								)}
@@ -639,20 +670,28 @@ export function App() {
 					)}
 					{screen === "account" && identity.account && (
 						<>
-							<dl className="account-info">
-								<dt>Username</dt>
-								<dd>{identity.account.username}</dd>
-							</dl>
+							<div className="account-info">
+								<UserRound aria-hidden="true" />
+								<dl>
+									<dt>Username</dt>
+									<dd>{identity.account.username}</dd>
+								</dl>
+							</div>
 							<button type="button" onClick={() => setScreen("history")}>
+								<History className="tone-cyan" aria-hidden="true" />
 								History
+								<ChevronRight className="trailing-icon" aria-hidden="true" />
 							</button>
 							{identity.account.hasPassword && (
 								<button type="button" onClick={() => setScreen("password")}>
+									<LockKeyhole className="tone-amber" aria-hidden="true" />
 									Change Password
+									<ChevronRight className="trailing-icon" aria-hidden="true" />
 								</button>
 							)}
 							<button
 								type="button"
+								className="button-danger"
 								disabled={pending}
 								onClick={() => {
 									void execute(async () => {
@@ -665,6 +704,7 @@ export function App() {
 									});
 								}}
 							>
+								<LogOut aria-hidden="true" />
 								Sign Out
 							</button>
 						</>
@@ -684,6 +724,7 @@ export function App() {
 						(identity.account ? (
 							<HistoryList
 								key={accountId}
+								onBack={back}
 								onSelect={(item) => {
 									setDetail({ accountId: required(identity.account).id, item });
 									setScreen("detail");

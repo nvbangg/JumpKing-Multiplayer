@@ -12,7 +12,7 @@ test("a delayed chat acknowledgement preserves the next draft and input focus", 
 	const message = page.getByRole("textbox", { name: "Message", exact: true });
 	const send = page.getByRole("button", { name: "Send", exact: true });
 	await message.fill("first message");
-	await expect(message).toHaveCSS("outline-style", "none");
+	await expect(message).toHaveCSS("outline-style", "solid");
 	await message.press("Enter");
 	await expect(send).toBeDisabled();
 	await message.fill("next draft");

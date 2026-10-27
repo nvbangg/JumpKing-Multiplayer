@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PasswordField } from "../../components/PasswordField";
 import { api, clearCsrf } from "../../network/api";
 export function ChangePassword({ onChanged }: { onChanged: () => void }) {
 	const [pending, setPending] = useState(false),
@@ -35,35 +36,24 @@ export function ChangePassword({ onChanged }: { onChanged: () => void }) {
 					.finally(() => setPending(false));
 			}}
 		>
-			<label>
-				Current Password
-				<input
-					name="currentPassword"
-					type="password"
-					autoComplete="current-password"
-					required
-				/>
-			</label>
-			<label>
-				New Password
-				<input
-					name="newPassword"
-					type="password"
-					autoComplete="new-password"
-					required
-					minLength={6}
-				/>
-			</label>
-			<label>
-				Confirm New Password
-				<input
-					name="confirmPassword"
-					type="password"
-					autoComplete="new-password"
-					required
-				/>
-			</label>
-			<button type="submit" disabled={pending}>
+			<PasswordField
+				label="Current Password"
+				name="currentPassword"
+				autoComplete="current-password"
+			/>
+			<PasswordField
+				label="New Password"
+				name="newPassword"
+				autoComplete="new-password"
+				minLength={6}
+				hint="At least 6 characters"
+			/>
+			<PasswordField
+				label="Confirm New Password"
+				name="confirmPassword"
+				autoComplete="new-password"
+			/>
+			<button className="button-accent" type="submit" disabled={pending}>
 				{pending ? "Changing…" : "Change Password"}
 			</button>
 			{error && <p role="alert">{error}</p>}

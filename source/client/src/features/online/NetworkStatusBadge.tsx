@@ -1,3 +1,4 @@
+import { Wifi } from "lucide-react";
 import type { NetworkQuality } from "../../network/contracts";
 
 export function NetworkStatusBadge({ quality }: { quality: NetworkQuality }) {
@@ -11,7 +12,7 @@ export function NetworkStatusBadge({ quality }: { quality: NetworkQuality }) {
 			title={title}
 			aria-label={title}
 		>
-			<span className="network-dot" aria-hidden="true" />
+			<Wifi aria-hidden="true" />
 			<span className="network-text">
 				{pingMs > 0 ? `${pingMs}ms` : "Ping..."}
 			</span>

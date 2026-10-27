@@ -1,3 +1,4 @@
+import { Users } from "lucide-react";
 import rules from "../../../../common/rules.json";
 import type { PlayerStanding } from "../../network/contracts";
 
@@ -23,7 +24,10 @@ export function PlayersPanel({
 			aria-label="Players ranking"
 		>
 			<summary>
-				<h2>Players</h2>
+				<h2>
+					<Users className="tone-cyan" aria-hidden="true" />
+					Players
+				</h2>
 			</summary>
 			<ol aria-label="Current players">
 				{players.map((player) => (

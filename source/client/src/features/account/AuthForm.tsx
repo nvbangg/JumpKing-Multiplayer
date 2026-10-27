@@ -1,4 +1,6 @@
+import { LogIn, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { PasswordField } from "../../components/PasswordField";
 import { api, clearCsrf } from "../../network/api";
 import type { GameConfig, Identity } from "../../network/contracts";
 import { useResource } from "../../network/useResource";
@@ -156,25 +158,25 @@ export function AuthForm({
 					});
 				}}
 			>
-				<label>
+				<label className="form-field">
 					Username
-					<input
-						name="username"
-						autoComplete="username"
-						required
-						pattern={"[\\p{L}\\p{N}_\\-]{3,32}"}
-					/>
+					<span className="input-wrap">
+						<UserRound aria-hidden="true" />
+						<input
+							name="username"
+							autoComplete="username"
+							required
+							pattern={"[\\p{L}\\p{N}_\\-]{3,32}"}
+						/>
+					</span>
 				</label>
-				<label>
-					Password
-					<input
-						type="password"
-						name="password"
-						autoComplete="current-password"
-						required
-					/>
-				</label>
-				<button disabled={pending} type="submit">
+				<PasswordField
+					label="Password"
+					name="password"
+					autoComplete="current-password"
+				/>
+				<button className="button-accent" disabled={pending} type="submit">
+					<LogIn aria-hidden="true" />
 					{pending ? "Please wait…" : "Sign In / Log In"}
 				</button>
 			</form>

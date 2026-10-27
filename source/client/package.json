@@ -16,6 +16,7 @@
 		"test:e2e": "playwright test"
 	},
 	"dependencies": {
+		"lucide-react": "^1.61.0",
 		"phaser": "3.90.0",
 		"react": "19.3.0",
 		"react-dom": "19.3.0"
