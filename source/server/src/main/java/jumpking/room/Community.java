@@ -283,7 +283,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
                         cues));
           }
           var pose = player.game.physics().snapshot();
-          boolean isLanded = pose.grounded && pose.splat == 0 && !pose.phasingFall;
+          boolean isLanded = pose.grounded && !pose.phasingFall;
           if (isLanded) {
             player.currentProgress = progress;
             if (progress > player.maximum) {
