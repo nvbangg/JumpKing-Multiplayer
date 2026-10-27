@@ -39,6 +39,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
           "START_GAME",
           "GAME_READY",
           "END_MATCH",
+          "SET_ROOM_PAUSED",
           "PLAY_AGAIN",
           "PLAYER_INPUT",
           "CANCEL_INPUT",
@@ -340,11 +341,44 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
                     case "END_MATCH" -> {
                       GameEnvelope.fields(command.payload(), Set.of());
                       requireHost(room, player);
-                      if (!room.state.equals("PLAYING"))
+                      if (!Set.of("PLAYING", "PAUSED").contains(room.state))
                         throw new ApiException(409, "CONFLICT", "No running match to end");
                       room.match.finish("HOST_ENDED", clock.instant());
                       finish(room);
                       connection.reply(command, "GAME_FINISHED", room.match.results());
+                    }
+                    case "SET_ROOM_PAUSED" -> {
+                      GameEnvelope.fields(command.payload(), Set.of("paused"));
+                      requireHost(room, player);
+                      boolean paused = GameEnvelope.bool(command.payload(), "paused", false);
+                      if (paused) {
+                        if (!room.state.equals("PLAYING"))
+                          throw new ApiException(
+                              409, "CONFLICT", "Match can only be paused while playing");
+                        room.state = "PAUSED";
+                        for (var member : room.players.values()) {
+                          var racer = room.match.players.get(member.id);
+                          if (racer != null) {
+                            racer.input.clear();
+                            racer.game.physics().cancelInput();
+                          }
+                        }
+                      } else {
+                        if (!room.state.equals("PAUSED"))
+                          throw new ApiException(409, "CONFLICT", "Match is not paused");
+                        room.state = "PLAYING";
+                        long step = 1_000_000_000L / room.match.tickRate;
+                        room.nextTick = time.nanos() + step;
+                        for (var member : room.players.values()) {
+                          var racer = room.match.players.get(member.id);
+                          if (racer != null) {
+                            racer.input.clear();
+                          }
+                        }
+                      }
+                      connection.reply(command, "ROOM_STATE", state(room));
+                      broadcast(room);
+                      snapshots(room);
                     }
                     case "SET_SPECTATE" -> {
                       GameEnvelope.fields(command.payload(), Set.of("playerId"));
@@ -355,7 +389,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
                               : GameEnvelope.text(command.payload(), "playerId");
                       var target = targetId == null ? null : room.players.get(targetId);
                       if (targetId != null
-                          && (!room.state.equals("PLAYING")
+                          && (!Set.of("PLAYING", "PAUSED").contains(room.state)
                               || target == null
                               || target == player
                               || target.connection == null
@@ -757,7 +791,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     player.disconnectedAt = time.nanos();
     chooseHost(room);
     broadcast(room);
-    if (room.state.equals("PLAYING")
+    if (Set.of("PLAYING", "PAUSED").contains(room.state)
         && room.players.values().stream().noneMatch(member -> member.connection != null))
       save(room, true);
   }
@@ -1087,7 +1121,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
       own.putPOJO("simulation", captured.get(member.id).simulation());
       var target = member.watching == null ? null : room.players.get(member.watching);
       if (target != null
-          && (!room.state.equals("PLAYING")
+          && (!Set.of("PLAYING", "PAUSED").contains(room.state)
               || target.connection == null
               || !target.connection.open()
               || !match.players.containsKey(target.id)

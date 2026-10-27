@@ -67,7 +67,7 @@ Host đã Confirmed có thể Start một mình; không chờ thêm thành viên
 
 Giới hạn thời gian là tùy chọn độc lập với mode, mặc định không giới hạn. Khi chọn 1–10 phút và hết giờ, trận kết thúc theo luật TIME_LIMIT.
 
-Clock chung chạy từ hết countdown. Menu/chat/AFK không dừng physics/clock hoặc đuổi người vì mở menu; không Host Pause. All-offline ngừng tick trong hạn reconnect, không chạy bù thời gian offline.
+Clock chung chạy từ hết countdown. Menu/chat/AFK của từng cá nhân không dừng physics/clock của phòng. Trong lúc trận đang diễn ra (PLAYING), Host có quyền tạm dừng trận đấu (Host Pause) qua lệnh SET_ROOM_PAUSED. Khi tạm dừng, trạng thái phòng chuyển sang PAUSED, đồng hồ trận và mô phỏng vật lý của tất cả người chơi dừng lại tại thời điểm hiện tại, input của người chơi bị khóa và client hiển thị thông báo tạm dừng. Khi Host chọn tiếp tục (Resume), trạng thái phòng trở lại PLAYING, mốc thời gian tick kế tiếp được đồng bộ lại theo thời gian thực (không bù dồn tick) và trận đấu tiếp tục bình thường cho toàn bộ thành viên. All-offline ngừng tick trong hạn reconnect, không chạy bù thời gian offline.
 
 Easy nhớ riêng vị trí đứng/đáp nền bình thường của từng người, không cần cờ hoặc thao tác lưu; vị trí gần nhất có thể thấp hơn vị trí trước. Không ghi điểm khi SPLAT, trượt, bị hất, Fly hoặc phasing. SPLAT trả về điểm đã nhớ (chưa có thì spawn), xóa vận tốc/charge/trượt và chờ thả Jump trước cú nhảy mới. Clock, jumps/falls, peak, Items/cooldown/bẫy và tiến độ NPC/quạ giữ nguyên; current progress cập nhật theo vị trí quay về. Điểm an toàn theo snapshot, giữ khi reconnect và reset mỗi ván; không lưu dài hạn. Kết quả/crown/Best Finish Time áp dụng như các mode Room khác.
 
