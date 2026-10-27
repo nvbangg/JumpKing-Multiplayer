@@ -30,7 +30,7 @@ public final class Simulation {
     this.p = physics;
     this.flyAllowed = flyAllowed;
     this.noWalk = noWalk;
-    finishPlatform = FinishPlatform.find(map);
+    finishPlatform = FinishPlatform.find(map, map.finish());
     state = initialState();
   }
 

@@ -1,6 +1,6 @@
 # Thiết kế dữ liệu
 
-MySQL/InnoDB, utf8mb4, timestamps UTC. Hibernate chỉ validate; `source/database/schema.sql` tạo database mới. Với database hiện có theo schema trước đó, dừng backend, sao lưu rồi chạy `source/database/migrate-to-current-schema.sql` một lần trong MySQL Workbench. Script kiểm tra schema và dữ liệu nickname trước khi đổi; DDL MySQL tự commit từng bước. Database lưu Account, lượt Community và kết quả Room; gameplay đang chạy của Room ở RAM.
+MySQL/InnoDB, utf8mb4, timestamps UTC. Hibernate chỉ validate; `source/database/schema.sql` tạo database mới. Database lưu Account, lượt Community và kết quả Room; gameplay đang chạy của Room ở RAM.
 
 ## Schema
 

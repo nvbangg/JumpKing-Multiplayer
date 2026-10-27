@@ -46,7 +46,12 @@ export function PlayersPanel({
 								!watchableIds.includes(player.playerId)
 							}
 							onClick={() => onWatch(player.playerId)}
-							style={{ color: rules.appearanceColors[player.colorSlot] }}
+							style={{
+								color:
+									rules.appearanceColors[
+										player.colorSlot % rules.appearanceColors.length
+									],
+							}}
 						>
 							{player.rank}. {player.nickname}
 						</button>

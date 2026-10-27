@@ -42,7 +42,7 @@ class RoomMapsTest {
               shared.geometry().spawn(),
               previous.finish(),
               shared.geometry().screens());
-      var platform = FinishPlatform.find(previousMap);
+      var platform = FinishPlatform.find(previousMap, previousMap.finish());
       assertThat(platform).isNotNull();
       assertThat(platform.width()).isPositive();
 
@@ -167,7 +167,7 @@ class RoomMapsTest {
       assertThat(sim.finished()).as("level %s wrong screen", goal.level()).isFalse();
       state.screen++;
       double x = state.x;
-      var platform = FinishPlatform.find(map);
+      var platform = FinishPlatform.find(map, map.finish());
       double beyondFloor = platform.x() + platform.width();
       if (beyondFloor <= map.width() - physics.bodyWidth / 2.0) {
         state.x = beyondFloor;

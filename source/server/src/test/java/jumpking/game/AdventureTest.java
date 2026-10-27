@@ -127,7 +127,7 @@ class AdventureTest {
   }
 
   @Test
-  void ravenRestoreRejectsCorruptionAndDefaultsOnlyAbsentProgress() {
+  void ravenRestoreRejectsCorruptOrMissingProgress() {
     var adventure = adventure();
     var saved = adventure.snapshot();
     var invalid = saved.deepCopy();
@@ -137,7 +137,8 @@ class AdventureTest {
     assertThat(adventure.snapshot()).isEqualTo(saved);
     var unrecorded = saved.deepCopy();
     unrecorded.remove("raven");
-    adventure.restore(unrecorded);
+    assertThatThrownBy(() -> adventure.restore(unrecorded))
+        .isInstanceOf(IllegalArgumentException.class);
     assertThat(adventure.snapshot()).isEqualTo(saved);
     var invalidWhite = saved.deepCopy();
     ((ObjectNode) invalidWhite.path("whiteRaven")).put("index", 17);
@@ -146,7 +147,8 @@ class AdventureTest {
     assertThat(adventure.snapshot()).isEqualTo(saved);
     var unrecordedWhite = saved.deepCopy();
     unrecordedWhite.remove("whiteRaven");
-    adventure.restore(unrecordedWhite);
+    assertThatThrownBy(() -> adventure.restore(unrecordedWhite))
+        .isInstanceOf(IllegalArgumentException.class);
     assertThat(adventure.snapshot()).isEqualTo(saved);
   }
 

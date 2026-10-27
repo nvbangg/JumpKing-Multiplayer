@@ -9,9 +9,7 @@ import jumpking.exception.ApiException;
 import jumpking.game.SharedData;
 import org.springframework.stereotype.Component;
 
-/**
- * Registry ngắn hạn: giữ chỗ trước khi enqueue/đợi persistence, dùng chung quotas hai kiểu chơi.
- */
+/** Registry giữ chỗ trước khi enqueue/đợi persistence; mỗi kiểu chơi có capacity riêng. */
 @Component
 public class RoomDirectory {
   public record Info(String roomId, String kind, boolean joinable) {}
@@ -29,27 +27,31 @@ public class RoomDirectory {
 
   private static class Entry {
     final String kind;
+    final int capacity;
     final BitSet slots = new BitSet();
     boolean joinable = true;
-    String visibility = "PRIVATE", mode = "RACE";
-    int mapId = 1;
-    Integer itemCooldownMinutes, timeLimitMinutes;
+    String visibility = "PRIVATE";
+    RoomSettings settings = RoomSettings.defaults();
 
-    Entry(String kind) {
+    Entry(String kind, int capacity) {
       this.kind = kind;
+      this.capacity = capacity;
     }
   }
 
   private final Map<String, Entry> entries = new HashMap<>();
   private final SecureRandom random = new SecureRandom();
   private final String alphabet;
-  private final int capacity, length, maximum;
+  private final int roomCapacity, communityCapacity, length, maximum;
 
   public RoomDirectory(SharedData shared, NetworkSettings limits) {
     var rules = shared.rules();
     alphabet = rules.path("roomCodeAlphabet").asText();
     length = rules.path("roomCodeLength").asInt();
-    capacity = rules.path("capacity").asInt();
+    roomCapacity = rules.path("roomCapacity").asInt();
+    communityCapacity = rules.path("communityCapacity").asInt();
+    if (roomCapacity < 1 || communityCapacity < 1)
+      throw new IllegalArgumentException("Room and Community capacities must be positive");
     maximum = limits.rooms();
   }
 
@@ -57,7 +59,7 @@ public class RoomDirectory {
     var entry = entries.get(id);
     return entry == null
         ? null
-        : new Info(id, entry.kind, entry.joinable && entry.slots.cardinality() < capacity);
+        : new Info(id, entry.kind, entry.joinable && entry.slots.cardinality() < entry.capacity);
   }
 
   public synchronized java.util.List<PublicRoom> publicRooms() {
@@ -68,19 +70,19 @@ public class RoomDirectory {
               return entry.kind.equals("ROOM")
                   && entry.visibility.equals("PUBLIC")
                   && entry.joinable
-                  && entry.slots.cardinality() < capacity;
+                  && entry.slots.cardinality() < entry.capacity;
             })
         .sorted(Map.Entry.comparingByKey())
         .map(
             value ->
                 new PublicRoom(
                     value.getKey(),
-                    value.getValue().mode,
-                    value.getValue().mapId,
-                    value.getValue().itemCooldownMinutes,
-                    value.getValue().timeLimitMinutes,
+                    value.getValue().settings.mode(),
+                    value.getValue().settings.mapId(),
+                    value.getValue().settings.itemCooldownMinutes(),
+                    value.getValue().settings.timeLimitMinutes(),
                     value.getValue().slots.cardinality(),
-                    capacity))
+                    value.getValue().capacity))
         .toList();
   }
 
@@ -88,10 +90,7 @@ public class RoomDirectory {
     var entry = entries.get(id);
     if (entry != null && entry.kind.equals("ROOM")) {
       entry.visibility = visibility;
-      entry.mode = settings.mode();
-      entry.mapId = settings.mapId();
-      entry.itemCooldownMinutes = settings.itemCooldownMinutes();
-      entry.timeLimitMinutes = settings.timeLimitMinutes();
+      entry.settings = settings;
     }
   }
 
@@ -101,7 +100,7 @@ public class RoomDirectory {
             .filter(
                 entry ->
                     entry.getValue().kind.equals("COMMUNITY")
-                        && entry.getValue().slots.cardinality() < capacity)
+                        && entry.getValue().slots.cardinality() < entry.getValue().capacity)
             .max(java.util.Comparator.comparingInt(entry -> entry.getValue().slots.cardinality()))
             .map(Map.Entry::getKey)
             .orElse(null);
@@ -127,7 +126,7 @@ public class RoomDirectory {
         code.append(alphabet.charAt(random.nextInt(alphabet.length())));
       id = code.toString();
     } while (entries.containsKey(id));
-    entries.put(id, new Entry(kind));
+    entries.put(id, new Entry(kind, kind.equals("ROOM") ? roomCapacity : communityCapacity));
     return id;
   }
 
@@ -138,7 +137,7 @@ public class RoomDirectory {
     if (!entry.joinable)
       throw new ApiException(409, "ROOM_NOT_JOINABLE", "This room is not accepting new players");
     int color = entry.slots.nextClearBit(0);
-    if (color >= capacity) throw new ApiException(409, "ROOM_FULL", "This room is full");
+    if (color >= entry.capacity) throw new ApiException(409, "ROOM_FULL", "This room is full");
     entry.slots.set(color);
     return new Slot(id, kind, color);
   }

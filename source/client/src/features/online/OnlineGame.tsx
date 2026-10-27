@@ -70,7 +70,6 @@ export function OnlineGame({
 	accountId,
 	firstGame,
 	onHome,
-	onResults,
 }: {
 	socket: GameSocket;
 	room: RoomState;
@@ -80,7 +79,6 @@ export function OnlineGame({
 	accountId?: string;
 	firstGame: boolean;
 	onHome: (message: string) => void;
-	onResults: () => void;
 }) {
 	const layout = useRef<HTMLElement>(null);
 	const gameWidth = useGameWidth(layout);
@@ -783,26 +781,15 @@ export function OnlineGame({
 								Skip
 							</button>
 						) : (
-							<>
-								{room.kind === "ROOM" ? (
-									<button
-										type="button"
-										disabled={!pictureReady}
-										onClick={onResults}
-									>
-										View Results
-									</button>
-								) : null}
-								<button
-									type="button"
-									disabled={!pictureReady || pending || disconnected}
-									onClick={() => {
-										void command("LEAVE_ROOM");
-									}}
-								>
-									Back to Menu
-								</button>
-							</>
+							<button
+								type="button"
+								disabled={!pictureReady || pending || disconnected}
+								onClick={() => {
+									void command("LEAVE_ROOM");
+								}}
+							>
+								Back to Menu
+							</button>
 						)}
 					</div>
 				)}

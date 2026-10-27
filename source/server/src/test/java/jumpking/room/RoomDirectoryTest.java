@@ -13,11 +13,15 @@ import org.junit.jupiter.api.Test;
 
 class RoomDirectoryTest {
   private RoomDirectory directory() throws Exception {
+    return directory(new SharedData(new ObjectMapper()));
+  }
+
+  private RoomDirectory directory(SharedData shared) {
     var limits =
         new NetworkSettings(
             30, 2, 32, 256, 64, 20, 16384, 120, 120, 4, 240, 4, 8, 5000, 30000, 500, 60, 200, 50,
             1000);
-    return new RoomDirectory(new SharedData(new ObjectMapper()), limits);
+    return new RoomDirectory(shared, limits);
   }
 
   @Test
@@ -52,6 +56,28 @@ class RoomDirectoryTest {
     directory.joinable(publicRoom.roomId(), true);
     directory.describeRoom(publicRoom.roomId(), "PRIVATE", new RoomSettings("RACE", null, 9, null));
     assertThat(directory.publicRooms()).isEmpty();
+  }
+
+  @Test
+  void roomAndCommunityEnforceIndependentCapacities() throws Exception {
+    var shared = new SharedData(new ObjectMapper());
+    ((com.fasterxml.jackson.databind.node.ObjectNode) shared.rules())
+        .put("roomCapacity", 1)
+        .put("communityCapacity", 2);
+    var directory = directory(shared);
+    var host = directory.createRoom();
+    assertThatThrownBy(() -> directory.room(host.roomId()))
+        .isInstanceOfSatisfying(
+            ApiException.class, error -> assertThat(error.code()).isEqualTo("ROOM_FULL"));
+    var first = directory.community();
+    var second = directory.community();
+    assertThat(second.roomId()).isEqualTo(first.roomId());
+    assertThat(second.color()).isNotEqualTo(first.color());
+    var overflow = directory.community();
+    assertThat(overflow.roomId()).isNotEqualTo(first.roomId());
+    directory.release(overflow);
+    directory.release(first);
+    assertThat(directory.community().roomId()).isEqualTo(second.roomId());
   }
 
   @Test

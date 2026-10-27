@@ -37,7 +37,7 @@ Tên vùng hiện mờ ở góc dưới trái trong 6 giây khi vào vùng khác
 
 ## Community
 
-- Tự chọn sảnh còn chỗ, ưu tiên sảnh đông hơn; hết chỗ tạo sảnh mới. Save thuộc Account/lượt, không thuộc sảnh.
+- Giới hạn sảnh theo `communityCapacity`, độc lập `roomCapacity` của Room. Tự chọn sảnh còn chỗ, ưu tiên sảnh đông hơn; hết chỗ tạo sảnh mới. Save thuộc Account/lượt, không thuộc sảnh.
 - Continue khôi phục đúng lượt ACTIVE; save đã đổi thì báo conflict, không tự tạo lượt mới. New Game phải xác nhận thay lượt đang dở, giữ lịch sử/thành tích cũ. Save & Exit rồi Continue có thể vào sảnh khác.
 - Pause chỉ tác động bản thân: hủy charge, tiếp tục physics/clock tới khi đáp nền ổn định rồi dừng. Fly được Pause ngay; phasing fall phải thoát khối. Save & Exit/disconnect cũng chờ ổn định rồi lưu, không hoàn tác cú rơi.
 - Paused/offline không tính active time. Pause liên tục 15 phút khi còn kết nối thì lưu, trả về menu và giải phóng slot; vẫn Continue được.

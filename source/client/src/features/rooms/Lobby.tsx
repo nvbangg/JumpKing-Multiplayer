@@ -28,7 +28,7 @@ export function Lobby({
 	command: (type: string, payload?: Record<string, unknown>) => void;
 }) {
 	const members = room.members.filter(
-		(member) => member.nextMatchJoined !== false,
+		(member) => member.nextMatchJoined === true,
 	);
 	const self = members.find((member) => member.playerId === selfId);
 	const host = !!self && room.hostPlayerId === selfId;
@@ -44,7 +44,7 @@ export function Lobby({
 					<RoomCode roomId={room.roomId} />
 				</header>
 				<p className="muted">
-					Players ({members.length}/{rules.capacity})
+					Players ({members.length}/{rules.roomCapacity})
 				</p>
 				{room.state === "COUNTDOWN" && <p role="status">Starting…</p>}
 				<ul className="players">
@@ -94,7 +94,7 @@ export function Lobby({
 								!confirmed ||
 								members.filter(
 									(member) =>
-										member.connected && member.nextMatchConfirmed !== false,
+										member.connected && member.nextMatchConfirmed === true,
 								).length < rules.minimumRoomPlayers
 							}
 							onClick={() => command("START_GAME")}
@@ -169,7 +169,7 @@ export function Lobby({
 						</span>
 						<select
 							aria-label="Visibility"
-							value={room.visibility || "PUBLIC"}
+							value={room.visibility}
 							disabled={!host || room.state !== "WAITING" || pending}
 							onChange={(event) =>
 								command("UPDATE_ROOM_SETTINGS", {

@@ -8,11 +8,11 @@ import { Lobby } from "./Lobby";
 const member = (playerId: string): RoomMember => ({
 	playerId,
 	nickname: playerId,
-	username: playerId,
 	colorSlot: 0,
 	connected: true,
 	paused: null,
 	nextMatchConfirmed: true,
+	nextMatchJoined: true,
 });
 const room: RoomState = {
 	roomId: "001234",

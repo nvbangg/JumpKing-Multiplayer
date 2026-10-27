@@ -57,24 +57,12 @@ public class User {
     return username;
   }
 
-  public void setUsername(String value) {
-    username = value;
-  }
-
   public String getPasswordHash() {
     return passwordHash;
   }
 
   public void setPasswordHash(String value) {
     passwordHash = value;
-  }
-
-  public String getGoogleId() {
-    return googleId;
-  }
-
-  public void setGoogleId(String value) {
-    googleId = value;
   }
 
   public Instant getCreatedAt() {
@@ -87,9 +75,5 @@ public class User {
 
   public void setCrown(Crown value) {
     crown = value;
-  }
-
-  public void setCreatedAt(Instant value) {
-    createdAt = value;
   }
 }

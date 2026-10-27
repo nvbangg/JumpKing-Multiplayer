@@ -65,7 +65,9 @@ export function ChatMessages({
 			>
 				{messages.map((message) => (
 					<p key={message.id} data-message-id={message.id}>
-						<strong style={{ color: colors[message.colorSlot] || "#ffffff" }}>
+						<strong
+							style={{ color: colors[message.colorSlot % colors.length] }}
+						>
 							{message.nickname}:{" "}
 						</strong>
 						{message.text}

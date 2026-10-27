@@ -93,7 +93,7 @@ public class RoomRuns {
     this.owners = owners;
     this.crowns = crowns;
     this.clock = clock;
-    capacity = shared.rules().path("capacity").asInt();
+    capacity = shared.rules().path("roomCapacity").asInt();
     itemCooldownMin = shared.rules().path("items").path("cooldownMinMinutes").asInt();
     itemCooldownMax = shared.rules().path("items").path("cooldownMaxMinutes").asInt();
   }

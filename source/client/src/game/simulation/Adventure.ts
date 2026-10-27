@@ -336,12 +336,8 @@ export class Adventure {
 			)
 				throw new Error("Invalid readable snapshot");
 		}
-		const birds = {} as Record<Bird, RavenState>;
 		for (const bird of BIRDS) {
-			const raven =
-				saved[bird] === undefined
-					? freshRaven(this.map.screenHeight, bird)
-					: saved[bird];
+			const raven = saved[bird];
 			if (
 				!raven ||
 				!count(raven.index) ||
@@ -356,14 +352,14 @@ export class Adventure {
 					(raven.index !== data[bird].positions.length - 1 || raven.flying))
 			)
 				throw new Error("Invalid raven snapshot");
-			birds[bird] = raven;
 		}
 		const restored: AdventureState = structuredClone({
 			codecVersion: 2,
 			flags: saved.flags,
 			dialogue: saved.dialogue,
 			readables: saved.readables,
-			...birds,
+			raven: saved.raven,
+			whiteRaven: saved.whiteRaven,
 		});
 		return () => {
 			this.state = restored;

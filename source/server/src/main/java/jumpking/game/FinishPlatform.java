@@ -2,8 +2,7 @@ package jumpking.game;
 
 /** Phạm vi mặt nền của đích Room ngắn, tính khi tạo simulation. */
 record FinishPlatform(double x, double y, double width) {
-  static FinishPlatform find(GameMap map) {
-    var finish = map.finish();
+  static FinishPlatform find(GameMap map, GameMap.Finish finish) {
     if (finish.minProgress() == 0) return null;
     double feetY = map.progressOriginY() - finish.minProgress();
     double rowIndex = (feetY + finish.screen() * map.screenHeight()) / map.tileSize();

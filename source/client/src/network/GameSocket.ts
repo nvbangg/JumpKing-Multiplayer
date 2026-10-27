@@ -89,7 +89,6 @@ function parseMessage(data: unknown): Message {
 export interface RoomMember {
 	playerId: string;
 	nickname: string;
-	username: string | null;
 	colorSlot: number;
 	connected: boolean;
 	paused: boolean | null;

@@ -147,7 +147,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
           new SerialExecutor(
               workers.executor(),
               limits.commandQueue(),
-              database.completionCapacity(rules.path("capacity").asInt()),
+              database.completionCapacity(rules.path("communityCapacity").asInt()),
               error ->
                   players
                       .values()
@@ -843,7 +843,6 @@ public class Community implements GameCommandHandler, AutoCloseable {
             .addObject()
             .put("playerId", player.id)
             .put("nickname", player.identity.username())
-            .put("username", player.identity.username())
             .put("colorSlot", player.slot.color())
             .put("connected", player.connection != null)
             .put("paused", player.paused)

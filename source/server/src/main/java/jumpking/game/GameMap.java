@@ -10,7 +10,7 @@ public record GameMap(
     Spawn spawn,
     Finish finish,
     List<Screen> screens,
-    // Chặng Room 2–9: ranh giới dưới tại điểm bắt đầu; null với map đầy đủ.
+    // Chặng Room 2–10: ranh giới dưới tại điểm bắt đầu; null với map đầy đủ.
     Double roomBottomY) {
   public record Spawn(double x, double y) {}
 

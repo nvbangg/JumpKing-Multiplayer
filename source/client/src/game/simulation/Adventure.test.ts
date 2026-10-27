@@ -119,11 +119,11 @@ test("white raven restore validates progress and preserves recorded black raven 
 		expect(adventure.snapshot()).toEqual(saved);
 	}
 	const { whiteRaven: _whiteRaven, ...unrecorded } = saved;
-	adventure.restore(unrecorded);
+	expect(() => adventure.restore(unrecorded)).toThrow();
 	expect(adventure.snapshot()).toEqual(saved);
 });
 
-test("raven restore rejects corrupt state atomically and starts unrecorded progress at the first perch", () => {
+test("raven restore rejects corrupt state atomically and rejects missing bird state", () => {
 	const adventure = new Adventure(map),
 		saved = adventure.snapshot();
 	for (const value of [
@@ -140,7 +140,7 @@ test("raven restore rejects corrupt state atomically and starts unrecorded progr
 		expect(adventure.snapshot()).toEqual(saved);
 	}
 	const { raven: _raven, ...unrecorded } = saved;
-	adventure.restore(unrecorded);
+	expect(() => adventure.restore(unrecorded)).toThrow();
 	expect(adventure.snapshot()).toEqual(saved);
 });
 
