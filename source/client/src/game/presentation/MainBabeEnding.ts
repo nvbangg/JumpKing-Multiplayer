@@ -106,7 +106,9 @@ export class MainBabeEnding {
 	private dress(actor: Actor): void {
 		for (const sprite of actor.sprites) sprite.destroy();
 		const textures = [
-			actor.texture,
+			actor.king && this.crowned
+				? crownTexture(actor.texture, this.signal.crown)
+				: actor.texture,
 			...(actor.king && this.crowned
 				? [crownTexture(this.manifest.crown, this.signal.crown)]
 				: []),
@@ -257,7 +259,7 @@ export class MainBabeEnding {
 			true,
 			raven
 				? crownTexture("props/textures/raven/raven_crown", this.signal.crown)
-				: "king/base",
+				: crownTexture("king/base", this.signal.crown),
 		);
 		actor.root.setName("ending-crown-carrier");
 		actor.root.setVisible(false);
