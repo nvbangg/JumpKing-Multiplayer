@@ -100,7 +100,7 @@ export interface RoomState {
 	visibility?: "PRIVATE" | "PUBLIC";
 	roomId: string;
 	kind: "ROOM" | "COMMUNITY";
-	state: "WAITING" | "COUNTDOWN" | "PLAYING" | "FINISHED";
+	state: "WAITING" | "COUNTDOWN" | "PLAYING" | "PAUSED" | "FINISHED";
 	hostPlayerId: string | null;
 	settings:
 		| (RoomItemSettings & {

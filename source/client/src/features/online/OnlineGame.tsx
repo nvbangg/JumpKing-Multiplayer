@@ -5,6 +5,7 @@ import {
 	LogOut,
 	Menu,
 	Mountain,
+	Pause,
 	Play,
 	Square,
 	Timer,
@@ -259,6 +260,7 @@ export function OnlineGame({
 		if (ended) onHome(removedNotice);
 		else setError(cause instanceof Error ? cause.message : fallback);
 	};
+	const hostPausedRef = useRef(false);
 	const pauseRef = useRef<() => void>(() => {});
 	const pauseRevision = useRef(0);
 	const pause = () => {
@@ -525,10 +527,26 @@ export function OnlineGame({
 					}
 					audio.current?.setScreen(view?.player.state.screen ?? state.screen);
 					if (snapshot.self.paused && !session.menu && !view) {
+						if (room.kind === "ROOM") hostPausedRef.current = true;
 						session.menu = true;
 						controls.cancel();
 						setMenu(true);
 						audio.current?.pause(true);
+					}
+					if (
+						room.kind === "ROOM" &&
+						!snapshot.self.paused &&
+						latestRoom.current.state === "PLAYING" &&
+						hostPausedRef.current
+					) {
+						hostPausedRef.current = false;
+						if (session.menu && !view) {
+							session.menu = false;
+							controls.resume();
+							audio.current?.pause(false);
+							setMenu(false);
+							focusGame();
+						}
 					}
 					if (
 						tutorialRef.current &&
@@ -685,6 +703,21 @@ export function OnlineGame({
 			} finally {
 				setPending(false);
 			}
+		} else if (
+			room.kind === "ROOM" &&
+			room.hostPlayerId === socket.selfId &&
+			room.state === "PAUSED"
+		) {
+			setPending(true);
+			try {
+				await socket.command("SET_ROOM_PAUSED", { paused: false });
+			} catch (cause) {
+				setMenu(true);
+				await reportFailure(cause, "Resume failed");
+				return;
+			} finally {
+				setPending(false);
+			}
 		}
 		// Pause mới khi đang chờ ACK phải được ưu tiên hơn Resume cũ.
 		if (revision !== pauseRevision.current) {
@@ -739,7 +772,11 @@ export function OnlineGame({
 	}, [options.sound]);
 	const displayedError = navigationError || error;
 	const captionPaused =
-		!!menu || !!ending || disconnected || room.state === "COUNTDOWN";
+		!!menu ||
+		!!ending ||
+		disconnected ||
+		room.state === "COUNTDOWN" ||
+		room.state === "PAUSED";
 	return (
 		<main
 			ref={layout}
@@ -839,7 +876,9 @@ export function OnlineGame({
 								disconnected
 									? "Disconnected"
 									: room.kind === "ROOM"
-										? "Game Menu"
+										? room.state === "PAUSED"
+											? "Match Paused"
+											: "Game Menu"
 										: "Paused"
 							}
 						>
@@ -881,29 +920,64 @@ export function OnlineGame({
 									</button>
 								</>
 							) : (
-								<button
-									type="button"
-									className="button-primary"
-									disabled={pending}
-									onClick={() => void resume()}
-								>
-									<Play aria-hidden="true" />
-									Resume
-								</button>
+								<>
+									{room.kind === "ROOM" && room.state === "PAUSED" ? (
+										room.hostPlayerId === socket.selfId ? (
+											<button
+												type="button"
+												className="button-primary"
+												disabled={pending}
+												onClick={() => void resume()}
+											>
+												<Play aria-hidden="true" />
+												Resume Match
+											</button>
+										) : (
+											<div className="room-paused-notice" role="status">
+												<Pause aria-hidden="true" />
+												<span>Match is paused by Host</span>
+											</div>
+										)
+									) : (
+										<button
+											type="button"
+											className="button-primary"
+											disabled={pending}
+											onClick={() => void resume()}
+										>
+											<Play aria-hidden="true" />
+											Resume
+										</button>
+									)}
+									{room.kind === "ROOM" &&
+										room.hostPlayerId === socket.selfId &&
+										room.state === "PLAYING" && (
+											<button
+												type="button"
+												className="button-warning"
+												disabled={pending || disconnected}
+												onClick={() =>
+													void command("SET_ROOM_PAUSED", { paused: true })
+												}
+											>
+												Pause Match
+											</button>
+										)}
+									{room.kind === "ROOM" &&
+										room.hostPlayerId === socket.selfId &&
+										(room.state === "PLAYING" || room.state === "PAUSED") && (
+											<button
+												type="button"
+												className="button-warning end-match"
+												disabled={pending || disconnected}
+												onClick={() => void command("END_MATCH")}
+											>
+												<Square aria-hidden="true" />
+												End Match
+											</button>
+										)}
+								</>
 							)}
-							{room.kind === "ROOM" &&
-								room.hostPlayerId === socket.selfId &&
-								room.state === "PLAYING" && (
-									<button
-										type="button"
-										className="button-warning end-match"
-										disabled={pending || disconnected}
-										onClick={() => void command("END_MATCH")}
-									>
-										<Square aria-hidden="true" />
-										End Match
-									</button>
-								)}
 							<SoundButton
 								options={options}
 								onChange={onOptionsChange}
