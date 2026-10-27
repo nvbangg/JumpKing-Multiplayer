@@ -284,7 +284,13 @@ public class Community implements GameCommandHandler, AutoCloseable {
           }
           var pose = player.game.physics().snapshot();
           boolean isLanded = pose.grounded && pose.splat == 0 && !pose.phasingFall;
-          if (isLanded) player.currentProgress = progress;
+          if (isLanded) {
+            player.currentProgress = progress;
+            if (progress > player.maximum) {
+              player.maximum = progress;
+              player.peakTicks = pose.ticks;
+            }
+          }
           for (String effect : events.movement())
             effects.add(
                 json.createObjectNode()
@@ -294,10 +300,6 @@ public class Community implements GameCommandHandler, AutoCloseable {
                     .put("screen", pose.screen)
                     .put("effect", effect)
                     .put("terrain", pose.snow ? "SNOW" : pose.ice ? "ICE" : "NORMAL"));
-          if (progress > player.maximum) {
-            player.maximum = progress;
-            player.peakTicks = pose.ticks;
-          }
           if (player.game.finished()) {
             changed = true;
             player.ending =
