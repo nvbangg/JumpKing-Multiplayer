@@ -19,7 +19,7 @@ for (const mobile of [false, true])
 		const first = await browser.newContext(
 			mobile
 				? {
-						viewport: { width: 390, height: 844 },
+						viewport: { width: 844, height: 390 },
 						hasTouch: true,
 						isMobile: true,
 					}

@@ -192,7 +192,7 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 			await page.setViewportSize({ width: 390, height: 844 });
 			await expect(
 				page.getByRole("dialog", { name: "Landscape required" }),
-			).toHaveCount(0);
+			).toBeVisible();
 			await page.setViewportSize({
 				width: viewport.width,
 				height: viewport.height,
@@ -245,7 +245,7 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 			await page.setViewportSize({ width: 390, height: 844 });
 			await expect(
 				page.getByRole("dialog", { name: "Landscape required" }),
-			).toHaveCount(0);
+			).toBeVisible();
 			await page.setViewportSize(viewport);
 			await expect(
 				page.getByRole("dialog", { name: "Landscape required" }),
@@ -481,18 +481,17 @@ test("mobile panels preserve drafts and chat stays available while paused", asyn
 		const landscapeGate = page.getByRole("dialog", {
 			name: "Landscape required",
 		});
-		await expect(landscapeGate).toHaveCount(0);
-		await expect(
-			page.getByRole("button", { name: "Resume", exact: true }),
-		).toBeVisible();
+		await expect(landscapeGate).toBeVisible();
 		const portraitJumps = observed.snapshot?.self.simulation.physics.jumps;
-		await page.locator("canvas").focus();
 		await page.keyboard.press("Space");
 		expect(observed.snapshot?.self.simulation.physics.jumps).toBe(
 			portraitJumps,
 		);
 		await page.setViewportSize({ width: 844, height: 390 });
 		await expect(landscapeGate).toBeHidden();
+		await expect(
+			page.getByRole("button", { name: "Resume", exact: true }),
+		).toBeVisible();
 		await page.evaluate(async () => {
 			const path = "/src/network/GameSocket.ts";
 			const { GameSocket } = await import(path);
@@ -524,7 +523,7 @@ test("mobile panels preserve drafts and chat stays available while paused", asyn
 			.toBe(true);
 		await expect.poll(() => observed.snapshot?.self.paused).toBe(false);
 		await page.setViewportSize({ width: 390, height: 844 });
-		await expect(landscapeGate).toHaveCount(0);
+		await expect(landscapeGate).toBeVisible();
 		await page.evaluate(() =>
 			(window as unknown as { releaseResume: () => void }).releaseResume(),
 		);

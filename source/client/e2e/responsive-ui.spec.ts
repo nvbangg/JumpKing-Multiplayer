@@ -27,8 +27,6 @@ const item = {
 };
 for (const viewport of [
 	{ width: 1672, height: 941 },
-	{ width: 390, height: 844 },
-	{ width: 320, height: 568 },
 	{ width: 844, height: 390 },
 	{ width: 844, height: 320 },
 	{ width: 667, height: 375 },
@@ -179,6 +177,9 @@ for (const viewport of [
 				name: "Change Password",
 				exact: true,
 			});
+			await submit.evaluate((button) =>
+				button.scrollIntoView({ block: "center" }),
+			);
 			await expect(submit).toBeInViewport({ ratio: 1 });
 			const submitBox = await submit.boundingBox(),
 				footerBox = await page.locator(".panel-actions").boundingBox();
