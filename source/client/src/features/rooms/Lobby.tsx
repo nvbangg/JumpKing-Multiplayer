@@ -169,7 +169,7 @@ export function Lobby({
 						</span>
 						<select
 							aria-label="Visibility"
-							value={room.visibility || "PRIVATE"}
+							value={room.visibility || "PUBLIC"}
 							disabled={!host || room.state !== "WAITING" || pending}
 							onChange={(event) =>
 								command("UPDATE_ROOM_SETTINGS", {

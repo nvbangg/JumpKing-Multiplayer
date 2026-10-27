@@ -558,7 +558,7 @@ class RoomRaceIT {
       String id = host.ok("CREATE_ROOM", Map.of()).path("roomId").asText();
       peer.ok("JOIN_ROOM", Map.of("roomId", id));
       assertThat(host.request("/rooms", "GET", null).path("rooms").findValuesAsText("roomId"))
-          .doesNotContain(id);
+          .contains(id);
       assertThat(
               peer.command("UPDATE_ROOM_SETTINGS", Map.of("visibility", "PUBLIC"))
                   .path("payload")
@@ -568,13 +568,18 @@ class RoomRaceIT {
       assertThat(
               host.command(
                       "UPDATE_ROOM_SETTINGS",
-                      Map.of("visibility", "PUBLIC", "mode", "HARDCORE", "timeLimitMinutes", 1))
+                      Map.of("visibility", "PUBLIC", "mode", "INVALID", "timeLimitMinutes", 1))
                   .path("type")
                   .asText())
           .isEqualTo("ERROR");
       assertThat(host.ok("GET_ROOM_STATE", Map.of()).path("visibility").asText())
-          .isEqualTo("PRIVATE");
+          .isEqualTo("PUBLIC");
+      host.ok("UPDATE_ROOM_SETTINGS", Map.of("visibility", "PRIVATE"));
+      assertThat(host.request("/rooms", "GET", null).path("rooms").findValuesAsText("roomId"))
+          .doesNotContain(id);
       host.ok("UPDATE_ROOM_SETTINGS", Map.of("visibility", "PUBLIC"));
+      assertThat(host.request("/rooms", "GET", null).path("rooms").findValuesAsText("roomId"))
+          .contains(id);
       var listed = host.request("/rooms", "GET", null).path("rooms");
       var entry =
           java.util.stream.StreamSupport.stream(listed.spliterator(), false)

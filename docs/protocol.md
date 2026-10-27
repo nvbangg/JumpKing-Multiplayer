@@ -86,7 +86,7 @@ Page là integer 0–100000; size/limit 1–100. Status: 400 validation, 401 xá
 | CANCEL_INPUT | {playId,generation,seq}; hủy charge/input, không launch |
 | RECONNECT | {roomId,playerId,reconnectToken} |
 
-Room mặc định RACE/không giới hạn/mapId=1/Items tắt, PRIVATE; Items theo [gameplay](gameplay.md#items-trong-room). ROOM_STATE của Room luôn trả settings đầy đủ, gồm mapId và itemCooldownMinutes; giá trị mặc định chỉ áp dụng tại đầu vào. Chỉ Host/WAITING được sửa settings; `timeLimitMinutes` là độc lập với mode, null nghĩa là không giới hạn và giá trị có hiệu lực là 1–10. `itemCooldownMinutes` null nghĩa là Items tắt; giá trị 1–10 bật Items và đặt cooldown. Backend kiểm tra giới hạn; database chỉ lưu giá trị nullable.
+Room mặc định RACE/không giới hạn/mapId=1/Items tắt/PUBLIC; Items theo [gameplay](gameplay.md#items-trong-room). ROOM_STATE của Room luôn trả settings đầy đủ, gồm mapId và itemCooldownMinutes; giá trị mặc định chỉ áp dụng tại đầu vào. Chỉ Host/WAITING được sửa settings; `timeLimitMinutes` là độc lập với mode, null nghĩa là không giới hạn và giá trị có hiệu lực là 1–10. `itemCooldownMinutes` null nghĩa là Items tắt; giá trị 1–5 bật Items và đặt cooldown. Backend kiểm tra giới hạn; database chỉ lưu giá trị nullable.
 
 JOIN_COMMUNITY bắt buộc cả hai fields: Continue gửi false và đúng ID ACTIVE; New Game gửi true với ID ACTIVE hoặc null nếu chưa có. Sai ID/trạng thái trả CONFLICT; hết chỗ/lỗi DB giữ save cũ. Muốn thay lượt đang chơi phải Save & Exit trước.
 

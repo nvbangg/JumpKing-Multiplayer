@@ -130,7 +130,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     final SerialExecutor actor;
     final ScheduledFuture<?> timer;
     RoomSettings settings = RoomSettings.defaults();
-    String state = "WAITING", visibility = "PRIVATE";
+    String state = "WAITING", visibility = "PUBLIC";
     RoomMatch match;
     CheckpointWriter<RoomRuns.Write> writer;
     long prepareDeadline, countdownAt, nextTick, serverTick, lastSnapshotTick, eventSeq, lastSave;
@@ -566,7 +566,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     player.crown = crown;
     if (create) {
       room.settings = settings;
-      room.visibility = "PRIVATE";
+      room.visibility = "PUBLIC";
       directory.describeRoom(room.id, room.visibility, settings);
     }
     room.players.put(player.id, player);
@@ -587,7 +587,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
   }
 
   private String visibility(JsonNode payload) {
-    String value = payload.has("visibility") ? GameEnvelope.text(payload, "visibility") : "PRIVATE";
+    String value = payload.has("visibility") ? GameEnvelope.text(payload, "visibility") : "PUBLIC";
     if (!Set.of("PRIVATE", "PUBLIC").contains(value)) throw GameEnvelope.invalid();
     return value;
   }
