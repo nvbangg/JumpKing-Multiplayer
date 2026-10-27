@@ -40,7 +40,7 @@ test("CSRF denial clears the cached token so retry fetches a new session token",
 		.mockResolvedValueOnce(
 			Response.json({
 				authenticated: true,
-				account: { id: "1", username: "Player", crownUnlocked: false },
+				account: { id: "1", username: "Player", crown: "NONE" },
 			}),
 		);
 	vi.stubGlobal("fetch", fetcher);

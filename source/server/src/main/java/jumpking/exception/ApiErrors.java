@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -13,6 +15,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class ApiErrors {
+  private static final Logger log = LoggerFactory.getLogger(ApiErrors.class);
+
   public static Map<String, Object> body(String code, String message) {
     return Map.of("error", Map.of("code", code, "message", message));
   }
@@ -28,7 +32,9 @@ public class ApiErrors {
 
   @ExceptionHandler(ApiException.class)
   ResponseEntity<?> application(ApiException error) {
-    return ResponseEntity.status(error.status()).body(body(error.code(), error.getMessage()));
+    var response = ResponseEntity.status(error.status());
+    if (error.status() == 429) response.header("Retry-After", "60");
+    return response.body(body(error.code(), error.getMessage()));
   }
 
   @ExceptionHandler({
@@ -47,13 +53,15 @@ public class ApiErrors {
   }
 
   @ExceptionHandler(DataAccessException.class)
-  ResponseEntity<?> database() {
+  ResponseEntity<?> database(DataAccessException error) {
+    log.error("Database request failed", error);
     return ResponseEntity.status(503)
         .body(body("UNAVAILABLE", "The service is temporarily unavailable"));
   }
 
   @ExceptionHandler(Exception.class)
-  ResponseEntity<?> unexpected() {
+  ResponseEntity<?> unexpected(Exception error) {
+    log.error("Unexpected request failure", error);
     return ResponseEntity.internalServerError()
         .body(body("INTERNAL_ERROR", "The server could not complete this request"));
   }

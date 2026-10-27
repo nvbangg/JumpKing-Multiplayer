@@ -6,18 +6,22 @@ import {
 	observeOnline,
 	registerOnline,
 } from "./support/online";
+import { expectTouchLayout } from "./support/touch-layout";
+
+test.use({ isMobile: true, hasTouch: true });
 
 test("touch holds direction and Jump simultaneously and cancellation never launches", async ({
 	page,
 	context,
 }) => {
-	await page.setViewportSize({ width: 390, height: 844 });
+	await page.setViewportSize({ width: 844, height: 390 });
 	test.skip(process.env.E2E_AUTH_ONLINE !== "true", "Requires backend/MySQL");
 	const observed = observeOnline(page);
 	await registerOnline(page, "touch");
 	await newCommunity(page);
 	const jump = page.getByRole("button", { name: "Jump", exact: true });
 	await expect(jump).toBeVisible();
+	await expectTouchLayout(page);
 	const bounds = await jump.boundingBox(),
 		left = await page
 			.getByRole("button", { name: "Move Left", exact: true })
@@ -56,7 +60,7 @@ test("touch holds direction and Jump simultaneously and cancellation never launc
 		type: "touchEnd",
 		touchPoints: [],
 	});
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await expect(
 		page.getByRole("heading", { name: "Paused", exact: true }),
 	).toBeVisible();

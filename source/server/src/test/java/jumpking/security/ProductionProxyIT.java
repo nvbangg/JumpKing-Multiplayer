@@ -23,7 +23,9 @@ import org.springframework.test.context.DynamicPropertySource;
     properties = {
       "app.allowed-origins=https://game.example.com",
       "app.auth-rate-per-minute=1",
-      "server.servlet.session.persistent=false"
+      "server.servlet.session.persistent=false",
+      "server.forward-headers-strategy=native",
+      "server.tomcat.remoteip.internal-proxies=127[.]0[.]0[.]1|::1|0:0:0:0:0:0:0:1"
     })
 class ProductionProxyIT {
   @DynamicPropertySource

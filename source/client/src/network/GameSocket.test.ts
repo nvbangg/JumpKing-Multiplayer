@@ -140,6 +140,41 @@ test("packets from a previous room or play cannot replace current chat, state or
 	game.close();
 });
 
+test("chat deduplicates messages and bounds its history to the latest thirty", async () => {
+	const game = new GameSocket(vi.fn(), vi.fn());
+	const socket = await open(game);
+	socket.receive({
+		v: 1,
+		type: "ROOM_JOINED",
+		payload: { roomId: "ABCDEF", playerId: "self" },
+	});
+	for (let index = 0; index < 52; index++) {
+		const packet = {
+			v: 1,
+			type: "CHAT_MESSAGE",
+			payload: {
+				roomId: "ABCDEF",
+				messages: [
+					{
+						id: String(index),
+						playerId: "self",
+						nickname: "Player",
+						text: `message-${index}`,
+						sentAt: "2026-01-01T00:00:00Z",
+						colorSlot: 0,
+					},
+				],
+			},
+		};
+		socket.receive(packet);
+		socket.receive(packet);
+	}
+	expect(game.chatHistory.map((message) => message.id)).toEqual(
+		Array.from({ length: 30 }, (_, index) => String(index + 22)),
+	);
+	game.close();
+});
+
 test("parallel connects share one handshake and stale sockets cannot affect the new connection", async () => {
 	const message = vi.fn(),
 		disconnect = vi.fn(),
@@ -341,6 +376,26 @@ test("network quality tracks ping, average, jitter, stalls, and notifies subscri
 	expect(qualities).toHaveLength(4);
 });
 
+test("ping below 100 ms is good even after jitter or earlier stalls", () => {
+	const game = new GameSocket(vi.fn(), vi.fn());
+	for (let index = 0; index < 3; index++)
+		game.recordPing(NETWORK.stallThresholdMs);
+	for (const [ping, status] of [
+		[99, "good"],
+		[100, "fair"],
+		[150, "fair"],
+		[151, "poor"],
+		[30, "good"],
+	] as const) {
+		game.recordPing(ping);
+		expect(game.getNetworkQuality()).toMatchObject({
+			pingMs: ping,
+			stalls: 3,
+			status,
+		});
+	}
+});
+
 test("Leave is shared until acknowledgement and clears membership before notifying the app", async () => {
 	let memberAtLeave: string | null = "unconfirmed";
 	const game = new GameSocket((type) => {
@@ -486,6 +541,101 @@ test("Reconnect resolves once the server restores the membership", async () => {
 	});
 	await expect(attempt).resolves.toBeUndefined();
 	expect(game.selfId).toBe("self");
+	game.close();
+});
+
+test("manual and automatic reconnect share one socket and one restore request", async () => {
+	const received = vi.fn(),
+		game = new GameSocket(received, vi.fn()),
+		initial = game.restore("profile"),
+		old = required(Socket.instances.at(-1));
+	old.open();
+	await initial;
+	game.fail("Disconnected");
+	vi.mocked(loadReconnect).mockResolvedValueOnce({
+		roomId: "123456",
+		playerId: "11111111-1111-4111-8111-111111111111",
+		reconnectToken: "token",
+	});
+	const automatic = game.reconnect(),
+		manual = game.reconnect(),
+		fresh = required(Socket.instances.at(-1));
+	expect(Socket.instances).toHaveLength(2);
+	fresh.open();
+	await vi.waitFor(() => expect(fresh.sent).toHaveLength(1));
+	const command = JSON.parse(required(fresh.sent[0]));
+	expect(command.type).toBe("RECONNECT");
+	fresh.receive({
+		v: 1,
+		type: "RECONNECT_OK",
+		requestId: command.requestId,
+		payload: { roomId: "123456", playerId: "self", generation: 2 },
+	});
+	await Promise.all([automatic, manual]);
+	expect(game.selfId).toBe("self");
+	expect(fresh.sent).toHaveLength(1);
+	expect(old.readyState).toBe(3);
+	game.close();
+});
+
+test("chat and item errors reject their caller without duplicating them in the app", async () => {
+	const received = vi.fn(),
+		game = new GameSocket(received, vi.fn()),
+		socket = await open(game);
+	for (const type of ["CHAT_SEND", "USE_ITEM", "START_GAME"]) {
+		const command = game.command(type),
+			rejected = expect(command).rejects.toMatchObject({
+				code: "RATE_LIMITED",
+			}),
+			request = JSON.parse(required(socket.sent.at(-1)));
+		socket.receive({
+			v: 1,
+			type: "ERROR",
+			requestId: request.requestId,
+			payload: { code: "RATE_LIMITED", message: "Wait before sending" },
+		});
+		await rejected;
+		if (type !== "START_GAME") expect(received).not.toHaveBeenCalled();
+		else
+			expect(received).toHaveBeenCalledExactlyOnceWith(
+				"ERROR",
+				{ code: "RATE_LIMITED", message: "Wait before sending" },
+				true,
+			);
+	}
+	received.mockClear();
+	socket.receive({
+		v: 1,
+		type: "ERROR",
+		payload: { code: "SAVE_FAILED", message: "Save failed" },
+	});
+	expect(received).toHaveBeenCalledExactlyOnceWith(
+		"ERROR",
+		{ code: "SAVE_FAILED", message: "Save failed" },
+		false,
+	);
+	game.close();
+});
+
+test("a late chat rejection after its command timeout cannot leak into the Lobby", async () => {
+	const received = vi.fn(),
+		game = new GameSocket(received, vi.fn()),
+		socket = await open(game),
+		chat = game.command("CHAT_SEND", { text: "hello" }),
+		rejected = expect(chat).rejects.toMatchObject({ code: "COMMAND_TIMEOUT" }),
+		request = JSON.parse(required(socket.sent[0]));
+	await vi.advanceTimersByTimeAsync(NETWORK.timeoutMs);
+	await rejected;
+	socket.receive({
+		v: 1,
+		type: "ERROR",
+		requestId: request.requestId,
+		payload: {
+			code: "RATE_LIMITED",
+			message: "Wait before sending another message",
+		},
+	});
+	expect(received).not.toHaveBeenCalled();
 	game.close();
 });
 

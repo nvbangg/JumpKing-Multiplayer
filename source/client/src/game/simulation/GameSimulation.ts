@@ -5,13 +5,16 @@ import {
 	type AdventureEvent,
 	type AdventureState,
 } from "./Adventure";
+import { ROOM_MAPS, ROOM_SCENE_MARKERS } from "./roomMaps";
 import { Simulation } from "./Simulation";
 import { PHYSICS as P } from "./tuning";
-import type { GameMap, PlayerInput, PlayerState } from "./types";
+import type { GameMap, PlayerInput, PlayerState, ReadView } from "./types";
 
 export interface WorldState {
 	lastTick: number;
+	safePosition?: { x: number; y: number };
 	regionIntro?: { screen: number; tick: number };
+	mapIntro?: { level: number; tick: number };
 	registeredScreens: number[];
 	weatherWind: number;
 	walls: Record<
@@ -33,12 +36,15 @@ export interface WorldEvent {
 export class GameSimulation {
 	readonly physics: Simulation;
 	readonly adventure: Adventure;
+	private readonly roomMode: boolean;
 	private world: WorldState;
 	constructor(
 		readonly map: GameMap,
 		flyAllowed = false,
 		noWalk = false,
+		initialMapLevel?: number,
 	) {
+		this.roomMode = initialMapLevel !== undefined;
 		this.physics = new Simulation(map, flyAllowed, noWalk);
 		this.adventure = new Adventure(map);
 		this.world = {
@@ -51,6 +57,18 @@ export class GameSimulation {
 					{ touching: false, canPlay: true, fadeTicks: 0 },
 				]),
 			),
+		};
+		if (initialMapLevel !== undefined) {
+			if (!ROOM_MAPS.some((roomMap) => roomMap.level === initialMapLevel))
+				throw new Error("Invalid initial Room map level");
+		}
+		this.world.mapIntro = { level: initialMapLevel ?? 1, tick: 0 };
+	}
+	view() {
+		return {
+			physics: this.physics.snapshot(),
+			adventure: this.adventure.view(),
+			world: this.world as ReadView<WorldState>,
 		};
 	}
 	snapshot(): GameSnapshot {
@@ -70,11 +88,27 @@ export class GameSimulation {
 			!saved.world ||
 			saved.world.lastTick !== saved.physics.ticks ||
 			!Number.isFinite(saved.world.weatherWind) ||
+			(saved.world.safePosition !== undefined &&
+				(!saved.world.safePosition ||
+					!Number.isFinite(saved.world.safePosition.x) ||
+					!Number.isFinite(saved.world.safePosition.y) ||
+					saved.world.safePosition.x < -P.bodyWidth / 2 ||
+					saved.world.safePosition.x > this.map.width - P.bodyWidth / 2 ||
+					saved.world.safePosition.y <
+						-this.map.screenHeight * this.map.screens.length ||
+					saved.world.safePosition.y > this.map.screenHeight)) ||
 			(saved.world.regionIntro !== undefined &&
 				(!ADVENTURE.regionStarts.includes(saved.world.regionIntro.screen) ||
 					!Number.isSafeInteger(saved.world.regionIntro.tick) ||
 					saved.world.regionIntro.tick < 0 ||
 					saved.world.regionIntro.tick > saved.physics.ticks)) ||
+			(saved.world.mapIntro !== undefined &&
+				(!ROOM_MAPS.some(
+					(roomMap) => roomMap.level === saved.world.mapIntro?.level,
+				) ||
+					!Number.isSafeInteger(saved.world.mapIntro.tick) ||
+					saved.world.mapIntro.tick < 0 ||
+					saved.world.mapIntro.tick > saved.physics.ticks)) ||
 			!Array.isArray(saved.world.registeredScreens) ||
 			new Set(saved.world.registeredScreens).size !==
 				saved.world.registeredScreens.length ||
@@ -105,14 +139,45 @@ export class GameSimulation {
 		adventure();
 		this.world = world;
 	}
-	tick(input: PlayerInput, respawnOnSplat = false) {
+	tick(input: PlayerInput, mode = "RACE") {
+		const previousY = this.physics.y;
 		const movement = this.physics.tick(input);
-		if (respawnOnSplat && movement.includes("SPLAT")) this.physics.respawn();
-		const player = this.physics.snapshot(),
-			events: WorldEvent[] = [];
+		let player = this.physics.snapshot();
+		if (
+			this.map.roomBottomY !== undefined &&
+			(previousY > this.map.roomBottomY || player.y > this.map.roomBottomY)
+		) {
+			const alreadyFell = movement.includes("SPLAT");
+			this.physics.respawnAt(this.map.spawn.x, this.map.spawn.y, !alreadyFell);
+			if (!alreadyFell) movement.push("SPLAT");
+			player = this.physics.snapshot();
+		} else if (movement.includes("SPLAT")) {
+			if (mode === "HARDCORE") this.physics.respawn();
+			else if (mode === "EASY") {
+				const safe = this.world.safePosition ?? this.map.spawn;
+				this.physics.respawnAt(safe.x, safe.y);
+			}
+			if (mode === "HARDCORE" || mode === "EASY")
+				player = this.physics.snapshot();
+		} else if (
+			mode === "EASY" &&
+			player.grounded &&
+			player.splat === 0 &&
+			!player.freeFlight &&
+			!player.phasingFall &&
+			!player.slipping &&
+			!player.knocked
+		) {
+			// Chỉ nhớ nền an toàn; không lấy vị trí tiếp đất của cú rơi SPLAT.
+			this.world.safePosition ??= { x: player.x, y: player.y };
+			this.world.safePosition.x = player.x;
+			this.world.safePosition.y = player.y;
+		}
+		const events: WorldEvent[] = [];
 		const adventure: AdventureEvent[] = this.adventure.tick(player, input);
 		if (
 			this.physics.finished &&
+			!this.roomMode &&
 			this.map.finish.screen === this.map.screens.length - 1
 		)
 			this.adventure.complete();
@@ -126,12 +191,16 @@ export class GameSimulation {
 			? this.world.weatherWind - (force * 2) / 3
 			: 0;
 		this.world.lastTick = player.ticks;
-		const region = required(
-			ADVENTURE.regionStarts.findLast((screen) => screen <= player.screen),
-		);
-		// Main Babe tuyến tính: rơi xuống hoặc respawn không mở lại vùng đã khám phá.
-		if (!this.world.regionIntro || region > this.world.regionIntro.screen)
-			this.world.regionIntro = { screen: region, tick: player.ticks };
+		// Community ghi nhận vùng cao nhất đã đáp an toàn, kể cả đi đường khác qua mốc.
+		if (!this.roomMode && movement.includes("LAND") && !player.freeFlight) {
+			const currentFeetY = player.y + P.bodyHeight;
+			let reached = this.world.mapIntro?.level ?? 0;
+			for (const marker of ROOM_SCENE_MARKERS)
+				if (marker.level > reached && currentFeetY <= marker.y)
+					reached = marker.level;
+			if (reached > (this.world.mapIntro?.level ?? 0))
+				this.world.mapIntro = { level: reached, tick: player.ticks };
+		}
 		if (
 			player.grounded &&
 			!this.world.registeredScreens.includes(player.screen)

@@ -36,7 +36,7 @@ class RoomFlyIT {
   }
 
   @Autowired RoomRaceIT.TestTime time;
-  @Autowired RaceRoom server;
+  @Autowired RoomManager server;
   @Autowired SharedData shared;
   @Autowired ObjectMapper json;
   @LocalServerPort int port;
@@ -96,9 +96,9 @@ class RoomFlyIT {
   }
 
   @Test
-  void allFourModesAllowLocalFlightPhasingAndCountTheNormalCommittedFinish() throws Exception {
+  void allModesAllowFlightPhasingAndCountTheNormalCommittedFinish() throws Exception {
     var before = MainBabeRoute.beforeFinish(shared, json);
-    for (String mode : List.of("RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK")) {
+    for (String mode : List.of("RACE", "EASY", "HARDCORE", "NO_WALK")) {
       try (var a = new GameClient(port);
           var b = new GameClient(port)) {
         a.register();
@@ -107,7 +107,8 @@ class RoomFlyIT {
         b.connect();
         var settings = new HashMap<String, Object>();
         settings.put("mode", mode);
-        settings.put("timeLimitMinutes", mode.equals("TIME_LIMIT") ? 30 : null);
+        settings.put("mapId", RoomSettings.FINAL_MAP_ID);
+        settings.put("timeLimitMinutes", null);
         String room = a.ok("CREATE_ROOM", Map.of("settings", settings)).path("roomId").asText();
         b.ok("JOIN_ROOM", Map.of("roomId", room));
         a.ok("START_GAME", Map.of());
@@ -184,8 +185,7 @@ class RoomFlyIT {
                         .path("saveStatus")
                         .asText()
                         .equals("SAVED"));
-        assertThat(a.request("/profile/me", "GET", null).path("total").path("wins").asInt())
-            .isEqualTo(1);
+        assertThat(a.request("/profile/me", "GET", null).path("total").has("wins")).isFalse();
         assertThat(
                 a.request("/history/ROOM/" + play, "GET", null).path("room").path("mode").asText())
             .isEqualTo(mode);
@@ -193,7 +193,7 @@ class RoomFlyIT {
                 TestDatabase.get()
                     .jdbc
                     .queryForObject(
-                        "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND user_id=? AND status='FINISHED' AND is_winner=TRUE",
+                        "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND user_id=? AND status='FINISHED' AND `rank`=1",
                         Integer.class,
                         play,
                         a.owner))

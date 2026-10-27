@@ -86,23 +86,20 @@ public class CommunityRuns {
         account,
         owner -> {
           var active = runs.lockActiveCommunity(owner).orElse(null);
-          var old =
-              active == null
-                  ? null
-                  : new Stored(
-                      active.getId(),
-                      owner,
-                      active.getRevision(),
-                      decode(active.getSnapshot()),
-                      active.getCurrentProgress(),
-                      active.getMaxProgress(),
-                      active.getPeakReachedTicks(),
-                      active.getStartedAt());
-          if ((!replace && old == null)
-              || !java.util.Objects.equals(expected, old == null ? null : old.id()))
+          if ((!replace && active == null)
+              || !java.util.Objects.equals(expected, active == null ? null : active.getId()))
             throw new ApiException(
                 409, "CONFLICT", "Community save changed; refresh and try again");
-          if (!replace) return old;
+          if (!replace)
+            return new Stored(
+                active.getId(),
+                owner,
+                active.getRevision(),
+                decode(active.getSnapshot()),
+                active.getCurrentProgress(),
+                active.getMaxProgress(),
+                active.getPeakReachedTicks(),
+                active.getStartedAt());
           var now = clock.instant();
           if (active != null) {
             active.setStatus("ABANDONED");
@@ -117,7 +114,6 @@ public class CommunityRuns {
           var run = new PlayRun();
           run.setId(id);
           run.setUserId(owner);
-          run.setKind("COMMUNITY");
           run.setStatus("ACTIVE");
           run.setRevision(1);
           run.setSnapshot(encode(spawn));
@@ -148,7 +144,7 @@ public class CommunityRuns {
         next.owner(),
         owner -> {
           var run = runs.lockById(next.id()).orElse(null);
-          if (run == null || run.getUserId() != owner || !run.getKind().equals("COMMUNITY"))
+          if (run == null || run.getUserId() != owner || run.getMatchId() != null)
             throw new ApiException(409, "CONFLICT", "Community run no longer exists");
           var value =
               new Existing(
@@ -196,7 +192,9 @@ public class CommunityRuns {
           run.setSnapshot(active ? encode(next.snapshot()) : null);
           run.setEndedAt(next.endedAt());
           run.setUpdatedAt(clock.instant());
-          if (next.status().equals("FINISHED")) crowns.unlock(owner);
+          if (next.status().equals("FINISHED"))
+            crowns.unlock(
+                owner, next.snapshot().adventure().path("raven").path("done").asBoolean());
           runs.flush();
           return null;
         });

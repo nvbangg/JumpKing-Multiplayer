@@ -10,6 +10,7 @@ public final class Simulation {
   private final boolean noWalk;
   private final FinishPlatform finishPlatform;
   private PlayerState state;
+  private long positionRevision;
   private static final double SQRT_HALF = Math.sqrt(0.5);
 
   private static double f(double value) {
@@ -41,11 +42,20 @@ public final class Simulation {
     s.vy = 1;
     s.grounded = true;
     s.direction = 1;
+    s.screen = screenAt(s.y + p.bodyHeight / 2.0);
     return s;
   }
 
   public PlayerState snapshot() {
     return state.copy();
+  }
+
+  public long positionRevision() {
+    return positionRevision;
+  }
+
+  public double y() {
+    return state.y;
   }
 
   public void restore(PlayerState saved) {
@@ -96,13 +106,35 @@ public final class Simulation {
     if (drop) state.vy = Math.max(0, state.vy);
   }
 
+  public void boostJump() {
+    state.jumpBoost = true;
+  }
+
   public void respawn() {
     long ticks = state.ticks;
     int jumps = state.jumps, falls = state.falls;
+    boolean jumpBoost = state.jumpBoost;
     state = initialState();
     state.ticks = ticks;
     state.jumps = jumps;
     state.falls = falls;
+    state.jumpBoost = jumpBoost;
+    // Metadata hiển thị trong RAM; tách respawn khỏi chuyển động liên tục, không lưu checkpoint.
+    positionRevision++;
+  }
+
+  public void respawnAt(double x, double y) {
+    respawnAt(x, y, false);
+  }
+
+  public void respawnAt(double x, double y, boolean countFall) {
+    respawn();
+    if (countFall) state.falls++;
+    state.x = x;
+    state.y = y;
+    state.screen = screenAt(y + p.bodyHeight / 2.0);
+    state.vy = 0;
+    cancelInput();
   }
 
   public void setFlight(boolean enabled) {
@@ -357,7 +389,10 @@ public final class Simulation {
                   : s.directions.stream().filter(value -> value != 0).findFirst().orElse(0);
           if (!s.snow || intensity > p.snowMinimumCharge) {
             if (s.snow && intensity < p.snowLaunchCharge) intensity = p.snowLaunchCharge;
-            s.vy = f(p.jumpVelocity * intensity);
+            // Độ cao tỉ lệ bình phương vận tốc bật; Boots không đổi charge hoặc lực ngang.
+            s.vy =
+                f(p.jumpVelocity * intensity * (s.jumpBoost ? p.jumpBoostVelocityMultiplier : 1));
+            s.jumpBoost = false;
             s.vx = f(clamp(s.vx + direction * p.jumpSpeed, -p.jumpSpeed, p.jumpSpeed));
             if (direction != 0) s.direction = direction;
             s.jumps++;
@@ -367,7 +402,7 @@ public final class Simulation {
           s.jumpConsumed = true;
         }
       } else {
-        if (s.snow) s.vx = 0;
+        if (s.snow || (noWalk && !s.ice)) s.vx = 0;
         else if (!noWalk) {
           double target = intent * p.walkSpeed;
           if (!s.ice) s.vx = target;

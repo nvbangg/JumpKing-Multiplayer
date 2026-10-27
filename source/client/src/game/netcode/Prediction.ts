@@ -14,7 +14,7 @@ export class Prediction {
 	constructor(
 		private game: GameSimulation,
 		private maximum: number,
-		private respawnOnSplat = false,
+		private mode = "RACE",
 	) {}
 	get pending(): number {
 		return this.frames.length;
@@ -22,13 +22,13 @@ export class Prediction {
 	reset(): void {
 		this.frames = [];
 	}
-	push(seq: number, input: PlayerInput): void {
+	push(seq: number, input: PlayerInput) {
 		if (this.frames.length >= this.maximum)
 			throw new Error(
 				"Input acknowledgements are too far behind; reconnect to continue",
 			);
 		this.frames.push({ seq, input: { ...input }, cancel: false });
-		this.game.tick(input, this.respawnOnSplat);
+		return this.game.tick(input, this.mode).movement;
 	}
 	cancel(seq: number): void {
 		this.frames = [
@@ -49,7 +49,7 @@ export class Prediction {
 		for (const frame of this.frames) {
 			if (frame.cancel) this.game.physics.cancelInput();
 			// Replay chỉ cập nhật simulation; presentation không nhận lại effects/ending.
-			this.game.tick(frame.input, this.respawnOnSplat);
+			this.game.tick(frame.input, this.mode);
 		}
 	}
 }

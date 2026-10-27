@@ -67,6 +67,9 @@ class RoomAgainIT {
       host.register();
       host.connect();
       String room = host.ok("CREATE_ROOM", Map.of()).path("roomId").asText();
+      var initial = host.ok("GET_ROOM_STATE", Map.of());
+      assertThat(initial.path("members")).hasSize(1);
+      assertThat(initial.path("members").get(0).path("nextMatchConfirmed").asBoolean()).isTrue();
       String first = started(host);
       ended(host);
       var history = host.request("/history", "GET", null).path("items");
@@ -94,12 +97,10 @@ class RoomAgainIT {
         player.connect();
       }
       String room =
-          a.ok(
-                  "CREATE_ROOM",
-                  Map.of("settings", Map.of("mode", "TIME_LIMIT", "timeLimitMinutes", 8)))
+          a.ok("CREATE_ROOM", Map.of("settings", Map.of("mode", "RACE", "timeLimitMinutes", 8)))
               .path("roomId")
               .asText();
-      b.ok("JOIN_ROOM", Map.of("roomId", room));
+      var bJoined = b.ok("JOIN_ROOM", Map.of("roomId", room));
       c.ok("JOIN_ROOM", Map.of("roomId", room));
       String first = started(a);
       ended(a);
@@ -110,6 +111,32 @@ class RoomAgainIT {
       assertThat(waiting.path("state").asText()).isEqualTo("WAITING");
       assertThat(waiting.path("roomId").asText()).isEqualTo(room);
       assertThat(waiting.path("settings").path("timeLimitMinutes").asInt()).isEqualTo(8);
+      assertThat(waiting.path("members").get(0).path("nextMatchJoined").asBoolean()).isFalse();
+      assertThat(waiting.path("members").get(1).path("nextMatchJoined").asBoolean()).isTrue();
+      b.ok("SET_ROOM_CONFIRMED", Map.of("confirmed", false));
+      b.disconnect();
+      a.await(
+          message ->
+              message.path("type").asText().equals("ROOM_STATE")
+                  && message.path("payload").path("state").asText().equals("WAITING")
+                  && message.path("payload").path("members").size() == 3
+                  && !message.path("payload").path("members").get(1).path("connected").asBoolean());
+      b.connect();
+      b.ok(
+          "RECONNECT",
+          Map.of(
+              "roomId", room,
+              "playerId", bJoined.path("playerId").asText(),
+              "reconnectToken", bJoined.path("reconnectToken").asText()));
+      var cancelled = b.ok("GET_ROOM_STATE", Map.of()).path("members").get(1);
+      assertThat(cancelled.path("nextMatchConfirmed").asBoolean()).isFalse();
+      assertThat(cancelled.path("nextMatchJoined").asBoolean()).isTrue();
+      assertThat(
+              a.command("SET_ROOM_CONFIRMED", Map.of("confirmed", true))
+                  .path("payload")
+                  .path("code")
+                  .asText())
+          .isEqualTo("CONFLICT");
       assertThat(a.command("START_GAME", Map.of()).path("payload").path("code").asText())
           .isEqualTo("NOT_ENOUGH_PLAYERS");
       assertThat(

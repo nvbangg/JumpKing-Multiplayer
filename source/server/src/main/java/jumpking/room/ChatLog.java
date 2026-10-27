@@ -1,5 +1,8 @@
 package jumpking.room;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
@@ -47,8 +50,19 @@ public final class ChatLog {
     return message;
   }
 
-  public List<Message> history() {
-    return List.copyOf(messages);
+  public ObjectNode history(String roomId, ObjectMapper json, int messageBytes) {
+    var envelope = json.createObjectNode().put("v", 1).put("type", "CHAT_HISTORY");
+    var payload = envelope.putObject("payload").put("roomId", roomId);
+    var history = payload.putArray("messages");
+    for (var message : messages) history.add(json.valueToTree(message));
+    // Dùng cùng serializer gửi WS: surrogate escaping có thể dài hơn UTF-8 của toString().
+    try {
+      while (!history.isEmpty() && json.writeValueAsBytes(envelope).length > messageBytes)
+        history.remove(0);
+    } catch (JsonProcessingException error) {
+      throw new IllegalStateException("Chat history could not be serialized", error);
+    }
+    return payload;
   }
 
   public void leave(String player) {

@@ -27,3 +27,37 @@ test("effects are deduplicated per room, filter peer screens and ignore a previo
 		receive([{ ...event, eventSeq: 5, effect: "TELEPORT" }]),
 	).toThrow("Invalid");
 });
+
+test("predicted self sounds do not echo from the server; peers and spectating still play", () => {
+	const effects = new PlayerEffects();
+	const event = {
+		eventSeq: 1,
+		playerId: "self",
+		playId: "run",
+		screen: 0,
+		effect: "JUMP",
+		terrain: "NORMAL",
+	};
+	const payload = {
+		roomId: "ABCDEF",
+		events: [event, { ...event, eventSeq: 2, playerId: "peer" }],
+	};
+	expect(
+		effects
+			.receive(payload, "ABCDEF", "self", "run", 0, "self")
+			.map((e) => e.playerId),
+	).toEqual(["peer"]);
+	expect(effects.receive(payload, "ABCDEF", "self", "run", 0)).toEqual([]);
+	expect(
+		effects.receive(
+			{
+				roomId: "ABCDEF",
+				events: [{ ...event, eventSeq: 3, playerId: "peer" }],
+			},
+			"ABCDEF",
+			"peer",
+			"run",
+			0,
+		),
+	).toHaveLength(1);
+});

@@ -6,51 +6,104 @@ import ravenTrace from "../../../../common/fixtures/raven-trace.json";
 import whiteRavenTrace from "../../../../common/fixtures/white-raven-trace.json";
 import map from "../../../../common/maps/main-babe.json";
 import { required } from "../../required";
-import { ADVENTURE, Adventure } from "./Adventure";
+import { Adventure } from "./Adventure";
 import { GameSimulation } from "./GameSimulation";
+import { ROOM_SCENE_MARKERS, roomMap } from "./roomMaps";
 import { Simulation } from "./Simulation";
+import { PHYSICS } from "./tuning";
 import { NEUTRAL_INPUT } from "./types";
 
-test("region intros start at their first screen and survive restore and respawn", () => {
-	const game = new GameSimulation(map, true);
-	for (const screen of ADVENTURE.regionStarts) {
-		game.physics.restore({
-			...game.physics.snapshot(),
-			y: -screen * map.screenHeight + 100,
-			screen,
-			freeFlight: true,
-			grounded: false,
-		});
-		game.tick(NEUTRAL_INPUT);
+test("map captions start at Green Woods, advance on safe landings and survive restore", () => {
+	expect(new GameSimulation(map).snapshot().world.mapIntro).toEqual({
+		level: 1,
+		tick: 0,
+	});
+	for (const marker of ROOM_SCENE_MARKERS) {
+		const game = new GameSimulation(map, true),
+			state = game.physics.snapshot();
+		state.x = marker.x + (marker.width - PHYSICS.bodyWidth) / 2;
+		state.y = marker.y - PHYSICS.bodyHeight - 3;
+		state.vy = 4;
+		state.freeFlight = false;
+		state.grounded = false;
+		game.physics.restore(state);
+		const events = game.tick(NEUTRAL_INPUT);
+		expect(events.movement).toContain("LAND");
 		const saved = game.snapshot();
-		expect(saved.world.regionIntro).toEqual({
-			screen,
+		expect(saved.world.mapIntro).toEqual({
+			level: marker.level,
 			tick: saved.physics.ticks,
 		});
 		const restored = new GameSimulation(map, true);
 		restored.restore(saved);
 		restored.physics.respawn();
 		restored.tick(NEUTRAL_INPUT);
-		expect(restored.snapshot().world.regionIntro).toEqual(
-			saved.world.regionIntro,
-		);
-		expect(
-			new GameSimulation(map).snapshot().world.regionIntro,
-		).toBeUndefined();
+		expect(restored.snapshot().world.mapIntro).toEqual(saved.world.mapIntro);
+		game.physics.restore({ ...state, ticks: saved.physics.ticks });
+		expect(game.tick(NEUTRAL_INPUT).movement).toContain("LAND");
+		expect(game.snapshot().world.mapIntro).toEqual(saved.world.mapIntro);
+
+		const flying = new GameSimulation(map, true),
+			flyState = flying.physics.snapshot();
+		flyState.x = marker.x + (marker.width - PHYSICS.bodyWidth) / 2;
+		flyState.y = marker.y - PHYSICS.bodyHeight + 1;
+		flyState.vy = 0;
+		flyState.freeFlight = true;
+		flyState.grounded = false;
+		flying.physics.restore(flyState);
+		flying.tick({ ...NEUTRAL_INPUT, up: true });
+		expect(flying.snapshot().world.mapIntro).toEqual({ level: 1, tick: 0 });
 	}
-	const before = game.snapshot();
+	const roomMarker = required(ROOM_SCENE_MARKERS[0]),
+		room = new GameSimulation(roomMap(map, 1), true, false, 1),
+		roomState = room.physics.snapshot();
+	roomState.x = roomMarker.x + (roomMarker.width - PHYSICS.bodyWidth) / 2;
+	roomState.y = roomMarker.y - PHYSICS.bodyHeight - 3;
+	roomState.vy = 4;
+	roomState.grounded = false;
+	room.physics.restore(roomState);
+	room.tick(NEUTRAL_INPUT);
+	expect(room.snapshot().world.mapIntro).toEqual({ level: 1, tick: 0 });
+	const game = new GameSimulation(map, true),
+		before = game.snapshot();
 	for (const intro of [
-		{ screen: 6, tick: 0 },
-		{ screen: 5, tick: -1 },
-		{ screen: 5, tick: before.physics.ticks + 1 },
+		{ level: 0, tick: 0 },
+		{ level: 10, tick: 0 },
+		{ level: 1, tick: -1 },
+		{ level: 1, tick: before.physics.ticks + 1 },
 	]) {
 		expect(() =>
 			game.restore({
 				...before,
-				world: { ...before.world, regionIntro: intro },
+				world: { ...before.world, mapIntro: intro },
 			}),
 		).toThrow();
 		expect(game.snapshot()).toEqual(before);
+	}
+});
+
+test("Community accepts another higher platform but rejects a splat or a lower landing", () => {
+	// Nền tại screen 3, hàng 20, cột 37–40 cao hơn mốc Red Tree và nằm ngoài bệ mốc.
+	for (const landing of [
+		{ x: 300, floorY: -920, speed: 4, level: 2, effect: "LAND" },
+		{ x: 300, floorY: -920, speed: PHYSICS.maxFall, level: 1, effect: "SPLAT" },
+		{
+			x: map.spawn.x,
+			floorY: map.spawn.y + PHYSICS.bodyHeight,
+			speed: 4,
+			level: 1,
+			effect: "LAND",
+		},
+	]) {
+		const game = new GameSimulation(map),
+			state = game.physics.snapshot();
+		state.x = landing.x;
+		state.y = landing.floorY - PHYSICS.bodyHeight - 3;
+		state.vy = landing.speed;
+		state.grounded = false;
+		game.physics.restore(state);
+		expect(game.tick(NEUTRAL_INPUT).movement).toContain(landing.effect);
+		expect(game.snapshot().world.mapIntro?.level).toBe(landing.level);
 	}
 });
 
@@ -326,4 +379,23 @@ test("full game restores adventure and environment without changing the legitima
 		}),
 	).toThrow();
 	expect(game.snapshot()).toEqual(state);
+});
+
+test("render view follows simulation while saved snapshots remain independent", () => {
+	const game = new GameSimulation(map);
+	const saved = game.snapshot();
+	const view = game.view();
+	game.tick(NEUTRAL_INPUT);
+	const next = game.view();
+	expect(next.adventure).toBe(view.adventure);
+	expect(next.world).toBe(view.world);
+	expect(next).toEqual({
+		physics: game.snapshot().physics,
+		adventure: game.snapshot().adventure,
+		world: game.snapshot().world,
+	});
+	expect(saved.world.lastTick).toBe(0);
+	expect(next.world.lastTick).toBe(1);
+	saved.adventure.flags.push("saved-only");
+	expect(next.adventure.flags).not.toContain("saved-only");
 });

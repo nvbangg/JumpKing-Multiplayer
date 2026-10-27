@@ -20,15 +20,42 @@ public final class GameSimulation {
   private final GameMap map;
   private final Physics p;
   private final JsonNode data;
+  private final List<SharedData.RoomScene> sceneMarkers;
+  private final Integer initialMapLevel;
   private final boolean flyAllowed, noWalk;
   private Simulation physics;
   private Adventure adventure;
   private ObjectNode world;
 
   public GameSimulation(GameMap map, Physics p, JsonNode data, boolean flyAllowed, boolean noWalk) {
+    this(map, p, data, List.of(), flyAllowed, noWalk);
+  }
+
+  public GameSimulation(
+      GameMap map,
+      Physics p,
+      JsonNode data,
+      List<SharedData.RoomScene> sceneMarkers,
+      boolean flyAllowed,
+      boolean noWalk) {
+    this(map, p, data, sceneMarkers, null, flyAllowed, noWalk);
+  }
+
+  public GameSimulation(
+      GameMap map,
+      Physics p,
+      JsonNode data,
+      List<SharedData.RoomScene> sceneMarkers,
+      Integer initialMapLevel,
+      boolean flyAllowed,
+      boolean noWalk) {
     this.map = map;
     this.p = p;
-    this.data = data.deepCopy();
+    this.data = data;
+    this.sceneMarkers = List.copyOf(sceneMarkers);
+    if (initialMapLevel != null && (initialMapLevel < 1 || initialMapLevel > 9))
+      throw new IllegalArgumentException("Invalid initial Room map level");
+    this.initialMapLevel = initialMapLevel;
     this.flyAllowed = flyAllowed;
     this.noWalk = noWalk;
     physics = new Simulation(map, p, flyAllowed, noWalk);
@@ -42,6 +69,10 @@ public final class GameSimulation {
           .put("touching", false)
           .put("canPlay", true)
           .put("fadeTicks", 0);
+    world
+        .putObject("mapIntro")
+        .put("level", initialMapLevel == null ? 1 : initialMapLevel)
+        .put("tick", 0);
   }
 
   public Simulation physics() {
@@ -80,6 +111,19 @@ public final class GameSimulation {
           || screen.asInt() >= map.screens().size()
           || !screens.add(screen.asInt()))
         throw new IllegalArgumentException("Invalid registered screen");
+    if (w.has("safePosition")) {
+      var safe = w.path("safePosition");
+      double x = safe.path("x").asDouble(), y = safe.path("y").asDouble();
+      if (!safe.isObject()
+          || !safe.path("x").isNumber()
+          || !safe.path("y").isNumber()
+          || !Double.isFinite(x)
+          || !Double.isFinite(y)
+          || x < -p.bodyWidth / 2.0
+          || x > map.width() - p.bodyWidth / 2.0
+          || y < -(double) map.screenHeight() * map.screens().size()
+          || y > map.screenHeight()) throw new IllegalArgumentException("Invalid safe position");
+    }
     if (w.has("regionIntro")) {
       var intro = w.path("regionIntro");
       boolean known = false;
@@ -91,6 +135,16 @@ public final class GameSimulation {
           || intro.path("tick").asLong() > saved.physics().ticks)
         throw new IllegalArgumentException("Invalid region intro");
     }
+    if (w.has("mapIntro")) {
+      var intro = w.path("mapIntro");
+      int level = intro.path("level").asInt();
+      boolean knownLevel = level >= 1 && level <= 9;
+      if (!knownLevel
+          || !intro.path("tick").isIntegralNumber()
+          || intro.path("tick").asLong() < 0
+          || intro.path("tick").asLong() > saved.physics().ticks)
+        throw new IllegalArgumentException("Invalid map intro");
+    }
     for (JsonNode wall : data.path("walls")) {
       var state = w.path("walls").path(wall.path("id").asText());
       if (!state.path("touching").isBoolean()
@@ -100,7 +154,8 @@ public final class GameSimulation {
           || state.path("fadeTicks").asInt() > data.path("tuning").path("wallFadeTicks").asInt())
         throw new IllegalArgumentException("Invalid wall snapshot");
     }
-    var candidate = new GameSimulation(map, p, data, flyAllowed, noWalk);
+    var candidate =
+        new GameSimulation(map, p, data, sceneMarkers, initialMapLevel, flyAllowed, noWalk);
     candidate.physics.restore(saved.physics());
     candidate.adventure.restore(saved.adventure());
     physics = candidate.physics;
@@ -109,16 +164,44 @@ public final class GameSimulation {
   }
 
   public Events tick(PlayerInput input) {
-    return tick(input, false);
+    return tick(input, "RACE");
   }
 
-  public Events tick(PlayerInput input, boolean respawnOnSplat) {
+  public Events tick(PlayerInput input, String mode) {
+    double previousY = physics.y();
     var movement = physics.tick(input);
-    if (respawnOnSplat && movement.contains("SPLAT")) physics.respawn();
     var player = physics.snapshot();
+    if (map.roomBottomY() != null
+        && (previousY > map.roomBottomY() || player.y > map.roomBottomY())) {
+      boolean alreadyFell = movement.contains("SPLAT");
+      physics.respawnAt(map.spawn().x(), map.spawn().y(), !alreadyFell);
+      if (!alreadyFell) {
+        movement = new ArrayList<>(movement);
+        movement.add("SPLAT");
+      }
+      player = physics.snapshot();
+    } else if (movement.contains("SPLAT") && (mode.equals("HARDCORE") || mode.equals("EASY"))) {
+      if (mode.equals("EASY")) {
+        var safe = world.path("safePosition");
+        physics.respawnAt(
+            safe.path("x").asDouble(map.spawn().x()), safe.path("y").asDouble(map.spawn().y()));
+      } else physics.respawn();
+      player = physics.snapshot();
+    } else if (mode.equals("EASY")
+        && player.grounded
+        && !player.freeFlight
+        && !player.phasingFall
+        && player.splat == 0
+        && !player.slipping
+        && !player.knocked) {
+      // Ghi nền an toàn sau xử lý vật lý; cú đáp gây SPLAT không thay mốc trước đó.
+      world.withObject("safePosition").put("x", player.x).put("y", player.y);
+    }
     var content = adventure.tick(player, input);
     var events = new ArrayList<WorldEvent>();
-    if (finished() && map.finish().screen() == map.screens().size() - 1) adventure.complete();
+    if (finished()
+        && map.roomBottomY() == null
+        && map.finish().screen() == map.screens().size() - 1) adventure.complete();
     double phase = player.ticks / (double) p.tickRate * p.windFrequency;
     double force =
         Math.max(-1, Math.min(1, 2 * Math.sin(phase) + (Math.cos(phase) > 0 ? 1 : -1)))
@@ -126,12 +209,15 @@ public final class GameSimulation {
     world
         .put("weatherWind", player.wind ? world.path("weatherWind").asDouble() - force * 2 / 3 : 0)
         .put("lastTick", player.ticks);
-    int region = 0;
-    for (JsonNode start : data.path("regionStarts"))
-      if (start.asInt() <= player.screen) region = start.asInt();
-    // Main Babe tuyến tính: rơi xuống hoặc respawn không mở lại vùng đã khám phá.
-    if (!world.has("regionIntro") || region > world.path("regionIntro").path("screen").asInt())
-      world.putObject("regionIntro").put("screen", region).put("tick", player.ticks);
+    // Community ghi nhận vùng cao nhất đã đáp an toàn, kể cả đi đường khác qua mốc.
+    if (initialMapLevel == null && movement.contains("LAND") && !player.freeFlight) {
+      double currentFeetY = player.y + p.bodyHeight;
+      int previousLevel = world.path("mapIntro").path("level").asInt(0), reached = previousLevel;
+      for (var marker : sceneMarkers)
+        if (marker.level() > reached && currentFeetY <= marker.y()) reached = marker.level();
+      if (reached > previousLevel)
+        world.putObject("mapIntro").put("level", reached).put("tick", player.ticks);
+    }
     var registered = (ArrayNode) world.path("registeredScreens");
     boolean seen = false;
     for (JsonNode screen : registered) if (screen.asInt() == player.screen) seen = true;

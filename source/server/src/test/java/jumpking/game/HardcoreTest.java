@@ -39,7 +39,7 @@ class HardcoreTest {
     game.physics().restore(pose);
     boolean splat = false;
     for (int tick = 0; tick < 8 && !splat; tick++)
-      splat = game.tick(PlayerInput.NEUTRAL, true).movement().contains("SPLAT");
+      splat = game.tick(PlayerInput.NEUTRAL, "HARDCORE").movement().contains("SPLAT");
     assertThat(splat).isTrue();
     var reset = game.snapshot();
     assertThat(reset.physics().x).isEqualTo(map.spawn().x());
@@ -65,7 +65,7 @@ class HardcoreTest {
     hardcore.restore(before);
     assertThat(race.tick(PlayerInput.NEUTRAL).movement()).contains("SPLAT");
     assertThat(race.finished()).isTrue();
-    assertThat(hardcore.tick(PlayerInput.NEUTRAL, true).movement()).contains("SPLAT");
+    assertThat(hardcore.tick(PlayerInput.NEUTRAL, "HARDCORE").movement()).contains("SPLAT");
     assertThat(hardcore.finished()).isFalse();
     assertThat(hardcore.adventure().completed()).isFalse();
   }

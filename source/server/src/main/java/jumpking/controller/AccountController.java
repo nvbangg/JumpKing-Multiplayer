@@ -1,7 +1,5 @@
 package jumpking.controller;
 
-import static jumpking.dto.AccountDto.*;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -9,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import jumpking.dto.AccountCredentials;
 import jumpking.dto.AccountDto;
-import jumpking.exception.ApiException;
 import jumpking.security.IdentityContext;
 import jumpking.service.AccountService;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
@@ -50,23 +47,23 @@ public class AccountController {
     this.authority = authority;
   }
 
-  @PostMapping("/register")
-  public AccountDto.Me register(
-      @Valid @RequestBody AccountCredentials.Registration form,
-      HttpServletRequest request,
-      HttpServletResponse response) {
-    if (identity.account() != null)
-      throw new ApiException(409, "CONFLICT", "Sign out before creating another account");
-    var account = accounts.register(form, value -> signIn(value, request, response));
-    return new AccountDto.Me(true, account);
-  }
-
   @PostMapping("/login")
   public AccountDto.Me login(
       @Valid @RequestBody AccountCredentials.Login form,
       HttpServletRequest request,
       HttpServletResponse response) {
     var account = accounts.login(form, identity.owner(), value -> signIn(value, request, response));
+    return new AccountDto.Me(true, account);
+  }
+
+  @PostMapping("/google")
+  public AccountDto.Me google(
+      @Valid @RequestBody AccountCredentials.GoogleLogin form,
+      HttpServletRequest request,
+      HttpServletResponse response) {
+    var account =
+        accounts.loginWithGoogle(
+            form.idToken(), identity.owner(), value -> signIn(value, request, response));
     return new AccountDto.Me(true, account);
   }
 
@@ -91,7 +88,7 @@ public class AccountController {
         ResponseCookie.from(name, "")
             .path("/")
             .httpOnly(true)
-            .sameSite("Lax")
+            .sameSite(cookie.getSameSite() == null ? null : cookie.getSameSite().attributeValue())
             .secure(Boolean.TRUE.equals(cookie.getSecure()))
             .maxAge(0)
             .build()

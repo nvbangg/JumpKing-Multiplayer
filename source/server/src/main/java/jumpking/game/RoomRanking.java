@@ -8,7 +8,6 @@ public final class RoomRanking {
 
   public record Score(
       String playerId,
-      String nickname,
       String status,
       double currentProgress,
       double maxProgress,
@@ -25,10 +24,10 @@ public final class RoomRanking {
     }
   }
 
-  public record Ranked(Score score, int rank, boolean winner) {}
+  public record Ranked(Score score, int rank) {}
 
-  public static List<Ranked> rank(List<Score> scores, String mode, boolean allowWinners) {
-    if (!Set.of("RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK").contains(mode))
+  public static List<Ranked> rank(List<Score> scores, String mode, boolean hasTimeLimit) {
+    if (!Set.of("RACE", "EASY", "HARDCORE", "NO_WALK").contains(mode))
       throw new IllegalArgumentException("Invalid Room mode");
     Comparator<Score> comparator =
         (a, b) -> {
@@ -38,26 +37,25 @@ public final class RoomRanking {
             return Long.compare(a.finishTicks, b.finishTicks);
           }
           int progress = Double.compare(b.currentProgress, a.currentProgress);
-          return progress != 0 || !mode.equals("TIME_LIMIT")
+          return progress != 0 || !hasTimeLimit
               ? progress
               : Double.compare(b.maxProgress, a.maxProgress);
         };
-    return order(scores, comparator, allowWinners);
+    return order(scores, comparator);
   }
 
   public static List<Ranked> currentHeight(List<Score> scores) {
-    return order(scores, Comparator.comparingDouble(Score::currentProgress).reversed(), false);
+    return order(scores, Comparator.comparingDouble(Score::currentProgress).reversed());
   }
 
-  private static List<Ranked> order(
-      List<Score> scores, Comparator<Score> comparator, boolean allowWinners) {
+  private static List<Ranked> order(List<Score> scores, Comparator<Score> comparator) {
     var sorted = scores.stream().sorted(comparator.thenComparing(Score::playerId)).toList();
     var result = new ArrayList<Ranked>();
     int rank = 0;
     for (int index = 0; index < sorted.size(); index++) {
       var score = sorted.get(index);
       if (index == 0 || comparator.compare(sorted.get(index - 1), score) != 0) rank = index + 1;
-      result.add(new Ranked(score, rank, allowWinners && rank == 1 && score.finishTicks != null));
+      result.add(new Ranked(score, rank));
     }
     return List.copyOf(result);
   }

@@ -24,80 +24,70 @@
     "name": "Colossal Drain",
     "finish": {
       "screen": 9,
-      "minCenterX": 8,
+      "minCenterX": 152,
       "requiresGrounded": true,
-      "minProgress": 3384
+      "minProgress": 3464
     }
   },
   {
     "level": 4,
-    "name": "False Kings Keep",
+    "name": "Bargainburg",
     "finish": {
-      "screen": 13,
-      "minCenterX": 216,
+      "screen": 25,
+      "minCenterX": 208,
       "requiresGrounded": true,
-      "minProgress": 4912
+      "minProgress": 9016
     }
   },
   {
     "level": 5,
-    "name": "Bargainburg",
+    "name": "Windswept Bluff",
     "finish": {
-      "screen": 18,
-      "minCenterX": 128,
+      "screen": 25,
+      "minCenterX": 200,
       "requiresGrounded": true,
-      "minProgress": 6752
+      "minProgress": 9136
     }
   },
   {
     "level": 6,
-    "name": "Great Frontier",
+    "name": "Stormwall Pass",
     "finish": {
-      "screen": 24,
-      "minCenterX": 96,
+      "screen": 32,
+      "minCenterX": 72,
       "requiresGrounded": true,
-      "minProgress": 8912
+      "minProgress": 11504,
+      "maxCenterX": 160
     }
   },
   {
     "level": 7,
-    "name": "Stormwall Pass",
+    "name": "Chapel Perilous",
     "finish": {
-      "screen": 31,
-      "minCenterX": 24,
+      "screen": 36,
+      "minCenterX": 416,
       "requiresGrounded": true,
-      "minProgress": 11392,
-      "maxCenterX": 72
+      "minProgress": 12960
     }
   },
   {
     "level": 8,
-    "name": "Chapel Perilous",
+    "name": "Blue Ruin",
     "finish": {
-      "screen": 35,
-      "minCenterX": 288,
+      "screen": 39,
+      "minCenterX": 304,
       "requiresGrounded": true,
-      "minProgress": 12584
+      "minProgress": 14096
     }
   },
   {
     "level": 9,
-    "name": "Blue Ruin",
+    "name": "The Tower",
     "finish": {
-      "screen": 38,
-      "minCenterX": 248,
+      "screen": 40,
+      "minCenterX": 328,
       "requiresGrounded": true,
-      "minProgress": 13912
-    }
-  },
-  {
-    "level": 10,
-    "name": "Main Babe",
-    "finish": {
-      "screen": 42,
-      "minCenterX": 336,
-      "requiresGrounded": true,
-      "minProgress": 0
+      "minProgress": 14560
     }
   }
 ]

@@ -21,25 +21,24 @@ public class SchemaRepository {
                 "SELECT constraint_name FROM information_schema.table_constraints WHERE constraint_schema=DATABASE() AND constraint_type='CHECK' AND enforced='YES'")
             .containsAll(
                 Set.of(
-                    "ck_matches_mode",
-                    "ck_matches_map_level",
-                    "ck_matches_items",
                     "ck_matches_ticks",
                     "ck_matches_end",
-                    "ck_runs_kind",
                     "ck_runs_counters",
                     "ck_runs_end",
                     "ck_runs_finish",
                     "ck_runs_snapshot",
-                    "ck_runs_rank",
-                    "ck_runs_winner")),
+                    "ck_runs_rank")),
         "Required enforced CHECK constraints missing");
     require(
         names(
-                "SELECT index_name FROM information_schema.statistics WHERE table_schema=DATABASE() AND non_unique=0")
+                "SELECT CONCAT(table_name,':',index_name,':',GROUP_CONCAT(column_name ORDER BY seq_in_index)) FROM information_schema.statistics WHERE table_schema=DATABASE() AND non_unique=0 GROUP BY table_name,index_name")
             .containsAll(
-                Set.of("uq_users_username", "uq_active_community_user", "uq_runs_match_user")),
-        "Required unique indexes missing");
+                Set.of(
+                    "users:uq_users_username:username",
+                    "users:uq_users_google_id:google_id",
+                    "play_runs:uq_active_community_user:active_community_user_id",
+                    "play_runs:uq_runs_match_user:match_id,user_id")),
+        "Required unique indexes missing or differ");
     require(
         names(
                 "SELECT constraint_name FROM information_schema.referential_constraints WHERE constraint_schema=DATABASE() AND delete_rule IN ('RESTRICT','NO ACTION')")
@@ -52,7 +51,7 @@ public class SchemaRepository {
         "InnoDB required");
     require(
         count(
-                "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='play_runs' AND column_name='active_community_user_id' AND extra LIKE '%GENERATED%' AND generation_expression LIKE '%COMMUNITY%'")
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='play_runs' AND column_name='active_community_user_id' AND extra LIKE '%GENERATED%' AND UPPER(generation_expression) LIKE '%MATCH_ID%' AND UPPER(generation_expression) LIKE '%ACTIVE%'")
             == 1,
         "Community unique generated column missing");
     require(
@@ -62,7 +61,7 @@ public class SchemaRepository {
                 Set.of(
                     "ix_runs_owner_history:user_id,ended_at,id",
                     "uq_runs_match_user:match_id,user_id",
-                    "ix_runs_leaderboard:kind,status")),
+                    "ix_runs_leaderboard:match_id,status")),
         "Records indexes differ");
   }
 

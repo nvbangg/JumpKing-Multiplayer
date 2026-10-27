@@ -22,7 +22,6 @@ final class RoomMatch {
     long peak;
     Long finish;
     Integer rank;
-    boolean winner;
     Map<String, Object> ending;
     Instant endedAt;
 
@@ -62,14 +61,14 @@ final class RoomMatch {
       throw new IllegalArgumentException("Invalid Room roster");
     this.roomId = roomId;
     this.settings = settings;
-    var map = shared.roomMap(settings.mapLevel());
+    var map = shared.roomMap(settings.mapId());
     var physics = shared.tuning();
     tickRate = physics.tickRate;
     items =
         new RoomItems(
             physics, shared.rules().path("items"), java.util.random.RandomGenerator.getDefault());
     limitTicks =
-        settings.mode().equals("TIME_LIMIT") ? settings.timeLimitMinutes() * 60L * tickRate : 0;
+        settings.timeLimitMinutes() == null ? 0 : settings.timeLimitMinutes() * 60L * tickRate;
     JsonNode adventure = shared.adventure();
     for (var spec : roster) {
       var input = new InputFrames(limits.inputFrames(), limits.inputTimeoutMs());
@@ -79,7 +78,13 @@ final class RoomMatch {
           new Player(
               spec,
               new GameSimulation(
-                  map, physics, adventure, flyAllowed, settings.mode().equals("NO_WALK")),
+                  map,
+                  physics,
+                  adventure,
+                  shared.roomScenes(),
+                  settings.mapId(),
+                  flyAllowed,
+                  settings.mode().equals("NO_WALK")),
               input));
     }
   }
@@ -87,21 +92,21 @@ final class RoomMatch {
   void start(Instant now) {
     if (startedAt != null) throw new IllegalStateException("Match has already started");
     startedAt = millis(now);
-    if (settings.itemsEnabled()) items.start(players.keySet());
+    if (settings.itemCooldownMinutes() != null) items.start(players.keySet());
   }
 
   List<Events> tick(long now, Instant instant) {
     if (startedAt == null || endedAt != null) return List.of();
     ticks++;
-    if (settings.itemsEnabled()) items.advance(ticks);
+    if (settings.itemCooldownMinutes() != null) items.advance(ticks);
     var events = new ArrayList<Events>();
     for (var player : players.values()) {
       if (!player.status.equals("ACTIVE")) continue;
       var input = player.input.poll(now);
       if (input.cancel()) player.game.physics().cancelInput();
-      if (settings.itemsEnabled()) items.hit(player.game.physics(), ticks);
-      var effect = player.game.tick(input.input(), settings.mode().equals("HARDCORE"));
-      if (settings.itemsEnabled() && effect.movement().contains("JUMP"))
+      if (settings.itemCooldownMinutes() != null) items.hit(player.game.physics(), ticks);
+      var effect = player.game.tick(input.input(), settings.mode());
+      if (settings.itemCooldownMinutes() != null && effect.movement().contains("JUMP"))
         items.takeoff(
             player.spec.playerId, player.game.physics(), ticks, settings.itemCooldownMinutes());
       events.add(new Events(player, effect));
@@ -111,18 +116,11 @@ final class RoomMatch {
       if (isLanded) player.currentProgress = progress;
       if (progress > player.maximum) {
         player.maximum = progress;
-        player.peak = player.game.physics().snapshot().ticks;
+        player.peak = state.ticks;
       }
       if (player.game.finished()) {
         player.status = "FINISHED";
         player.finish = ticks;
-        if (settings.mapLevel() == RoomSettings.FULL_MAP_LEVEL)
-          player.ending =
-              Map.of(
-                  "screen",
-                  player.game.physics().snapshot().screen,
-                  "ravenDone",
-                  player.game.adventure().ravenDone());
       }
     }
     if (players.values().stream().anyMatch(player -> player.finish != null))
@@ -167,16 +165,15 @@ final class RoomMatch {
                 player ->
                     new RoomRanking.Score(
                         player.spec.playerId,
-                        player.spec.nickname,
                         player.status,
                         player.currentProgress,
                         player.maximum,
                         player.finish))
             .toList();
-    for (var result : RoomRanking.rank(scores, settings.mode(), reason.equals("FINISH"))) {
+    for (var result :
+        RoomRanking.rank(scores, settings.mode(), settings.timeLimitMinutes() != null)) {
       var player = players.get(result.score().playerId());
       player.rank = result.rank();
-      player.winner = result.winner();
     }
   }
 
@@ -189,7 +186,6 @@ final class RoomMatch {
                   return new RoomRuns.Run(
                       player.runId,
                       player.spec.owner,
-                      player.spec.nickname,
                       player.status,
                       pose.ticks,
                       pose.jumps,
@@ -199,7 +195,6 @@ final class RoomMatch {
                       player.peak,
                       player.finish,
                       player.rank,
-                      player.winner,
                       player.endedAt);
                 })
             .toList();
@@ -208,15 +203,22 @@ final class RoomMatch {
         roomId,
         settings.mode(),
         settings.timeLimitMinutes(),
-        settings.mapLevel(),
-        settings.itemsEnabled(),
+        settings.mapId(),
         settings.itemCooldownMinutes(),
         revision,
         startedAt,
         endedAt,
         ticks,
         reason,
-        runs);
+        runs,
+        settings.mapId() == RoomSettings.FINAL_MAP_ID
+            ? players.values().stream()
+                .filter(
+                    player ->
+                        player.status.equals("FINISHED") && player.game.adventure().ravenDone())
+                .map(player -> player.spec.owner())
+                .collect(java.util.stream.Collectors.toSet())
+            : Set.of());
   }
 
   Map<String, Object> results() {
@@ -235,7 +237,6 @@ final class RoomMatch {
                   row.put("rank", player.rank);
                   row.put("currentProgress", player.currentProgress);
                   row.put("maxProgress", player.maximum);
-                  row.put("isWinner", player.winner);
                   row.put("finishTimeMs", player.finish == null ? null : ms(player.finish));
                   return row;
                 })
@@ -245,8 +246,8 @@ final class RoomMatch {
         id,
         "reason",
         reason,
-        "mapLevel",
-        settings.mapLevel(),
+        "mapId",
+        settings.mapId(),
         "durationMs",
         ms(ticks),
         "results",
@@ -263,13 +264,12 @@ final class RoomMatch {
                 player ->
                     new RoomRanking.Score(
                         player.spec.playerId,
-                        player.spec.nickname,
                         player.status,
                         player.currentProgress,
                         player.maximum,
                         player.finish))
             .toList();
-    return RoomRanking.rank(scores, settings.mode(), false).stream()
+    return RoomRanking.rank(scores, settings.mode(), settings.timeLimitMinutes() != null).stream()
         .map(
             row -> {
               var spec = players.get(row.score().playerId()).spec;

@@ -1,3 +1,4 @@
+import { Box } from "lucide-react";
 import rules from "../../../../common/rules.json";
 import type { RoomItemSettings } from "../../game/items";
 
@@ -11,44 +12,37 @@ export function ItemSettings({
 	onChange: (patch: Partial<RoomItemSettings>) => void;
 }) {
 	return (
-		<>
-			<label className="mode-setting item-toggle">
-				<span>Items</span>
-				<input
-					type="checkbox"
-					aria-label="Items"
-					checked={value.itemsEnabled}
-					disabled={disabled}
-					onChange={(event) => onChange({ itemsEnabled: event.target.checked })}
-				/>
-			</label>
-			{value.itemsEnabled && (
-				<label className="mode-setting">
-					Item Cooldown
-					<select
-						aria-label="Item Cooldown"
-						value={value.itemCooldownMinutes}
-						disabled={disabled}
-						onChange={(event) =>
-							onChange({ itemCooldownMinutes: Number(event.target.value) })
-						}
-					>
-						{Array.from(
-							{
-								length:
-									rules.items.cooldownMaxMinutes -
-									rules.items.cooldownMinMinutes +
-									1,
-							},
-							(_, i) => i + rules.items.cooldownMinMinutes,
-						).map((minutes) => (
-							<option key={minutes} value={minutes}>
-								{minutes} min
-							</option>
-						))}
-					</select>
-				</label>
-			)}
-		</>
+		<label className="mode-setting">
+			<span className="setting-label">
+				<Box aria-hidden="true" />
+				Items cooldown
+			</span>
+			<select
+				aria-label="Items cooldown"
+				value={value.itemCooldownMinutes ?? "OFF"}
+				disabled={disabled}
+				onChange={(event) => {
+					onChange({
+						itemCooldownMinutes:
+							event.target.value === "OFF" ? null : Number(event.target.value),
+					});
+				}}
+			>
+				<option value="OFF">No items</option>
+				{Array.from(
+					{
+						length:
+							rules.items.cooldownMaxMinutes -
+							rules.items.cooldownMinMinutes +
+							1,
+					},
+					(_, i) => i + rules.items.cooldownMinMinutes,
+				).map((minutes) => (
+					<option key={minutes} value={minutes}>
+						{minutes} min
+					</option>
+				))}
+			</select>
+		</label>
 	);
 }

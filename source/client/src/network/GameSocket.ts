@@ -94,6 +94,7 @@ export interface RoomMember {
 	connected: boolean;
 	paused: boolean | null;
 	nextMatchConfirmed: boolean | null;
+	nextMatchJoined?: boolean;
 }
 export interface RoomState {
 	visibility?: "PRIVATE" | "PUBLIC";
@@ -105,7 +106,7 @@ export interface RoomState {
 		| (RoomItemSettings & {
 				mode: string;
 				timeLimitMinutes: number | null;
-				mapLevel?: number;
+				mapId: number;
 		  })
 		| null;
 	members: RoomMember[];
@@ -119,11 +120,10 @@ export interface ResultRow {
 	rank: number;
 	currentProgress: number;
 	maxProgress: number;
-	isWinner: boolean;
 	finishTimeMs: number | null;
 }
 export interface MatchResult {
-	mapLevel?: number;
+	mapId: number;
 	playId: string;
 	reason: string;
 	durationMs: number;
@@ -139,6 +139,7 @@ export class GameSocket {
 	private pending = new Map<
 		string,
 		{
+			type: string;
 			resolve: (value: Message) => void;
 			reject: (error: Error) => void;
 			timer: ReturnType<typeof setTimeout>;
@@ -192,9 +193,9 @@ export class GameSocket {
 		}
 
 		let status: "good" | "fair" | "poor" = "good";
-		if (rtt > 150 || this.stallsCount > 2) {
+		if (rtt > 150) {
 			status = "poor";
-		} else if (rtt > 60 || jitter > 30) {
+		} else if (rtt >= 100) {
 			status = "fair";
 		}
 
@@ -208,9 +209,6 @@ export class GameSocket {
 
 		for (const listener of this.qualityListeners) {
 			listener(this.currentQuality);
-		}
-		for (const listener of this.listeners) {
-			listener("NETWORK_QUALITY", { ...this.currentQuality });
 		}
 	}
 
@@ -387,6 +385,8 @@ export class GameSocket {
 			const request = message.requestId
 				? this.pending.get(message.requestId)
 				: undefined;
+			// Không đưa lỗi của command đã hết hạn hoặc kết thúc về màn hình hiện tại.
+			if (message.type === "ERROR" && message.requestId && !request) return;
 			if (request && message.requestId) {
 				clearTimeout(request.timer);
 				this.pending.delete(message.requestId);
@@ -484,11 +484,16 @@ export class GameSocket {
 					this.playContext = { playId, generation };
 				}
 			}
-			this.onMessage(
-				message.type,
-				message.payload,
-				message.requestId !== undefined,
-			);
+			// Form chat và thao tác item tự hiển thị lỗi từ Promise, không lặp lại ở màn hình khác.
+			if (
+				message.type !== "ERROR" ||
+				!["CHAT_SEND", "USE_ITEM"].includes(request?.type || "")
+			)
+				this.onMessage(
+					message.type,
+					message.payload,
+					message.requestId !== undefined,
+				);
 			for (const listener of this.listeners)
 				listener(message.type, message.payload);
 		};
@@ -518,7 +523,7 @@ export class GameSocket {
 					),
 				);
 			}, NETWORK.timeoutMs);
-			this.pending.set(requestId, { resolve, reject, timer });
+			this.pending.set(requestId, { type, resolve, reject, timer });
 			try {
 				const message = JSON.stringify({ v: 1, type, requestId, payload });
 				if (new TextEncoder().encode(message).length > NETWORK.maxMessageBytes)

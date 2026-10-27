@@ -5,6 +5,9 @@ server.address=127.0.0.1
 server.port=8080
 # Origin HTTPS mà người chơi dùng để mở game
 app.allowed-origins=https://game.yourdomain.com
+# Khi frontend khác site (Cloudflare Pages), thay origin trên và bật cookie cross-site:
+# app.allowed-origins=https://jumpking-multiplayer.pages.dev
+# server.servlet.session.cookie.same-site=none
 # Thư mục bền vững ngoài JAR; chỉ user chạy dịch vụ được đọc/ghi.
 server.servlet.session.store-dir=${APP_SESSION_STORE_DIR:./.local/sessions}
 app.fly-enabled=${FLY_ENABLED:false}

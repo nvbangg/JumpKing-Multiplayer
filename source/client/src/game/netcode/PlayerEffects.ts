@@ -17,6 +17,7 @@ export class PlayerEffects {
 		selfId: string,
 		playId: string,
 		screen: number,
+		predictedPlayerId?: string,
 	): PlayerEffect[] {
 		if (payload.roomId !== roomId || !Array.isArray(payload.events)) return [];
 		if (this.room !== roomId) {
@@ -38,6 +39,8 @@ export class PlayerEffects {
 				throw new Error("Invalid player effect");
 			if (value.eventSeq <= this.last) continue;
 			this.last = value.eventSeq;
+			// Âm thanh bản thân đã phát ở prediction; vẫn đánh dấu sequence để không replay.
+			if (value.playerId === predictedPlayerId) continue;
 			if (
 				value.playerId === selfId
 					? value.playId === playId

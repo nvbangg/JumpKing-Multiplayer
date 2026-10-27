@@ -85,6 +85,38 @@ class RoomItemsTest {
   }
 
   @Test
+  void bananaLimitIsCheckedWhenPreparingAndAgainAtTakeoffWithoutConsumingTheItem() {
+    var rules = shared.rules().path("items").deepCopy();
+    ((com.fasterxml.jackson.databind.node.ObjectNode) rules).put("maximumBananas", 1);
+    var items = new RoomItems(p, rules, new Random(0));
+    items.start(List.of("a", "b"));
+    items.slots.get("b").held = RoomItems.Kind.BANANA;
+    var first = ground("#", false);
+    var second = ground("#", false);
+    var pose = second.snapshot();
+    pose.x = 200;
+    second.restore(pose);
+    items.use("a", first, Map.of(), 0, 3);
+    items.use("b", second, Map.of(), 0, 3);
+    items.takeoff("a", first, 0, 3);
+    items.takeoff("b", second, 0, 3);
+    var rejected = items.view("b", 0, 0, 360);
+    assertThat(rejected.bananas()).hasSize(1);
+    assertThat(rejected.held()).isEqualTo(RoomItems.Kind.BANANA);
+    assertThat(rejected.bananaArmed()).isFalse();
+    assertThat(rejected.cooldownMs()).isZero();
+    assertThatThrownBy(() -> items.use("b", second, Map.of(), 1, 3))
+        .isInstanceOfSatisfying(
+            jumpking.exception.ApiException.class,
+            error -> assertThat(error.code()).isEqualTo("ITEM_UNAVAILABLE"));
+    items.hit(first, 1);
+    items.use("b", second, Map.of(), 2, 3);
+    items.takeoff("b", second, 2, 3);
+    assertThat(items.view("b", 2, 0, 360).bananas()).hasSize(1);
+    assertThat(items.slots.get("b").held).isNull();
+  }
+
+  @Test
   void rockTargetsActualHighestOtherPlayerAndNeverStacksVelocity() {
     var items = items("a", "b");
     items.slots.get("a").held = RoomItems.Kind.ROCK;
@@ -130,6 +162,47 @@ class RoomItemsTest {
         .hasMessageContaining("No other player");
     assertThat(items.view("a", 0, 0, 360).cooldownMs()).isZero();
     assertThat(items.slots.get("a").held).isEqualTo(RoomItems.Kind.ROCK);
+  }
+
+  @Test
+  void bootsActivateOneBoostAndStartCooldownWithoutStacking() {
+    var items = items("a");
+    var own = ground("#", false);
+    items.slots.get("a").held = RoomItems.Kind.BOOTS;
+    items.use("a", own, Map.of(), 100, 3);
+    assertThat(own.snapshot().jumpBoost).isTrue();
+    assertThat(items.view("a", 100, 0, 360).held()).isNull();
+    assertThat(items.view("a", 100, 0, 360).cooldownMs()).isEqualTo(180_000);
+    items.slots.get("a").held = RoomItems.Kind.BOOTS;
+    assertThatThrownBy(() -> items.use("a", own, Map.of(), 101, 3))
+        .hasMessageContaining("already active");
+    assertThat(items.slots.get("a").held).isEqualTo(RoomItems.Kind.BOOTS);
+    for (int i = 0; i < p.chargeTicks; i++) own.tick(new PlayerInput(false, true, true));
+    assertThat(own.snapshot().vy).isEqualTo((double) (float) (p.jumpVelocity * Math.sqrt(2)));
+    assertThat(own.snapshot().vx).isEqualTo(p.jumpSpeed);
+    assertThat(own.snapshot().jumpBoost).isFalse();
+  }
+
+  @Test
+  void bootsSurviveCanceledChargeSnowAndRespawnUntilARealJump() {
+    var sim = ground("N", false);
+    sim.boostJump();
+    for (int i = 0; i < 4; i++) sim.tick(new PlayerInput(false, false, true));
+    sim.cancelInput();
+    sim.tick(PlayerInput.NEUTRAL);
+    for (int i = 0; i < 4; i++) sim.tick(new PlayerInput(false, false, true));
+    sim.tick(PlayerInput.NEUTRAL);
+    assertThat(sim.snapshot().jumps).isZero();
+    assertThat(sim.snapshot().jumpBoost).isTrue();
+    var restored = ground("N", false);
+    restored.restore(sim.snapshot());
+    restored.respawnAt(100, 326);
+    assertThat(restored.snapshot().jumpBoost).isTrue();
+    for (int i = 0; i < 5; i++) restored.tick(PlayerInput.NEUTRAL);
+    for (int i = 0; i < p.chargeTicks; i++) restored.tick(new PlayerInput(false, false, true));
+    assertThat(restored.snapshot().jumps).isEqualTo(1);
+    assertThat(restored.snapshot().jumpBoost).isFalse();
+    assertThat(ground("N", false).snapshot().jumpBoost).isFalse();
   }
 
   @Test

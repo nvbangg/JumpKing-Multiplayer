@@ -5,4 +5,5 @@ export const PHYSICS = Object.freeze({
 	...raw,
 	gravity,
 	jumpVelocity: -Math.fround(raw.jumpGravityMultiplier * gravity),
+	jumpBoostVelocityMultiplier: Math.sqrt(raw.jumpBoostHeightMultiplier),
 });

@@ -24,7 +24,11 @@ public class IdentityContext {
   }
 
   public static Account accountView(User user) {
-    return new Account(user.getId().toString(), user.getUsername(), user.isCrownUnlocked());
+    return new Account(
+        user.getId().toString(),
+        user.getUsername(),
+        user.getCrown(),
+        user.getPasswordHash() != null);
   }
 
   public Account requireAccount() {

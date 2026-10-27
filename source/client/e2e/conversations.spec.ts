@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import mainMap from "../../common/maps/main-babe.json" with { type: "json" };
 
 test("native bitmap NPC and readable dialogue render while gameplay continues", async ({
 	page,
@@ -10,15 +11,12 @@ test("native bitmap NPC and readable dialogue render while gameplay continues", 
 			errors.push(message.text());
 	});
 	await page.goto("/");
-	const result = await page.evaluate(async () => {
+	const result = await page.evaluate(async (map) => {
 		const renderer = "/src/game/presentation/createGame.ts",
 			simulation = "/src/game/simulation/GameSimulation.ts";
 		const { createGame } = await import(renderer),
 			{ GameSimulation } = await import(simulation);
-		const [manifest, map] = await Promise.all([
-			fetch("/assets/manifest.json").then((r) => r.json()),
-			fetch("/shared/maps/main-babe.json").then((r) => r.json()),
-		]);
+		const manifest = await (await fetch("/assets/manifest.json")).json();
 		const gameState = new GameSimulation(map),
 			parent = document.createElement("div");
 		parent.style.cssText =
@@ -34,7 +32,7 @@ test("native bitmap NPC and readable dialogue render while gameplay continues", 
 						nickname: "Player",
 						color: "#ffffff",
 						state: s.physics,
-						crowned: gameState.adventure.completed,
+						crown: gameState.adventure.completed ? "GOLD" : "NONE",
 						adventure: s.adventure,
 					},
 					peers: [],
@@ -97,7 +95,7 @@ test("native bitmap NPC and readable dialogue render while gameplay continues", 
 			game.destroy(true);
 			parent.remove();
 		}
-	});
+	}, mainMap);
 	expect(result.first).toMatchObject({ visible: true, type: "BitmapText" });
 	expect(result.first.text).toContain("You");
 	expect(result.jumps).toBe(1);

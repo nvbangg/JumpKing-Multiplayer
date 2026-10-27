@@ -21,7 +21,7 @@ test("Account totals come from committed Community data and survive reload", asy
 	await page.waitForTimeout(220);
 	await page.keyboard.up("Space");
 	await page.waitForTimeout(900);
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await page.getByRole("button", { name: "Save & Exit", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "Continue", exact: true }),
@@ -35,6 +35,12 @@ test("Account totals come from committed Community data and survive reload", asy
 	expect(total.totalPlayTimeMs).toBe(community.elapsedTimeMs);
 	await page.reload();
 	const panel = page.getByLabel("Total statistics");
+	await expect(
+		panel
+			.locator("div")
+			.filter({ has: page.locator("dt", { hasText: /^Total Play Time$/ }) })
+			.locator("dd"),
+	).toHaveText(/^(?:\d+:)?\d{2}:\d{2} s$/);
 	await expect(
 		panel
 			.locator("div")
@@ -54,38 +60,43 @@ test("History paginates owned Community results without depending on local stora
 }) => {
 	test.setTimeout(90000);
 	await page.goto("/");
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await page
 		.getByLabel("Username", { exact: true })
 		.fill(required(process.env.E2E_HISTORY_USERNAME));
 	await page
 		.getByLabel("Password", { exact: true })
 		.fill(required(process.env.E2E_HISTORY_PASSWORD));
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await expect(
 		page.getByRole("button", {
 			name: required(process.env.E2E_HISTORY_USERNAME),
 			exact: true,
 		}),
 	).toBeVisible();
+	await page.locator(".account-actions button").click();
 	await page.getByRole("button", { name: "History", exact: true }).click();
 	const list = page.getByLabel("Game history");
 	await expect(
-		list.getByRole("button").filter({ hasText: "ABANDONED" }),
+		list.getByRole("button").filter({ hasText: "Abandoned" }),
 	).toHaveCount(20);
 	await list.getByRole("button", { name: "Load More", exact: true }).click();
 	await expect(
-		list.getByRole("button").filter({ hasText: "ABANDONED" }),
+		list.getByRole("button").filter({ hasText: "Abandoned" }),
 	).toHaveCount(21);
 	await expect(
 		list.getByRole("button", { name: "Load More", exact: true }),
 	).toBeHidden();
 	await list
 		.getByRole("button")
-		.filter({ hasText: "ABANDONED" })
+		.filter({ hasText: "Abandoned" })
 		.first()
 		.click();
-	await expect(page.locator(".record-detail")).toContainText("COMMUNITY");
+	await expect(page.locator(".record-detail")).toContainText("Community");
 	await page.evaluate(() => {
 		indexedDB.open = () => {
 			throw new DOMException("Blocked by test", "SecurityError");
@@ -97,7 +108,7 @@ test("History paginates owned Community results without depending on local stora
 			page
 				.getByLabel("Game history")
 				.getByRole("button")
-				.filter({ hasText: "ABANDONED" }),
+				.filter({ hasText: "Abandoned" }),
 		).toHaveCount(20);
 	} finally {
 		await page.evaluate(() => Reflect.deleteProperty(indexedDB, "open"));

@@ -34,7 +34,7 @@ public class PersistenceWorkers implements AutoCloseable {
   }
 
   public int completionCapacity(int players) {
-    // Mỗi slot: hàng chờ ghi, một write đang chạy và một operation load/transfer.
+    // Mỗi slot: hàng chờ ghi, một write đang chạy và một operation tải/thay lượt.
     return Math.multiplyExact(players, settings.persistenceRunQueue() + 2);
   }
 

@@ -33,10 +33,11 @@ class RoomNoWalkIT {
   }
 
   @Autowired RoomRaceIT.TestTime time;
-  @Autowired RaceRoom server;
+  @Autowired RoomManager server;
   @LocalServerPort int port;
 
-  private void step(GameClient client, String play, int seq, boolean jump) throws Exception {
+  private void step(GameClient client, String play, int seq, int direction, boolean jump)
+      throws Exception {
     client.input(
         Map.of(
             "playId",
@@ -46,9 +47,9 @@ class RoomNoWalkIT {
             "seq",
             seq,
             "left",
-            false,
+            direction < 0,
             "right",
-            true,
+            direction > 0,
             "jump",
             jump));
     long elapsed =
@@ -61,7 +62,7 @@ class RoomNoWalkIT {
   }
 
   @Test
-  void groundIntentCannotWalkButJumpVelocityAndAirborneWallBounceRemainNative() throws Exception {
+  void groundIntentCannotWalkAfterLandingAndAirborneWallBounceRemainNative() throws Exception {
     try (var a = new GameClient(port);
         var b = new GameClient(port)) {
       a.register();
@@ -82,16 +83,36 @@ class RoomNoWalkIT {
               .asText();
       time.advance(3000);
       a.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
-      for (int seq = 1; seq <= 10; seq++) step(a, play, seq, false);
+      int seq = 1;
+      for (int i = 0; i < 10; i++) step(a, play, seq++, 1, false);
       var standing = a.snapshot().path("self").path("simulation").path("physics");
       assertThat(standing.path("x").asDouble()).isEqualTo(231);
       assertThat(standing.path("vx").asDouble()).isZero();
-      for (int seq = 11; seq <= 22; seq++) step(a, play, seq, true);
-      step(a, play, 23, false);
+      for (int i = 0; i < 4; i++) step(a, play, seq++, 1, true);
+      step(a, play, seq++, 1, false);
       var jumping = a.snapshot().path("self").path("simulation").path("physics");
       assertThat(jumping.path("jumps").asInt()).isEqualTo(1);
       assertThat(jumping.path("x").asDouble()).isGreaterThan(231);
       assertThat(jumping.path("vx").asDouble()).isEqualTo(3.5);
+      for (int i = 0;
+          i < 60
+              && !a.snapshot()
+                  .path("self")
+                  .path("simulation")
+                  .path("physics")
+                  .path("grounded")
+                  .asBoolean();
+          i++) step(a, play, seq++, 1, false);
+      var landed = a.snapshot().path("self").path("simulation").path("physics");
+      assertThat(landed.path("grounded").asBoolean()).isTrue();
+      assertThat(landed.path("vx").asDouble()).isZero();
+      assertThat(landed.path("falls").asInt()).isZero();
+      for (int direction : new int[] {-1, 0, 1}) {
+        for (int i = 0; i < 3; i++) step(a, play, seq++, direction, false);
+        var stopped = a.snapshot().path("self").path("simulation").path("physics");
+        assertThat(stopped.path("x").asDouble()).isEqualTo(landed.path("x").asDouble());
+        assertThat(stopped.path("vx").asDouble()).isZero();
+      }
       Object room = ((Map<?, ?>) ReflectionTestUtils.getField(server, "rooms")).get(roomId);
       var arranged = new CompletableFuture<Void>();
       ((SerialExecutor) ReflectionTestUtils.getField(room, "actor"))
@@ -114,7 +135,7 @@ class RoomNoWalkIT {
                 }
               });
       arranged.get(8, TimeUnit.SECONDS);
-      step(a, play, 24, false);
+      step(a, play, seq++, 1, false);
       assertThat(a.snapshot().path("self").path("simulation").path("physics").path("vx").asDouble())
           .isNegative();
       a.ok("END_MATCH", Map.of());

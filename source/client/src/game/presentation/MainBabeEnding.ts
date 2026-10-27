@@ -3,6 +3,7 @@ import { required } from "../../required";
 import type { AssetManifest } from "../content/assets";
 import { PHYSICS as P } from "../simulation/tuning";
 import { PRESENTATION as V } from "./config";
+import { crownTexture } from "./crownTextures";
 import {
 	endingFrameName,
 	ENDING_FRAMES as FRAMES,
@@ -106,7 +107,9 @@ export class MainBabeEnding {
 		for (const sprite of actor.sprites) sprite.destroy();
 		const textures = [
 			actor.texture,
-			...(actor.king ? (this.crowned ? [this.manifest.crown] : []) : []),
+			...(actor.king && this.crowned
+				? [crownTexture(this.manifest.crown, this.signal.crown)]
+				: []),
 		];
 		actor.sprites = textures.map((texture) => {
 			const frame = required(FRAMES[actor.frame]);
@@ -252,7 +255,9 @@ export class MainBabeEnding {
 			2,
 			raven ? "ravenCrown.0" : "cherub.deliver0",
 			true,
-			raven ? "props/textures/raven/raven_crown" : "king/base",
+			raven
+				? crownTexture("props/textures/raven/raven_crown", this.signal.crown)
+				: "king/base",
 		);
 		actor.root.setName("ending-crown-carrier");
 		actor.root.setVisible(false);
@@ -495,7 +500,7 @@ export class MainBabeEnding {
 		this.hud.destroy(true);
 		this.scene.cameras.main.setScroll(this.camera.x, this.camera.y);
 		this.picture = this.scene.add
-			.image(0, 0, "ending/imagecrown")
+			.image(0, 0, crownTexture("ending/imagecrown", this.signal.crown))
 			.setOrigin(0)
 			.setScrollFactor(0)
 			.setDepth(V.endingDepth + 2)

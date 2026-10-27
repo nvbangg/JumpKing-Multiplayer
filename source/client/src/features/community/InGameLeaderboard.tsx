@@ -1,40 +1,28 @@
-import { useEffect, useState } from "react";
+import { Trophy } from "lucide-react";
 import { PRESENTATION } from "../../game/presentation/config";
-import { api } from "../../network/api";
 import type { LeaderboardEntry } from "../../network/contracts";
+import { useResource } from "../../network/useResource";
 import { duration } from "../records/format";
-export function InGameLeaderboard() {
-	const [revision, setRevision] = useState(0),
-		[entries, setEntries] = useState<LeaderboardEntry[]>([]),
-		[loading, setLoading] = useState(true),
-		[error, setError] = useState("");
-	// biome-ignore lint/correctness/useExhaustiveDependencies: Revision là tín hiệu tải lại khi nhấn Refresh.
-	useEffect(() => {
-		let active = true;
-		setLoading(true);
-		setError("");
-		void api<{ entries: LeaderboardEntry[] }>(
-			`/leaderboard?limit=${PRESENTATION.inGameLeaderboardLimit}`,
-		)
-			.then((result) => {
-				if (active) setEntries(result.entries);
-			})
-			.catch((cause) => {
-				if (active) setError(cause.message);
-			})
-			.finally(() => {
-				if (active) setLoading(false);
-			});
-		return () => {
-			active = false;
-		};
-	}, [revision]);
+
+export function InGameLeaderboard({ onRefresh }: { onRefresh: () => void }) {
+	const { data, loading, error, reload } = useResource<{
+		entries: LeaderboardEntry[];
+	}>(`/leaderboard?limit=${PRESENTATION.inGameLeaderboardLimit}`, {
+		entries: [],
+	});
+	const entries = data.entries;
 	return (
-		<section
+		<details
+			open
 			className="in-game-panel records-panel"
 			aria-label="Community leaderboard"
 		>
-			<h2>Leaderboard</h2>
+			<summary>
+				<h2>
+					<Trophy className="tone-amber" aria-hidden="true" />
+					Leaderboard
+				</h2>
+			</summary>
 			<ol aria-label="Community records">
 				{entries.map((entry) => (
 					<li key={entry.id}>
@@ -55,10 +43,13 @@ export function InGameLeaderboard() {
 			<button
 				type="button"
 				disabled={loading}
-				onClick={() => setRevision((value) => value + 1)}
+				onClick={() => {
+					reload();
+					onRefresh();
+				}}
 			>
 				Refresh
 			</button>
-		</section>
+		</details>
 	);
 }

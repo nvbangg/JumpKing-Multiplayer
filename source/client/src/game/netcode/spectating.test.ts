@@ -12,10 +12,10 @@ const room: RoomState = {
 	state: "PLAYING",
 	hostPlayerId: "self",
 	settings: {
+		mapId: 9,
 		mode: "RACE",
 		timeLimitMinutes: null,
-		itemsEnabled: false,
-		itemCooldownMinutes: 3,
+		itemCooldownMinutes: null,
 	},
 	members: [],
 	currentPlay: null,
@@ -42,10 +42,11 @@ test("watching changes the rendered player and scene without restoring target st
 	const view = {
 		player: {
 			playerId: "peer",
+			positionRevision: 0,
 			nickname: "Peer",
 			colorSlot: 1,
 			state: target,
-			crowned: true,
+			crown: "BLACK" as const,
 			status: "ACTIVE",
 		},
 		playId: "match",
@@ -62,10 +63,10 @@ test("watching changes the rendered player and scene without restoring target st
 		elapsedTimeMs: 1000,
 		remainingTimeMs: null,
 		self: {
+			crown: "GOLD",
 			lastProcessedInputSeq: 0,
 			status: "ACTIVE",
 			paused: false,
-			metrics: {},
 			simulation: own,
 		},
 		spectating: view,
@@ -78,10 +79,11 @@ test("watching changes the rendered player and scene without restoring target st
 	expect(runtime.frame().self).toMatchObject({
 		id: "peer",
 		nickname: "Peer",
-		crowned: true,
+		crown: "BLACK" as const,
 		state: target,
 	});
 	expect(runtime.frame().peers.map((p) => p.id)).toEqual(["self"]);
+	expect(runtime.frame().peers[0]?.crown).toBe("GOLD");
 	const next = {
 		...view,
 		player: { ...view.player, state: { ...target, screen: 6, y: -2160 } },
@@ -101,6 +103,7 @@ test("watching changes the rendered player and scene without restoring target st
 		peers: [],
 	} as unknown as Record<string, unknown>);
 	expect(runtime.frame().self.id).toBe("self");
+	expect(runtime.frame().self.crown).toBe("GOLD");
 	expect(runtime.frame().self.state).toEqual(own.physics);
 	runtime.advance(1000 / 60);
 	expect(send).toHaveBeenCalledWith(
@@ -134,19 +137,20 @@ test("returning discards cancelled frames from watching before reconciling the v
 		elapsedTimeMs: 0,
 		remainingTimeMs: null,
 		self: {
+			crown: "GOLD",
 			lastProcessedInputSeq: 0,
 			status: "ACTIVE",
 			paused: false,
-			metrics: {},
 			simulation: own,
 		},
 		spectating: {
 			player: {
 				playerId: "peer",
+				positionRevision: 0,
 				nickname: "Peer",
 				colorSlot: 1,
 				state: { ...own.physics, screen: 6, y: -2160 },
-				crowned: false,
+				crown: "NONE",
 				status: "ACTIVE",
 			},
 			playId: "match",

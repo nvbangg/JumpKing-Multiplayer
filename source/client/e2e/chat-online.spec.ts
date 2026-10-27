@@ -13,13 +13,13 @@ test.skip(
 	process.env.E2E_AUTH_ONLINE !== "true",
 	"Requires the isolated backend/MySQL integration harness",
 );
-test("persistent chat, ten-message limit, shortcuts and touch work without launching a held jump", async ({
+test("persistent scrollable chat, shortcuts and touch work without launching a held jump", async ({
 	browser,
 }, info) => {
 	test.setTimeout(60_000);
 	const first = await browser.newContext(),
 		second = await browser.newContext({
-			viewport: { width: 390, height: 844 },
+			viewport: { width: 844, height: 390 },
 			isMobile: true,
 			hasTouch: true,
 		});
@@ -59,9 +59,7 @@ test("persistent chat, ten-message limit, shortcuts and touch work without launc
 		const history = b.getByRole("log");
 		await a.locator("canvas").click();
 		const jumps = required(snapshots.at(-1)).self.simulation.physics.jumps;
-		await expect(
-			a.getByRole("heading", { name: "Players", exact: true }),
-		).toBeVisible();
+		await expect(a.locator(".players-panel")).toBeVisible();
 		await expect(
 			a.getByRole("list", { name: "Current players" }).locator("li"),
 		).toHaveCount(2);
@@ -86,7 +84,7 @@ test("persistent chat, ten-message limit, shortcuts and touch work without launc
 		await a.getByLabel("Message", { exact: true }).fill("Online hello");
 		await a.keyboard.press("Enter");
 		await expect(history).toContainText("Online hello");
-		await expect(a.getByLabel("Message", { exact: true })).not.toBeFocused();
+		await expect(a.getByLabel("Message", { exact: true })).toBeFocused();
 		await expect(b.getByLabel("Message", { exact: true })).toBeVisible();
 		for (let index = 0; index < 10; index++) {
 			// Tôn trọng cooldown chat thật trên server.
@@ -97,17 +95,24 @@ test("persistent chat, ten-message limit, shortcuts and touch work without launc
 			await a.getByRole("button", { name: "Send", exact: true }).click();
 			await expect(history).toContainText(`Line ${index}`);
 		}
-		await b.getByRole("button", { name: "Collapse chat", exact: true }).tap();
-		await expect(b.locator(".chat-panel")).toBeHidden();
+		await b.waitForTimeout(5100);
+		await expect(b.locator(".chat-history-box")).toHaveAttribute(
+			"data-hidden",
+			"true",
+		);
+		await expect(b.getByLabel("Message", { exact: true })).toBeVisible();
 		await a.waitForTimeout(1100);
 		const latest = `Latest message ${"message ".repeat(18)}`;
 		await a.getByLabel("Message", { exact: true }).fill(latest);
 		await a.getByRole("button", { name: "Send", exact: true }).click();
 		await expect(b.locator(".chat-messages")).toContainText(latest);
-		await b.getByRole("button", { name: "Show chat", exact: true }).tap();
+		await expect(b.locator(".chat-history-box")).toHaveAttribute(
+			"data-hidden",
+			"false",
+		);
 		await expect(history.locator("p").last()).toBeInViewport();
-		await expect(history.locator("p")).toHaveCount(10);
-		await expect(history).not.toContainText("Online hello");
+		await expect(history.locator("p")).toHaveCount(13);
+		await expect(history).toContainText("Online hello");
 		expect(
 			await history.evaluate(
 				(element) =>
@@ -127,19 +132,18 @@ test("persistent chat, ten-message limit, shortcuts and touch work without launc
 		await a.keyboard.press("Enter");
 		await expect(a.getByLabel("Message", { exact: true })).toBeFocused();
 		await a.keyboard.press("Escape");
-		await expect(
-			a.getByRole("region", { name: "Room chat", exact: true }),
-		).toBeVisible();
+		await expect(a.locator(".chat-panel")).toBeVisible();
 		await expect(a.getByLabel("Message", { exact: true })).not.toBeFocused();
 		await expect
 			.poll(() => snapshots.at(-1)?.elapsedTimeMs ?? 0)
 			.toBeGreaterThan(elapsed);
 		await a.keyboard.press("Enter");
-		await a.getByRole("button", { name: "Close chat", exact: true }).click();
+		await a.keyboard.press("Escape");
 		await a.keyboard.press("Escape");
 		await expect(
 			a.getByRole("button", { name: "Resume", exact: true }),
 		).toBeVisible();
+		await expect(a.getByLabel("Message", { exact: true })).toBeVisible();
 		await a.getByRole("button", { name: "Resume", exact: true }).click();
 		expect(required(snapshots.at(-1)).self.simulation.physics.jumps).toBe(
 			jumps,
@@ -169,9 +173,7 @@ test("persistent chat, ten-message limit, shortcuts and touch work without launc
 			await b.getByRole("button", { name: "Resume", exact: true }).isVisible()
 		)
 			await b.getByRole("button", { name: "Resume", exact: true }).click();
-		const chatBox = await b
-			.getByRole("region", { name: "Room chat", exact: true })
-			.boundingBox();
+		const chatBox = await b.locator(".chat-panel").boundingBox();
 		const controlsBox = await b
 			.getByRole("button", { name: "Move Left", exact: true })
 			.boundingBox();
@@ -185,7 +187,7 @@ test("persistent chat, ten-message limit, shortcuts and touch work without launc
 			await a.getByRole("button", { name: "Resume", exact: true }).isVisible()
 		)
 			await a.getByRole("button", { name: "Resume", exact: true }).click();
-		await a.getByRole("button", { name: "Menu", exact: true }).click();
+		await a.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await a.getByRole("button", { name: "End Match", exact: true }).click();
 		await expect(
 			a.getByRole("button", { name: "Play Again", exact: true }),

@@ -23,6 +23,7 @@ export class AudioBus {
 	) {
 		window.addEventListener("pointerdown", this.gesture, true);
 		window.addEventListener("keydown", this.gesture, true);
+		if (preloadEffects) void this.unlock();
 	}
 	private gesture = () => {
 		void this.unlock();
@@ -30,12 +31,17 @@ export class AudioBus {
 	async unlock(): Promise<void> {
 		if (!this.enabled || this.disposed) return;
 		try {
-			this.context ||= new AudioContext();
-			if (this.context.state === "suspended") await this.context.resume();
+			this.context ||= new AudioContext({ latencyHint: "interactive" });
+			// Tải/giải mã ngay cả khi trình duyệt đang chờ thao tác để cho phép phát.
+			const resumed =
+				this.context.state === "suspended"
+					? this.context.resume()
+					: Promise.resolve();
 			for (const audio of this.ambience) this.playStream(audio);
 			if (this.preloadEffects)
-				await Promise.all(
-					Object.keys(this.manifest.sounds)
+				await Promise.all([
+					resumed,
+					...Object.keys(this.manifest.sounds)
 						.filter(
 							(key) =>
 								key.startsWith("audio/jump_king/") ||
@@ -50,7 +56,8 @@ export class AudioBus {
 								].includes(key),
 						)
 						.map((key) => this.load(key)),
-				);
+				]);
+			else await resumed;
 		} catch (cause) {
 			this.report(cause);
 		}

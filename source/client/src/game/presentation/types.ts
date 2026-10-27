@@ -1,8 +1,9 @@
+import type { Crown } from "../../network/contracts";
 import type { RoomItemsView } from "../items";
 import type { AdventureState } from "../simulation/Adventure";
 import type { FinishPlatform } from "../simulation/finishPlatform";
 import type { WorldState } from "../simulation/GameSimulation";
-import type { PlayerState } from "../simulation/types";
+import type { PlayerState, ReadView } from "../simulation/types";
 
 export type RenderPose = Pick<
 	PlayerState,
@@ -29,13 +30,14 @@ export interface RenderPlayer {
 	nickname: string;
 	color: string;
 	state: RenderPose;
-	crowned: boolean;
-	adventure?: AdventureState;
+	crown: Crown;
+	adventure?: ReadView<AdventureState>;
 }
 export interface EndingSignal {
 	id: string;
 	screen: number;
 	ravenDone?: boolean;
+	crown: Exclude<Crown, "NONE">;
 }
 export interface PresentationHooks {
 	onEndingStart?: (skip: () => void) => void;
@@ -45,7 +47,7 @@ export interface PresentationHooks {
 export interface WorldFrame {
 	self: RenderPlayer;
 	peers: RenderPlayer[];
-	world?: WorldState;
+	world: ReadView<WorldState>;
 	items?: RoomItemsView;
 	ending?: EndingSignal;
 }

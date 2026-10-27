@@ -18,7 +18,10 @@ import org.springframework.test.context.DynamicPropertySource;
 @SpringBootTest(
     classes = JumpKingApplication.class,
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = "server.servlet.session.cookie.secure=true")
+    properties = {
+      "server.servlet.session.cookie.secure=true",
+      "server.servlet.session.cookie.same-site=none"
+    })
 class SecureCookieIT {
   @DynamicPropertySource
   static void database(DynamicPropertyRegistry properties) {
@@ -40,13 +43,13 @@ class SecureCookieIT {
               HttpResponse.BodyHandlers.ofString());
       String cookie = csrf.headers().firstValue("set-cookie").orElseThrow();
       assertThat(cookie)
-          .contains("Secure", "HttpOnly", "SameSite=Lax", "Path=/", "Max-Age=2592000")
+          .contains("Secure", "HttpOnly", "SameSite=None", "Path=/", "Max-Age=2592000")
           .doesNotContain("Domain=");
       String token = new ObjectMapper().readTree(csrf.body()).path("token").asText();
       // HTTP loopback chỉ dùng kiểm tra headers; gửi cookie thủ công vì browser sẽ đòi HTTPS.
       var account =
           http.send(
-              HttpRequest.newBuilder(URI.create(origin + "/api/auth/register"))
+              HttpRequest.newBuilder(URI.create(origin + "/api/auth/login"))
                   .header("Cookie", cookie.split(";", 2)[0])
                   .header("X-CSRF-TOKEN", token)
                   .header("Content-Type", "application/json")
@@ -65,8 +68,29 @@ class SecureCookieIT {
       assertThat(account.statusCode()).isEqualTo(200);
       assertThat(account.headers().firstValue("set-cookie").orElseThrow())
           .contains(
-              "JSESSIONID=", "Secure", "HttpOnly", "SameSite=Lax", "Path=/", "Max-Age=2592000")
+              "JSESSIONID=", "Secure", "HttpOnly", "SameSite=None", "Path=/", "Max-Age=2592000")
           .doesNotContain("Domain=");
+      String authenticatedCookie =
+          account.headers().firstValue("set-cookie").orElseThrow().split(";", 2)[0];
+      var refreshed =
+          http.send(
+              HttpRequest.newBuilder(URI.create(origin + "/api/auth/csrf"))
+                  .header("Cookie", authenticatedCookie)
+                  .build(),
+              HttpResponse.BodyHandlers.ofString());
+      var logout =
+          http.send(
+              HttpRequest.newBuilder(URI.create(origin + "/api/auth/logout"))
+                  .header("Cookie", authenticatedCookie)
+                  .header(
+                      "X-CSRF-TOKEN",
+                      new ObjectMapper().readTree(refreshed.body()).path("token").asText())
+                  .POST(HttpRequest.BodyPublishers.noBody())
+                  .build(),
+              HttpResponse.BodyHandlers.ofString());
+      assertThat(logout.statusCode()).isEqualTo(200);
+      assertThat(logout.headers().firstValue("set-cookie").orElseThrow())
+          .contains("JSESSIONID=", "SameSite=None", "Secure", "HttpOnly", "Max-Age=0");
     }
   }
 }

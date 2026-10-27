@@ -29,7 +29,7 @@ class LeaderboardIT {
       for (int index = 0; index < 4; index++) {
         String name = "ranking_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
         jdbc.update(
-            "INSERT INTO users(username,password_hash,created_at) VALUES (?,'unused-test-hash',UTC_TIMESTAMP(3))",
+            "INSERT INTO users(username,password_hash,crown,created_at) VALUES (?,'unused-test-hash','NONE',UTC_TIMESTAMP(3))",
             name);
         owners.add(jdbc.queryForObject("SELECT id FROM users WHERE username=?", Long.class, name));
       }
@@ -38,7 +38,7 @@ class LeaderboardIT {
         ids.add(id);
         long ticks = index < 2 ? 600 : 1200;
         jdbc.update(
-            "INSERT INTO play_runs(id,user_id,kind,status,play_ticks,current_progress,max_progress,peak_reached_ticks,finish_ticks,started_at,ended_at,updated_at) VALUES (?,?,'COMMUNITY','FINISHED',?,15000,15000,?,?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO play_runs(id,user_id,status,play_ticks,current_progress,max_progress,peak_reached_ticks,finish_ticks,started_at,ended_at,updated_at) VALUES (?,?,'FINISHED',?,15000,15000,?,?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             id,
             owners.get(index),
             ticks,
@@ -47,18 +47,18 @@ class LeaderboardIT {
       }
       String bestUnfinished = UUID.randomUUID().toString();
       jdbc.update(
-          "INSERT INTO play_runs(id,user_id,kind,status,play_ticks,current_progress,max_progress,peak_reached_ticks,started_at,ended_at,updated_at) VALUES (?,?,'COMMUNITY','ABANDONED',200,300,10000,100,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+          "INSERT INTO play_runs(id,user_id,status,play_ticks,current_progress,max_progress,peak_reached_ticks,started_at,ended_at,updated_at) VALUES (?,?,'ABANDONED',200,300,10000,100,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
           bestUnfinished,
           owners.get(3));
       jdbc.update(
-          "INSERT INTO play_runs(id,user_id,kind,status,play_ticks,current_progress,max_progress,peak_reached_ticks,started_at,ended_at,updated_at) VALUES (?,?,'COMMUNITY','ABANDONED',50,300,9000,1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+          "INSERT INTO play_runs(id,user_id,status,play_ticks,current_progress,max_progress,peak_reached_ticks,started_at,ended_at,updated_at) VALUES (?,?,'ABANDONED',50,300,9000,1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
           UUID.randomUUID().toString(),
           owners.get(3));
       jdbc.update(
-          "INSERT INTO matches(id,room_code,mode,started_at,ended_at,duration_ticks,end_reason) VALUES (?,'ABCDEF','RACE',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),1,'FINISH')",
+          "INSERT INTO matches(id,room_code,mode,map_id,started_at,ended_at,duration_ticks,end_reason) VALUES (?,'ABCDEF','RACE',1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),1,'FINISH')",
           match);
       jdbc.update(
-          "INSERT INTO play_runs(id,user_id,kind,match_id,nickname,status,play_ticks,current_progress,max_progress,peak_reached_ticks,finish_ticks,`rank`,is_winner,started_at,ended_at,updated_at) VALUES (?,?,'ROOM',?,'Player','FINISHED',1,15000,15000,1,1,1,TRUE,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+          "INSERT INTO play_runs(id,user_id,match_id,status,play_ticks,current_progress,max_progress,peak_reached_ticks,finish_ticks,`rank`,started_at,ended_at,updated_at) VALUES (?,?,?,'FINISHED',1,15000,15000,1,1,1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
           UUID.randomUUID().toString(),
           owners.get(3),
           match);

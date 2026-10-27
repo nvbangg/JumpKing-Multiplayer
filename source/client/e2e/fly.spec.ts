@@ -8,6 +8,9 @@ import {
 	observeOnline,
 	registerOnline,
 } from "./support/online";
+import { expectTouchLayout } from "./support/touch-layout";
+
+test.use({ isMobile: true, hasTouch: true });
 
 const enabled = process.env.E2E_FLY_ENABLED === "true";
 test("Flight follows the server permission and double Space toggles real Community flight", async ({
@@ -22,12 +25,10 @@ test("Flight follows the server permission and double Space toggles real Communi
 	);
 	const observed = observeOnline(page);
 	await registerOnline(page, "fly");
-	await page.getByRole("button", { name: "Options", exact: true }).click();
 	await expect(page.getByRole("switch", { name: /Fly Mode/ })).toHaveCount(0);
-	await page.getByRole("button", { name: "Back", exact: true }).click();
 	await newCommunity(page);
 	await expect(
-		page.getByRole("button", { name: "Menu", exact: true }),
+		page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 	).toBeVisible();
 	await page.keyboard.press("Space");
 	await page.keyboard.press("Space");
@@ -40,8 +41,8 @@ test("Flight follows the server permission and double Space toggles real Communi
 		await page.waitForTimeout(200);
 		await page.keyboard.up("KeyW");
 	}
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
-	await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
+	await expect.poll(() => observed.snapshot?.self.paused).toBe(true);
 	const first = required(observed.snapshot).self.simulation.physics;
 	expect(first.freeFlight).toBe(enabled);
 	if (!enabled) return;
@@ -50,12 +51,12 @@ test("Flight follows the server permission and double Space toggles real Communi
 	await page.getByRole("button", { name: "Save & Exit", exact: true }).click();
 	await page.getByRole("button", { name: "Continue", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "Menu", exact: true }),
+		page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 	).toBeVisible();
 	await page.keyboard.press("Space");
 	await page.keyboard.press("Space");
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
-	await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
+	await expect.poll(() => observed.snapshot?.self.paused).toBe(true);
 	const off = required(observed.snapshot).self.simulation.physics;
 	expect(off.freeFlight).toBe(false);
 	expect(off.jumps).toBe(first.jumps);
@@ -66,7 +67,7 @@ test("touch double Jump respects the gate and simultaneous Jump fingers are one 
 	page,
 	context,
 }) => {
-	await page.setViewportSize({ width: 390, height: 844 });
+	await page.setViewportSize({ width: 844, height: 390 });
 	await page.addInitScript(() =>
 		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false })),
 	);
@@ -98,8 +99,8 @@ test("touch double Jump respects the gate and simultaneous Jump fingers are one 
 		type: "touchEnd",
 		touchPoints: [],
 	});
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
-	await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
+	await expect.poll(() => observed.snapshot?.self.paused).toBe(true);
 	expect(required(observed.snapshot).self.simulation.physics.freeFlight).toBe(
 		false,
 	);
@@ -115,16 +116,17 @@ test("touch double Jump respects the gate and simultaneous Jump fingers are one 
 			touchPoints: [],
 		});
 	}
-	if (enabled)
+	if (enabled) {
 		await expect(
 			page.getByRole("button", { name: "Move Up", exact: true }),
 		).toBeVisible();
-	else
+		await expectTouchLayout(page);
+	} else
 		await expect(
 			page.getByRole("button", { name: "Move Up", exact: true }),
 		).toBeHidden();
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
-	await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
+	await expect.poll(() => observed.snapshot?.self.paused).toBe(true);
 	expect(required(observed.snapshot).self.simulation.physics.freeFlight).toBe(
 		enabled,
 	);

@@ -71,10 +71,6 @@ public class GameTransport extends TextWebSocketHandler implements AutoCloseable
         new ThreadPoolExecutor.AbortPolicy());
   }
 
-  public java.util.concurrent.Executor workers() {
-    return workers;
-  }
-
   private void quota(String key, int maximum) {
     long minute = Math.floorDiv(clock.millis(), 60_000L);
     if (minute != bucketMinute) {
@@ -91,8 +87,8 @@ public class GameTransport extends TextWebSocketHandler implements AutoCloseable
     quota("handshake:" + ip, limits.handshakesPerMinute());
   }
 
-  public synchronized void roomLookup(String ip) {
-    quota("lookup:" + ip, limits.roomLookupsPerMinute());
+  public synchronized void publicLookup(String ip) {
+    quota("public:" + ip, limits.publicLookupsPerMinute());
   }
 
   public synchronized void joinAttempt(GameConnection connection) {
@@ -116,10 +112,6 @@ public class GameTransport extends TextWebSocketHandler implements AutoCloseable
 
   public synchronized void release(String key) {
     reservations.remove(key);
-  }
-
-  public int connectionCount() {
-    return connections.size();
   }
 
   private static ApiException rate() {

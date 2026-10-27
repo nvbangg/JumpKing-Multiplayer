@@ -24,7 +24,7 @@ for (const kind of ["COMMUNITY", "ROOM"] as const) {
 			page,
 		}) => {
 			if (kind === "COMMUNITY" && action === "reconnect") {
-				await page.setViewportSize({ width: 390, height: 844 });
+				await page.setViewportSize({ width: 844, height: 390 });
 			}
 			const name = await registerOnline(page, "lag");
 			if (kind === "COMMUNITY") await newCommunity(page);
@@ -32,11 +32,11 @@ for (const kind of ["COMMUNITY", "ROOM"] as const) {
 				await createRoom(page);
 				await page.getByRole("button", { name: "Start", exact: true }).click();
 				await expect(
-					page.getByRole("button", { name: "Menu", exact: true }),
+					page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 				).toBeVisible({ timeout: 30000 });
 				await expect(
 					page.getByLabel("Play time", { exact: true }),
-				).not.toHaveText("00:00", { timeout: 10000 });
+				).not.toHaveText("00:00 s", { timeout: 10000 });
 				await page.locator("canvas").click();
 			}
 			if (
@@ -45,19 +45,6 @@ for (const kind of ["COMMUNITY", "ROOM"] as const) {
 					.isVisible()
 			) {
 				await page.getByRole("button", { name: "Resume", exact: true }).click();
-			}
-			if (kind === "COMMUNITY" && action === "reconnect") {
-				await page.route("**/version.json", (route) =>
-					route.fulfill({ json: { version: "next-release-during-play" } }),
-				);
-				await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-				await expect(
-					page.getByRole("status", { name: "Website update" }),
-				).toContainText("Return to the main menu");
-				await expect(
-					page.getByRole("button", { name: "Update now" }),
-				).toHaveCount(0);
-				await expect(page.locator("canvas")).toBeVisible();
 			}
 			await page.evaluate(async () => {
 				const path = "/src/network/GameSocket.ts";
@@ -80,10 +67,6 @@ for (const kind of ["COMMUNITY", "ROOM"] as const) {
 				page.getByRole("heading", { name: "Disconnected", exact: true }),
 			).toBeVisible({ timeout: 15000 });
 			await expect(page.getByRole("alert")).toContainText("too far behind");
-			if (kind === "COMMUNITY")
-				await expect(
-					page.getByText("Latest save unconfirmed", { exact: true }),
-				).toBeVisible();
 			await expect(
 				page.getByRole("button", { name: "Resume", exact: true }),
 			).toHaveCount(0);
@@ -120,12 +103,14 @@ for (const kind of ["COMMUNITY", "ROOM"] as const) {
 				).toBeVisible();
 				await page.getByRole("button", { name: "Resume", exact: true }).click();
 				await expect(
-					page.getByRole("button", { name: "Menu", exact: true }),
+					page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 				).toBeVisible();
 				await expect(
 					page.getByRole("heading", { name: "Disconnected", exact: true }),
 				).toHaveCount(0);
-				await page.getByRole("button", { name: "Menu", exact: true }).click();
+				await page
+					.getByRole("button", { name: "Menu (Esc)", exact: true })
+					.click();
 				await page
 					.getByRole("button", {
 						name: kind === "COMMUNITY" ? "Save & Exit" : "Leave Room",

@@ -8,6 +8,7 @@ import jumpking.exception.ApiException;
 import jumpking.game.RoomRanking;
 import jumpking.repository.MatchRepository;
 import jumpking.repository.PlayRunRepository;
+import jumpking.room.RoomSettings;
 import org.springframework.stereotype.Service;
 
 /** Một bản ghi tích lũy của toàn roster; match và metrics được commit cùng transaction. */
@@ -16,7 +17,6 @@ public class RoomRuns {
   public record Run(
       String id,
       long owner,
-      String nickname,
       String status,
       long ticks,
       int jumps,
@@ -26,7 +26,6 @@ public class RoomRuns {
       long peak,
       Long finish,
       Integer rank,
-      boolean winner,
       Instant endedAt) {
     public Run {
       endedAt = millis(endedAt);
@@ -34,8 +33,7 @@ public class RoomRuns {
 
     Run unranked() {
       return new Run(
-          id, owner, nickname, status, ticks, jumps, falls, progress, maximum, peak, finish, null,
-          false, endedAt);
+          id, owner, status, ticks, jumps, falls, progress, maximum, peak, finish, null, endedAt);
     }
   }
 
@@ -44,19 +42,20 @@ public class RoomRuns {
       String roomCode,
       String mode,
       Integer minutes,
-      int mapLevel,
-      boolean itemsEnabled,
-      int itemCooldownMinutes,
+      int mapId,
+      Integer itemCooldownMinutes,
       long revision,
       Instant startedAt,
       Instant endedAt,
       long duration,
       String reason,
-      List<Run> runs) {
+      List<Run> runs,
+      Set<Long> ravenFinishers) {
     public Write {
       startedAt = millis(startedAt);
       endedAt = millis(endedAt);
       runs = List.copyOf(runs);
+      ravenFinishers = Set.copyOf(ravenFinishers);
     }
   }
 
@@ -64,9 +63,8 @@ public class RoomRuns {
       String roomCode,
       String mode,
       Integer minutes,
-      int mapLevel,
-      boolean itemsEnabled,
-      int itemCooldownMinutes,
+      int mapId,
+      Integer itemCooldownMinutes,
       Instant startedAt,
       Instant endedAt,
       long duration,
@@ -80,6 +78,8 @@ public class RoomRuns {
   private final CrownService crowns;
   private final Clock clock;
   private final int capacity;
+  private final int itemCooldownMin;
+  private final int itemCooldownMax;
 
   public RoomRuns(
       MatchRepository matchRepository,
@@ -94,6 +94,8 @@ public class RoomRuns {
     this.crowns = crowns;
     this.clock = clock;
     capacity = shared.rules().path("capacity").asInt();
+    itemCooldownMin = shared.rules().path("items").path("cooldownMinMinutes").asInt();
+    itemCooldownMax = shared.rules().path("items").path("cooldownMaxMinutes").asInt();
   }
 
   public void save(Write write) {
@@ -111,8 +113,7 @@ public class RoomRuns {
                   write.roomCode,
                   write.mode,
                   write.minutes,
-                  write.mapLevel,
-                  write.itemsEnabled,
+                  write.mapId,
                   write.itemCooldownMinutes,
                   write.startedAt,
                   write.endedAt,
@@ -122,18 +123,15 @@ public class RoomRuns {
             if (!previous.roomCode.equals(write.roomCode)
                 || !previous.mode.equals(write.mode)
                 || !Objects.equals(previous.minutes, write.minutes)
-                || previous.mapLevel != write.mapLevel
-                || previous.itemsEnabled != write.itemsEnabled
-                || previous.itemCooldownMinutes != write.itemCooldownMinutes
+                || previous.mapId != write.mapId
+                || !Objects.equals(previous.itemCooldownMinutes, write.itemCooldownMinutes)
                 || !previous.startedAt.equals(write.startedAt)
                 || old.size() != next.size()) throw conflict();
             var byId = new HashMap<String, Stored>();
             old.forEach(value -> byId.put(value.run.id, value));
             for (var run : next) {
               var value = byId.get(run.id);
-              if (value == null
-                  || value.run.owner != run.owner
-                  || !value.run.nickname.equals(run.nickname)) throw conflict();
+              if (value == null || value.run.owner != run.owner) throw conflict();
             }
             long revision = old.stream().mapToLong(Stored::revision).max().orElseThrow();
             if (write.revision < revision) return null;
@@ -161,8 +159,7 @@ public class RoomRuns {
             matchEntity.setId(write.id);
             matchEntity.setRoomCode(write.roomCode);
             matchEntity.setMode(write.mode);
-            matchEntity.setMapLevel(write.mapLevel);
-            matchEntity.setItemsEnabled(write.itemsEnabled);
+            matchEntity.setMapId(write.mapId);
             matchEntity.setItemCooldownMinutes(write.itemCooldownMinutes);
             matchEntity.setTimeLimitMinutes(write.minutes);
             matchEntity.setStartedAt(write.startedAt);
@@ -179,9 +176,7 @@ public class RoomRuns {
               entity = new PlayRun();
               entity.setId(run.id);
               entity.setUserId(run.owner);
-              entity.setKind("ROOM");
               entity.setMatchId(write.id);
-              entity.setNickname(run.nickname);
               entity.setStartedAt(write.startedAt);
             }
             entity.setRevision(write.revision);
@@ -194,8 +189,8 @@ public class RoomRuns {
             entity.setPeakReachedTicks(run.peak);
             entity.setFinishTicks(run.finish);
             entity.setRank(run.rank);
-            entity.setWinner(run.winner);
-            if (run.status.equals("FINISHED") && write.mapLevel == 10) crowns.unlock(run.owner);
+            if (run.status.equals("FINISHED") && write.mapId == RoomSettings.FINAL_MAP_ID)
+              crowns.unlock(run.owner, write.ravenFinishers.contains(run.owner));
             entity.setEndedAt(run.endedAt);
             entity.setUpdatedAt(clock.instant());
             runRepository.save(entity);
@@ -222,11 +217,10 @@ public class RoomRuns {
               .map(
                   value -> {
                     var run = value.run;
-                    return new RoomRanking.Score(
-                        run.id, run.nickname, "DNF", run.progress, run.maximum, null);
+                    return new RoomRanking.Score(run.id, "DNF", run.progress, run.maximum, null);
                   })
               .toList();
-      var ranks = RoomRanking.rank(scores, match.mode, false);
+      var ranks = RoomRanking.rank(scores, match.mode, match.minutes != null);
       var abandoned =
           stored.stream()
               .map(
@@ -241,7 +235,6 @@ public class RoomRuns {
                     return new Run(
                         run.id,
                         run.owner,
-                        run.nickname,
                         "DNF",
                         run.ticks,
                         run.jumps,
@@ -251,7 +244,6 @@ public class RoomRuns {
                         run.peak,
                         null,
                         rank,
-                        false,
                         run.endedAt == null ? deadline : run.endedAt);
                   })
               .toList();
@@ -261,15 +253,15 @@ public class RoomRuns {
               match.roomCode,
               match.mode,
               match.minutes,
-              match.mapLevel,
-              match.itemsEnabled,
+              match.mapId,
               match.itemCooldownMinutes,
               stored.stream().mapToLong(Stored::revision).max().orElseThrow() + 1,
               match.startedAt,
               deadline,
               match.duration,
               "ABORTED",
-              abandoned));
+              abandoned,
+              Set.of()));
     }
   }
 
@@ -278,8 +270,7 @@ public class RoomRuns {
         match.getRoomCode(),
         match.getMode(),
         match.getTimeLimitMinutes(),
-        match.getMapLevel(),
-        match.getItemsEnabled(),
+        match.getMapId(),
         match.getItemCooldownMinutes(),
         match.getStartedAt(),
         match.getEndedAt(),
@@ -295,7 +286,6 @@ public class RoomRuns {
                     new Run(
                         run.getId(),
                         run.getUserId(),
-                        run.getNickname(),
                         run.getStatus(),
                         run.getPlayTicks(),
                         run.getJumps(),
@@ -305,17 +295,17 @@ public class RoomRuns {
                         run.getPeakReachedTicks(),
                         run.getFinishTicks(),
                         run.getRank(),
-                        run.getWinner(),
                         run.getEndedAt()),
                     run.getRevision()))
         .toList();
   }
 
   private void validate(Write value) {
-    if (value.mapLevel < 1
-        || value.mapLevel > 10
-        || value.itemCooldownMinutes < 1
-        || value.itemCooldownMinutes > 15
+    if (value.mapId < 1
+        || value.mapId > RoomSettings.FINAL_MAP_ID
+        || value.itemCooldownMinutes != null
+            && (value.itemCooldownMinutes < itemCooldownMin
+                || value.itemCooldownMinutes > itemCooldownMax)
         || value.revision < 1
         || value.duration < 0
         || value.startedAt == null
@@ -344,32 +334,33 @@ public class RoomRuns {
               && (run.endedAt.isBefore(value.startedAt)
                   || value.endedAt != null && run.endedAt.isAfter(value.endedAt))) throw conflict();
       if (value.endedAt == null
-          && (run.rank != null
-              || run.winner
-              || run.status.equals("FINISHED")
-              || run.status.equals("UNFINISHED"))) throw conflict();
+          && (run.rank != null || run.status.equals("FINISHED") || run.status.equals("UNFINISHED")))
+        throw conflict();
       if (value.endedAt != null && run.status.equals("ACTIVE")) throw conflict();
     }
+    var fullFinishers = new HashSet<Long>();
+    if (value.mapId == RoomSettings.FINAL_MAP_ID)
+      for (var run : value.runs) if (run.status.equals("FINISHED")) fullFinishers.add(run.owner);
+    if (!fullFinishers.containsAll(value.ravenFinishers)) throw conflict();
     if (value.endedAt != null) {
       var scores =
           value.runs.stream()
               .map(
                   run ->
                       new RoomRanking.Score(
-                          run.id, run.nickname, run.status, run.progress, run.maximum, run.finish))
+                          run.id, run.status, run.progress, run.maximum, run.finish))
               .toList();
-      var ranks = RoomRanking.rank(scores, value.mode, value.reason.equals("FINISH"));
+      var ranks = RoomRanking.rank(scores, value.mode, value.minutes != null);
       for (var run : value.runs) {
         var ranked =
             ranks.stream()
                 .filter(row -> row.score().playerId().equals(run.id))
                 .findFirst()
                 .orElseThrow();
-        if (!Objects.equals(run.rank, ranked.rank()) || run.winner != ranked.winner())
-          throw conflict();
+        if (!Objects.equals(run.rank, ranked.rank())) throw conflict();
       }
-      if (value.reason.equals("FINISH") && ranks.stream().noneMatch(RoomRanking.Ranked::winner))
-        throw conflict();
+      if (value.reason.equals("FINISH")
+          && value.runs.stream().noneMatch(run -> run.status.equals("FINISHED"))) throw conflict();
     }
   }
 

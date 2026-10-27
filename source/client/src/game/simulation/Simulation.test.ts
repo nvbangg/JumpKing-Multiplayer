@@ -70,15 +70,103 @@ test("snow rejects weak charge and raises a small valid charge", () => {
 	expect(sim.snapshot().vy).toBe(Math.fround(P.jumpVelocity * 0.3));
 });
 
-test("No Walk removes walking intent while allowing horizontal jumps", () => {
-	const sim = settled(ground(), true),
-		start = sim.snapshot().x;
-	for (let i = 0; i < 20; i++) sim.tick({ ...idle, right: true });
-	expect(sim.snapshot().x).toBe(start);
-	for (let i = 0; i < 36; i++) sim.tick({ ...idle, right: true, jump: true });
-	expect(sim.snapshot().vx).toBe(3.5);
+for (const direction of [-1, 1])
+	test(`No Walk stops after landing a horizontal jump (${direction})`, () => {
+		const sim = settled(ground(), true),
+			start = sim.snapshot().x,
+			input = { ...idle, left: direction < 0, right: direction > 0 };
+		for (let i = 0; i < 20; i++) sim.tick(input);
+		expect(sim.snapshot().x).toBe(start);
+		for (let i = 0; i < 12; i++) sim.tick({ ...input, jump: true });
+		sim.tick(input);
+		expect(sim.snapshot().vx).toBe(direction * P.jumpSpeed);
+		for (let i = 0; i < 120; i++) {
+			sim.tick(input);
+			if (sim.snapshot().grounded) break;
+			expect(sim.snapshot().vx).toBe(direction * P.jumpSpeed);
+		}
+		const landing = sim.snapshot();
+		expect(landing.grounded).toBe(true);
+		expect((landing.x - start) * direction).toBeGreaterThan(0);
+		expect(landing.vx).toBe(0);
+		for (const groundedInput of [
+			idle,
+			{ ...idle, left: true },
+			{ ...idle, right: true },
+		])
+			for (let i = 0; i < 20; i++) {
+				sim.tick(groundedInput);
+				expect(sim.snapshot().x).toBe(landing.x);
+				expect(sim.snapshot().vx).toBe(0);
+			}
+	});
+
+test("No Walk preserves ice friction without accelerating from horizontal input", () => {
+	const sim = settled(ground("I"), true),
+		idleSim = settled(ground("I"), true);
+	for (const game of [sim, idleSim])
+		game.restore({ ...game.snapshot(), vx: P.jumpSpeed });
+	for (let i = 0; i < 12; i++) {
+		sim.tick({ ...idle, left: true });
+		idleSim.tick(idle);
+		expect(sim.snapshot().x).toBe(idleSim.snapshot().x);
+		expect(sim.snapshot().vx).toBe(idleSim.snapshot().vx);
+	}
+	expect(sim.snapshot().vx).toBeGreaterThan(0);
+	expect(sim.snapshot().vx).toBeLessThan(P.jumpSpeed);
+});
+
+test("Boots double jump height once while retaining horizontal speed and charge time", () => {
+	const normal = settled(ground()),
+		boosted = settled(ground());
+	const startY = normal.snapshot().y;
+	boosted.boostJump();
+	for (let i = 0; i < P.chargeTicks; i++) {
+		normal.tick({ ...idle, right: true, jump: true });
+		boosted.tick({ ...idle, right: true, jump: true });
+	}
+	expect(boosted.snapshot().vy).toBe(
+		Math.fround(P.jumpVelocity * Math.sqrt(2)),
+	);
+	expect(boosted.snapshot().vx).toBe(normal.snapshot().vx);
+	expect(boosted.snapshot().jumps).toBe(1);
+	expect(boosted.snapshot().jumpBoost).toBeUndefined();
+	const rise = (sim: Simulation) => {
+		let minimumY = startY;
+		while (sim.snapshot().vy < 0) {
+			sim.tick(idle);
+			minimumY = Math.min(minimumY, sim.snapshot().y);
+		}
+		return startY - minimumY;
+	};
+	expect(rise(boosted) / rise(normal)).toBeCloseTo(2, 1);
+	for (let i = 0; i < 160; i++) boosted.tick(idle);
+	boosted.tick({ ...idle, right: true });
+	for (let i = 0; i < P.chargeTicks; i++) boosted.tick({ ...idle, jump: true });
+	expect(boosted.snapshot().jumps).toBe(2);
+	expect(boosted.snapshot().vy).toBe(P.jumpVelocity);
+});
+
+test("unused Boots survive cancel, rejected snow charge, restore and respawn", () => {
+	const sim = settled(ground("N"));
+	sim.boostJump();
+	for (let i = 0; i < 4; i++) sim.tick({ ...idle, jump: true });
+	sim.cancelInput();
 	sim.tick(idle);
-	expect(sim.snapshot().x).toBeGreaterThan(start);
+	for (let i = 0; i < 4; i++) sim.tick({ ...idle, jump: true });
+	sim.tick(idle);
+	expect(sim.snapshot().jumps).toBe(0);
+	expect(sim.snapshot().jumpBoost).toBe(true);
+	const restored = settled(ground("N"));
+	restored.restore(JSON.parse(JSON.stringify(sim.snapshot())));
+	restored.respawnAt(100, 302);
+	expect(restored.snapshot().jumpBoost).toBe(true);
+	for (let i = 0; i < 5; i++) restored.tick(idle);
+	for (let i = 0; i < P.chargeTicks; i++)
+		restored.tick({ ...idle, jump: true });
+	expect(restored.snapshot().jumps).toBe(1);
+	expect(restored.snapshot().jumpBoost).toBeUndefined();
+	expect(settled(ground()).snapshot().jumpBoost).toBeUndefined();
 });
 
 test("codec restores exact replay and rejects malformed state", () => {

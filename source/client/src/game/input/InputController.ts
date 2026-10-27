@@ -28,16 +28,7 @@ export class InputController {
 	) {
 		window.addEventListener("keydown", this.keyDown);
 		window.addEventListener("keyup", this.keyUp);
-		window.addEventListener("focusin", this.focusIn);
 	}
-	private focusIn = (event: FocusEvent) => {
-		if (!(event.target instanceof Element) || !event.target.closest("summary"))
-			return;
-		this.keys.clear();
-		this.pointers.clear();
-		this.padBlocked = true;
-		this.onCancelInput();
-	};
 	private keyDown = (event: KeyboardEvent) => {
 		if (event.defaultPrevented) return;
 		if (
@@ -49,7 +40,10 @@ export class InputController {
 			this.onMenu();
 			return;
 		}
-		if (event.target instanceof Element && event.target.closest("summary"))
+		if (
+			event.target instanceof Element &&
+			event.target.closest("button,a,summary")
+		)
 			return;
 		if (!relevant.has(event.code)) return;
 		event.preventDefault();
@@ -155,7 +149,6 @@ export class InputController {
 	dispose(): void {
 		window.removeEventListener("keydown", this.keyDown);
 		window.removeEventListener("keyup", this.keyUp);
-		window.removeEventListener("focusin", this.focusIn);
 		this.keys.clear();
 		this.pointers.clear();
 	}

@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 class SecurityBoundsTest {
   private SecuritySettings settings(String origin) {
-    return new SecuritySettings(List.of(origin), Duration.ofHours(24), 20, 16384, 10000);
+    return new SecuritySettings(List.of(origin), Duration.ofHours(24), 20, 16384, 10000, null);
   }
 
   @Test
@@ -37,7 +37,7 @@ class SecurityBoundsTest {
     assertThatThrownBy(
             () ->
                 new SecuritySettings(
-                    List.of("https://example.com"), Duration.ZERO, 20, 16384, 10000))
+                    List.of("https://example.com"), Duration.ZERO, 20, 16384, 10000, null))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -45,17 +45,21 @@ class SecurityBoundsTest {
   void identityBucketSurvivesIpChangesAndCapacityFailsClosed() {
     var clock = Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC);
     var limits = new AuthRateLimiter(clock, settings("https://example.com"));
-    for (int index = 0; index < 20; index++) limits.check("ip" + index, "account:42");
-    assertThatThrownBy(() -> limits.check("another-ip", "account:42"))
+    for (int index = 0; index < 20; index++) limits.checkAccount(42);
+    assertThatThrownBy(() -> limits.checkAccount(42))
         .isInstanceOfSatisfying(
-            ApiException.class, error -> assertThat(error.status()).isEqualTo(429));
+            ApiException.class,
+            error -> {
+              assertThat(error.status()).isEqualTo(429);
+              assertThat(error.code()).isEqualTo("RATE_LIMITED");
+            });
     var bounded =
         new AuthRateLimiter(
             clock,
             new SecuritySettings(
-                List.of("https://example.com"), Duration.ofHours(24), 20, 16384, 1));
-    bounded.check("one", null);
-    assertThatThrownBy(() -> bounded.check("two", null)).isInstanceOf(ApiException.class);
+                List.of("https://example.com"), Duration.ofHours(24), 20, 16384, 1, null));
+    bounded.checkIp("one");
+    assertThatThrownBy(() -> bounded.checkIp("two")).isInstanceOf(ApiException.class);
   }
 
   @Test
@@ -67,16 +71,16 @@ class SecurityBoundsTest {
         new AuthRateLimiter(
             clock,
             new SecuritySettings(
-                List.of("https://example.com"), Duration.ofHours(24), 2, 16384, 2));
+                List.of("https://example.com"), Duration.ofHours(24), 2, 16384, 2, null));
     for (int index = 0; index < 2; index++) {
-      limits.check("one", null);
+      limits.checkIp("one");
     }
-    limits.check("two", null);
-    assertThatThrownBy(() -> limits.check("one", null)).isInstanceOf(ApiException.class);
-    assertThatThrownBy(() -> limits.check("three", null)).isInstanceOf(ApiException.class);
+    limits.checkIp("two");
+    assertThatThrownBy(() -> limits.checkIp("one")).isInstanceOf(ApiException.class);
+    assertThatThrownBy(() -> limits.checkIp("three")).isInstanceOf(ApiException.class);
     now.set(60_000);
-    limits.check("two", null);
-    limits.check("two", null);
-    assertThatThrownBy(() -> limits.check("two", null)).isInstanceOf(ApiException.class);
+    limits.checkIp("two");
+    limits.checkIp("two");
+    assertThatThrownBy(() -> limits.checkIp("two")).isInstanceOf(ApiException.class);
   }
 }

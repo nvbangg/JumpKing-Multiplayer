@@ -2,12 +2,13 @@ import { expect, test } from "@playwright/test";
 import checkpoints from "../../common/fixtures/main-babe-checkpoints.json" with {
 	type: "json",
 };
+import mainMap from "../../common/maps/main-babe.json" with { type: "json" };
 import rules from "../../common/rules.json" with { type: "json" };
 import type { GameRuntime } from "../src/game/presentation/types";
 
 test("renderer draws all 43 screens and keeps self above translucent peers", async ({
 	page,
-}) => {
+}, info) => {
 	const errors: string[] = [];
 	page.on("pageerror", (error) => errors.push(error.message));
 	page.on("console", (message) => {
@@ -15,8 +16,11 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 			errors.push(message.text());
 	});
 	await page.goto("/");
+	await page.exposeFunction("captureCrownScreen", async (name: string) => {
+		await page.screenshot({ path: info.outputPath(name) });
+	});
 	const output = await page.evaluate(
-		async ({ states, colors }) => {
+		async ({ states, colors, map }) => {
 			const requiredPath = "/src/required.ts";
 			const { required }: typeof import("../src/required") = await import(
 				requiredPath
@@ -27,7 +31,8 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 			const { createGame } = await import(modulePath),
 				{ findFinishPlatform } = await import(markerPath),
 				{ ROOM_MAPS, roomMap } = await import(roomMapsPath);
-			const map = await (await fetch("/shared/maps/main-babe.json")).json();
+			const adventurePath = "/src/game/simulation/Adventure.ts";
+			const { ADVENTURE } = await import(adventurePath);
 			const manifest = await (await fetch("/assets/manifest.json")).json();
 			const parent = document.createElement("div");
 			parent.style.cssText =
@@ -52,7 +57,22 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 							nickname: "You",
 							color: colors[ownColor],
 							state,
-							crowned: state.screen % 2 === 0,
+							crown: required(["NONE", "GOLD", "BLACK"][state.screen % 3]),
+						},
+						world: {
+							lastTick: state.ticks,
+							registeredScreens: [],
+							weatherWind: 0,
+							walls: Object.fromEntries(
+								manifest.walls.map((wall: { id: string }) => [
+									wall.id,
+									{
+										touching: false,
+										canPlay: true,
+										fadeTicks: ADVENTURE.tuning.wallFadeTicks,
+									},
+								]),
+							),
 						},
 						peers: [
 							{
@@ -60,7 +80,7 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 								nickname: "Friend",
 								color: colors[(ownColor + 1) % colors.length],
 								state: { ...state },
-								crowned: state.screen % 2 === 0,
+								crown: required(["NONE", "GOLD", "BLACK"][state.screen % 3]),
 							},
 						],
 					};
@@ -81,6 +101,25 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 			const screens: number[] = [];
 			try {
 				const scene = game.scene.getScene("Tower");
+				const readPixels = (key: string) => {
+					const image = scene.textures.get(key).getSourceImage(),
+						canvas = document.createElement("canvas");
+					canvas.width = image.width;
+					canvas.height = image.height;
+					const context = required(canvas.getContext("2d"));
+					context.drawImage(image, 0, 0);
+					return context.getImageData(0, 0, canvas.width, canvas.height).data;
+				};
+				const goldPixels = readPixels(manifest.crown),
+					blackPixels = readPixels(`${manifest.crown}/black`);
+				if (
+					goldPixels.length !== blackPixels.length ||
+					!goldPixels.some((value, i) => value !== blackPixels[i]) ||
+					goldPixels.some((value, i) => i % 4 === 3 && value !== blackPixels[i])
+				)
+					failures.push(
+						"Black crown must change color and preserve transparency",
+					);
 				if (scene.children.getByName("room-finish"))
 					failures.push("Finish marker outside Room");
 				runtime.finishMarker = findFinishPlatform(roomMap(map, 1));
@@ -158,7 +197,10 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 					if (self.depth <= peer.depth) failures.push(`Self depth ${screen}`);
 					const crowns = scene.children.list.filter(
 						(child: { type: string; texture?: { key: string } }) =>
-							child.type === "Sprite" && child.texture?.key === manifest.crown,
+							child.type === "Sprite" &&
+							[manifest.crown, `${manifest.crown}/black`].includes(
+								child.texture?.key,
+							),
 					);
 					if (
 						crowns.length !== 2 ||
@@ -171,37 +213,57 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 								crown.alpha === 0.7 && crown.depth < self.depth,
 						) ||
 						crowns.some(
-							(crown: { visible: boolean }) =>
-								crown.visible !== (screen % 2 === 0),
+							(crown: {
+								visible: boolean;
+								tintTopLeft: number;
+								texture: { key: string };
+							}) =>
+								crown.visible !== (screen % 3 !== 0) ||
+								crown.tintTopLeft !== 0xffffff ||
+								(crown.visible &&
+									crown.texture.key !==
+										(screen % 3 === 2
+											? `${manifest.crown}/black`
+											: manifest.crown)),
 						)
 					)
 						failures.push(`Crown ${screen}`);
 					if (scene.cameras.main.scrollY !== -screen * 360)
 						failures.push(`Camera ${screen}`);
-					const labels = scene.children.list.filter(
-						(child: { type: string; name: string }) =>
-							child.type === "Text" && child.name !== "room-finish",
-					);
-					if (
-						labels.length !== 2 ||
-						labels.some(
-							(label: { alpha: number; visible: boolean }) =>
-								label.alpha !== 1 || !label.visible,
-						)
-					)
+					const labels = [
+						...parent.querySelectorAll<HTMLElement>(".player-names span"),
+					];
+					if (labels.length !== 2 || labels.some((label) => label.hidden))
 						failures.push(`Names ${screen}`);
-					const ownName = scene.children.getByName("nickname:self"),
-						peerName = scene.children.getByName("nickname:peer");
+					const ownName = parent.querySelector<HTMLElement>(
+							'[data-player-id="self"]',
+						),
+						peerName = parent.querySelector<HTMLElement>(
+							'[data-player-id="peer"]',
+						);
 					if (
 						!ownName ||
 						!peerName ||
-						ownName.style.strokeThickness !== 1 ||
-						ownName.style.resolution !== 2
+						!getComputedStyle(ownName).fontFamily.includes("Segoe UI") ||
+						getComputedStyle(ownName).imageRendering !== "auto" ||
+						Number.parseFloat(getComputedStyle(ownName).fontSize) < 11 ||
+						scene.children.getByName("nickname:self")
 					)
 						failures.push(`Name font ${screen}`);
 					if (ownName && peerName) {
-						const a = ownName.getBounds(),
-							b = peerName.getBounds();
+						const rgb = (hex: string) => {
+							const color = Number.parseInt(hex.slice(1), 16);
+							return `rgb(${color >> 16}, ${(color >> 8) & 255}, ${color & 255})`;
+						};
+						if (
+							getComputedStyle(ownName).color !==
+								rgb(required(colors[ownColor])) ||
+							getComputedStyle(peerName).color !==
+								rgb(required(colors[(ownColor + 1) % colors.length]))
+						)
+							failures.push(`Name color ${screen}`);
+						const a = ownName.getBoundingClientRect(),
+							b = peerName.getBoundingClientRect();
 						if (
 							a.left < b.right &&
 							a.right > b.left &&
@@ -211,14 +273,25 @@ test("renderer draws all 43 screens and keeps self above translucent peers", asy
 							failures.push(`Overlapping names ${screen}`);
 					}
 					screens.push(screen);
+					if (screen === 1 || screen === 2)
+						await (
+							window as unknown as {
+								captureCrownScreen(name: string): Promise<void>;
+							}
+						).captureCrownScreen(
+							`crown-${screen === 1 ? "gold" : "black"}.png`,
+						);
 				}
 				return { screens, failures };
 			} finally {
 				game.destroy(true);
+				await frames();
+				if (parent.querySelector(".player-names"))
+					failures.push("Name layer retained after destroying the game");
 				parent.remove();
 			}
 		},
-		{ states: checkpoints, colors: rules.appearanceColors },
+		{ states: checkpoints, map: mainMap, colors: rules.appearanceColors },
 	);
 	expect(output.screens).toHaveLength(43);
 	expect(output.failures).toEqual([]);

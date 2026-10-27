@@ -37,7 +37,7 @@ class RoomEndingIT {
   }
 
   @Autowired RoomRaceIT.TestTime time;
-  @Autowired RaceRoom server;
+  @Autowired RoomManager server;
   @Autowired SharedData shared;
   @Autowired ObjectMapper json;
   @LocalServerPort int port;
@@ -51,7 +51,8 @@ class RoomEndingIT {
     }
     var settings = new HashMap<String, Object>();
     settings.put("mode", mode);
-    settings.put("timeLimitMinutes", mode.equals("TIME_LIMIT") ? 30 : null);
+    settings.put("mapId", RoomSettings.FINAL_MAP_ID);
+    settings.put("timeLimitMinutes", null);
     String room =
         clients[0].ok("CREATE_ROOM", Map.of("settings", settings)).path("roomId").asText();
     for (int index = 1; index < clients.length; index++)
@@ -97,7 +98,7 @@ class RoomEndingIT {
   }
 
   @Test
-  void aFailedFinalCommitCannotPlayEndingAndRetryOrReconnectKeepsTheSameWinner() throws Exception {
+  void roomFinalCommitDoesNotStartAnEndingAndRetryOrReconnectKeepsTheSameWinner() throws Exception {
     var jdbc = TestDatabase.get().jdbc;
     String trigger = "ending_" + UUID.randomUUID().toString().replace("-", "");
     try (var a = new GameClient(port);
@@ -146,18 +147,26 @@ class RoomEndingIT {
               a.messages.stream()
                   .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED")))
           .isEmpty();
+      assertThat(jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, a.owner))
+          .isEqualTo("NONE");
       jdbc.execute("DROP TRIGGER " + trigger);
       a.ok("PLAY_AGAIN", Map.of("matchId", game.play));
       saved(a);
-      var finished = a.await(message -> message.path("type").asText().equals("PLAYER_FINISHED"));
-      assertThat(finished.path("payload").path("ending").path("ravenDone").asBoolean()).isTrue();
+      assertThat(
+              a.messages.stream()
+                  .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED")))
+          .isEmpty();
+      assertThat(jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, a.owner))
+          .isEqualTo("BLACK");
+      assertThat(jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, b.owner))
+          .isEqualTo("NONE");
       assertThat(
               b.messages.stream()
                   .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED")))
           .isEmpty();
       assertThat(
               jdbc.queryForObject(
-                  "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND is_winner=TRUE",
+                  "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND status='FINISHED' AND `rank`=1",
                   Integer.class,
                   game.play))
           .isEqualTo(1);
@@ -172,24 +181,15 @@ class RoomEndingIT {
               joined.path("playerId").asText(),
               "reconnectToken",
               joined.path("reconnectToken").asText()));
-      GameClient.until(
-          () ->
-              a.messages.stream()
-                      .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED"))
-                      .count()
-                  == 2);
       assertThat(
               a.messages.stream()
-                  .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED"))
-                  .allMatch(
-                      message -> message.path("payload").path("playId").asText().equals(game.play)))
-          .isTrue();
+                  .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED")))
+          .isEmpty();
       a.ok("GET_ROOM_STATE", Map.of());
       assertThat(
               a.messages.stream()
-                  .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED"))
-                  .count())
-          .isEqualTo(2);
+                  .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED")))
+          .isEmpty();
       a.ok("LEAVE_ROOM", Map.of());
       b.ok("LEAVE_ROOM", Map.of());
     } finally {

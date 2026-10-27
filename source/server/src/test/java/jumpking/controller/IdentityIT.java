@@ -1,6 +1,7 @@
 package jumpking.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doAnswer;
 
@@ -57,6 +58,23 @@ class IdentityIT {
     MutableClock testClock() {
       return new MutableClock();
     }
+
+    @Bean
+    @Primary
+    jumpking.security.GoogleTokenVerifier testGoogleVerifier() {
+      return idToken -> {
+        if ("valid-google-token".equals(idToken)) {
+          return new jumpking.security.GoogleTokenVerifier.Profile(
+              "google-test-id-123", "tester@gmail.com", "Google Tester");
+        }
+        if ("valid-google-token-2".equals(idToken)) {
+          return new jumpking.security.GoogleTokenVerifier.Profile(
+              "google-test-id-456", "another@gmail.com", "Another Tester");
+        }
+        throw new jumpking.exception.ApiException(
+            401, "INVALID_CREDENTIALS", "Google ID token is invalid");
+      };
+    }
   }
 
   static class MutableClock extends Clock {
@@ -86,6 +104,7 @@ class IdentityIT {
   @Autowired MutableClock clock;
   @Autowired SessionAuthority sessions;
   @Autowired ObjectMapper json;
+  @Autowired jumpking.service.AccountService accounts;
   @MockitoSpyBean org.springframework.security.crypto.password.PasswordEncoder passwords;
 
   @BeforeEach
@@ -146,7 +165,7 @@ class IdentityIT {
     return java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 20);
   }
 
-  private String registration(String username, String password) throws Exception {
+  private String credentials(String username, String password) throws Exception {
     return json.writeValueAsString(java.util.Map.of("username", username, "password", password));
   }
 
@@ -167,14 +186,14 @@ class IdentityIT {
     try (var client = client()) {
       client.token();
       long count = accountCount();
-      var created = client.send("/auth/login", "POST", registration(name, password));
+      var created = client.send("/auth/login", "POST", credentials(name, password));
       assertThat(created.statusCode()).isEqualTo(200);
       assertThat(tree(created).path("account").path("username").asText()).isEqualTo(name);
       String hash = passwordHash(name);
       client.token();
       assertThat(client.send("/auth/logout", "POST", null).statusCode()).isEqualTo(200);
       client.token();
-      var reopened = client.send("/auth/login", "POST", registration(name, password));
+      var reopened = client.send("/auth/login", "POST", credentials(name, password));
       assertThat(reopened.statusCode()).isEqualTo(200);
       assertThat(tree(reopened)).isEqualTo(tree(created));
       assertThat(accountCount()).isEqualTo(count + 1);
@@ -188,12 +207,12 @@ class IdentityIT {
     try (var registered = client();
         var login = client()) {
       registered.token();
-      var original = registered.send("/auth/register", "POST", registration(name, password));
+      var original = registered.send("/auth/login", "POST", credentials(name, password));
       assertThat(original.statusCode()).isEqualTo(200);
       long count = accountCount();
       String hash = passwordHash(name);
       login.token();
-      var invalid = login.send("/auth/login", "POST", registration(name, "wrong"));
+      var invalid = login.send("/auth/login", "POST", credentials(name, "wrong"));
       assertThat(invalid.statusCode()).isEqualTo(401);
       assertThat(tree(invalid).path("error").path("code").asText())
           .isEqualTo("INVALID_CREDENTIALS");
@@ -201,7 +220,7 @@ class IdentityIT {
       assertThat(passwordHash(name)).isEqualTo(hash);
       assertThat(tree(login.send("/auth/me", "GET", null)).path("authenticated").asBoolean())
           .isFalse();
-      var valid = login.send("/auth/login", "POST", registration(name, password));
+      var valid = login.send("/auth/login", "POST", credentials(name, password));
       assertThat(valid.statusCode()).isEqualTo(200);
       assertThat(tree(valid)).isEqualTo(tree(original));
       assertThat(accountCount()).isEqualTo(count);
@@ -216,7 +235,7 @@ class IdentityIT {
       String previous = client.cookie("JSESSIONID"), oldCsrf = client.csrf;
       String name = unique(), password = "New account password";
       long count = accountCount();
-      var response = client.send("/auth/login", "POST", registration(name, password));
+      var response = client.send("/auth/login", "POST", credentials(name, password));
       assertThat(response.statusCode()).isEqualTo(200);
       assertThat(tree(response).propertyStream().map(java.util.Map.Entry::getKey))
           .containsExactlyInAnyOrder("authenticated", "account");
@@ -241,14 +260,14 @@ class IdentityIT {
       long count = accountCount();
       for (String body :
           java.util.List.of(
-              registration("ab", "password123"),
-              registration("invalid name", "password123"),
-              registration("a".repeat(33), "password123"),
-              registration("\uD840\uDC00".repeat(33), "password123"),
-              registration(unique(), "short"),
-              registration(unique(), "é".repeat(37)),
-              registration(unique(), ""),
-              registration(unique(), "password123").replace("}", ",\"admin\":true}"),
+              credentials("ab", "password123"),
+              credentials("invalid name", "password123"),
+              credentials("a".repeat(33), "password123"),
+              credentials("\uD840\uDC00".repeat(33), "password123"),
+              credentials(unique(), "short"),
+              credentials(unique(), "é".repeat(37)),
+              credentials(unique(), ""),
+              credentials(unique(), "password123").replace("}", ",\"admin\":true}"),
               "{\"username\":null,\"password\":\"password123\"}",
               "{\"username\":\"" + unique() + "\",\"password\":null}")) {
         var invalid = client.send("/auth/login", "POST", body);
@@ -260,22 +279,71 @@ class IdentityIT {
   }
 
   @Test
-  void signedInSessionCannotCreateAnotherAccountThroughLoginOrRegister() throws Exception {
+  void googleLoginCreatesUserAndReusesOnSecondLogin() throws Exception {
     try (var client = client()) {
       client.token();
-      var original = client.send("/auth/login", "POST", registration(unique(), "password123"));
+      long count = accountCount();
+      var response = client.send("/auth/google", "POST", "{\"idToken\":\"valid-google-token\"}");
+      assertThat(response.statusCode()).isEqualTo(200);
+      var json = tree(response);
+      assertThat(json.path("authenticated").asBoolean()).isTrue();
+      assertThat(json.path("account").path("username").asText()).isEqualTo("Google_Tester");
+      assertThat(accountCount()).isEqualTo(count + 1);
+
+      client.token();
+      var second = client.send("/auth/google", "POST", "{\"idToken\":\"valid-google-token\"}");
+      assertThat(second.statusCode()).isEqualTo(200);
+      assertThat(tree(second).path("account").path("id").asText())
+          .isEqualTo(json.path("account").path("id").asText());
+      assertThat(accountCount()).isEqualTo(count + 1);
+    }
+  }
+
+  @Test
+  void googleLoginRejectsInvalidToken() throws Exception {
+    try (var client = client()) {
+      client.token();
+      var response = client.send("/auth/google", "POST", "{\"idToken\":\"invalid-token\"}");
+      assertThat(response.statusCode()).isEqualTo(401);
+      assertThat(tree(response).path("error").path("code").asText())
+          .isEqualTo("INVALID_CREDENTIALS");
+    }
+  }
+
+  @Test
+  void googleAccountRejectsPasswordChange() throws Exception {
+    try (var client = client()) {
+      client.token();
+      var login = client.send("/auth/google", "POST", "{\"idToken\":\"valid-google-token-2\"}");
+      assertThat(login.statusCode()).isEqualTo(200);
+      assertThat(tree(login).path("account").path("hasPassword").asBoolean()).isFalse();
+
+      client.token();
+      var change =
+          client.send(
+              "/auth/password",
+              "POST",
+              "{\"currentPassword\":\"anyPassword123\",\"newPassword\":\"newPassword123\"}");
+      assertThat(change.statusCode()).isEqualTo(409);
+      assertThat(tree(change).path("error").path("code").asText()).isEqualTo("CONFLICT");
+    }
+  }
+
+  @Test
+  void signedInSessionCannotCreateAnotherAccountThroughLogin() throws Exception {
+    try (var client = client()) {
+      client.token();
+      var original = client.send("/auth/login", "POST", credentials(unique(), "password123"));
       assertThat(original.statusCode()).isEqualTo(200);
       client.token();
       long count = accountCount();
       String session = client.cookie("JSESSIONID");
-      for (String path : java.util.List.of("/auth/login", "/auth/register")) {
-        var conflict = client.send(path, "POST", registration(unique(), "password456"));
-        assertThat(conflict.statusCode()).isEqualTo(409);
-        assertThat(tree(conflict).path("error").path("code").asText()).isEqualTo("CONFLICT");
-        assertThat(tree(client.send("/auth/me", "GET", null))).isEqualTo(tree(original));
-        assertThat(client.cookie("JSESSIONID")).isEqualTo(session);
-        assertThat(accountCount()).isEqualTo(count);
-      }
+      var conflict = client.send("/auth/login", "POST", credentials(unique(), "password456"));
+      assertThat(conflict.statusCode()).isEqualTo(409);
+      assertThat(tree(conflict).path("error").path("code").asText()).isEqualTo("CONFLICT");
+      assertThat(tree(client.send("/auth/me", "GET", null))).isEqualTo(tree(original));
+      assertThat(client.cookie("JSESSIONID")).isEqualTo(session);
+      assertThat(accountCount()).isEqualTo(count);
     }
   }
 
@@ -314,10 +382,10 @@ class IdentityIT {
       second.token();
       var a =
           executor.submit(
-              () -> first.send("/auth/login", "POST", registration(name, firstPassword)));
+              () -> first.send("/auth/login", "POST", credentials(name, firstPassword)));
       var b =
           executor.submit(
-              () -> second.send("/auth/login", "POST", registration(name, secondPassword)));
+              () -> second.send("/auth/login", "POST", credentials(name, secondPassword)));
       var firstResponse = a.get(20, TimeUnit.SECONDS);
       var secondResponse = b.get(20, TimeUnit.SECONDS);
       String hash = passwordHash(name);
@@ -429,17 +497,64 @@ class IdentityIT {
       assertThat(client.http.send(chunked, HttpResponse.BodyHandlers.ofString()).statusCode())
           .isEqualTo(400);
       String name = "limited_" + unique();
-      assertThat(
-              client.send("/auth/register", "POST", registration(name, "password123")).statusCode())
+      assertThat(client.send("/auth/login", "POST", credentials(name, "password123")).statusCode())
           .isEqualTo(200);
       client.token();
-      String incorrect = registration(name, "incorrect");
+      assertThat(client.send("/auth/logout", "POST", null).statusCode()).isEqualTo(200);
+      client.token();
       clock.advance(120_000);
       for (int index = 0; index < 20; index++)
-        assertThat(client.send("/auth/login", "POST", incorrect).statusCode()).isEqualTo(401);
+        assertThat(
+                client
+                    .send("/auth/login", "POST", credentials("unknown_" + unique(), "short"))
+                    .statusCode())
+            .isEqualTo(400);
       client.cookies.getCookieStore().removeAll();
       client.token();
-      assertThat(client.send("/auth/login", "POST", incorrect).statusCode()).isEqualTo(429);
+      assertThat(client.send("/auth/login", "POST", credentials(name, "incorrect")).statusCode())
+          .isEqualTo(429);
+    }
+  }
+
+  @Test
+  void accountQuotaUsesCanonicalIdentityBeforeCheckingPassword() throws Exception {
+    String suffix = unique(), name = "limité_" + suffix;
+    try (var client = client()) {
+      client.token();
+      assertThat(client.send("/auth/login", "POST", credentials(name, "password123")).statusCode())
+          .isEqualTo(200);
+    }
+    clock.advance(120_000);
+    org.mockito.Mockito.clearInvocations(passwords);
+    // Bỏ qua quota IP để kiểm tra các alias cùng Account theo collation của MySQL.
+    String alias = "LIMITE_" + suffix.toUpperCase(java.util.Locale.ROOT);
+    for (int index = 0; index < 20; index++) {
+      String username = index % 2 == 0 ? name : alias;
+      assertThatThrownBy(
+              () ->
+                  accounts.login(
+                      new jumpking.dto.AccountCredentials.Login(username, "incorrect"),
+                      null,
+                      account -> {}))
+          .isInstanceOf(jumpking.exception.ApiException.class)
+          .hasFieldOrPropertyWithValue("status", 401);
+    }
+    assertThatThrownBy(
+            () ->
+                accounts.login(
+                    new jumpking.dto.AccountCredentials.Login(alias, "incorrect"),
+                    null,
+                    account -> {}))
+        .isInstanceOf(jumpking.exception.ApiException.class)
+        .hasFieldOrPropertyWithValue("status", 429);
+    org.mockito.Mockito.verify(passwords, org.mockito.Mockito.times(20))
+        .matches(
+            org.mockito.ArgumentMatchers.eq("incorrect"), org.mockito.ArgumentMatchers.anyString());
+    try (var client = client()) {
+      client.token();
+      var limited = client.send("/auth/login", "POST", credentials(alias, "password123"));
+      assertThat(limited.statusCode()).isEqualTo(429);
+      assertThat(limited.headers().firstValue("Retry-After")).contains("60");
     }
   }
 
@@ -482,19 +597,20 @@ class IdentityIT {
   }
 
   @Test
-  void registrationRotatesSessionAndCsrfAndLogoutRevokesSession() throws Exception {
+  void newAccountRotatesSessionAndCsrfAndLogoutRevokesSession() throws Exception {
     try (var client = client();
         var attacker = client()) {
       client.token();
       String previous = client.cookie("JSESSIONID"), oldCsrf = client.csrf;
       String name = "player_" + unique(), password = "A secure test password";
-      var response = client.send("/auth/register", "POST", registration(name, password));
+      var response = client.send("/auth/login", "POST", credentials(name, password));
       assertThat(response.statusCode()).isEqualTo(200);
       assertThat(tree(response).propertyStream().map(java.util.Map.Entry::getKey))
           .containsExactlyInAnyOrder("authenticated", "account");
       assertThat(tree(response).path("authenticated").asBoolean()).isTrue();
       assertThat(tree(response).path("account").path("id").isTextual()).isTrue();
-      assertThat(tree(response).path("account").path("crownUnlocked").isBoolean()).isTrue();
+      assertThat(tree(response).path("account").path("crown").asText()).isEqualTo("NONE");
+      assertThat(tree(response).path("account").path("hasPassword").asBoolean()).isTrue();
       String id = client.cookie("JSESSIONID");
       assertThat(id).isNotEqualTo(previous);
       assertThat(sessions.find(previous)).isNull();
@@ -530,23 +646,19 @@ class IdentityIT {
       String name = unique();
       for (String body :
           java.util.List.of(
-              registration("ab", "password123"),
-              registration("invalid name", "password123"),
-              registration(name, "short"),
-              registration(name, "é".repeat(37)),
-              registration(name, "password123").replace("}", ",\"admin\":true}"))) {
-        assertThat(client.send("/auth/register", "POST", body).statusCode())
-            .as(body)
-            .isEqualTo(400);
+              credentials("ab", "password123"),
+              credentials("invalid name", "password123"),
+              credentials(name, "short"),
+              credentials(name, "é".repeat(37)),
+              credentials(name, "password123").replace("}", ",\"admin\":true}"))) {
+        assertThat(client.send("/auth/login", "POST", body).statusCode()).as(body).isEqualTo(400);
       }
       assertThat(
-              client
-                  .send("/auth/register", "POST", registration(name, "😀".repeat(18)))
-                  .statusCode())
+              client.send("/auth/login", "POST", credentials(name, "😀".repeat(18))).statusCode())
           .isEqualTo(200);
       second.token();
-      var duplicate = second.send("/auth/register", "POST", registration(name, "password123"));
-      assertThat(duplicate.statusCode()).isEqualTo(409);
+      var duplicate = second.send("/auth/login", "POST", credentials(name, "password123"));
+      assertThat(duplicate.statusCode()).isEqualTo(401);
       assertThat(duplicate.body()).doesNotContain("SQL", "uq_users");
     }
   }
@@ -559,7 +671,7 @@ class IdentityIT {
     try (var first = client();
         var other = client()) {
       first.token();
-      assertThat(first.send("/auth/register", "POST", registration(name, password)).statusCode())
+      assertThat(first.send("/auth/login", "POST", credentials(name, password)).statusCode())
           .isEqualTo(200);
       first.token();
       other.token();

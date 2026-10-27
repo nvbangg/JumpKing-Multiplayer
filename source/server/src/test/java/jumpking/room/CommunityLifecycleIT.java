@@ -81,7 +81,7 @@ class CommunityLifecycleIT {
 
   @Autowired TestTime time;
   @Autowired Memberships memberships;
-  @Autowired CommunityTower server;
+  @Autowired Community server;
   @Autowired CommunityRuns records;
   @Autowired SharedData shared;
   @Autowired ObjectMapper json;
@@ -94,6 +94,27 @@ class CommunityLifecycleIT {
         message ->
             message.path("type").asText().equals("GAME_SNAPSHOT")
                 && message.path("payload").path("serverTick").asLong() > before);
+  }
+
+  private void idle(GameClient client, long milliseconds) throws Exception {
+    var membership = memberships.find(client.owner);
+    Object tower =
+        ((Map<?, ?>) ReflectionTestUtils.getField(server, "towers")).get(membership.roomId());
+    var checked = new CompletableFuture<Void>();
+    ((SerialExecutor) ReflectionTestUtils.getField(tower, "actor"))
+        .execute(
+            () -> {
+              try {
+                long before = (Long) ReflectionTestUtils.getField(tower, "serverTick");
+                time.advance(milliseconds);
+                ReflectionTestUtils.invokeMethod(tower, "advance");
+                assertThat(ReflectionTestUtils.getField(tower, "serverTick")).isEqualTo(before);
+                checked.complete(null);
+              } catch (Throwable error) {
+                checked.completeExceptionally(error);
+              }
+            });
+    checked.get(8, TimeUnit.SECONDS);
   }
 
   private JsonNode tickAt(
@@ -138,8 +159,7 @@ class CommunityLifecycleIT {
   }
 
   private void assertCurrentProgress(GameClient client, JsonNode snapshot, double expected) {
-    assertThat(snapshot.path("self").path("metrics").path("currentProgress").asDouble())
-        .isEqualTo(expected);
+    assertThat(snapshot.path("self").has("metrics")).isFalse();
     String id = memberships.find(client.owner).playerId();
     for (var player : snapshot.path("players"))
       if (player.path("playerId").asText().equals(id)) {
@@ -162,7 +182,10 @@ class CommunityLifecycleIT {
       assertThat(
               airborne.path("self").path("simulation").path("physics").path("grounded").asBoolean())
           .isFalse();
-      double maximum = airborne.path("self").path("metrics").path("maxProgress").asDouble();
+      double maximum =
+          shared.geometry().progressOriginY()
+              - airborne.path("self").path("simulation").path("physics").path("y").asDouble()
+              - shared.tuning().bodyHeight;
       assertThat(maximum).isGreaterThan(144);
       var splatted = tickAt(client, 231, 302, true, 3, false);
       assertCurrentProgress(client, splatted, 144);
@@ -180,8 +203,6 @@ class CommunityLifecycleIT {
           .isTrue();
       var lowerLanding = tickAt(client, 231, 302, true, 0, false);
       assertCurrentProgress(client, lowerLanding, 0);
-      assertThat(lowerLanding.path("self").path("metrics").path("maxProgress").asDouble())
-          .isEqualTo(maximum);
       client.ok("LEAVE_ROOM", Map.of());
       var current = client.request("/community/current", "GET", null).path("run");
       assertThat(current.path("id").asText()).isEqualTo(joined.path("playId").asText());
@@ -384,7 +405,7 @@ class CommunityLifecycleIT {
                   .asText())
           .isEqualTo("RATE_LIMITED");
       client.ok("HEARTBEAT", Map.of("nonce", "still-paused"));
-      step(client, 899_999);
+      idle(client, 899_999);
       assertThat(memberships.find(client.owner)).isNotNull();
       assertThat(
               client
@@ -401,6 +422,33 @@ class CommunityLifecycleIT {
       var current = client.request("/community/current", "GET", null);
       assertThat(current.path("run").path("id").asText()).isEqualTo(join.path("playId").asText());
       assertThat(current.path("saveStatus").asText()).isEqualTo("SAVED");
+    }
+  }
+
+  @Test
+  void repeatedResumeCommandsDoNotAdvanceTheSimulationClock() throws Exception {
+    try (var client = new GameClient(port)) {
+      client.register();
+      client.connect();
+      client.ok("JOIN_COMMUNITY", client.communityRequest());
+      var membership = memberships.find(client.owner);
+      Object tower =
+          ((Map<?, ?>) ReflectionTestUtils.getField(server, "towers")).get(membership.roomId());
+      var actor = (SerialExecutor) ReflectionTestUtils.getField(tower, "actor");
+      var before = new CompletableFuture<Long>();
+      actor.execute(
+          () -> {
+            ReflectionTestUtils.invokeMethod(tower, "advance");
+            ReflectionTestUtils.invokeMethod(server, "snapshots", tower);
+            before.complete((Long) ReflectionTestUtils.getField(tower, "serverTick"));
+          });
+      long tick = before.get(8, TimeUnit.SECONDS);
+      for (int command = 0; command < 10; command++)
+        client.ok("SET_COMMUNITY_PAUSED", Map.of("paused", false));
+      var after = new CompletableFuture<Long>();
+      actor.execute(() -> after.complete((Long) ReflectionTestUtils.getField(tower, "serverTick")));
+      assertThat(after.get(8, TimeUnit.SECONDS)).isEqualTo(tick);
+      client.ok("LEAVE_ROOM", Map.of());
     }
   }
 
@@ -457,7 +505,7 @@ class CommunityLifecycleIT {
           .isTrue();
       long ticks = settled.path("self").path("simulation").path("physics").path("ticks").asLong();
       assertThat(ticks).isGreaterThan(40);
-      step(client, 60_000);
+      idle(client, 60_000);
       assertThat(
               client
                   .snapshot()
@@ -469,6 +517,13 @@ class CommunityLifecycleIT {
           .isEqualTo(ticks);
       var resume = client.ok("SET_COMMUNITY_PAUSED", Map.of("paused", false));
       assertThat(resume.path("generation").asLong()).isEqualTo(2);
+      time.advance(50);
+      client.await(
+          message ->
+              message.path("type").asText().equals("GAME_SNAPSHOT")
+                  && message.path("payload").path("generation").asLong() == 2
+                  && message.path("payload").path("serverTick").asLong()
+                      > settled.path("serverTick").asLong());
       assertThat(
               client
                   .ok("SET_COMMUNITY_PAUSED", Map.of("paused", false))
@@ -483,7 +538,7 @@ class CommunityLifecycleIT {
                   .path("run")
                   .path("elapsedTimeMs")
                   .asLong())
-          .isEqualTo(ticks * 1000 / 60);
+          .isEqualTo((ticks + 3) * 1000 / 60);
     }
   }
 

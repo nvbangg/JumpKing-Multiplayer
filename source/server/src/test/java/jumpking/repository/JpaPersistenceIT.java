@@ -41,7 +41,6 @@ class JpaPersistenceIT {
     var run = new PlayRun();
     run.setId(UUID.randomUUID().toString());
     run.setUserId(owner.getId());
-    run.setKind("COMMUNITY");
     run.setStatus("ACTIVE");
     run.setRevision(1);
     run.setSnapshot("{\"physics\":{\"ticks\":0},\"world\":{}}");
@@ -51,7 +50,8 @@ class JpaPersistenceIT {
     var match = new Match();
     match.setId(UUID.randomUUID().toString());
     match.setRoomCode("ABCDEF");
-    match.setMode("TIME_LIMIT");
+    match.setMode("RACE");
+    match.setMapId(1);
     match.setTimeLimitMinutes(5);
     match.setStartedAt(now);
     matches.saveAndFlush(match);
@@ -59,5 +59,6 @@ class JpaPersistenceIT {
     assertThat(users.findById(owner.getId()).orElseThrow().getCreatedAt()).isEqualTo(now);
     assertThat(runs.findById(run.getId()).orElseThrow().getSnapshot()).contains("physics");
     assertThat(matches.findById(match.getId()).orElseThrow().getTimeLimitMinutes()).isEqualTo(5);
+    assertThat(matches.findById(match.getId()).orElseThrow().getMapId()).isEqualTo(1);
   }
 }

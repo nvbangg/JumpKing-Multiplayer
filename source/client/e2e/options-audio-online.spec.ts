@@ -7,60 +7,62 @@ import {
 	registerOnline,
 } from "./support/online";
 
-test("Options keep sound, show controls and the game timer is always visible", async ({
+test("Sound moves into the game menu, controls remain visible and the timer is always visible", async ({
 	page,
-}) => {
+}, info) => {
 	test.skip(process.env.E2E_AUTH_ONLINE !== "true", "Requires backend/MySQL");
 	await registerOnline(page, "options");
 	await expect(
-		page.getByText("Hold Space / W / ↑, then release", { exact: true }),
+		page.getByRole("button", { name: "Options", exact: true }),
 	).toHaveCount(0);
-	await page.getByRole("button", { name: "Options", exact: true }).click();
-	await expect(
-		page.getByText("Hold Space / W / ↑, then release", { exact: true }),
-	).toBeVisible();
+	await expect(page.getByRole("switch", { name: /^Sound:/ })).toHaveCount(0);
+	await expect(page.locator(".controls-help")).toHaveCount(0);
 	await expect(
 		page.getByRole("button", { name: "Controls", exact: true }),
 	).toHaveCount(0);
 	await expect(page.getByRole("switch", { name: /Display Timer/ })).toHaveCount(
 		0,
 	);
-	await page.getByRole("switch", { name: "Sound: On", exact: true }).click();
-	if (await page.evaluate(() => document.fullscreenEnabled)) {
-		await page
-			.getByRole("switch", { name: "Fullscreen: Off", exact: true })
-			.click();
-		await expect
-			.poll(() => page.evaluate(() => document.fullscreenElement !== null))
-			.toBe(true);
-		await expect(
-			page.getByRole("switch", { name: "Fullscreen: On", exact: true }),
-		).toBeChecked();
-		await page.evaluate(() => document.exitFullscreen());
-		await expect(
-			page.getByRole("switch", { name: "Fullscreen: Off", exact: true }),
-		).not.toBeChecked();
-	}
-	await page.getByRole("button", { name: "Back", exact: true }).click();
+	await expect(page.getByRole("switch", { name: /Fullscreen/ })).toHaveCount(0);
 	await newCommunity(page);
 	await expect(page.getByLabel("Play time", { exact: true })).toBeVisible();
+	await expect(page.getByLabel("Play time", { exact: true })).toHaveText(
+		/^\d{2}:\d{2} s$/,
+	);
+	await expect(page.getByRole("switch", { name: /^Sound:/ })).toHaveCount(0);
 	const region = page.getByLabel("Current region", { exact: true });
-	await expect(region).toHaveText("REDCROWN WOODS");
-	await expect(region).toHaveCSS("animation-duration", "6s");
-	await expect(region).toHaveCSS("pointer-events", "none");
-	await expect
-		.poll(() =>
-			region.evaluate((element) => Number(getComputedStyle(element).opacity)),
-		)
-		.toBeGreaterThan(0);
-	await region.evaluate((element) => {
-		element.setAttribute("data-same-region", "retained");
-	});
+	await expect(region).toHaveText("Green Woods");
 	await expect(page.getByText(/^Jumps:/)).toHaveCount(0);
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
-	await expect(region).toBeHidden();
-	await expect(region).toHaveCSS("animation-play-state", "paused");
-	await expect(region).toHaveAttribute("data-same-region", "retained");
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
+	await expect(
+		page
+			.getByRole("region", { name: "Game menu", exact: true })
+			.getByRole("switch", { name: "Sound: On", exact: true }),
+	).toBeVisible();
+	await page.getByRole("switch", { name: "Sound: On", exact: true }).click();
+	await expect(
+		page.getByRole("switch", { name: "Sound: Off", exact: true }),
+	).toBeVisible();
+	await page.screenshot({ path: info.outputPath("pause-desktop.png") });
+	await expect(page.locator(".controls-help dt")).toHaveText(["Move", "Jump"]);
+	await expect(page.locator(".controls-help dd")).toHaveText([
+		"A / D or ← / →",
+		"Space / W / ↑",
+	]);
+	expect(
+		await page.locator(".controls-help").evaluate((help) =>
+			[...help.querySelectorAll("dt")].every((label) => {
+				const term = label.getBoundingClientRect(),
+					keys = label.nextElementSibling?.getBoundingClientRect();
+				return (
+					keys &&
+					term.right <= keys.left &&
+					term.top < keys.bottom &&
+					keys.top < term.bottom
+				);
+			}),
+		),
+	).toBe(true);
 	expect(
 		await page.locator(".controls-help").evaluate((help) => {
 			const button = document.querySelector(
@@ -70,7 +72,7 @@ test("Options keep sound, show controls and the game timer is always visible", a
 				!!button &&
 				!!(
 					button.compareDocumentPosition(help) &
-					Node.DOCUMENT_POSITION_FOLLOWING
+					Node.DOCUMENT_POSITION_PRECEDING
 				)
 			);
 		}),
@@ -78,29 +80,13 @@ test("Options keep sound, show controls and the game timer is always visible", a
 	const paused = await page
 		.getByLabel("Play time", { exact: true })
 		.textContent();
-	const captionTime = await region.evaluate((element) =>
-		Number(element.getAnimations()[0]?.currentTime),
-	);
 	await page.waitForTimeout(500);
-	expect(
-		await region.evaluate((element) =>
-			Number(element.getAnimations()[0]?.currentTime),
-		),
-	).toBe(captionTime);
 	await expect(page.getByLabel("Play time", { exact: true })).toHaveText(
 		required(paused),
 	);
 	await page.getByRole("button", { name: "Resume", exact: true }).click();
-	await expect(region).toBeVisible();
-	await expect(region).toHaveCSS("animation-play-state", "running");
-	expect(
-		await region.evaluate((element) =>
-			Number(element.getAnimations()[0]?.currentTime),
-		),
-	).toBeGreaterThanOrEqual(captionTime);
-	await expect(region).toHaveAttribute("data-same-region", "retained");
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
-	await page.getByRole("button", { name: "Options", exact: true }).click();
+	await expect(page.getByRole("switch", { name: /^Sound:/ })).toHaveCount(0);
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await expect(
 		page.getByRole("switch", { name: "Sound: Off", exact: true }),
 	).toBeVisible();
@@ -128,7 +114,6 @@ test("native audio unlocks, decodes and caches effects and stops old ambience", 
 		);
 		state.testAudio.setScreen(0);
 	});
-	await page.keyboard.press("KeyX");
 	const inspect = () =>
 		page.evaluate(() => {
 			const state = globalThis as unknown as {
@@ -149,7 +134,9 @@ test("native audio unlocks, decodes and caches effects and stops old ambience", 
 				errors: state.audioErrors,
 			};
 		});
+	// Effects đã giải mã trước thao tác mở khóa, cú nhảy đầu không phải chờ tải.
 	await expect.poll(async () => (await inspect()).cache).toBeGreaterThan(10);
+	await page.keyboard.press("KeyX");
 	await expect.poll(async () => (await inspect()).playing).toBe(true);
 	expect((await inspect()).context).toBe("running");
 	const result = await page.evaluate(() => {
@@ -207,7 +194,7 @@ test("blocked audio reports a limitation without blocking the game", async ({
 	await registerOnline(page, "blocked_audio");
 	await newCommunity(page);
 	await expect(
-		page.getByRole("button", { name: "Menu", exact: true }),
+		page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 	).toBeVisible();
 	await page.keyboard.down("Space");
 	await expect
@@ -216,11 +203,10 @@ test("blocked audio reports a limitation without blocking the game", async ({
 		)
 		.toBe(1);
 	await page.keyboard.up("Space");
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await expect(page.getByRole("alert")).toContainText(
 		"Sound could not be played",
 	);
-	await page.getByRole("button", { name: "Options", exact: true }).click();
 	await page.getByRole("switch", { name: "Sound: On", exact: true }).click();
 	await expect(
 		page.getByRole("switch", { name: "Sound: Off", exact: true }),

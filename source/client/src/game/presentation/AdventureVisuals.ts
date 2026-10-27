@@ -82,8 +82,8 @@ export class AdventureVisuals {
 			required(this.walls.get(wall.id))
 				.setVisible(wall.screen === frame.self.state.screen)
 				.setAlpha(
-					(frame.world?.walls[wall.id]?.fadeTicks ??
-						ADVENTURE.tuning.wallFadeTicks) / ADVENTURE.tuning.wallFadeTicks,
+					required(frame.world.walls[wall.id]).fadeTicks /
+						ADVENTURE.tuning.wallFadeTicks,
 				);
 	}
 }

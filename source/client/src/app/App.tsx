@@ -1,8 +1,20 @@
+import {
+	ChevronRight,
+	FilePlus2,
+	History,
+	LockKeyhole,
+	LogIn,
+	LogOut,
+	Play,
+	Search,
+	UserRound,
+	UserRoundPlus,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ControlsHelp } from "../components/ControlsHelp";
 import { MenuPanel } from "../components/MenuPanel";
 import { AuthForm } from "../features/account/AuthForm";
 import { ChangePassword } from "../features/account/ChangePassword";
+import { LobbyChat } from "../features/chat/Chat";
 import { OnlineGame } from "../features/online/OnlineGame";
 import { HistoryDetail } from "../features/records/HistoryDetail";
 import { HistoryList } from "../features/records/HistoryList";
@@ -11,11 +23,8 @@ import { roomFinishScreen } from "../features/rooms/ending";
 import { Lobby } from "../features/rooms/Lobby";
 import { PublicRooms } from "../features/rooms/PublicRooms";
 import { Results } from "../features/rooms/Results";
-import { RoomChat } from "../features/rooms/RoomChat";
-import { OptionsButtons } from "../features/settings/OptionsPanel";
+import { reconnectLobby } from "../features/rooms/reconnectLobby";
 import { readOptions, saveOptions } from "../features/settings/options";
-import { loadManifest } from "../game/content/assets";
-import { AudioBus } from "../game/presentation/AudioBus";
 import { ApiError, api, backendOrigin, clearCsrf } from "../network/api";
 import type { HistoryItem, Identity, Statistics } from "../network/contracts";
 import {
@@ -25,18 +34,16 @@ import {
 } from "../network/GameSocket";
 import { loadReconnect } from "../network/reconnect";
 import { required } from "../required";
-import { UpdateNotice } from "./UpdateNotice";
+import { LoadErrorNotice, usePreloadError } from "./LoadErrorNotice";
+import { useMobileDisplay } from "./useMobileDisplay";
 
 type Screen =
 	| "home"
 	| "online"
 	| "sign-in"
-	| "register"
 	| "account"
 	| "history"
 	| "detail"
-	| "options"
-	| "rooms"
 	| "password"
 	| "public-rooms"
 	| "lobby"
@@ -48,10 +55,8 @@ const initialIdentity: Identity = {
 const routes: Partial<Record<Screen, string>> = {
 	home: "/",
 	history: "/history",
-	options: "/options",
 	account: "/account",
 	"sign-in": "/sign-in",
-	register: "/register",
 };
 const REMOVED_FROM_ROOM =
 	"Your room membership has ended. For Community, use Continue to load the last server checkpoint.";
@@ -63,6 +68,8 @@ function locationScreen(): Screen {
 			)?.[0] as Screen | undefined) || "home";
 }
 export function App() {
+	useMobileDisplay();
+	const loadError = usePreloadError();
 	const [screen, setScreenState] = useState<Screen>(locationScreen);
 	const [identity, setIdentityState] = useState<Identity>(initialIdentity);
 	const identityRevision = useRef(0);
@@ -82,6 +89,7 @@ export function App() {
 		item: HistoryItem;
 	} | null>(null);
 	const [room, setRoom] = useState<RoomState | null>(null);
+	const [newCommunityRun, setNewCommunityRun] = useState(false);
 	const [result, setResult] = useState<MatchResult | null>(null);
 	const resultRef = useRef<MatchResult | null>(null);
 	const viewedEnding = useRef<string | null>(null);
@@ -89,14 +97,19 @@ export function App() {
 	const [error, setError] = useState("");
 	const [pending, setPending] = useState(false);
 	const socket = useRef<GameSocket | null>(null);
+	const leaveRequested = useRef(false);
 	const exitScreen = useRef<Screen | null>(null);
 	const [navigationError, setNavigationError] = useState("");
 	const [connectionNotice, setConnectionNotice] = useState("");
+	const [disconnected, setDisconnected] = useState(false);
+	const [reconnecting, setReconnecting] = useState(false);
+	const reconnectTask = useRef<Promise<void> | null>(null);
+	const reconnectAction = useRef<() => Promise<void>>(async () => {});
 	const leaveOnline = useCallback(() => {
 		const connection = socket.current;
-		return connection?.selfId
-			? connection.command("LEAVE_ROOM").then(() => {})
-			: Promise.resolve();
+		if (!connection?.selfId) return Promise.resolve();
+		leaveRequested.current = true;
+		return connection.command("LEAVE_ROOM").then(() => {});
 	}, []);
 	const setScreen = useCallback(
 		(next: Screen) => {
@@ -130,36 +143,13 @@ export function App() {
 		? `${backendOrigin()}:account:${accountId}`
 		: "";
 	const home = homeData?.accountId === accountId ? homeData : null;
-	const playing = screen === "online";
-	useEffect(() => {
-		if (playing || !options.sound) return;
-		let disposed = false,
-			music: AudioBus | undefined;
-		const controller = new AbortController();
-		void loadManifest(controller.signal)
-			.then((manifest) => {
-				if (disposed) return;
-				music = new AudioBus(manifest, true, setError, false);
-				music.setMusic("audio/music/menu loop/menu_loop");
-			})
-			.catch(() => {
-				if (!disposed) setError("Menu sound could not be loaded");
-			});
-		return () => {
-			disposed = true;
-			controller.abort();
-			music?.dispose();
-		};
-	}, [playing, options.sound]);
 	const back = () => {
 		const next =
-			screen === "public-rooms"
-				? "rooms"
-				: screen === "password"
-					? "account"
-					: screen === "detail"
-						? "history"
-						: "home";
+			screen === "password" || (screen === "history" && identity.account)
+				? "account"
+				: screen === "detail"
+					? "history"
+					: "home";
 		if (routes[next]) window.history.replaceState(null, "", routes[next]);
 		setError("");
 		setScreen(next);
@@ -228,6 +218,18 @@ export function App() {
 			cancelled = true;
 		};
 	}, [reconnectProfile, identity.authenticated]);
+	useEffect(() => {
+		if (
+			!disconnected ||
+			screen !== "lobby" ||
+			room?.kind !== "ROOM" ||
+			room.state !== "WAITING"
+		)
+			return;
+		return reconnectLobby(() =>
+			leaveRequested.current ? Promise.resolve() : reconnectAction.current(),
+		);
+	}, [disconnected, screen, room?.kind, room?.state]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: Revision cho phép thử tải lại sau lỗi hoặc save thay đổi ở tab khác.
 	useEffect(() => {
@@ -273,6 +275,7 @@ export function App() {
 			const connection = new GameSocket(
 				(type, payload, replied) => {
 					if (socket.current !== connection) return;
+					if (type === "ROOM_JOINED") leaveRequested.current = false;
 					if (type === "ROOM_STATE") {
 						const next = payload as unknown as RoomState;
 						if (!next.roomId) {
@@ -281,6 +284,7 @@ export function App() {
 							return;
 						}
 						setRoom(next);
+						setDisconnected(false);
 						if (next.kind === "COMMUNITY") {
 							setScreen("online");
 							return;
@@ -298,7 +302,7 @@ export function App() {
 						);
 						setScreen(
 							resultRef.current &&
-								self?.nextMatchConfirmed !== true &&
+								self?.nextMatchJoined !== true &&
 								(next.state === "WAITING" || next.state === "FINISHED")
 								? roomFinishScreen(
 										resultRef.current,
@@ -333,17 +337,20 @@ export function App() {
 						};
 						resultRef.current = updated;
 						setResult(updated);
-						setScreen(
-							roomFinishScreen(
-								updated,
-								socket.current?.selfId || null,
-								viewedEnding.current,
-							),
+						setScreenState((current) =>
+							current === "lobby"
+								? current
+								: roomFinishScreen(
+										updated,
+										socket.current?.selfId || null,
+										viewedEnding.current,
+									),
 						);
 					} else if (type === "ROOM_LEFT") {
 						const next = exitScreen.current;
 						exitScreen.current = null;
 						setNavigationError("");
+						setDisconnected(false);
 						setRoom(null);
 						setResult(null);
 						resultRef.current = null;
@@ -354,14 +361,20 @@ export function App() {
 						else {
 							// Server tự đưa người chơi ra: về trang chủ và báo lý do.
 							setError("");
-							setConnectionNotice(REMOVED_FROM_ROOM);
+							setConnectionNotice(
+								payload.reason === "KICKED"
+									? "You were kicked from the room by the host."
+									: REMOVED_FROM_ROOM,
+							);
 							setScreen("home");
 						}
 					} else if (type === "ERROR") setError(String(payload.message));
 				},
 				() => {
-					if (socket.current === connection)
+					if (socket.current === connection) {
+						setDisconnected(true);
 						setError("Disconnected from the game server");
+					}
 				},
 			);
 			socket.current = connection;
@@ -370,7 +383,44 @@ export function App() {
 		return socket.current;
 	};
 	connect.current = connectedSocket;
+	reconnectAction.current = () => {
+		if (reconnectTask.current) return reconnectTask.current;
+		const connection = socket.current;
+		if (!connection) return Promise.resolve();
+		setReconnecting(true);
+		setError("");
+		const task = connection
+			.reconnect()
+			.catch((cause) => {
+				if (socket.current !== connection) return;
+				if (
+					cause instanceof ApiError &&
+					["RECONNECT_EXPIRED", "ROOM_NOT_FOUND"].includes(cause.code)
+				) {
+					connection.close();
+					socket.current = null;
+					setDisconnected(false);
+					setRoom(null);
+					setResult(null);
+					resultRef.current = null;
+					setError("");
+					setConnectionNotice(REMOVED_FROM_ROOM);
+					setScreen("home");
+				} else
+					setError(cause instanceof Error ? cause.message : "Reconnect failed");
+				throw cause;
+			})
+			.finally(() => {
+				if (reconnectTask.current === task) {
+					reconnectTask.current = null;
+					setReconnecting(false);
+				}
+			});
+		reconnectTask.current = task;
+		return task;
+	};
 	const command = (type: string, payload: Record<string, unknown> = {}) => {
+		if (type === "LEAVE_ROOM") leaveRequested.current = true;
 		void execute(async () => {
 			const connection = await connectedSocket();
 			await connection.command(type, payload);
@@ -385,6 +435,7 @@ export function App() {
 		if (pending || homeLoading || !home || (!newRun && !home.run)) return;
 		if (newRun && home.run && !window.confirm("Replace your unfinished game?"))
 			return;
+		setNewCommunityRun(newRun);
 		void execute(async () => {
 			try {
 				const connection = await connectedSocket();
@@ -401,23 +452,28 @@ export function App() {
 	const updateOptions = (key: keyof typeof options) => {
 		const next = { ...options, [key]: !options[key] };
 		setOptions(next);
-		try {
-			saveOptions(next);
-			setError("");
-		} catch {
-			setError("Options could not be saved on this device");
-		}
+		saveOptions(next);
 	};
 
 	const displayedError = navigationError || error;
 	if (screen === "online" && room && socket.current)
 		return (
 			<>
-				<UpdateNotice canReload={false} />
+				<LoadErrorNotice failed={loadError} canReload={false} />
 				<OnlineGame
 					room={room}
 					socket={socket.current}
 					navigationError={navigationError}
+					options={options}
+					onOptionsChange={updateOptions}
+					newCommunityRun={newCommunityRun}
+					accountId={accountId}
+					firstGame={
+						!!home &&
+						!home.run &&
+						home.statistics.totalPlayTimeMs === 0 &&
+						home.statistics.matchesPlayed === 0
+					}
 					onResults={() => {
 						viewedEnding.current = resultRef.current?.playId || null;
 						setScreen("results");
@@ -462,38 +518,41 @@ export function App() {
 		);
 	return (
 		<main className={`home screen-${screen}`}>
-			<UpdateNotice
+			<LoadErrorNotice
+				failed={loadError}
 				canReload={
 					screen === "home" && !room && !pending && !socket.current?.selfId
 				}
 			/>
-			{screen !== "detail" && (
-				<header className="brand">
-					<h1>
-						<img src="/assets/title_logo.png" alt="JumpKing" />
-					</h1>
-				</header>
-			)}
+			<header className="brand">
+				<h1>
+					<img src="/ui/logo.png" alt="JumpKing" width="1903" height="815" />
+				</h1>
+			</header>
 			<div
-				className={screen === "home" && home ? "home-layout" : "single-panel"}
+				className={
+					screen === "home" && home
+						? "home-layout"
+						: screen === "lobby"
+							? "lobby-panel"
+							: "single-panel"
+				}
 			>
 				<MenuPanel
+					label={screen === "lobby" ? "Lobby" : undefined}
+					showBack={screen !== "history"}
 					title={
 						screen === "home"
 							? undefined
 							: (
 									{
-										"sign-in": "Sign In",
-										register: "Sign In",
+										"sign-in": "Sign In / Log In",
 										password: "Change Password",
-										rooms: "Room",
 										account: "Account",
 										history: "History",
 										detail: "Game Details",
-										options: "Options",
 
-										"public-rooms": "Join Public Room",
-										lobby: "Lobby",
+										"public-rooms": "Public Rooms",
 										results: "Results",
 									} as Partial<Record<Screen, string>>
 								)[screen]
@@ -509,52 +568,98 @@ export function App() {
 							{home?.run && (
 								<button
 									type="button"
+									className="button-primary home-action"
 									onClick={() => enterCommunity(false)}
 									disabled={pending || (!!accountId && (homeLoading || !home))}
 								>
+									<Play aria-hidden="true" />
 									Continue
 								</button>
 							)}
 							<button
 								type="button"
+								className="home-action"
 								onClick={() => enterCommunity(true)}
 								disabled={pending || (!!accountId && (homeLoading || !home))}
 							>
+								<FilePlus2 className="tone-purple" aria-hidden="true" />
 								New Game
 							</button>
 							<button
 								type="button"
-								onClick={() =>
-									setScreen(identity.authenticated ? "rooms" : "sign-in")
-								}
+								className="home-action"
+								disabled={pending}
+								onClick={() => {
+									if (!identity.account) setScreen("sign-in");
+									else command("CREATE_ROOM");
+								}}
 							>
-								Room
+								<UserRoundPlus className="tone-amber" aria-hidden="true" />
+								Create Room
 							</button>
 							<button
 								type="button"
+								className="home-action"
 								onClick={() =>
-									setScreen(identity.account ? "history" : "sign-in")
+									setScreen(identity.account ? "public-rooms" : "sign-in")
 								}
 							>
-								History
+								<Search className="tone-cyan" aria-hidden="true" />
+								Join Public Room
 							</button>
-							<button type="button" onClick={() => setScreen("options")}>
-								Options
-							</button>
+							<form
+								className="room-join-form"
+								onSubmit={(event) => {
+									event.preventDefault();
+									if (!identity.account) {
+										setScreen("sign-in");
+										return;
+									}
+									const roomId = String(
+										new FormData(event.currentTarget).get("roomId") || "",
+									).trim();
+									command("JOIN_ROOM", { roomId });
+								}}
+							>
+								<input
+									name="roomId"
+									aria-label="Room ID"
+									placeholder="Enter Room ID"
+									required
+									minLength={6}
+									maxLength={6}
+									inputMode="numeric"
+									autoComplete="off"
+									pattern="[0-9]{6}"
+								/>
+								<button
+									type="submit"
+									className="button-primary"
+									disabled={pending}
+								>
+									Join
+								</button>
+							</form>
 							<div className="account-actions">
 								{identity.account ? (
 									<button type="button" onClick={() => setScreen("account")}>
-										{identity.account.username}
+										<UserRound aria-hidden="true" />
+										<span>{identity.account.username}</span>
+										<ChevronRight
+											className="trailing-icon"
+											aria-hidden="true"
+										/>
 									</button>
 								) : (
 									<button type="button" onClick={() => setScreen("sign-in")}>
-										Sign In
+										<LogIn aria-hidden="true" />
+										Sign In / Log In
 									</button>
 								)}
 							</div>
 						</>
 					)}
-					{(screen === "sign-in" || screen === "register") && (
+					{screen === "sign-in" && (
 						<AuthForm
 							key={screen}
 							onSuccess={(value) => {
@@ -565,15 +670,28 @@ export function App() {
 					)}
 					{screen === "account" && identity.account && (
 						<>
-							<dl className="account-info">
-								<dt>Username</dt>
-								<dd>{identity.account.username}</dd>
-							</dl>
-							<button type="button" onClick={() => setScreen("password")}>
-								Change Password
+							<div className="account-info">
+								<UserRound aria-hidden="true" />
+								<dl>
+									<dt>Username</dt>
+									<dd>{identity.account.username}</dd>
+								</dl>
+							</div>
+							<button type="button" onClick={() => setScreen("history")}>
+								<History className="tone-cyan" aria-hidden="true" />
+								History
+								<ChevronRight className="trailing-icon" aria-hidden="true" />
 							</button>
+							{identity.account.hasPassword && (
+								<button type="button" onClick={() => setScreen("password")}>
+									<LockKeyhole className="tone-amber" aria-hidden="true" />
+									Change Password
+									<ChevronRight className="trailing-icon" aria-hidden="true" />
+								</button>
+							)}
 							<button
 								type="button"
+								className="button-danger"
 								disabled={pending}
 								onClick={() => {
 									void execute(async () => {
@@ -586,11 +704,12 @@ export function App() {
 									});
 								}}
 							>
+								<LogOut aria-hidden="true" />
 								Sign Out
 							</button>
 						</>
 					)}
-					{screen === "password" && identity.account && (
+					{screen === "password" && identity.account?.hasPassword && (
 						<ChangePassword
 							onChanged={() => {
 								socket.current?.close();
@@ -605,6 +724,7 @@ export function App() {
 						(identity.account ? (
 							<HistoryList
 								key={accountId}
+								onBack={back}
 								onSelect={(item) => {
 									setDetail({ accountId: required(identity.account).id, item });
 									setScreen("detail");
@@ -612,7 +732,7 @@ export function App() {
 							/>
 						) : (
 							<button type="button" onClick={() => setScreen("sign-in")}>
-								Sign In
+								Sign In / Log In
 							</button>
 						))}
 					{screen === "detail" && detail?.accountId === accountId && detail && (
@@ -621,64 +741,9 @@ export function App() {
 							item={detail.item}
 						/>
 					)}
-					{screen === "options" && (
-						<>
-							<OptionsButtons
-								options={options}
-								onChange={updateOptions}
-								onError={setError}
-							/>
-							<ControlsHelp />
-						</>
-					)}
-					{screen === "rooms" && identity.authenticated && (
-						<>
-							<button
-								type="button"
-								disabled={pending}
-								onClick={() => command("CREATE_ROOM")}
-							>
-								Create Room
-							</button>
-							<button type="button" onClick={() => setScreen("public-rooms")}>
-								Join Public Room
-							</button>
-							<form
-								className="room-join-form"
-								onSubmit={(event) => {
-									event.preventDefault();
-									const roomId = String(
-										new FormData(event.currentTarget).get("roomId") || "",
-									)
-										.trim()
-										.toUpperCase();
-									command("JOIN_ROOM", { roomId });
-								}}
-							>
-								<input
-									name="roomId"
-									aria-label="Room ID"
-									placeholder="Enter Room ID"
-									required
-									minLength={6}
-									maxLength={6}
-									autoComplete="off"
-									autoCapitalize="characters"
-									pattern="[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}"
-									onInput={(event) => {
-										event.currentTarget.value =
-											event.currentTarget.value.toUpperCase();
-									}}
-								/>
-
-								<button type="submit" disabled={pending}>
-									Join
-								</button>
-							</form>
-						</>
-					)}
 					{screen === "public-rooms" && identity.authenticated && (
 						<PublicRooms
+							pending={pending}
 							onJoin={(roomId) => command("JOIN_ROOM", { roomId })}
 						/>
 					)}
@@ -686,9 +751,21 @@ export function App() {
 						<Lobby
 							room={room}
 							selfId={socket.current?.selfId || null}
-							pending={pending}
+							pending={pending || disconnected || reconnecting}
 							command={command}
 						/>
+					)}
+					{disconnected && room && (
+						<button
+							type="button"
+							disabled={pending || reconnecting}
+							onClick={() => {
+								leaveRequested.current = false;
+								void reconnectAction.current().catch(() => {});
+							}}
+						>
+							Reconnect
+						</button>
 					)}
 					{screen === "results" && result && (
 						<Results
@@ -704,6 +781,7 @@ export function App() {
 					{screen === "home" && connectionNotice && (
 						<p role="status">{connectionNotice}</p>
 					)}
+					{pending && <p role="status">Please wait…</p>}
 					{displayedError && (
 						<p className="error" role="alert">
 							{displayedError}
@@ -729,7 +807,7 @@ export function App() {
 				)}
 			</div>
 			{screen === "lobby" && room && socket.current && (
-				<RoomChat socket={socket.current} />
+				<LobbyChat socket={socket.current} />
 			)}
 		</main>
 	);

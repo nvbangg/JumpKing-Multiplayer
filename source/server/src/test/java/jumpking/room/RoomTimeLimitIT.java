@@ -38,7 +38,7 @@ class RoomTimeLimitIT {
   }
 
   @Autowired RoomRaceIT.TestTime time;
-  @Autowired RaceRoom server;
+  @Autowired RoomManager server;
   @Autowired SharedData shared;
   @Autowired ObjectMapper json;
   @LocalServerPort int port;
@@ -53,7 +53,15 @@ class RoomTimeLimitIT {
     String room =
         a.ok(
                 "CREATE_ROOM",
-                Map.of("settings", Map.of("mode", "TIME_LIMIT", "timeLimitMinutes", minutes)))
+                Map.of(
+                    "settings",
+                    Map.of(
+                        "mode",
+                        "RACE",
+                        "timeLimitMinutes",
+                        minutes,
+                        "mapId",
+                        RoomSettings.FINAL_MAP_ID)))
             .path("roomId")
             .asText();
     b.ok("JOIN_ROOM", Map.of("roomId", room));
@@ -107,7 +115,6 @@ class RoomTimeLimitIT {
       assertThat(ended.path("reason").asText()).isEqualTo("TIME_LIMIT");
       assertThat(ended.path("durationMs").asLong()).isEqualTo(60_000);
       for (var row : ended.path("results")) {
-        assertThat(row.path("isWinner").asBoolean()).isFalse();
         assertThat(row.path("rank").asInt()).isEqualTo(1);
       }
       a.await(
@@ -159,7 +166,6 @@ class RoomTimeLimitIT {
       assertThat(ended.path("reason").asText()).isEqualTo("FINISH");
       assertThat(ended.path("durationMs").asLong()).isEqualTo(300_000);
       for (var row : ended.path("results")) {
-        assertThat(row.path("isWinner").asBoolean()).isTrue();
         assertThat(row.path("rank").asInt()).isEqualTo(1);
       }
       a.await(
@@ -175,7 +181,7 @@ class RoomTimeLimitIT {
               TestDatabase.get()
                   .jdbc
                   .queryForObject(
-                      "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND status='FINISHED' AND finish_ticks=18000 AND is_winner=TRUE",
+                      "SELECT COUNT(*) FROM play_runs WHERE match_id=? AND status='FINISHED' AND finish_ticks=18000 AND `rank`=1",
                       Integer.class,
                       game.play))
           .isEqualTo(2);

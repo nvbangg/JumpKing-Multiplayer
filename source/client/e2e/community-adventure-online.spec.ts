@@ -26,14 +26,18 @@ test("NPC dialogue persists across Community Continue without Inventory", async 
 		}),
 	);
 	await page.goto("/");
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await page
 		.getByLabel("Username", { exact: true })
 		.fill(required(process.env.E2E_ADVENTURE_USERNAME));
 	await page
 		.getByLabel("Password", { exact: true })
 		.fill(required(process.env.E2E_ADVENTURE_PASSWORD));
-	await page.getByRole("button", { name: "Sign In", exact: true }).click();
+	await page
+		.getByRole("button", { name: "Sign In / Log In", exact: true })
+		.click();
 	await page.getByRole("button", { name: "Continue", exact: true }).click();
 	await expect
 		.poll(
@@ -45,7 +49,7 @@ test("NPC dialogue persists across Community Continue without Inventory", async 
 	const talks = required(
 		required(snapshots.at(-1)).self.simulation.adventure.dialogue.old_man,
 	).talks;
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "Inventory", exact: true }),
 	).toHaveCount(0);
@@ -70,7 +74,7 @@ test("NPC dialogue persists across Community Continue without Inventory", async 
 	expect(
 		required(snapshots.at(-1)).self.simulation.adventure,
 	).not.toHaveProperty("inventory");
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await page.getByRole("button", { name: "Save & Exit", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "New Game", exact: true }),

@@ -9,7 +9,7 @@ function valid(value: unknown): value is ReconnectContext {
 	const context = value as ReconnectContext;
 	return (
 		typeof context.roomId === "string" &&
-		/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/.test(context.roomId) &&
+		/^[0-9]{6}$/.test(context.roomId) &&
 		typeof context.playerId === "string" &&
 		/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(
 			context.playerId,

@@ -23,47 +23,104 @@ class AdventureTest {
   private final Physics physics;
 
   @Test
-  void regionIntrosStartAtTheirFirstScreenAndSurviveRestoreAndRespawn() {
-    var game = new GameSimulation(map, physics, shared.adventure(), true, false);
-    for (JsonNode start : shared.adventure().path("regionStarts")) {
-      int screen = start.asInt();
+  void mapCaptionsStartAtGreenWoodsAdvanceOnSafeLandingsAndSurviveRestore() {
+    var initial =
+        new GameSimulation(map, physics, shared.adventure(), shared.roomScenes(), true, false);
+    assertThat(initial.snapshot().world().path("mapIntro").path("level").asInt()).isEqualTo(1);
+    assertThat(initial.snapshot().world().path("mapIntro").path("tick").asLong()).isZero();
+    for (var marker : shared.roomScenes()) {
+      var game =
+          new GameSimulation(map, physics, shared.adventure(), shared.roomScenes(), true, false);
       var player = game.physics().snapshot();
-      player.y = -screen * map.screenHeight() + 100;
-      player.screen = screen;
-      player.freeFlight = true;
+      player.x = marker.x() + (marker.width() - physics.bodyWidth) / 2;
+      player.y = marker.y() - physics.bodyHeight - 3;
+      player.vy = 4;
+      player.freeFlight = false;
       player.grounded = false;
       game.physics().restore(player);
-      game.tick(PlayerInput.NEUTRAL);
+      var events = game.tick(PlayerInput.NEUTRAL);
+      assertThat(events.movement()).contains("LAND");
       var saved = game.snapshot();
-      var intro = saved.world().path("regionIntro");
-      assertThat(intro.path("screen").asInt()).isEqualTo(screen);
+      var intro = saved.world().path("mapIntro");
+      assertThat(intro.path("level").asInt()).isEqualTo(marker.level());
       assertThat(intro.path("tick").asLong()).isEqualTo(saved.physics().ticks);
-      var restored = new GameSimulation(map, physics, shared.adventure(), true, false);
+      var restored =
+          new GameSimulation(map, physics, shared.adventure(), shared.roomScenes(), true, false);
       restored.restore(saved);
       restored.physics().respawn();
       restored.tick(PlayerInput.NEUTRAL);
-      assertThat(restored.snapshot().world().path("regionIntro")).isEqualTo(intro);
-      assertThat(
-              new GameSimulation(map, physics, shared.adventure(), true, false)
-                  .snapshot()
-                  .world()
-                  .has("regionIntro"))
-          .isFalse();
+      assertThat(restored.snapshot().world().path("mapIntro")).isEqualTo(intro);
+      player.ticks = saved.physics().ticks;
+      game.physics().restore(player);
+      assertThat(game.tick(PlayerInput.NEUTRAL).movement()).contains("LAND");
+      assertThat(game.snapshot().world().path("mapIntro")).isEqualTo(intro);
+
+      var flying =
+          new GameSimulation(map, physics, shared.adventure(), shared.roomScenes(), true, false);
+      var flyState = flying.physics().snapshot();
+      flyState.x = marker.x() + (marker.width() - physics.bodyWidth) / 2;
+      flyState.y = marker.y() - physics.bodyHeight + 1;
+      flyState.vy = 0;
+      flyState.freeFlight = true;
+      flyState.grounded = false;
+      flying.physics().restore(flyState);
+      flying.tick(new PlayerInput(false, false, false, true, false, null));
+      assertThat(flying.snapshot().world().path("mapIntro").path("level").asInt()).isEqualTo(1);
+      assertThat(flying.snapshot().world().path("mapIntro").path("tick").asLong()).isZero();
     }
+    var firstMarker = shared.roomScenes().getFirst();
+    var room =
+        new GameSimulation(
+            shared.roomMap(1), physics, shared.adventure(), shared.roomScenes(), 1, true, false);
+    var roomState = room.physics().snapshot();
+    roomState.x = firstMarker.x() + (firstMarker.width() - physics.bodyWidth) / 2;
+    roomState.y = firstMarker.y() - physics.bodyHeight - 3;
+    roomState.vy = 4;
+    roomState.grounded = false;
+    room.physics().restore(roomState);
+    room.tick(PlayerInput.NEUTRAL);
+    assertThat(room.snapshot().world().path("mapIntro").path("level").asInt()).isEqualTo(1);
+    assertThat(room.snapshot().world().path("mapIntro").path("tick").asLong()).isZero();
+    var game =
+        new GameSimulation(map, physics, shared.adventure(), shared.roomScenes(), true, false);
     var saved = game.snapshot();
     for (var intro :
         List.of(
-            mapper.createObjectNode().put("screen", 6).put("tick", 0),
-            mapper.createObjectNode().put("screen", 5).put("tick", -1),
-            mapper.createObjectNode().put("screen", 5).put("tick", saved.physics().ticks + 1))) {
+            mapper.createObjectNode().put("level", 0).put("tick", 0),
+            mapper.createObjectNode().put("level", 10).put("tick", 0),
+            mapper.createObjectNode().put("level", 1).put("tick", -1),
+            mapper.createObjectNode().put("level", 1).put("tick", saved.physics().ticks + 1))) {
       var invalid = (ObjectNode) saved.world().deepCopy();
-      invalid.set("regionIntro", intro);
+      invalid.set("mapIntro", intro);
       assertThatThrownBy(
               () ->
                   game.restore(
                       new GameSimulation.Snapshot(1, saved.physics(), saved.adventure(), invalid)))
           .isInstanceOf(IllegalArgumentException.class);
       assertThat(game.snapshot().world()).isEqualTo(saved.world());
+    }
+  }
+
+  @Test
+  void communityAcceptsAnotherHigherPlatformButRejectsSplatOrLowerLanding() {
+    record Landing(double x, double floorY, double speed, int level, String effect) {}
+    // Nền tại screen 3, hàng 20, cột 37–40 cao hơn mốc Red Tree và nằm ngoài bệ mốc.
+    for (var landing :
+        List.of(
+            new Landing(300, -920, 4, 2, "LAND"),
+            new Landing(300, -920, physics.maxFall, 1, "SPLAT"),
+            new Landing(map.spawn().x(), map.spawn().y() + physics.bodyHeight, 4, 1, "LAND"))) {
+      var game =
+          new GameSimulation(map, physics, shared.adventure(), shared.roomScenes(), false, false);
+      var player = game.physics().snapshot();
+      player.x = landing.x();
+      player.y = landing.floorY() - physics.bodyHeight - 3;
+      player.vy = landing.speed();
+      player.grounded = false;
+      game.physics().restore(player);
+      assertThat(game.tick(PlayerInput.NEUTRAL).movement()).contains(landing.effect());
+      assertThat(game.snapshot().world().path("mapIntro").path("level").asInt())
+          .isEqualTo(landing.level());
     }
   }
 

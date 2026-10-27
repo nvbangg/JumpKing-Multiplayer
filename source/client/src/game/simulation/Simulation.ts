@@ -50,7 +50,7 @@ export class Simulation {
 			ice: false,
 			snow: false,
 			wind: false,
-			screen: 0,
+			screen: this.screenAt(this.map.spawn.y + P.bodyHeight / 2),
 			ticks: 0,
 			jumps: 0,
 			falls: 0,
@@ -64,7 +64,12 @@ export class Simulation {
 	snapshot(): PlayerState {
 		const result = { ...this.state, directions: [...this.state.directions] };
 		if (!result.slipping) delete result.slipping;
+		if (!result.jumpBoost) delete result.jumpBoost;
 		return result;
+	}
+
+	get y(): number {
+		return this.state.y;
 	}
 
 	restore(state: PlayerState): void {
@@ -115,6 +120,7 @@ export class Simulation {
 			state.charge > P.chargeTicks ||
 			state.splat > P.splatTicks ||
 			(state.slipping !== undefined && typeof state.slipping !== "boolean") ||
+			(state.jumpBoost !== undefined && typeof state.jumpBoost !== "boolean") ||
 			state.x < -P.bodyWidth / 2 ||
 			state.x > this.map.width - P.bodyWidth / 2 ||
 			state.y < -this.map.screenHeight * this.map.screens.length ||
@@ -137,9 +143,23 @@ export class Simulation {
 		s.jumpConsumed = true;
 	}
 
+	boostJump(): void {
+		this.state.jumpBoost = true;
+	}
+
 	respawn(): void {
-		const { ticks, jumps, falls } = this.state;
-		this.state = { ...this.initialState(), ticks, jumps, falls };
+		const { ticks, jumps, falls, jumpBoost } = this.state;
+		this.state = { ...this.initialState(), ticks, jumps, falls, jumpBoost };
+	}
+
+	respawnAt(x: number, y: number, countFall = false): void {
+		this.respawn();
+		if (countFall) this.state.falls++;
+		this.state.x = x;
+		this.state.y = y;
+		this.state.screen = this.screenAt(y + P.bodyHeight / 2);
+		this.state.vy = 0;
+		this.cancelInput();
 	}
 
 	setFlight(enabled: boolean): void {
@@ -424,7 +444,12 @@ export class Simulation {
 					if (!s.snow || intensity > P.snowMinimumCharge) {
 						if (s.snow && intensity < P.snowLaunchCharge)
 							intensity = P.snowLaunchCharge;
-						s.vy = f(P.jumpVelocity * intensity);
+						s.vy = f(
+							P.jumpVelocity *
+								intensity *
+								(s.jumpBoost ? P.jumpBoostVelocityMultiplier : 1),
+						);
+						delete s.jumpBoost;
 						s.vx = f(
 							clamp(s.vx + direction * P.jumpSpeed, -P.jumpSpeed, P.jumpSpeed),
 						);
@@ -436,7 +461,7 @@ export class Simulation {
 					s.jumpConsumed = true;
 				}
 			} else {
-				if (s.snow) s.vx = 0;
+				if (s.snow || (this.noWalk && !s.ice)) s.vx = 0;
 				else if (!this.noWalk) {
 					const target = intent * P.walkSpeed;
 					if (!s.ice) s.vx = target;

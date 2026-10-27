@@ -1,12 +1,10 @@
 package jumpking.room;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.*;
 import java.util.concurrent.*;
 import jumpking.game.SharedData;
 import jumpking.network.SerialExecutor;
 import jumpking.support.GameClient;
-import jumpking.support.MainBabeRoute;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /** State trước Finish Room chỉ được chuẩn bị trong test, không có endpoint cheat. */
@@ -18,8 +16,7 @@ public final class RoomBrowserFixture implements AutoCloseable {
   private static final String PASSWORD = "A secure server integration password";
 
   public RoomBrowserFixture(
-      int port, RaceRoom server, Memberships memberships, SharedData shared, ObjectMapper json)
-      throws Exception {
+      int port, RoomManager server, Memberships memberships, SharedData shared) throws Exception {
     this.memberships = memberships;
     first = new GameClient(port);
     second = new GameClient(port);
@@ -30,6 +27,7 @@ public final class RoomBrowserFixture implements AutoCloseable {
       second.connect();
       var host = first.ok("CREATE_ROOM", Map.of());
       roomId = host.path("roomId").asText();
+      first.ok("UPDATE_ROOM_SETTINGS", Map.of("mapId", RoomSettings.FINAL_MAP_ID));
       var other = second.ok("JOIN_ROOM", Map.of("roomId", roomId));
       first.ok("START_GAME", Map.of());
       playId =
@@ -41,7 +39,6 @@ public final class RoomBrowserFixture implements AutoCloseable {
       first.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
       first.disconnect();
       second.disconnect();
-      var before = MainBabeRoute.beforeFinish(shared, json);
       Object room = ((Map<?, ?>) ReflectionTestUtils.getField(server, "rooms")).get(roomId);
       var actor = (SerialExecutor) ReflectionTestUtils.getField(room, "actor");
       GameClient.until(
@@ -64,11 +61,23 @@ public final class RoomBrowserFixture implements AutoCloseable {
               () -> {
                 try {
                   var match = (RoomMatch) ReflectionTestUtils.getField(room, "match");
-                  match.ticks = before.physics().ticks;
                   var player = match.players.get(host.path("playerId").asText());
+                  var before = player.game.snapshot();
+                  var state = before.physics();
+                  var map = shared.roomMap(RoomSettings.FINAL_MAP_ID);
+                  state.screen = map.finish().screen();
+                  state.x = map.finish().minCenterX() - shared.tuning().bodyWidth / 2.0;
+                  state.y =
+                      map.progressOriginY()
+                          - map.finish().minProgress()
+                          - shared.tuning().bodyHeight
+                          - 1;
+                  state.vx = 0;
+                  state.vy = 1;
+                  state.grounded = false;
                   player.game.restore(before);
                   player.maximum = player.game.physics().progress();
-                  player.peak = before.physics().ticks;
+                  player.peak = state.ticks;
                   prepared.complete(null);
                 } catch (Throwable error) {
                   prepared.completeExceptionally(error);

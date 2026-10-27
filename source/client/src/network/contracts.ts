@@ -1,5 +1,6 @@
 export interface GameConfig {
 	features: { flyEnabled: boolean };
+	auth?: { googleClientId?: string | null };
 }
 export interface NetworkQuality {
 	pingMs: number;
@@ -8,10 +9,12 @@ export interface NetworkQuality {
 	stalls: number;
 	status: "good" | "fair" | "poor";
 }
+export type Crown = "NONE" | "GOLD" | "BLACK";
 export interface Account {
 	id: string;
 	username: string;
-	crownUnlocked: boolean;
+	crown: Crown;
+	hasPassword: boolean;
 }
 export interface Identity {
 	authenticated: boolean;
@@ -23,7 +26,7 @@ export interface Statistics {
 	totalFalls: number;
 	finishes: number;
 	matchesPlayed: number;
-	wins: number;
+	roomWins: number;
 	bestFinishTimeMs: number | null;
 }
 export interface HistoryItem {
@@ -40,13 +43,11 @@ export interface HistoryItem {
 	finishTimeMs: number | null;
 	room: null | {
 		mode: string;
-		mapLevel: number;
-		itemsEnabled: boolean;
-		itemCooldownMinutes: number;
+		mapId: number;
+		itemCooldownMinutes: number | null;
 		roomCode: string;
 		durationMs: number;
 		rank: number;
-		isWinner: boolean;
 	};
 }
 export interface LeaderboardEntry {

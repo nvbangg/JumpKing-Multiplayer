@@ -1,12 +1,26 @@
-import { useEffect, useRef, useState } from "react";
-import rules from "../../../../common/rules.json";
+import {
+	Banana,
+	Clock3,
+	Footprints,
+	LogOut,
+	Menu,
+	Mountain,
+	Play,
+	Square,
+	Timer,
+} from "lucide-react";
+import {
+	type CSSProperties,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { ControlsHelp } from "../../components/ControlsHelp";
 import { MenuPanel } from "../../components/MenuPanel";
-import { NetworkStatusBadge } from "../../components/NetworkStatusBadge";
 import { loadManifest } from "../../game/content/assets";
 import { FlightToggle } from "../../game/input/FlightToggle";
-import { InputController } from "../../game/input/InputController";
-import { TouchControls } from "../../game/input/TouchControls";
+import type { InputController } from "../../game/input/InputController";
 import type { RoomItemsView } from "../../game/items";
 import { AdventureEffects } from "../../game/netcode/AdventureEffects";
 import {
@@ -17,6 +31,7 @@ import { PlayerEffects } from "../../game/netcode/PlayerEffects";
 import { AudioBus } from "../../game/presentation/AudioBus";
 import { PRESENTATION } from "../../game/presentation/config";
 import { parseMap } from "../../game/simulation/map";
+import { ROOM_MAPS } from "../../game/simulation/roomMaps";
 import { PHYSICS } from "../../game/simulation/tuning";
 import { ApiError, api } from "../../network/api";
 import type {
@@ -26,43 +41,79 @@ import type {
 } from "../../network/contracts";
 import type { GameSocket, RoomState } from "../../network/GameSocket";
 import { required } from "../../required";
+import { Chat } from "../chat/Chat";
+import { useChat } from "../chat/useChat";
 import { InGameLeaderboard } from "../community/InGameLeaderboard";
 import { duration } from "../records/format";
-import { ChatOverlay } from "../rooms/ChatOverlay";
-import { PlayersPanel } from "../rooms/PlayersPanel";
-import { useRoomChat } from "../rooms/useRoomChat";
-import { OptionsButtons } from "../settings/OptionsPanel";
-import { type Options, readOptions, saveOptions } from "../settings/options";
+import type { Options } from "../settings/options";
+import { SoundButton } from "../settings/SoundButton";
+import { createGameControls } from "./gameControls";
+import { NetworkStatusBadge } from "./NetworkStatusBadge";
+import { PlayersPanel } from "./PlayersPanel";
+import { TouchControls } from "./TouchControls";
+import { TutorialGuide } from "./TutorialGuide";
+import {
+	isTutorialCompleted,
+	nextTutorialStep,
+	saveTutorialCompleted,
+	type TutorialStep,
+} from "./tutorial";
+import { useGameWidth } from "./useGameWidth";
+import { usePortraitPause } from "./usePortraitPause";
 
 export function OnlineGame({
 	socket,
 	room,
 	navigationError,
+	options,
+	onOptionsChange,
+	accountId,
+	firstGame,
+	newCommunityRun,
 	onHome,
 	onResults,
 }: {
 	socket: GameSocket;
 	room: RoomState;
 	navigationError: string;
+	options: Options;
+	onOptionsChange: (key: keyof Options) => void;
+	accountId?: string;
+	firstGame: boolean;
+	newCommunityRun: boolean;
 	onHome: (message: string) => void;
 	onResults: () => void;
 }) {
+	const layout = useRef<HTMLElement>(null);
+	const gameWidth = useGameWidth(layout);
 	const container = useRef<HTMLDivElement>(null),
 		runtime = useRef<OnlineRuntime | null>(null),
 		input = useRef<InputController | null>(null),
 		audio = useRef<AudioBus | null>(null);
 	const [countdown, setCountdown] = useState<number | null>(null);
 	const [ready, setReady] = useState(false),
-		[menu, setMenu] = useState<"pause" | "options" | null>(null);
+		[menu, setMenu] = useState(false);
 	const flight = useRef<FlightToggle | null>(null);
 	const [flying, setFlying] = useState(false);
-	const [options, setOptions] = useState(readOptions);
+	const sound = useRef(options.sound);
+	sound.current = options.sound;
 	const [error, setError] = useState(""),
 		[pending, setPending] = useState(false),
-		[elapsed, setElapsed] = useState(0),
-		[saveStatus, setSaveStatus] = useState("SAVED");
-	const [items, setItems] = useState<RoomItemsView | null>(null);
+		[elapsed, setElapsed] = useState(0);
+	const [items, setItems] = useState<Pick<
+		RoomItemsView,
+		"held" | "bananaArmed" | "cooldownMs"
+	> | null>(null);
 	const [itemPending, setItemPending] = useState(false);
+	const [itemNotice, setItemNotice] = useState<{ message: string } | null>(
+		null,
+	);
+	useEffect(() => {
+		if (!itemNotice) return;
+		const timer = setTimeout(() => setItemNotice(null), 2000);
+		return () => clearTimeout(timer);
+	}, [itemNotice]);
+	const [jumpBoost, setJumpBoost] = useState(false);
 	const placingItem = useRef(false);
 	const [remaining, setRemaining] = useState<number | null>(null);
 	const [players, setPlayers] = useState<PlayerStanding[]>([]);
@@ -75,8 +126,6 @@ export function OnlineGame({
 		name: string;
 		delayMs: number;
 	} | null>(null);
-	const [chatCollapsed, setChatCollapsed] = useState(false),
-		[leaderboardCollapsed, setLeaderboardCollapsed] = useState(false);
 	const [disconnected, setDisconnected] = useState(false);
 	const [networkQuality, setNetworkQuality] = useState<NetworkQuality>(() =>
 		socket.getNetworkQuality(),
@@ -87,13 +136,25 @@ export function OnlineGame({
 	}, [socket]);
 	const [ending, setEnding] = useState<"playing" | "picture" | null>(null),
 		[pictureReady, setPictureReady] = useState(false);
+	const [tutorialStep, setTutorialStep] = useState<TutorialStep | null>(() =>
+		room.kind === "COMMUNITY" && firstGame && !isTutorialCompleted(accountId)
+			? "move"
+			: null,
+	);
+	const tutorialRef = useRef<TutorialStep | null>(tutorialStep);
+	tutorialRef.current = tutorialStep;
+	const tutorialOrigin = useRef<{ x: number; jumps: number } | null>(null);
+	const dismissTutorial = useCallback(() => {
+		tutorialRef.current = null;
+		setTutorialStep(null);
+		saveTutorialCompleted(accountId);
+	}, [accountId]);
 	const endingActive = useRef(false),
 		skipEnding = useRef<(() => void) | null>(null);
-	const chat = useRoomChat(
+	const chat = useChat(
 		socket,
 		ready && !ending,
 		() => {
-			setChatCollapsed(false);
 			runtime.current?.cancel();
 			flight.current?.cancel();
 			input.current?.cancel();
@@ -120,7 +181,12 @@ export function OnlineGame({
 			snapshot = session?.latest;
 		if (
 			!session ||
+			room.kind !== "ROOM" ||
+			room.state !== "PLAYING" ||
+			disconnected ||
+			flying ||
 			!snapshot?.items?.held ||
+			(snapshot.items.held === "BOOTS" && jumpBoost) ||
 			session.menu ||
 			snapshot.spectating ||
 			snapshot.self.paused ||
@@ -133,17 +199,51 @@ export function OnlineGame({
 			return;
 		placingItem.current = true;
 		setItemPending(true);
+		setItemNotice(null);
 		setError("");
 		void socket
 			.command("USE_ITEM", socket.playContext)
-			.catch((cause) =>
-				setError(cause instanceof Error ? cause.message : "Could not use item"),
-			)
+			.catch((cause) => {
+				if (
+					cause instanceof ApiError &&
+					[
+						"NO_ITEM_TARGET",
+						"ITEM_COOLDOWN",
+						"ITEM_UNAVAILABLE",
+						"INVALID_ITEM_POSITION",
+					].includes(cause.code)
+				)
+					setItemNotice({ message: cause.message });
+				else
+					setError(
+						cause instanceof Error ? cause.message : "Could not use item",
+					);
+			})
 			.finally(() => {
 				placingItem.current = false;
 				setItemPending(false);
 			});
 	};
+	const useItemRef = useRef(useItem);
+	useItemRef.current = useItem;
+	useEffect(() => {
+		const key = (event: KeyboardEvent) => {
+			if (
+				event.defaultPrevented ||
+				event.repeat ||
+				event.code !== "KeyE" ||
+				(event.target instanceof Element &&
+					event.target.closest(
+						'input,textarea,select,button,a,summary,[contenteditable="true"]',
+					))
+			)
+				return;
+			event.preventDefault();
+			useItemRef.current();
+		};
+		window.addEventListener("keydown", key);
+		return () => window.removeEventListener("keydown", key);
+	}, []);
 	const latestRoom = useRef(room);
 	latestRoom.current = room;
 	const removedNotice =
@@ -160,26 +260,28 @@ export function OnlineGame({
 		else setError(cause instanceof Error ? cause.message : fallback);
 	};
 	const pauseRef = useRef<() => void>(() => {});
+	const pauseRevision = useRef(0);
 	const pause = () => {
 		if (endingActive.current) {
 			skipEnding.current?.();
 			return;
 		}
+		pauseRevision.current++;
 		if (!runtime.current || runtime.current.menu) return;
 		runtime.current.menu = true;
 		runtime.current.cancel();
 		flight.current?.cancel();
 		input.current?.cancel();
 		audio.current?.pause(true);
-		setMenu("pause");
+		setMenu(true);
 		if (room.kind === "COMMUNITY") {
-			setSaveStatus("PENDING");
 			void socket
 				.command("SET_COMMUNITY_PAUSED", { paused: true })
 				.catch((cause) => reportFailure(cause, "Pause failed"));
 		}
 	};
 	pauseRef.current = pause;
+	usePortraitPause(ready && !ending, () => pauseRef.current());
 	useEffect(() => {
 		runtime.current?.updateRoom(room);
 	}, [room]);
@@ -208,41 +310,31 @@ export function OnlineGame({
 	useEffect(() => {
 		let disposed = false,
 			game: { destroy(removeCanvas: boolean): void } | undefined;
+		let initialCaptionTick: number | undefined;
+		let rendererReady = false;
 		const controller = new AbortController();
-		let lastActivity = performance.now();
 		const effects = new PlayerEffects(),
 			adventureEffects = new AdventureEffects();
 		let cueManifest: Awaited<ReturnType<typeof loadManifest>> | null = null;
-		const controls = new InputController(
-			() => {
-				lastActivity = performance.now();
-			},
-			() => pauseRef.current(),
-			() => {
+		const bindings = createGameControls({
+			pause: () => pauseRef.current(),
+			cancel: () => {
 				runtime.current?.cancel();
 				flight.current?.cancel();
 			},
-			(now) => flight.current?.press(now),
-		);
-		input.current = controls;
-		const afk = window.setInterval(() => {
-			if (
+			jump: (now) => flight.current?.press(now),
+			pauseWhenIdle: () =>
 				latestRoom.current.kind === "ROOM" &&
-				runtime.current &&
+				!!runtime.current &&
 				!runtime.current.menu &&
-				!runtime.current.latest?.spectating &&
-				performance.now() - lastActivity >= rules.afkMs
-			)
-				pauseRef.current();
-		}, PRESENTATION.afkPollMs);
-		const hidden = () => {
-			if (document.hidden) pauseRef.current();
-		};
-		const blur = () => pauseRef.current();
-		document.addEventListener("visibilitychange", hidden);
-		window.addEventListener("blur", blur);
+				!runtime.current.latest?.spectating,
+		});
+		const controls = bindings.input;
+		input.current = controls;
 		const unsubscribe = socket.subscribe((type, payload) => {
 			try {
+				if (type === "ERROR" && payload.code === "SAVE_FAILED")
+					setError(String(payload.message));
 				if (type === "GAME_SNAPSHOT") runtime.current?.receive(payload);
 				if (type === "PLAYER_FINISHED") runtime.current?.finish(payload);
 				if (
@@ -276,6 +368,9 @@ export function OnlineGame({
 						session.viewPlayerId,
 						session.viewPlayId,
 						session.frame().self.state.screen,
+						session.latest?.spectating
+							? undefined
+							: (socket.selfId ?? undefined),
 					)) {
 						audio.current?.effect(
 							effect.effect,
@@ -294,7 +389,7 @@ export function OnlineGame({
 					controls.cancel();
 					audio.current?.pause(true);
 					setDisconnected(true);
-					setMenu("pause");
+					setMenu(true);
 					setError(
 						typeof payload.message === "string"
 							? payload.message
@@ -306,11 +401,7 @@ export function OnlineGame({
 					setError("");
 					if (runtime.current) runtime.current.menu = true;
 					controls.cancel();
-					setMenu("pause");
-				}
-				if (type === "COMMUNITY_RUN_STATE" || type === "SAVE_STATUS") {
-					if (typeof payload.saveStatus === "string")
-						setSaveStatus(payload.saveStatus);
+					setMenu(true);
 				}
 			} catch (cause) {
 				setError(cause instanceof Error ? cause.message : "Invalid game state");
@@ -326,18 +417,48 @@ export function OnlineGame({
 			]);
 			if (disposed) return;
 			cueManifest = manifest;
-			audio.current = new AudioBus(manifest, readOptions().sound, setError);
+			audio.current = new AudioBus(manifest, sound.current, setError);
 			const session = new OnlineRuntime(
 				parseMap(mapData),
 				socket,
 				latestRoom.current,
 				() => controls.read(),
 				(state, snapshot) => {
-					setElapsed(snapshot.elapsedTimeMs);
-					setItems(snapshot.items ?? null);
-					setRemaining(snapshot.remainingTimeMs);
+					setElapsed(Math.floor(snapshot.elapsedTimeMs / 1000) * 1000);
+					const item = snapshot.items;
+					setItems((previous) => {
+						if (!item) return null;
+						const cooldownMs = Math.ceil(item.cooldownMs / 1000) * 1000;
+						return previous?.held === item.held &&
+							previous.bananaArmed === item.bananaArmed &&
+							previous.cooldownMs === cooldownMs
+							? previous
+							: { held: item.held, bananaArmed: item.bananaArmed, cooldownMs };
+					});
+					setRemaining(
+						snapshot.remainingTimeMs === null
+							? null
+							: Math.ceil(snapshot.remainingTimeMs / 1000) * 1000,
+					);
 					setFlying(state.freeFlight);
-					setPlayers(snapshot.players || []);
+					setJumpBoost(state.jumpBoost === true);
+					setPlayers((previous) => {
+						const next = snapshot.players ?? [];
+						return previous.length === next.length &&
+							next.every((player, i) => {
+								const old = required(previous[i]);
+								return (
+									old.playerId === player.playerId &&
+									old.nickname === player.nickname &&
+									old.colorSlot === player.colorSlot &&
+									old.rank === player.rank &&
+									Math.floor(old.currentProgress) ===
+										Math.floor(player.currentProgress)
+								);
+							})
+							? previous
+							: next;
+					});
 					const view = snapshot.spectating;
 					if (
 						viewedPlayer.current &&
@@ -347,32 +468,57 @@ export function OnlineGame({
 					) {
 						session.menu = true;
 						controls.cancel();
-						setMenu("pause");
+						setMenu(true);
 						setError("The player is no longer available to watch.");
 						audio.current?.pause(true);
 					}
 					if (!view) returningToSelf.current = false;
 					viewedPlayer.current = view?.player.playerId ?? null;
-					setWatching(view ?? null);
+					setWatching((previous) => {
+						if (!view) return null;
+						return previous?.player.playerId === view.player.playerId &&
+							previous.player.nickname === view.player.nickname &&
+							previous.paused === view.paused &&
+							Math.floor(previous.elapsedTimeMs / 1000) ===
+								Math.floor(view.elapsedTimeMs / 1000)
+							? previous
+							: view;
+					});
 					if (view) controls.cancel();
 					const intro = (view?.world ?? snapshot.self.simulation.world)
-						.regionIntro;
+						.mapIntro;
 					if (intro) {
-						const id = `${view?.playId ?? snapshot.playId}:${intro.screen}:${intro.tick}`;
+						const id = `${view?.playId ?? snapshot.playId}:${intro.level}:${intro.tick}`;
+						const initialIntro =
+							!view &&
+							newCommunityRun &&
+							latestRoom.current.kind === "COMMUNITY" &&
+							intro.level === 1 &&
+							intro.tick === 0;
+						if (
+							initialIntro &&
+							rendererReady &&
+							initialCaptionTick === undefined &&
+							!socket.resumeRequired
+						)
+							initialCaptionTick = snapshot.self.simulation.physics.ticks;
+						const introTick = initialIntro ? initialCaptionTick : intro.tick;
 						const age =
-							(((view?.player.state.ticks ??
-								snapshot.self.simulation.physics.ticks) -
-								intro.tick) *
-								1000) /
-							PHYSICS.tickRate;
+							introTick === undefined
+								? PRESENTATION.mapCaptionMs
+								: (((view?.player.state.ticks ??
+										snapshot.self.simulation.physics.ticks) -
+										introTick) *
+										1000) /
+									PHYSICS.tickRate;
 						setCaption((previous) =>
-							age >= PRESENTATION.regionCaptionMs
+							age >= PRESENTATION.mapCaptionMs
 								? null
 								: previous?.id === id
 									? previous
 									: {
 											id,
-											name: manifest.screens[intro.screen]?.location || "",
+											name: ROOM_MAPS[intro.level - 1]?.name || "",
 											delayMs: -age,
 										},
 						);
@@ -381,22 +527,48 @@ export function OnlineGame({
 					if (snapshot.self.paused && !session.menu && !view) {
 						session.menu = true;
 						controls.cancel();
-						setMenu("pause");
+						setMenu(true);
 						audio.current?.pause(true);
+					}
+					if (
+						tutorialRef.current &&
+						!view &&
+						!session.menu &&
+						!snapshot.self.paused
+					) {
+						const physics = snapshot.self.simulation.physics;
+						if (tutorialOrigin.current === null)
+							tutorialOrigin.current = { x: physics.x, jumps: physics.jumps };
+						const next = nextTutorialStep(
+							tutorialRef.current,
+							physics,
+							tutorialOrigin.current,
+						);
+						if (next !== tutorialRef.current) {
+							tutorialOrigin.current = { x: physics.x, jumps: physics.jumps };
+							if (next === null) dismissTutorial();
+							else {
+								tutorialRef.current = next;
+								setTutorialStep(next);
+							}
+						}
 					}
 				},
 				config.features.flyEnabled,
 				(message) => {
 					setError(message);
-					setMenu("pause");
+					setMenu(true);
 					controls.cancel();
+				},
+				(movement, state) => {
+					for (const effect of movement) audio.current?.effect(effect, state);
 				},
 			);
 			runtime.current = session;
 			if (socket.resumeRequired) {
 				session.menu = true;
 				controls.cancel();
-				setMenu("pause");
+				setMenu(true);
 				audio.current?.pause(true);
 			}
 			flight.current = new FlightToggle(
@@ -414,8 +586,27 @@ export function OnlineGame({
 				manifest,
 				session,
 				() => {
+					rendererReady = true;
 					setReady(true);
 					const current = latestRoom.current;
+					const snapshot = session.latest;
+					const intro = snapshot?.self.simulation.world.mapIntro;
+					if (
+						newCommunityRun &&
+						current.kind === "COMMUNITY" &&
+						!socket.resumeRequired &&
+						snapshot &&
+						intro?.level === 1 &&
+						intro.tick === 0
+					) {
+						// Caption đầu lượt đủ 3 giây sau khi tải màn chơi; Continue không phát lại.
+						initialCaptionTick = snapshot.self.simulation.physics.ticks;
+						setCaption({
+							id: `${snapshot.playId}:1:0`,
+							name: required(ROOM_MAPS[0]).name,
+							delayMs: 0,
+						});
+					}
 					if (
 						current.kind === "ROOM" &&
 						current.state === "COUNTDOWN" &&
@@ -433,7 +624,7 @@ export function OnlineGame({
 						endingActive.current = true;
 						controls.cancel();
 						session.cancel();
-						setMenu(null);
+						setMenu(false);
 						chat.closeChat();
 						setPictureReady(false);
 						setEnding("playing");
@@ -452,9 +643,8 @@ export function OnlineGame({
 		return () => {
 			disposed = true;
 			controller.abort();
-			clearInterval(afk);
 			unsubscribe();
-			controls.dispose();
+			bindings.dispose();
 			runtime.current?.cancel();
 			runtime.current = null;
 			input.current = null;
@@ -462,10 +652,8 @@ export function OnlineGame({
 			game?.destroy(true);
 			audio.current?.dispose();
 			audio.current = null;
-			document.removeEventListener("visibilitychange", hidden);
-			window.removeEventListener("blur", blur);
 		};
-	}, [socket, room.roomId, chat.closeChat]);
+	}, [socket, room.roomId, chat.closeChat, newCommunityRun]);
 	const command = async (
 		type: string,
 		payload: Record<string, unknown> = {},
@@ -482,6 +670,7 @@ export function OnlineGame({
 		}
 	};
 	const resume = async (ownGame = false) => {
+		const revision = pauseRevision.current;
 		if (
 			room.kind === "COMMUNITY" &&
 			(!runtime.current?.latest?.spectating || ownGame)
@@ -490,19 +679,32 @@ export function OnlineGame({
 			try {
 				await socket.command("SET_COMMUNITY_PAUSED", { paused: false });
 			} catch (cause) {
-				setMenu("pause");
+				setMenu(true);
 				await reportFailure(cause, "Resume failed");
 				return;
 			} finally {
 				setPending(false);
 			}
 		}
+		// Pause mới khi đang chờ ACK phải được ưu tiên hơn Resume cũ.
+		if (revision !== pauseRevision.current) {
+			if (room.kind === "COMMUNITY") {
+				void socket
+					.command("SET_COMMUNITY_PAUSED", { paused: true })
+					.catch((cause) => reportFailure(cause, "Pause failed"));
+			}
+			return;
+		}
 		socket.resumeRequired = false;
 		if (runtime.current) runtime.current.menu = false;
 		if (ownGame || !runtime.current?.latest?.spectating)
 			input.current?.resume();
 		audio.current?.pause(false);
-		setMenu(null);
+		setMenu(false);
+		focusGame();
+	};
+	const focusGame = () => {
+		container.current?.querySelector("canvas")?.focus({ preventScroll: true });
 	};
 	const watch = async (playerId: string | null) => {
 		const session = runtime.current;
@@ -520,371 +722,348 @@ export function OnlineGame({
 			if (playerId === null) await resume(true);
 			else {
 				session.menu = false;
-				setMenu(null);
+				setMenu(false);
 				audio.current?.pause(false);
 			}
 		} catch (cause) {
 			returningToSelf.current = false;
 			session.menu = true;
-			setMenu("pause");
+			setMenu(true);
 			await reportFailure(cause, "Unable to watch player");
 		} finally {
 			setPending(false);
 		}
 	};
-	const updateOptions = (key: keyof Options) => {
-		const next = { ...options, [key]: !options[key] };
-		setOptions(next);
-		audio.current?.setEnabled(next.sound);
-		try {
-			saveOptions(next);
-		} catch {
-			setError("Options could not be saved on this device");
-		}
-	};
+	useEffect(() => {
+		audio.current?.setEnabled(options.sound);
+	}, [options.sound]);
 	const displayedError = navigationError || error;
 	const captionPaused =
 		!!menu || !!ending || disconnected || room.state === "COUNTDOWN";
 	return (
 		<main
+			ref={layout}
 			className="play-page"
-			data-chat-collapsed={chatCollapsed}
-			data-leaderboard-collapsed={leaderboardCollapsed}
+			data-flying={flying}
+			style={
+				gameWidth
+					? ({ "--game-width": `${gameWidth}px` } as CSSProperties)
+					: undefined
+			}
 		>
-			<section className="game-viewport" aria-label="Online Main Babe game">
-				{/* Phaser quản lý canvas; React giữ overlay ở phần tử anh em. */}
-				<div className="game-surface" ref={container} />
-				{ready && caption?.name && !ending && (
-					<output
-						key={caption.id}
-						className="region-caption"
-						aria-label="Current region"
-						style={{
-							visibility: captionPaused ? "hidden" : "visible",
-							animationPlayState: captionPaused ? "paused" : "running",
-							animationDuration: `${PRESENTATION.regionCaptionMs}ms`,
-							animationDelay: `${caption.delayMs}ms`,
-						}}
-					>
-						{caption.name}
-					</output>
-				)}
-			</section>
-			{!ready && !displayedError && (
-				<p className="game-message" role="status">
-					Loading…
-				</p>
-			)}
-			{!ready && displayedError && (
-				<div className="game-message">
-					<p role="alert">{displayedError}</p>
-					<button
-						type="button"
-						disabled={pending}
-						onClick={() => void command("LEAVE_ROOM")}
-					>
-						Leave
-					</button>
-				</div>
-			)}
-			{ready && room.kind === "ROOM" && room.state === "COUNTDOWN" && (
-				<p className="game-message" role="status">
-					{countdown ?? "Waiting for players…"}
-				</p>
-			)}
-			{ready && !ending && (
-				<div className="game-hud">
-					<span>
-						{
-							<span className="timer" role="timer" aria-label="Play time">
-								{duration(watching?.elapsedTimeMs ?? elapsed)}
-							</span>
-						}
-						{remaining !== null && (
-							<span className="timer" role="timer" aria-label="Time left">
-								Time Left: {duration(Math.ceil(remaining / 1000) * 1000)}
-							</span>
-						)}
-					</span>
-					{room.kind === "ROOM" && (
-						<output className="room-code" aria-label="Room ID">
-							{room.roomId}
+			<div className="game-stage">
+				<section className="game-viewport" aria-label="Online Main Babe game">
+					{/* Phaser quản lý canvas; React giữ overlay ở phần tử anh em. */}
+					<div className="game-surface" ref={container} />
+					{ready && caption?.name && !ending && (
+						<output
+							key={caption.id}
+							className="region-caption"
+							aria-label="Current region"
+							style={{
+								visibility: captionPaused ? "hidden" : "visible",
+								animationPlayState: captionPaused ? "paused" : "running",
+								animationDuration: `${PRESENTATION.mapCaptionMs}ms`,
+								animationDelay: `${caption.delayMs}ms`,
+							}}
+						>
+							{caption.name}
 						</output>
 					)}
-					<span>
-						<NetworkStatusBadge quality={networkQuality} />
+				</section>
+				{!ready && !displayedError && (
+					<p className="game-message" role="status">
+						Loading…
+					</p>
+				)}
+				{!ready && displayedError && (
+					<div className="game-message">
+						<p role="alert">{displayedError}</p>
 						<button
 							type="button"
-							aria-keyshortcuts="Enter"
-							onClick={chat.openChat}
+							disabled={pending}
+							onClick={() => void command("LEAVE_ROOM")}
 						>
-							Chat
+							Leave
 						</button>
-						<button type="button" onClick={pause}>
-							Menu
-						</button>
-					</span>
-				</div>
-			)}
-			{ready &&
-				!ending &&
-				!menu &&
-				!chat.open &&
-				!watching &&
-				room.kind === "ROOM" &&
-				room.settings?.itemsEnabled && (
-					<button
-						className="item-control"
-						type="button"
-						aria-label="Use item"
-						aria-pressed={items?.bananaArmed ?? false}
-						title={
-							items?.held === "BANANA"
-								? "Click to prepare a banana, then jump; click again to cancel"
-								: "Throw at the highest other player"
-						}
-						disabled={
-							!items?.held ||
-							itemPending ||
-							disconnected ||
-							room.state !== "PLAYING" ||
-							flying
-						}
-						onPointerDown={(event) => event.preventDefault()}
-						onClick={useItem}
-					>
-						{items?.held === "BANANA"
-							? items.bananaArmed
-								? "Banana · Jump to drop"
-								: "Banana · Prepare"
-							: items?.held === "ROCK"
-								? "Rock · Throw"
-								: `Item ${duration(Math.ceil((items?.cooldownMs ?? 0) / 1000) * 1000)}`}
-					</button>
+					</div>
 				)}
-			{ready && !ending && !menu && !chat.open && !watching && (
-				<TouchControls input={input} flying={flying} />
-			)}
-			{ready && watching && !ending && !menu && (
-				<div className="spectator-bar" role="status">
-					<span
-						className="spectator-label"
-						title={`Watching ${watching.player.nickname}`}
-					>
-						Watching {watching.player.nickname}
-						{watching.paused ? " (Paused)" : ""}
-					</span>
-					<button
-						type="button"
-						disabled={pending || disconnected}
-						onClick={() => void watch(null)}
-					>
-						Back to My Game
-					</button>
-				</div>
-			)}
-			{ending && (
-				<div className="ending-actions">
-					{ending === "playing" ? (
-						<button type="button" onClick={() => skipEnding.current?.()}>
-							Skip
-						</button>
-					) : (
-						<>
-							{room.kind === "ROOM" ? (
+				{ready && room.kind === "ROOM" && room.state === "COUNTDOWN" && (
+					<p className="game-message" role="status">
+						{countdown ?? "Waiting for players…"}
+					</p>
+				)}
+				{ready &&
+					!ending &&
+					!menu &&
+					!chat.open &&
+					!watching &&
+					room.kind === "COMMUNITY" &&
+					tutorialStep && (
+						<TutorialGuide step={tutorialStep} onDismiss={dismissTutorial} />
+					)}
+				{ending && (
+					<div className="ending-actions">
+						{ending === "playing" ? (
+							<button type="button" onClick={() => skipEnding.current?.()}>
+								Skip
+							</button>
+						) : (
+							<>
+								{room.kind === "ROOM" ? (
+									<button
+										type="button"
+										disabled={!pictureReady}
+										onClick={onResults}
+									>
+										View Results
+									</button>
+								) : null}
 								<button
 									type="button"
-									disabled={!pictureReady}
-									onClick={onResults}
+									disabled={!pictureReady || pending || disconnected}
+									onClick={() => {
+										void command("LEAVE_ROOM");
+									}}
 								>
-									View Results
+									Back to Menu
 								</button>
-							) : null}
-							<button
-								type="button"
-								disabled={!pictureReady || pending || disconnected}
-								onClick={() => {
-									void command("LEAVE_ROOM");
-								}}
-							>
-								Back to Menu
-							</button>
-						</>
-					)}
-				</div>
-			)}
-			{ready && !ending && <ChatOverlay chat={chat} socket={socket} />}
-			{ready && !ending && !menu && (
-				<>
-					<button
-						type="button"
-						className="mobile-panel-toggle mobile-chat-toggle"
-						aria-label={chatCollapsed ? "Show chat" : "Collapse chat"}
-						title={chatCollapsed ? "Show chat" : "Collapse chat"}
-						aria-expanded={!chatCollapsed}
-						onClick={() => {
-							chat.closeChat();
-							setChatCollapsed((value) => !value);
-						}}
-					>
-						{chatCollapsed ? "›" : "‹"}
-					</button>
-					{room.kind === "COMMUNITY" && (
-						<button
-							type="button"
-							className="mobile-panel-toggle mobile-leaderboard-toggle"
-							aria-label={
-								leaderboardCollapsed
-									? "Show leaderboard"
-									: "Collapse leaderboard"
-							}
+							</>
+						)}
+					</div>
+				)}
+				{menu && (
+					<section className="game-overlay" aria-label="Game menu">
+						<MenuPanel
 							title={
-								leaderboardCollapsed
-									? "Show leaderboard"
-									: "Collapse leaderboard"
-							}
-							aria-expanded={!leaderboardCollapsed}
-							onClick={() => setLeaderboardCollapsed((value) => !value)}
-						>
-							{leaderboardCollapsed ? "‹" : "›"}
-						</button>
-					)}
-				</>
-			)}
-			{ready && !ending && (
-				<aside className="in-game-panels">
-					<PlayersPanel
-						players={players}
-						selfId={socket.selfId}
-						watchingId={watching?.player.playerId}
-						watchableIds={room.members
-							.filter((member) => member.connected)
-							.map((member) => member.playerId)}
-						disabled={
-							pending ||
-							disconnected ||
-							!!menu ||
-							(room.kind === "ROOM" && room.state !== "PLAYING")
-						}
-						onWatch={(id) => void watch(id)}
-					/>
-					{room.kind === "COMMUNITY" && <InGameLeaderboard />}
-				</aside>
-			)}
-			{menu && (
-				<section className="game-overlay" aria-label="Game menu">
-					<MenuPanel
-						title={
-							menu === "options"
-								? "Options"
-								: disconnected
+								disconnected
 									? "Disconnected"
 									: room.kind === "ROOM"
 										? "Game Menu"
 										: "Paused"
-						}
-						onBack={menu === "options" ? () => setMenu("pause") : undefined}
-					>
-						{menu === "pause" ? (
-							<>
-								{disconnected ? (
-									<>
-										<button
-											type="button"
-											disabled={pending}
-											onClick={() => {
-												setPending(true);
-												void socket
-													.reconnect()
-													.catch((cause) => {
-														if (
-															cause instanceof ApiError &&
-															["RECONNECT_EXPIRED", "ROOM_NOT_FOUND"].includes(
-																cause.code,
-															)
-														)
-															onHome(removedNotice);
-														else setError(cause.message);
-													})
-													.finally(() => setPending(false));
-											}}
-										>
-											Reconnect
-										</button>
-										<button
-											type="button"
-											onClick={() =>
-												onHome(
-													room.kind === "COMMUNITY"
-														? "Disconnected. Latest save could not be confirmed. Continue will use the last server checkpoint."
-														: "Disconnected. Your departure could not be confirmed by the server.",
-												)
-											}
-										>
-											Back to Menu
-										</button>
-									</>
-								) : (
+							}
+						>
+							{disconnected ? (
+								<>
 									<button
 										type="button"
 										disabled={pending}
-										onClick={() => void resume()}
+										onClick={() => {
+											setPending(true);
+											void socket
+												.reconnect()
+												.catch((cause) => {
+													if (
+														cause instanceof ApiError &&
+														["RECONNECT_EXPIRED", "ROOM_NOT_FOUND"].includes(
+															cause.code,
+														)
+													)
+														onHome(removedNotice);
+													else setError(cause.message);
+												})
+												.finally(() => setPending(false));
+										}}
 									>
-										Resume
+										Reconnect
 									</button>
-								)}
-								<button type="button" onClick={() => setMenu("options")}>
-									Options
-								</button>
-								<button type="button" onClick={chat.openChat}>
-									Open Chat
-								</button>
-								{room.kind === "ROOM" &&
-									room.hostPlayerId === socket.selfId &&
-									room.state === "PLAYING" && (
-										<button
-											type="button"
-											disabled={pending || disconnected}
-											onClick={() => void command("END_MATCH")}
-										>
-											End Match
-										</button>
-									)}
+									<button
+										type="button"
+										onClick={() =>
+											onHome(
+												room.kind === "COMMUNITY"
+													? "Disconnected. Latest save could not be confirmed. Continue will use the last server checkpoint."
+													: "Disconnected. Your departure could not be confirmed by the server.",
+											)
+										}
+									>
+										Back to Menu
+									</button>
+								</>
+							) : (
 								<button
 									type="button"
-									disabled={pending || disconnected}
-									onClick={() => void command("LEAVE_ROOM")}
+									className="button-primary"
+									disabled={pending}
+									onClick={() => void resume()}
 								>
-									{room.kind === "COMMUNITY" ? "Save & Exit" : "Leave Room"}
+									<Play aria-hidden="true" />
+									Resume
 								</button>
-								{room.kind === "COMMUNITY" && (
-									<small role="status">
-										{disconnected
-											? "Latest save unconfirmed"
-											: saveStatus === "SAVED"
-												? "Saved"
-												: saveStatus === "FAILED"
-													? "Save failed"
-													: "Saving…"}
-									</small>
+							)}
+							{room.kind === "ROOM" &&
+								room.hostPlayerId === socket.selfId &&
+								room.state === "PLAYING" && (
+									<button
+										type="button"
+										className="button-warning end-match"
+										disabled={pending || disconnected}
+										onClick={() => void command("END_MATCH")}
+									>
+										<Square aria-hidden="true" />
+										End Match
+									</button>
 								)}
-								<ControlsHelp />
-							</>
-						) : (
-							<OptionsButtons
+							<SoundButton
 								options={options}
-								onChange={updateOptions}
+								onChange={onOptionsChange}
 								onError={setError}
 							/>
+							<ControlsHelp />
+							<button
+								type="button"
+								className="button-danger"
+								disabled={pending || disconnected}
+								onClick={() => void command("LEAVE_ROOM")}
+							>
+								<LogOut aria-hidden="true" />
+								{room.kind === "COMMUNITY" ? "Save & Exit" : "Leave Room"}
+							</button>
+							{displayedError && <p role="alert">{displayedError}</p>}
+						</MenuPanel>
+					</section>
+				)}
+				{ready && displayedError && !menu && (
+					<p className="save-error" role="alert">
+						{displayedError}
+					</p>
+				)}
+				{itemNotice && (
+					<output className="item-notice">{itemNotice.message}</output>
+				)}
+			</div>
+			{ready && !ending && (
+				<div className="game-right">
+					<aside className="game-sidebar" aria-label="Game panels">
+						<div className="in-game-panels">
+							<div className="game-panel-pane" data-panel="players">
+								<PlayersPanel
+									players={players}
+									selfId={socket.selfId}
+									watchingId={watching?.player.playerId}
+									watchableIds={room.members
+										.filter((member) => member.connected)
+										.map((member) => member.playerId)}
+									disabled={
+										pending ||
+										disconnected ||
+										!!menu ||
+										(room.kind === "ROOM" && room.state !== "PLAYING")
+									}
+									onWatch={(id) => void watch(id)}
+								/>
+							</div>
+							{room.kind === "COMMUNITY" && (
+								<div className="game-panel-pane" data-panel="leaderboard">
+									<InGameLeaderboard
+										onRefresh={() => {
+											if (!menu) focusGame();
+										}}
+									/>
+								</div>
+							)}
+						</div>
+					</aside>
+					{!menu &&
+						!chat.open &&
+						!watching &&
+						room.kind === "ROOM" &&
+						room.settings?.itemCooldownMinutes != null && (
+							<button
+								className="item-control"
+								type="button"
+								aria-label="Use item"
+								aria-keyshortcuts="E"
+								aria-pressed={items?.bananaArmed ?? false}
+								title={
+									items?.held === "BANANA"
+										? "Click to prepare a banana, then jump; click again to cancel"
+										: items?.held === "BOOTS"
+											? "Boost the height of your next jump"
+											: "Throw at the highest other player"
+								}
+								disabled={
+									!items?.held ||
+									itemPending ||
+									disconnected ||
+									room.state !== "PLAYING" ||
+									(items.held === "BOOTS" && jumpBoost) ||
+									flying
+								}
+								onPointerDown={(event) => event.preventDefault()}
+								onClick={useItem}
+							>
+								<kbd>E</kbd>
+								{items?.held === "BANANA" ? (
+									<Banana className="tone-amber" aria-hidden="true" />
+								) : items?.held === "BOOTS" ? (
+									<Footprints className="tone-purple" aria-hidden="true" />
+								) : items?.held === "ROCK" ? (
+									<Mountain aria-hidden="true" />
+								) : null}
+								{items?.held === "BANANA"
+									? items.bananaArmed
+										? "Banana · Jump to drop"
+										: "Banana · Prepare"
+									: items?.held === "ROCK"
+										? "Rock · Throw"
+										: items?.held === "BOOTS"
+											? "Boots · Use"
+											: `Item ${duration(Math.ceil((items?.cooldownMs ?? 0) / 1000) * 1000)}`}
+								{jumpBoost && (
+									<>
+										<br />
+										<span>Next jump ×2</span>
+									</>
+								)}
+							</button>
 						)}
-						{displayedError && <p role="alert">{displayedError}</p>}
-					</MenuPanel>
-				</section>
+				</div>
 			)}
-			{ready && displayedError && !menu && (
-				<p className="save-error" role="alert">
-					{displayedError}
-				</p>
+			{ready && !ending && (
+				<aside className="game-left" aria-label="Game controls and chat">
+					<div className="game-hud">
+						<span className="timer" role="timer" aria-label="Play time">
+							<Clock3 aria-hidden="true" />
+							{duration(watching?.elapsedTimeMs ?? elapsed)}
+						</span>
+						{remaining !== null && (
+							<span className="timer" role="timer" aria-label="Time left">
+								<Timer aria-hidden="true" />
+								Time Left: {duration(Math.ceil(remaining / 1000) * 1000)}
+							</span>
+						)}
+						<NetworkStatusBadge quality={networkQuality} />
+						<button type="button" onClick={pause}>
+							<Menu aria-hidden="true" />
+							Menu (Esc)
+						</button>
+					</div>
+					{watching && !menu && (
+						<div className="spectator-bar" role="status">
+							<span
+								className="spectator-label"
+								title={`Watching ${watching.player.nickname}`}
+							>
+								Watching {watching.player.nickname}
+								{watching.paused ? " (Paused)" : ""}
+							</span>
+							<button
+								type="button"
+								disabled={pending || disconnected}
+								onClick={() => void watch(null)}
+							>
+								Back to My Game
+							</button>
+						</div>
+					)}
+					<section className="game-chat" aria-label="Game chat">
+						<Chat chat={chat} socket={socket} dismissible />
+					</section>
+				</aside>
+			)}
+			{ready && !ending && !menu && !chat.open && !watching && (
+				<TouchControls input={input} flying={flying} />
 			)}
 		</main>
 	);

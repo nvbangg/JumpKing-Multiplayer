@@ -16,7 +16,7 @@ test.skip(
 
 async function captureScene(page: Page): Promise<void> {
 	await page.evaluate(async () => {
-		const path = "/src/game/scenes/TowerScene.ts";
+		const path = "/src/game/presentation/TowerScene.ts";
 		const { TowerScene } = await import(path);
 		const create = TowerScene.prototype.create;
 		TowerScene.prototype.create = function () {
@@ -99,12 +99,19 @@ test("player colors match across browsers while only the local player has full o
 			await (await required(guest).request.get("/api/auth/me")).json()
 		).account.username;
 		const id = await createRoom(required(host));
+		const roomCode = required(host).locator(".room-code code");
+		await expect(roomCode).toHaveText(id);
+		await expect(roomCode).toHaveCSS("user-select", "text");
+		await expect(
+			required(host).getByRole("button", { name: "Copy ID", exact: true }),
+		).toHaveCount(0);
 		await joinRoom(required(guest), id);
 		await startRoom(required(host), required(guest));
 		for (const [index, page] of [required(host), required(guest)].entries()) {
 			await expect(
-				page.getByRole("button", { name: "Menu", exact: true }),
+				page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 			).toBeVisible({ timeout: 15_000 });
+			await expect(page.getByLabel("Room ID", { exact: true })).toHaveCount(0);
 			const ownName = index === 0 ? hostName : peerName;
 			const otherName = index === 0 ? peerName : hostName;
 			const ownColor = required(rules.appearanceColors[index]);

@@ -16,6 +16,10 @@ public final class PlayerState {
       com.fasterxml.jackson.annotation.JsonInclude.Include.NON_DEFAULT)
   public boolean slipping;
 
+  @com.fasterxml.jackson.annotation.JsonInclude(
+      com.fasterxml.jackson.annotation.JsonInclude.Include.NON_DEFAULT)
+  public boolean jumpBoost;
+
   public boolean knocked, ice, snow, wind;
   public int screen;
   public long ticks;
@@ -37,6 +41,7 @@ public final class PlayerState {
     copy.directions = new ArrayList<>(directions);
     copy.splat = splat;
     copy.slipping = slipping;
+    copy.jumpBoost = jumpBoost;
     copy.knocked = knocked;
     copy.ice = ice;
     copy.snow = snow;

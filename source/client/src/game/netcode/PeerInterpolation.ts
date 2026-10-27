@@ -4,7 +4,7 @@ import type { OnlineSnapshot } from "./OnlineRuntime";
 
 interface Sample {
 	time: number;
-	value: OnlineSnapshot;
+	byId: Map<string, OnlineSnapshot["peers"][number]>;
 }
 export class PeerInterpolation {
 	private samples: Sample[] = [];
@@ -19,16 +19,31 @@ export class PeerInterpolation {
 	}
 	receive(value: OnlineSnapshot, now: number): void {
 		const last = this.samples.at(-1);
-		if (last && value.serverTick <= last.value.serverTick) return;
+		const time = (value.serverTick * 1000) / this.tickRate;
+		if (last && time <= last.time) return;
 		if (last && now - this.receivedAt > NETWORK.interpolationResetMs)
 			this.reset();
-		const time = (value.serverTick * 1000) / this.tickRate;
 		this.offset = this.samples.length
 			? this.offset +
 				(now - time - this.offset) * NETWORK.interpolationClockCorrection
 			: now - time;
 		this.receivedAt = now;
-		this.samples.push({ time, value });
+		const byId = new Map(value.peers.map((peer) => [peer.playerId, peer]));
+		for (const [id, peer] of byId) {
+			const old = last?.byId.get(id);
+			if (
+				old &&
+				peer.positionRevision === old.positionRevision &&
+				peer.state.screen === old.state.screen &&
+				peer.state.ticks >= old.state.ticks &&
+				peer.state.falls === old.state.falls
+			)
+				continue;
+			// Neo riêng người vừa respawn/đổi screen; mẫu cũ không được kéo họ lùi lại.
+			for (const sample of this.samples)
+				if (sample.byId.has(id)) sample.byId.set(id, peer);
+		}
+		this.samples.push({ time, byId });
 		if (this.samples.length > NETWORK.interpolationSnapshots)
 			this.samples.shift();
 	}
@@ -64,36 +79,13 @@ export class PeerInterpolation {
 							(this.cursor - previous.time) / (current.time - previous.time),
 						),
 					);
-		const oldPeers = new Map(
-			previous.value.peers.map((peer) => [peer.playerId, peer]),
-		);
-		const visible = new Map(
-			newest.value.peers.map((peer) => [peer.playerId, peer]),
-		);
-		return current.value.peers
+		const oldPeers = previous.byId;
+		const visible = newest.byId;
+		return Array.from(current.byId.values())
 			.filter((peer) => visible.has(peer.playerId))
 			.map((peer) => {
-				const latest = required(visible.get(peer.playerId));
-				if (
-					latest.state.screen !== peer.state.screen ||
-					latest.state.ticks < peer.state.ticks ||
-					latest.state.falls !== peer.state.falls ||
-					Math.hypot(
-						latest.state.x - peer.state.x,
-						latest.state.y - peer.state.y,
-					) > NETWORK.interpolationTeleportPixels
-				)
-					return latest;
 				const old = oldPeers.get(peer.playerId);
-				if (
-					!old ||
-					peer.state.screen !== old.state.screen ||
-					peer.state.ticks < old.state.ticks ||
-					peer.state.falls !== old.state.falls ||
-					Math.hypot(peer.state.x - old.state.x, peer.state.y - old.state.y) >
-						NETWORK.interpolationTeleportPixels
-				)
-					return peer;
+				if (!old) return peer;
 				return {
 					...peer,
 					state: {

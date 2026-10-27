@@ -1,9 +1,13 @@
+// View chỉ đọc trong frame hiện tại; snapshot riêng vẫn dùng cho restore/lưu dữ liệu.
+export type ReadView<T> = { readonly [K in keyof T]: ReadView<T[K]> };
+
 export interface GameMap {
 	width: number;
 	screenHeight: number;
 	tileSize: number;
 	progressOriginY: number;
 	spawn: { x: number; y: number };
+	roomBottomY?: number;
 	finish: {
 		screen: number;
 		minCenterX: number;
@@ -37,6 +41,7 @@ export interface PlayerState {
 	directions: number[];
 	splat: number;
 	slipping?: boolean;
+	jumpBoost?: boolean;
 	knocked: boolean;
 	ice: boolean;
 	snow: boolean;

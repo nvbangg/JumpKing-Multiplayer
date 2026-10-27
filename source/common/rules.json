@@ -2,15 +2,14 @@
   "snapshotRate": 20,
   "capacity": 10,
   "minimumRoomPlayers": 1,
-  "roomCodeAlphabet": "ABCDEFGHJKLMNPQRSTUVWXYZ23456789",
+  "roomCodeAlphabet": "0123456789",
   "roomCodeLength": 6,
   "countdownMs": 3000,
   "afkMs": 60000,
   "communityPauseMs": 900000,
   "reconnectMs": 300000,
   "timeLimitMinutesMin": 1,
-  "timeLimitMinutesMax": 30,
-  "timeLimitDefaultMinutes": 5,
+  "timeLimitMinutesMax": 10,
   "appearanceColors": [
     "#ffffff",
     "#e76f51",
@@ -26,8 +25,8 @@
   "roomLoadTimeoutMs": 30000,
   "items": {
     "cooldownMinMinutes": 1,
-    "cooldownMaxMinutes": 15,
-    "cooldownDefaultMinutes": 3,
+    "cooldownMaxMinutes": 10,
+    "maximumBananas": 64,
     "bananaWidth": 12,
     "rockEffectTicks": 18
   }

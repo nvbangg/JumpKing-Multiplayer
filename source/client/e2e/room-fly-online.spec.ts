@@ -18,11 +18,11 @@ test.skip(
 	"Requires the local-profile Room flight harness",
 );
 
-test("region caption appears once per region and fades without blocking mobile controls", async ({
+test("Room shows the selected map name at start and keeps it through reconnect", async ({
 	page,
 }, info) => {
 	test.setTimeout(45000);
-	await page.setViewportSize({ width: 390, height: 844 });
+	await page.setViewportSize({ width: 844, height: 390 });
 	await page.addInitScript(() =>
 		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false })),
 	);
@@ -39,39 +39,19 @@ test("region caption appears once per region and fades without blocking mobile c
 			};
 		});
 		await createRoom(page);
-		await page.getByLabel("Map", { exact: true }).selectOption("10");
+		await page.getByLabel("Map", { exact: true }).selectOption("9");
 		await page.getByRole("button", { name: "Start", exact: true }).click();
 		await expect(page.getByLabel("Play time", { exact: true })).not.toHaveText(
-			"00:00",
+			"00:00 s",
 			{ timeout: 15000 },
 		);
 		await page.locator("canvas").click();
 		const caption = page.getByLabel("Current region", { exact: true });
-		await expect(caption).toHaveText("REDCROWN WOODS");
-		await caption.evaluate((element) =>
-			element.setAttribute("data-same-region", "retained"),
-		);
-		await page.keyboard.press("Space");
-		await page.waitForTimeout(80);
-		await page.keyboard.press("Space");
 		await expect
-			.poll(() => observed.snapshot?.self.simulation.physics.freeFlight)
-			.toBe(true);
-		await page.keyboard.down("ArrowUp");
-		await expect
-			.poll(() => observed.snapshot?.self.simulation.physics.screen)
-			.toBeGreaterThanOrEqual(1);
-		await expect(caption).toHaveText("REDCROWN WOODS");
-		await expect(caption).toHaveAttribute("data-same-region", "retained");
-		await expect
-			.poll(() => observed.snapshot?.self.simulation.physics.screen, {
-				timeout: 15000,
-				intervals: [30],
-			})
-			.toBe(5);
-		await page.keyboard.up("ArrowUp");
-		await expect(caption).toHaveText("COLOSSAL DRAIN");
-		await expect(caption).not.toHaveAttribute("data-same-region", "retained");
+			.poll(() => observed.snapshot?.self.simulation.world.mapIntro?.level)
+			.toBe(9);
+		await expect(caption).toHaveText("The Tower");
+		await expect(caption).toHaveCSS("animation-duration", "3s");
 		await expect
 			.poll(() =>
 				caption.evaluate((element) =>
@@ -81,7 +61,7 @@ test("region caption appears once per region and fades without blocking mobile c
 			.toBeGreaterThan(0.1);
 		const bounds = required(await caption.boundingBox());
 		expect(bounds.x).toBeGreaterThanOrEqual(0);
-		expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+		expect(bounds.x + bounds.width).toBeLessThanOrEqual(844);
 		await page.screenshot({ path: info.outputPath("region-mobile.png") });
 		await caption.evaluate(async (element) => {
 			for (const animation of element.getAnimations()) animation.finish();
@@ -90,33 +70,24 @@ test("region caption appears once per region and fades without blocking mobile c
 			);
 		});
 		await expect(caption).toHaveCSS("opacity", "0");
-		await page.keyboard.down("ArrowDown");
-		await expect
-			.poll(() => observed.snapshot?.self.simulation.physics.screen)
-			.toBeLessThan(5);
-		await page.keyboard.up("ArrowDown");
-		await expect(caption).toHaveCount(0, { timeout: 8000 });
-		await page.keyboard.down("ArrowUp");
-		await expect
-			.poll(() => observed.snapshot?.self.simulation.physics.screen)
-			.toBeGreaterThanOrEqual(5);
-		await page.keyboard.up("ArrowUp");
-		await expect(caption).toHaveCount(0);
 		const intro = structuredClone(
-			required(observed.snapshot).self.simulation.world.regionIntro,
+			required(observed.snapshot).self.simulation.world.mapIntro,
 		);
+		await expect
+			.poll(() => observed.snapshot?.self.simulation.world.mapIntro)
+			.toEqual(intro);
 		await page.evaluate(() => {
 			const connection = (
 				window as unknown as { regionConnection: { socket: WebSocket } }
 			).regionConnection;
-			connection.socket.close(4000, "Test region reconnect");
+			connection.socket.close(4000, "Test map caption reconnect");
 		});
 		await page.getByRole("button", { name: "Reconnect", exact: true }).click();
 		await expect(
 			page.getByRole("button", { name: "Resume", exact: true }),
 		).toBeVisible();
 		await expect
-			.poll(() => observed.snapshot?.self.simulation.world.regionIntro)
+			.poll(() => observed.snapshot?.self.simulation.world.mapIntro)
 			.toEqual(intro);
 		await expect(caption).toHaveCount(0);
 	} finally {
@@ -163,14 +134,14 @@ test("short Room finish shows Results and History without ending or full-map rew
 		await a.bringToFront();
 		await startRoom(a, b);
 		await expect(
-			a.getByRole("button", { name: "Menu", exact: true }),
+			a.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible({ timeout: 15_000 });
 		if (
 			!(await a
 				.getByRole("button", { name: "Resume", exact: true })
 				.isVisible())
 		)
-			await a.getByRole("button", { name: "Menu", exact: true }).click();
+			await a.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await a.getByRole("button", { name: "Resume", exact: true }).click();
 		await a.keyboard.press("Space");
 		await a.waitForTimeout(80);
@@ -234,7 +205,13 @@ test("short Room finish shows Results and History without ending or full-map rew
 		await expect(
 			a.getByRole("button", { name: "Play Again", exact: true }),
 		).toBeEnabled({ timeout: 10_000 });
-		await expect(a.locator(".winner")).toContainText(hostName);
+		await expect(
+			a
+				.getByRole("row")
+				.filter({ hasText: hostName })
+				.getByRole("cell")
+				.first(),
+		).toHaveText("1");
 		await expect(
 			a.getByText("Map 1 · Green Woods", { exact: true }),
 		).toBeVisible();
@@ -244,23 +221,23 @@ test("short Room finish shows Results and History without ending or full-map rew
 		expect(finishes).toEqual([]);
 		const history = (await (await a.request.get("/api/history")).json())
 			.items[0];
-		expect(history.room.mapLevel).toBe(1);
+		expect(history.room.mapId).toBe(1);
 		const stats = (await (await a.request.get("/api/profile/me")).json()).total;
 		expect(stats.finishes).toBe(1);
-		expect(stats.wins).toBe(1);
+		expect(stats.matchesPlayed).toBe(1);
 		expect(stats.bestFinishTimeMs).toBeNull();
 		expect(
-			(await (await a.request.get("/api/auth/me")).json()).account
-				.crownUnlocked,
-		).toBe(false);
+			(await (await a.request.get("/api/auth/me")).json()).account.crown,
+		).toBe("NONE");
 		await a.screenshot({ path: info.outputPath("short-room-results.png") });
 		await a.getByRole("button", { name: "Play Again", exact: true }).click();
 		await expect(a.getByLabel("Map", { exact: true })).toHaveValue("1");
 		await expect(a.locator(".room-code code")).toHaveText(id);
 		await b.getByRole("button", { name: "Leave", exact: true }).click();
 		await a.getByRole("button", { name: "Leave", exact: true }).click();
+		await a.locator(".account-actions button").click();
 		await a.getByRole("button", { name: "History", exact: true }).click();
-		await a.locator(".history-list > button").first().click();
+		await a.locator(".history-rows > button").first().click();
 		await expect(a.getByText("1 · Green Woods", { exact: true })).toBeVisible();
 		expect(errors).toEqual([]);
 	} finally {
@@ -270,7 +247,7 @@ test("short Room finish shows Results and History without ending or full-map rew
 		await second.close();
 	}
 });
-for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"])
+for (const mode of ["RACE", "HARDCORE", "NO_WALK"])
 	test(`two browsers can enable and cancel flight in ${mode}`, async ({
 		browser,
 	}) => {
@@ -308,14 +285,16 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"])
 			await a.bringToFront();
 			await startRoom(a, b);
 			await expect(
-				a.getByRole("button", { name: "Menu", exact: true }),
+				a.getByRole("button", { name: "Menu (Esc)", exact: true }),
 			).toBeVisible({ timeout: 15_000 });
 			if (
 				!(await a
 					.getByRole("button", { name: "Resume", exact: true })
 					.isVisible())
 			)
-				await a.getByRole("button", { name: "Menu", exact: true }).click();
+				await a
+					.getByRole("button", { name: "Menu (Esc)", exact: true })
+					.click();
 			await a.getByRole("button", { name: "Resume", exact: true }).click();
 			await a.keyboard.press("Space");
 			await a.waitForTimeout(80);
@@ -363,7 +342,9 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"])
 					.getByRole("button", { name: "End Match", exact: true })
 					.isVisible())
 			)
-				await a.getByRole("button", { name: "Menu", exact: true }).click();
+				await a
+					.getByRole("button", { name: "Menu (Esc)", exact: true })
+					.click();
 			await a.getByRole("button", { name: "End Match", exact: true }).click();
 			await expect(
 				a.getByRole("button", { name: "Play Again", exact: true }),

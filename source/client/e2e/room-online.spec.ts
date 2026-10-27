@@ -66,7 +66,7 @@ test("closing a Room page removes its avatar and releases membership through Lea
 			.toBe(false);
 		// Document đóng có thể mất event DevTools; membership phải được giải phóng ngay.
 		await expect(
-			b.getByRole("button", { name: "Menu", exact: true }),
+			b.getByRole("button", { name: "Menu (Esc)", exact: true }),
 		).toBeVisible();
 		returned = await first.newPage();
 		await returned.goto("/");
@@ -116,7 +116,7 @@ test("Back leaves the online context but blur and valid Room transitions do not"
 		await a.goto("/");
 		await joinRoom(a, room);
 		await startRoom(b, a);
-		await b.getByRole("button", { name: "Menu", exact: true }).click();
+		await b.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await b.getByRole("button", { name: "End Match", exact: true }).click();
 		await expect(a.getByText("Results saved", { exact: true })).toBeVisible();
 		expect(lifecycle.leaves).toBe(1);
@@ -137,9 +137,10 @@ test("Back leaves the online context but blur and valid Room transitions do not"
 	}
 });
 
-test("Account lobby, permanent chat, settings draft and Host transfer", async ({
+test("Account lobby, permanent chat, selected settings and Host transfer", async ({
 	browser,
-}) => {
+}, info) => {
+	test.setTimeout(60000);
 	const ca = await browser.newContext(),
 		cb = await browser.newContext();
 	const a = await ca.newPage(),
@@ -148,6 +149,7 @@ test("Account lobby, permanent chat, settings draft and Host transfer", async ({
 		const host = await registerOnline(a, "lobby_host"),
 			peer = await registerOnline(b, "lobby_peer");
 		const id = await createRoom(a);
+		await expect(a.getByLabel("Map", { exact: true })).toHaveValue("1");
 		await expect(
 			a.getByRole("button", { name: "Start", exact: true }),
 		).toBeEnabled();
@@ -164,13 +166,66 @@ test("Account lobby, permanent chat, settings draft and Host transfer", async ({
 		await expect(
 			a.getByRole("button", { name: "Close chat", exact: true }),
 		).toHaveCount(0);
-		await a.getByLabel("Mode", { exact: true }).selectOption("TIME_LIMIT");
-		await a.getByLabel("Minutes", { exact: true }).fill("");
-		await expect(b.getByLabel("Minutes", { exact: true })).toHaveValue("5");
-		await a.getByLabel("Minutes", { exact: true }).fill("12");
-		await expect(b.getByLabel("Minutes", { exact: true })).toHaveValue("5");
-		await a.getByLabel("Minutes", { exact: true }).press("Tab");
-		await expect(b.getByLabel("Minutes", { exact: true })).toHaveValue("12");
+		await expect(a.getByLabel("Time Limit", { exact: true })).toHaveValue(
+			"UNLIMITED",
+		);
+		await a.getByLabel("Time Limit", { exact: true }).selectOption("5");
+		await a.getByLabel("Mode", { exact: true }).focus();
+		await expect(a.getByLabel("Mode", { exact: true })).toHaveCSS(
+			"outline-style",
+			"solid",
+		);
+		await expect(a.getByLabel("Time Limit", { exact: true })).toHaveValue("5");
+		const fields = await a
+			.locator(".lobby-settings select, .lobby-settings input")
+			.evaluateAll((inputs) =>
+				inputs.map((input) => input.getAttribute("aria-label")),
+			);
+		expect(fields.indexOf("Time Limit")).toBe(fields.indexOf("Mode") + 1);
+		await expect(b.getByLabel("Time Limit", { exact: true })).toHaveValue("5");
+		await expect(
+			a.getByLabel("Time Limit", { exact: true }).locator("option"),
+		).toHaveCount(11);
+		await a.getByLabel("Time Limit", { exact: true }).selectOption("10");
+		await expect(b.getByLabel("Time Limit", { exact: true })).toHaveValue("10");
+		for (const viewport of [
+			{ width: 1280, height: 720 },
+			{ width: 844, height: 390 },
+			{ width: 390, height: 844 },
+		]) {
+			await a.setViewportSize(viewport);
+			const roster = await a
+					.getByRole("region", { name: "Room players" })
+					.boundingBox(),
+				settings = await a
+					.getByRole("region", { name: "Room settings" })
+					.boundingBox(),
+				menu = await a.locator(".menu-panel").boundingBox(),
+				chat = await a
+					.getByRole("region", { name: "Room chat", exact: true })
+					.boundingBox();
+			if (!roster || !settings || !menu || !chat)
+				throw new Error("Lobby layout is missing");
+			expect(menu.height).toBeGreaterThan(100);
+			if (viewport.width > 680)
+				expect(roster.x + roster.width).toBeLessThanOrEqual(settings.x);
+			else expect(roster.y + roster.height).toBeLessThanOrEqual(settings.y);
+			// Kiểm tra không chồng lấn theo vị trí thực, không giả định breakpoint của Lobby.
+			expect(
+				chat.x + chat.width <= menu.x || menu.y + menu.height <= chat.y,
+			).toBe(true);
+			await a
+				.getByLabel("Time Limit", { exact: true })
+				.scrollIntoViewIfNeeded();
+			await expect(
+				a.getByLabel("Time Limit", { exact: true }),
+			).toBeInViewport();
+			await a.screenshot({
+				path: info.outputPath(`lobby-${viewport.width}.png`),
+				fullPage: true,
+			});
+		}
+		await a.setViewportSize({ width: 1280, height: 720 });
 		await a.getByLabel("Mode", { exact: true }).selectOption("NO_WALK");
 		await expect(b.getByLabel("Mode", { exact: true })).toHaveValue("NO_WALK");
 		await a.getByRole("button", { name: "Leave", exact: true }).click();
@@ -191,7 +246,7 @@ test("Account lobby, permanent chat, settings draft and Host transfer", async ({
 	}
 });
 
-for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
+for (const mode of ["RACE", "HARDCORE", "NO_WALK"] as const)
 	test(`Room ${mode}: authoritative input, menu clock, End, Play Again and History`, async ({
 		browser,
 	}) => {
@@ -207,10 +262,6 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			const room = await createRoom(a);
 			await joinRoom(b, room);
 			await a.getByLabel("Mode", { exact: true }).selectOption(mode);
-			if (mode === "TIME_LIMIT") {
-				await a.getByLabel("Minutes", { exact: true }).fill("1");
-				await a.getByLabel("Minutes", { exact: true }).press("Tab");
-			}
 			await startRoom(a, b);
 			await expect
 				.poll(() => observed.snapshot?.self.simulation.physics.grounded)
@@ -221,21 +272,43 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 				await expect
 					.poll(() => observed.snapshot?.elapsedTimeMs)
 					.toBeGreaterThan(before + 300);
-				await a.keyboard.up("ArrowRight");
 				expect(required(observed.snapshot).self.simulation.physics.x).toBe(231);
 				expect(required(observed.snapshot).self.simulation.physics.vx).toBe(0);
 			}
-			if (mode === "TIME_LIMIT")
-				await expect(a.getByLabel("Time left", { exact: true })).toContainText(
-					"Time Left:",
-				);
 			await a.keyboard.down("Space");
 			await a.waitForTimeout(220);
 			await a.keyboard.up("Space");
 			await expect
 				.poll(() => observed.snapshot?.self.simulation.physics.jumps)
 				.toBe(1);
-			await a.getByRole("button", { name: "Menu", exact: true }).click();
+			if (mode === "NO_WALK") {
+				await expect
+					.poll(() => observed.snapshot?.self.simulation.physics.grounded)
+					.toBe(false);
+				expect(
+					required(observed.snapshot).self.simulation.physics.x,
+				).toBeGreaterThan(231);
+				await expect
+					.poll(() => observed.snapshot?.self.simulation.physics.grounded)
+					.toBe(true);
+				expect(required(observed.snapshot).self.simulation.physics.vx).toBe(0);
+				const landingX = required(observed.snapshot).self.simulation.physics.x;
+				for (const direction of ["ArrowRight", "ArrowLeft"]) {
+					await a.keyboard.down(direction);
+					const before = required(observed.snapshot).elapsedTimeMs;
+					await expect
+						.poll(() => observed.snapshot?.elapsedTimeMs)
+						.toBeGreaterThan(before + 300);
+					expect(required(observed.snapshot).self.simulation.physics.x).toBe(
+						landingX,
+					);
+					expect(required(observed.snapshot).self.simulation.physics.vx).toBe(
+						0,
+					);
+					await a.keyboard.up(direction);
+				}
+			}
+			await a.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 			const before = required(observed.snapshot).elapsedTimeMs;
 			await expect
 				.poll(() => observed.snapshot?.elapsedTimeMs)
@@ -260,12 +333,12 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			).json();
 			expect(
 				detail.participants.find(
-					(p: { nickname: string }) => p.nickname === host,
+					(p: { username: string }) => p.username === host,
 				).jumps,
 			).toBe(1);
 			expect(
 				detail.participants.some(
-					(p: { nickname: string }) => p.nickname === peer,
+					(p: { username: string }) => p.username === peer,
 				),
 			).toBe(true);
 			await a.getByRole("button", { name: "Play Again", exact: true }).click();
@@ -281,7 +354,7 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			await startRoom(a, b);
 			await expect.poll(() => observed.snapshot?.playId).not.toBe(first.id);
 			expect(required(observed.snapshot).self.simulation.physics.jumps).toBe(0);
-			await a.getByRole("button", { name: "Menu", exact: true }).click();
+			await a.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 			await a.getByRole("button", { name: "End Match", exact: true }).click();
 			await expect(a.getByText("Results saved", { exact: true })).toBeVisible();
 			for (const page of [a, b])
@@ -289,11 +362,12 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			expect(
 				(await (await a.request.get("/api/history")).json()).items,
 			).toHaveLength(2);
+			await a.locator(".account-actions button").click();
 			await a.getByRole("button", { name: "History", exact: true }).click();
 			await a
 				.getByLabel("Game history")
 				.getByRole("button")
-				.filter({ hasText: "ROOM" })
+				.filter({ hasText: "Room" })
 				.first()
 				.click();
 			await expect(
@@ -307,7 +381,7 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 		}
 	});
 
-for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
+for (const mode of ["RACE", "HARDCORE", "NO_WALK"] as const)
 	test(`one-player Room ${mode}: Start, Players, End, Play Again and History`, async ({
 		page,
 	}, info) => {
@@ -315,7 +389,6 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 		const observed = observeOnline(page);
 		try {
 			await registerOnline(page, "alone");
-			await page.getByRole("button", { name: "Room", exact: true }).click();
 			const idInput = page.getByPlaceholder("Enter Room ID", { exact: true });
 			await expect(idInput).toBeVisible();
 			const join = page.getByRole("button", { name: "Join", exact: true });
@@ -339,9 +412,11 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 				page.getByRole("list", { name: "Current players" }).locator("li"),
 			).toHaveCount(1);
 			const id = required(observed.snapshot).playId;
-			await page.setViewportSize({ width: 390, height: 844 });
+			await page.setViewportSize({ width: 844, height: 390 });
 			await page.screenshot({ path: info.outputPath("players-mobile.png") });
-			await page.getByRole("button", { name: "Menu", exact: true }).click();
+			await page
+				.getByRole("button", { name: "Menu (Esc)", exact: true })
+				.click();
 			expect(
 				await page.locator(".controls-help").evaluate((help) => {
 					const button = Array.from(
@@ -351,7 +426,7 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 						!!button &&
 						!!(
 							button.compareDocumentPosition(help) &
-							Node.DOCUMENT_POSITION_FOLLOWING
+							Node.DOCUMENT_POSITION_PRECEDING
 						)
 					);
 				}),
@@ -373,7 +448,9 @@ for (const mode of ["RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK"] as const)
 			await expect(page.locator(".room-code code")).toHaveText(code);
 			await startRoom(page, page);
 			await expect.poll(() => observed.snapshot?.playId).not.toBe(id);
-			await page.getByRole("button", { name: "Menu", exact: true }).click();
+			await page
+				.getByRole("button", { name: "Menu (Esc)", exact: true })
+				.click();
 			await page
 				.getByRole("button", { name: "End Match", exact: true })
 				.click();

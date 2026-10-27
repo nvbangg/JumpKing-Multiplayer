@@ -19,7 +19,7 @@ test("two independent browser identities use real WS and logout revokes only the
 			page.evaluate(async () => {
 				const csrf = await (await fetch("/api/auth/csrf")).json();
 				const name = `ws_${crypto.randomUUID().replaceAll("-", "").slice(0, 15)}`;
-				const response = await fetch("/api/auth/register", {
+				const response = await fetch("/api/auth/login", {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",

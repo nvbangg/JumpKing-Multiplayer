@@ -46,7 +46,7 @@ for (const kind of ["COMMUNITY", "ROOM"] as const)
 		test.setTimeout(60000);
 		const first = await browser.newContext(),
 			second = await browser.newContext({
-				viewport: { width: 390, height: 844 },
+				viewport: { width: 844, height: 390 },
 				isMobile: true,
 				hasTouch: true,
 			});
@@ -94,6 +94,17 @@ for (const kind of ["COMMUNITY", "ROOM"] as const)
 			await expect(
 				viewer.getByRole("button", { name: "Back to My Game", exact: true }),
 			).toBeVisible();
+			const stage = await viewer.locator(".game-stage").boundingBox(),
+				chat = await viewer.locator(".game-chat").boundingBox(),
+				back = await viewer
+					.getByRole("button", { name: "Back to My Game", exact: true })
+					.boundingBox();
+			if (!stage || !chat || !back)
+				throw new Error("Spectator controls are missing");
+			expect(back.x).toBeGreaterThanOrEqual(0);
+			expect(back.y).toBeGreaterThanOrEqual(0);
+			expect(back.x + back.width).toBeLessThanOrEqual(stage.x);
+			expect(back.y + back.height).toBeLessThanOrEqual(chat.y);
 			await expect(viewer.locator("canvas")).toHaveAttribute(
 				"data-view-player",
 				required(targetId),

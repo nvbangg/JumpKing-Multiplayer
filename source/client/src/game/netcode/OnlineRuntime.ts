@@ -1,6 +1,6 @@
 import rules from "../../../../common/rules.json";
 import { NETWORK } from "../../network/config";
-import type { PlayerStanding } from "../../network/contracts";
+import type { Crown, PlayerStanding } from "../../network/contracts";
 import type { GameSocket, RoomState } from "../../network/GameSocket";
 import { required } from "../../required";
 import type { RoomItemsView } from "../items";
@@ -19,7 +19,12 @@ import {
 } from "../simulation/GameSimulation";
 import { roomMap } from "../simulation/roomMaps";
 import { PHYSICS } from "../simulation/tuning";
-import type { GameMap, PlayerInput, PlayerState } from "../simulation/types";
+import type {
+	GameMap,
+	MovementEffect,
+	PlayerInput,
+	PlayerState,
+} from "../simulation/types";
 import { PeerInterpolation } from "./PeerInterpolation";
 import { Prediction } from "./Prediction";
 
@@ -42,18 +47,19 @@ export interface OnlineSnapshot {
 	elapsedTimeMs: number;
 	remainingTimeMs: number | null;
 	self: {
+		crown: Crown;
 		lastProcessedInputSeq: number;
 		status: string;
 		paused: boolean;
 		simulation: GameSnapshot;
-		metrics: Record<string, unknown>;
 	};
 	peers: {
 		playerId: string;
+		positionRevision: number;
 		nickname: string;
 		colorSlot: number;
 		state: RenderPose;
-		crowned: boolean;
+		crown: Crown;
 		status: string;
 	}[];
 }
@@ -76,11 +82,16 @@ export class OnlineRuntime implements GameRuntime {
 		private changed: (state: PlayerState, snapshot: OnlineSnapshot) => void,
 		flyAllowed: boolean,
 		private failed: (message: string) => void = () => {},
+		private onMovement: (
+			effects: MovementEffect[],
+			state: PlayerState,
+		) => void = () => {},
 	) {
 		this.game = new GameSimulation(
-			room.kind === "ROOM" ? roomMap(map, room.settings?.mapLevel ?? 10) : map,
+			room.kind === "ROOM" ? roomMap(map, required(room.settings).mapId) : map,
 			flyAllowed,
 			room.settings?.mode === "NO_WALK",
+			room.kind === "ROOM" ? required(room.settings).mapId : undefined,
 		);
 		if (room.kind === "ROOM")
 			this.finishMarker =
@@ -89,7 +100,7 @@ export class OnlineRuntime implements GameRuntime {
 		this.prediction = new Prediction(
 			this.game,
 			NETWORK.maxInputFrames,
-			room.settings?.mode === "HARDCORE",
+			room.settings?.mode,
 		);
 	}
 	updateRoom(room: RoomState): void {
@@ -123,10 +134,13 @@ export class OnlineRuntime implements GameRuntime {
 			throw new Error("Invalid ending state");
 		if (ending.ravenDone !== undefined && typeof ending.ravenDone !== "boolean")
 			throw new Error("Invalid ending state");
+		if (ending.crown !== "GOLD" && ending.crown !== "BLACK")
+			throw new Error("Invalid ending state");
 		this.ending ??= {
 			id: payload.playId,
 			screen: required(ending.screen),
 			ravenDone: ending.ravenDone === true,
+			crown: ending.crown,
 		};
 	}
 	receive(payload: Record<string, unknown>): void {
@@ -224,7 +238,9 @@ export class OnlineRuntime implements GameRuntime {
 			if (this.menu) break;
 			const seq = ++this.sequence;
 			try {
-				this.prediction.push(seq, input);
+				const movement = this.prediction.push(seq, input);
+				if (movement.length)
+					this.onMovement(movement, this.game.physics.snapshot());
 			} catch (cause) {
 				this.menu = true;
 				const message =
@@ -264,7 +280,7 @@ export class OnlineRuntime implements GameRuntime {
 		return this.latest?.spectating?.playId ?? this.latest?.playId ?? "";
 	}
 	frame(): WorldFrame {
-		const saved = this.game.snapshot(),
+		const saved = this.game.view(),
 			self = this.room.members.find(
 				(member) => member.playerId === this.socket.selfId,
 			);
@@ -277,7 +293,7 @@ export class OnlineRuntime implements GameRuntime {
 				nickname: peer.nickname,
 				color: color(peer.colorSlot),
 				state: peer.state,
-				crowned: peer.crowned,
+				crown: peer.crown,
 			}));
 		// Chỉ đổi frame hiển thị; game/prediction và ACK luôn thuộc bản thân.
 		const watched = this.latest?.spectating;
@@ -289,7 +305,7 @@ export class OnlineRuntime implements GameRuntime {
 					nickname: watched.player.nickname,
 					color: color(watched.player.colorSlot),
 					state: target?.state ?? watched.player.state,
-					crowned: watched.player.crowned,
+					crown: watched.player.crown,
 					adventure: watched.adventure,
 				},
 				peers: peers
@@ -299,7 +315,7 @@ export class OnlineRuntime implements GameRuntime {
 						nickname: self?.nickname || "Player",
 						color: color(self?.colorSlot || 0),
 						state: saved.physics,
-						crowned: this.game.adventure.completed,
+						crown: this.latest?.self.crown ?? "NONE",
 					}),
 				world: watched.world,
 				items: this.latest?.items,
@@ -311,7 +327,7 @@ export class OnlineRuntime implements GameRuntime {
 				nickname: self?.nickname || "Player",
 				color: color(self?.colorSlot || 0),
 				state: saved.physics,
-				crowned: this.game.adventure.completed,
+				crown: this.latest?.self.crown ?? "NONE",
 				adventure: saved.adventure,
 			},
 			peers,

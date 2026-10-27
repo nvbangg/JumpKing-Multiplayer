@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import type { AssetManifest } from "../content/assets";
-import { TowerScene } from "../scenes/TowerScene";
 import { PRESENTATION } from "./config";
+import { TowerScene } from "./TowerScene";
 import type { GameRuntime, PresentationHooks } from "./types";
 
 export function createGame(
@@ -23,6 +23,16 @@ export function createGame(
 		scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
 		callbacks: {
 			postBoot: (game) => {
+				// Theo kích thước vùng game khi sidebar hoặc hướng màn hình thay đổi.
+				const resize = new ResizeObserver(([entry]) => {
+					if (!entry) return;
+					game.scale.setParentSize(
+						entry.contentRect.width,
+						entry.contentRect.height,
+					);
+				});
+				resize.observe(parent);
+				game.events.once(Phaser.Core.Events.DESTROY, () => resize.disconnect());
 				const canvas = game.canvas;
 				canvas.tabIndex = 0;
 				// Phaser chặn mousedown mặc định; trả focus về game bằng pointerdown.

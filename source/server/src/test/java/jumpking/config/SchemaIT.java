@@ -1,6 +1,7 @@
 package jumpking.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.net.ServerSocket;
@@ -15,6 +16,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipFile;
 import jumpking.support.TestDatabase;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -37,6 +39,8 @@ class SchemaIT {
 
   private static JdbcTemplate jdbc;
   private static DriverManagerDataSource dataSource;
+  private final java.util.List<Long> owners = new java.util.ArrayList<>();
+  private final java.util.List<String> matches = new java.util.ArrayList<>();
 
   @BeforeAll
   static void startDatabase() throws Exception {
@@ -48,16 +52,35 @@ class SchemaIT {
   private long account() {
     String token = UUID.randomUUID().toString();
     jdbc.update(
-        "INSERT INTO users(username,password_hash,created_at) VALUES (?,?,UTC_TIMESTAMP(3))",
+        "INSERT INTO users(username,password_hash,crown,created_at) VALUES (?,?,'NONE',UTC_TIMESTAMP(3))",
         token.substring(0, 24),
         "hash");
-    return jdbc.queryForObject(
-        "SELECT id FROM users WHERE username=?", Long.class, token.substring(0, 24));
+    long owner =
+        jdbc.queryForObject(
+            "SELECT id FROM users WHERE username=?", Long.class, token.substring(0, 24));
+    owners.add(owner);
+    return owner;
+  }
+
+  private String newMatchId() {
+    String id = UUID.randomUUID().toString();
+    matches.add(id);
+    return id;
+  }
+
+  @AfterEach
+  void removeFixtures() {
+    for (long owner : owners) jdbc.update("DELETE FROM play_runs WHERE user_id=?", owner);
+    for (String match : matches) {
+      jdbc.update("DELETE FROM play_runs WHERE match_id=?", match);
+      jdbc.update("DELETE FROM matches WHERE id=?", match);
+    }
+    for (long owner : owners) jdbc.update("DELETE FROM users WHERE id=?", owner);
   }
 
   private void community(long userId) {
     jdbc.update(
-        "INSERT INTO play_runs(id,user_id,kind,status,snapshot,started_at,updated_at) VALUES (?,?,'COMMUNITY','ACTIVE',JSON_OBJECT('codecVersion',1),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+        "INSERT INTO play_runs(id,user_id,status,snapshot,started_at,updated_at) VALUES (?,?,'ACTIVE',JSON_OBJECT('codecVersion',1),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
         UUID.randomUUID().toString(),
         userId);
   }
@@ -65,6 +88,18 @@ class SchemaIT {
   @Test
   void validatesActualSchemaAndIndexes() {
     schema.validate();
+  }
+
+  @Test
+  void rejectsGoogleIndexThatDoesNotGuaranteeUniqueGoogleIds() {
+    jdbc.execute(
+        "ALTER TABLE users DROP INDEX uq_users_google_id, ADD UNIQUE KEY uq_users_google_id (google_id,id)");
+    try {
+      assertThatThrownBy(() -> schema.validate()).hasMessageContaining("unique indexes");
+    } finally {
+      jdbc.execute(
+          "ALTER TABLE users DROP INDEX uq_users_google_id, ADD UNIQUE KEY uq_users_google_id (google_id)");
+    }
   }
 
   @Test
@@ -155,32 +190,13 @@ class SchemaIT {
         assertThat(archive.getEntry("BOOT-INF/classes/shared/fixtures/physics-traces.json"))
             .isNull();
         if (archive.getEntry("BOOT-INF/classes/static/index.html") != null) {
-          var version =
-              http.send(
-                  HttpRequest.newBuilder(URI.create(origin + "/version.json")).build(),
-                  HttpResponse.BodyHandlers.ofString());
-          assertThat(version.statusCode()).isEqualTo(200);
-          assertThat(version.headers().allValues("set-cookie")).isEmpty();
-          assertThat(version.headers().firstValue("cache-control").orElseThrow())
-              .isEqualTo("no-cache");
-          assertThat(
-                  new com.fasterxml.jackson.databind.ObjectMapper()
-                      .readTree(version.body())
-                      .path("version")
-                      .asText())
-              .isNotBlank();
-          try (var stream =
-              archive.getInputStream(archive.getEntry("BOOT-INF/classes/static/version.json"))) {
-            assertThat(version.body())
-                .isEqualTo(
-                    new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
-          }
           for (String path : new String[] {"/", "/history", "/community"}) {
             var page =
                 http.send(
                     HttpRequest.newBuilder(URI.create(origin + path)).build(),
                     HttpResponse.BodyHandlers.ofString());
             assertThat(page.statusCode()).as(path).isEqualTo(200);
+            assertThat(page.headers().allValues("set-cookie")).isEmpty();
             assertThat(page.body())
                 .contains("<div id=\"root\"></div>")
                 .doesNotContain("SPA routing fixture");
@@ -195,6 +211,17 @@ class SchemaIT {
                         .build(),
                     HttpResponse.BodyHandlers.discarding());
             assertThat(cached.statusCode()).as("Revalidate " + path).isEqualTo(304);
+          }
+          for (String file : new String[] {"background.png", "logo.png"}) {
+            var image =
+                http.send(
+                    HttpRequest.newBuilder(URI.create(origin + "/ui/" + file)).build(),
+                    HttpResponse.BodyHandlers.ofByteArray());
+            assertThat(image.statusCode()).as(file).isEqualTo(200);
+            assertThat(image.headers().firstValue("content-type").orElseThrow())
+                .startsWith("image/png");
+            assertThat(image.body())
+                .isEqualTo(Files.readAllBytes(Path.of("../client/public/ui", file)));
           }
           verifyViteProxy(http, origin);
           if (System.getenv("E2E_BROWSER_PATH") != null) verifyPackagedBrowser(origin);
@@ -313,24 +340,17 @@ class SchemaIT {
       jdbc.execute(
           "ALTER TABLE matches ADD CONSTRAINT ck_matches_ticks CHECK (duration_ticks BETWEEN 0 AND 9007199254740991)");
     }
-    jdbc.execute("ALTER TABLE matches DROP CHECK ck_matches_map_level");
-    try {
-      assertThatThrownBy(() -> schema.validate()).hasMessageContaining("CHECK");
-    } finally {
-      jdbc.execute(
-          "ALTER TABLE matches ADD CONSTRAINT ck_matches_map_level CHECK (map_level BETWEEN 1 AND 10)");
-    }
   }
 
   @Test
   void eachAccountHasAtMostOneRunPerRoomMatch() {
     long owner = account(), peer = account();
-    String match = UUID.randomUUID().toString();
+    String match = newMatchId();
     jdbc.update(
-        "INSERT INTO matches(id,room_code,mode,started_at) VALUES (?,'ABCDEF','RACE',UTC_TIMESTAMP(3))",
+        "INSERT INTO matches(id,room_code,mode,map_id,started_at) VALUES (?,'ABCDEF','RACE',1,UTC_TIMESTAMP(3))",
         match);
     String insert =
-        "INSERT INTO play_runs(id,user_id,kind,match_id,nickname,status,started_at,updated_at) VALUES (?,?,'ROOM',?,'Player','ACTIVE',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))";
+        "INSERT INTO play_runs(id,user_id,match_id,status,started_at,updated_at) VALUES (?,?,?,'ACTIVE',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))";
     jdbc.update(insert, UUID.randomUUID().toString(), owner, match);
     assertThatThrownBy(() -> jdbc.update(insert, UUID.randomUUID().toString(), owner, match))
         .isInstanceOf(org.springframework.dao.DuplicateKeyException.class);
@@ -365,39 +385,31 @@ class SchemaIT {
   }
 
   @Test
-  void rejectsInvalidIdentityAndNullTimeLimit() {
+  void databaseStoresRoomOptionsWithoutEmbeddingGameplayRules() {
     assertThatThrownBy(() -> jdbc.update("INSERT INTO users(created_at) VALUES (UTC_TIMESTAMP(3))"))
         .isInstanceOf(org.springframework.dao.DataAccessException.class);
-    assertThatThrownBy(
-            () ->
-                jdbc.update(
-                    "INSERT INTO matches(id,room_code,mode,started_at) VALUES (?,'ABCDEF','TIME_LIMIT',UTC_TIMESTAMP(3))",
-                    UUID.randomUUID().toString()))
-        .isInstanceOf(org.springframework.dao.DataAccessException.class);
-    for (int level : new int[] {0, 11})
-      assertThatThrownBy(
-              () ->
-                  jdbc.update(
-                      "INSERT INTO matches(id,room_code,mode,map_level,started_at) VALUES (?,'ABCDEF','RACE',?,UTC_TIMESTAMP(3))",
-                      UUID.randomUUID().toString(),
-                      level))
-          .isInstanceOf(org.springframework.dao.DataAccessException.class);
+    jdbc.update(
+        "INSERT INTO matches(id,room_code,mode,map_id,time_limit_minutes,started_at) VALUES (?,'ABCDEF','RACE',1,10,UTC_TIMESTAMP(3))",
+        newMatchId());
+    jdbc.update(
+        "INSERT INTO matches(id,room_code,mode,map_id,time_limit_minutes,item_cooldown_minutes,started_at) VALUES (?,'ABCDEF','UNKNOWN',0,11,0,UTC_TIMESTAMP(3))",
+        newMatchId());
   }
 
   @Test
-  void rejectsFinishWithoutTimeAndInvalidSnapshot() {
+  void storesFinishWithoutTimeAndRejectsInvalidSnapshot() {
     long owner = account();
-    assertThatThrownBy(
+    assertThatCode(
             () ->
                 jdbc.update(
-                    "INSERT INTO play_runs(id,user_id,kind,status,started_at,updated_at,ended_at) VALUES (?,?,'COMMUNITY','FINISHED',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                    "INSERT INTO play_runs(id,user_id,status,started_at,updated_at,ended_at) VALUES (?,?,'FINISHED',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
                     UUID.randomUUID().toString(),
                     owner))
-        .isInstanceOf(org.springframework.dao.DataAccessException.class);
+        .doesNotThrowAnyException();
     assertThatThrownBy(
             () ->
                 jdbc.update(
-                    "INSERT INTO play_runs(id,user_id,kind,status,snapshot,started_at,updated_at) VALUES (?,?,'COMMUNITY','ACTIVE',JSON_ARRAY(),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                    "INSERT INTO play_runs(id,user_id,status,snapshot,started_at,updated_at) VALUES (?,?,'ACTIVE',JSON_ARRAY(),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
                     UUID.randomUUID().toString(),
                     owner))
         .isInstanceOf(org.springframework.dao.DataAccessException.class);

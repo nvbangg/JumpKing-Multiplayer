@@ -29,7 +29,7 @@ public final class InputFrames {
     clear();
   }
 
-  public void offer(GameEnvelope envelope, long now, boolean flyAllowed) {
+  public PlayerInput offer(GameEnvelope envelope, long now, boolean flyAllowed) {
     var p = envelope.payload();
     boolean cancel = envelope.type().equals("CANCEL_INPUT");
     GameEnvelope.fields(
@@ -69,6 +69,7 @@ public final class InputFrames {
     queue.add(new Queued(new Frame(seq, input, cancel), now));
     accepted = seq;
     lastReceived = now;
+    return input;
   }
 
   public Frame poll(long now) {

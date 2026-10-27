@@ -1,7 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { ChevronRight, Gamepad2, Users } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import ROOM_MAPS from "../../../../common/room-maps.json";
+import { BackButton } from "../../components/BackButton";
 import { api } from "../../network/api";
 import type { HistoryItem } from "../../network/contracts";
-import { duration } from "./format";
+import { displayLabel, duration } from "./format";
 
 interface HistoryPage {
 	items: HistoryItem[];
@@ -10,8 +13,10 @@ interface HistoryPage {
 }
 export function HistoryList({
 	onSelect,
+	onBack,
 }: {
 	onSelect: (item: HistoryItem) => void;
+	onBack?: () => void;
 }) {
 	const [items, setItems] = useState<HistoryItem[]>([]);
 	const [page, setPage] = useState(0),
@@ -19,43 +24,18 @@ export function HistoryList({
 		[loading, setLoading] = useState(true),
 		[error, setError] = useState("");
 	const generation = useRef(0);
-	const pageSize = 20;
-	useEffect(() => {
-		let disposed = false;
-		void api<HistoryPage>(`/history?page=0&size=${pageSize}`)
-			.then((result) => {
-				if (!disposed) {
-					setItems(result.items);
-					setHasNext(result.hasNext);
-				}
-			})
-			.catch((cause) => {
-				if (!disposed)
-					setError(
-						cause instanceof Error
-							? cause.message
-							: "History could not be loaded",
-					);
-			})
-			.finally(() => {
-				if (!disposed) setLoading(false);
-			});
-		return () => {
-			disposed = true;
-			generation.current++;
-		};
-	}, []);
-	const loadMore = async () => {
-		if (loading) return;
+	const loadPage = useCallback(async (nextPage: number) => {
 		setLoading(true);
 		setError("");
 		const requestGeneration = generation.current;
 		try {
 			const result = await api<HistoryPage>(
-				`/history?page=${page + 1}&size=${pageSize}`,
+				`/history?page=${nextPage}&size=20`,
 			);
 			if (generation.current !== requestGeneration) return;
-			setItems((rows) => [...rows, ...result.items]);
+			setItems((rows) =>
+				nextPage === 0 ? result.items : [...rows, ...result.items],
+			);
 			setPage(result.page);
 			setHasNext(result.hasNext);
 		} catch (cause) {
@@ -68,39 +48,88 @@ export function HistoryList({
 		} finally {
 			if (generation.current === requestGeneration) setLoading(false);
 		}
-	};
+	}, []);
+	useEffect(() => {
+		void loadPage(0);
+		return () => {
+			generation.current++;
+		};
+	}, [loadPage]);
 	return (
 		<section className="history-list" aria-label="Game history">
-			{items.map((item) => (
-				<button
-					type="button"
-					key={`${item.kind}:${item.id}`}
-					onClick={() => onSelect(item)}
-				>
-					<span className="kind-label">
-						{item.kind}
-						{item.room && ` · Map ${item.room.mapLevel}`}
-					</span>
-					<span>
-						{new Date(item.endedAt).toLocaleDateString()} · {item.status}
-					</span>
-					<span>{duration(item.finishTimeMs ?? item.playTimeMs)}</span>
-				</button>
-			))}
+			<div className="history-heading" aria-hidden="true">
+				<span>Type</span>
+				<span>Played At</span>
+				<span>Result</span>
+				<span>Map</span>
+				<span>Play Time</span>
+				<span />
+			</div>
+			<div className="history-rows">
+				{items.map((item) => (
+					<button
+						type="button"
+						key={`${item.kind}:${item.id}`}
+						onClick={() => onSelect(item)}
+					>
+						<span className="history-kind">
+							{item.kind === "COMMUNITY" ? (
+								<Users className="tone-cyan" aria-hidden="true" />
+							) : (
+								<Gamepad2 className="tone-amber" aria-hidden="true" />
+							)}
+							{displayLabel(item.kind)}
+						</span>
+						<time className="history-date" dateTime={item.endedAt}>
+							{new Date(item.endedAt).toLocaleString(undefined, {
+								dateStyle: "medium",
+								timeStyle: "short",
+							})}
+						</time>
+						<span
+							className={
+								"history-status " +
+								(item.status === "FINISHED"
+									? "tone-green"
+									: item.status === "DNF"
+										? "tone-red"
+										: "")
+							}
+						>
+							{displayLabel(item.status)}
+						</span>
+						<span className="history-map">
+							{item.room
+								? item.room.mapId +
+									" · " +
+									(ROOM_MAPS.find((map) => map.level === item.room?.mapId)
+										?.name || "Map")
+								: "Main Babe"}
+						</span>
+						<span className="history-time">
+							{duration(item.finishTimeMs ?? item.playTimeMs)}
+						</span>
+						<ChevronRight className="history-chevron" aria-hidden="true" />
+					</button>
+				))}
+			</div>
 			{loading && <p role="status">Loading…</p>}
-			{!loading && !items.length && !error && <p>No completed games.</p>}
-			{hasNext && (
-				<button
-					type="button"
-					disabled={loading}
-					onClick={() => {
-						void loadMore();
-					}}
-				>
-					Load More
-				</button>
+			{!loading && !items.length && !error && (
+				<p className="empty-state">No completed games.</p>
 			)}
 			{error && <p role="alert">{error}</p>}
+			<footer className="panel-actions">
+				{hasNext && (
+					<button
+						type="button"
+						disabled={loading}
+						onClick={() => void loadPage(page + 1)}
+					>
+						Load More
+					</button>
+				)}
+				{onBack && <BackButton onClick={onBack} />}
+			</footer>
 		</section>
 	);
 }

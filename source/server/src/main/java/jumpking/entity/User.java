@@ -16,11 +16,16 @@ public class User {
   @Column(name = "username", length = 32, nullable = false)
   private String username;
 
-  @Column(name = "password_hash", length = 255, nullable = false)
+  @Column(name = "password_hash", length = 255)
   private String passwordHash;
 
-  @Column(name = "crown_unlocked", nullable = false, columnDefinition = "boolean")
-  private boolean crownUnlocked;
+  @Column(name = "google_id", length = 64)
+  private String googleId;
+
+  @Enumerated(EnumType.STRING)
+  @JdbcTypeCode(SqlTypes.VARCHAR)
+  @Column(name = "crown", length = 5, nullable = false)
+  private Crown crown = Crown.NONE;
 
   @JdbcTypeCode(SqlTypes.TIMESTAMP)
   @Column(name = "created_at", columnDefinition = "datetime(3)")
@@ -32,6 +37,14 @@ public class User {
     var user = new User();
     user.username = username;
     user.passwordHash = passwordHash;
+    user.createdAt = created;
+    return user;
+  }
+
+  public static User googleAccount(String username, String googleId, Instant created) {
+    var user = new User();
+    user.username = username;
+    user.googleId = googleId;
     user.createdAt = created;
     return user;
   }
@@ -56,16 +69,24 @@ public class User {
     passwordHash = value;
   }
 
+  public String getGoogleId() {
+    return googleId;
+  }
+
+  public void setGoogleId(String value) {
+    googleId = value;
+  }
+
   public Instant getCreatedAt() {
     return createdAt;
   }
 
-  public boolean isCrownUnlocked() {
-    return crownUnlocked;
+  public Crown getCrown() {
+    return crown;
   }
 
-  public void setCrownUnlocked(boolean value) {
-    crownUnlocked = value;
+  public void setCrown(Crown value) {
+    crown = value;
   }
 
   public void setCreatedAt(Instant value) {

@@ -10,7 +10,8 @@ import jumpking.game.*;
 final class RoomItems {
   enum Kind {
     BANANA,
-    ROCK
+    ROCK,
+    BOOTS
   }
 
   static final class Slot {
@@ -32,7 +33,7 @@ final class RoomItems {
   private final Physics p;
   private final RandomGenerator random;
   private final double width;
-  private final int rockEffectTicks;
+  private final int rockEffectTicks, maximumBananas;
   private long sequence;
 
   RoomItems(Physics p, JsonNode rules, RandomGenerator random) {
@@ -40,6 +41,8 @@ final class RoomItems {
     this.random = random;
     width = rules.path("bananaWidth").asDouble();
     rockEffectTicks = rules.path("rockEffectTicks").asInt();
+    maximumBananas = rules.path("maximumBananas").asInt();
+    if (maximumBananas < 1) throw new IllegalArgumentException("Banana limit must be positive");
   }
 
   void start(Collection<String> players) {
@@ -51,7 +54,8 @@ final class RoomItems {
   }
 
   private void grant(Slot slot) {
-    slot.held = random.nextBoolean() ? Kind.BANANA : Kind.ROCK;
+    var kinds = Kind.values();
+    slot.held = kinds[random.nextInt(kinds.length)];
     slot.bananaArmed = false;
   }
 
@@ -83,10 +87,19 @@ final class RoomItems {
         || state.charge > 0)
       throw new ApiException(409, "ITEM_UNAVAILABLE", "Item cannot be used right now");
     if (slot.held == Kind.BANANA) {
+      if (bananas.size() >= maximumBananas)
+        throw new ApiException(409, "ITEM_UNAVAILABLE", "The room has reached its banana limit");
       if (!state.grounded || state.vy < 0)
         throw new ApiException(
             409, "INVALID_ITEM_POSITION", "Stand on the ground to prepare a banana");
       slot.bananaArmed = true;
+      return;
+    }
+    if (slot.held == Kind.BOOTS) {
+      if (state.jumpBoost)
+        throw new ApiException(409, "ITEM_UNAVAILABLE", "Jump boost is already active");
+      own.boostJump();
+      consume(slot, tick, cooldownMinutes);
       return;
     }
     Simulation target = null;
@@ -119,6 +132,8 @@ final class RoomItems {
     if (slot == null || !slot.bananaArmed || slot.held != Kind.BANANA) return;
     var state = simulation.snapshot();
     slot.bananaArmed = false;
+    // Người khác có thể đặt bẫy sau lúc chuẩn bị; kiểm tra lại trước khi tiêu thụ item.
+    if (bananas.size() >= maximumBananas) return;
     // JUMP có thể là air grace; chỉ đặt tại cú bật nhảy thật trên mặt nền.
     if (!state.grounded || state.freeFlight || state.phasingFall) return;
     double x = state.x + p.bodyWidth / 2.0, y = state.y + p.bodyHeight;

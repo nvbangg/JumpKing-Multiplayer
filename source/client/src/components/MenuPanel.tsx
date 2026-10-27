@@ -5,19 +5,27 @@ import {
 	useEffect,
 	useRef,
 } from "react";
+import { BackButton } from "./BackButton";
+
+const choicesSelector =
+	"button:not(:disabled), input:not(:disabled), select:not(:disabled)";
 
 export function MenuPanel({
 	title,
 	children,
 	onBack,
+	showBack = true,
+	label,
 }: {
 	title?: string;
 	children: ReactNode;
 	onBack?: () => void;
+	showBack?: boolean;
+	label?: string;
 }) {
 	const ref = useRef<HTMLElement>(null);
 	const selections = useRef<Record<string, string>>({});
-	const key = title || "Main menu";
+	const key = title || label || "Main menu";
 	useEffect(() => {
 		const buttons = Array.from(
 			ref.current?.querySelectorAll<HTMLButtonElement>(
@@ -28,10 +36,11 @@ export function MenuPanel({
 			(button) => button.textContent === selections.current[key],
 		);
 		const first =
-			ref.current?.querySelector<HTMLInputElement>("input") ||
-			selected ||
-			buttons[0];
-		first?.focus({ preventScroll: true });
+			selected || ref.current?.querySelector<HTMLElement>(choicesSelector);
+		if (
+			!(first?.tagName === "INPUT" && matchMedia("(pointer: coarse)").matches)
+		)
+			first?.focus({ preventScroll: true });
 	}, [key]);
 	const keyDown = useCallback(
 		(event: KeyboardEvent | ReactKeyboardEvent<HTMLElement>) => {
@@ -44,15 +53,11 @@ export function MenuPanel({
 				return;
 			if (!["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
 			const choices = Array.from(
-				ref.current?.querySelectorAll<HTMLButtonElement>(
-					"button:not(:disabled)",
-				) || [],
+				ref.current?.querySelectorAll<HTMLElement>(choicesSelector) || [],
 			);
 			if (!choices.length) return;
 			event.preventDefault();
-			const index = choices.indexOf(
-				document.activeElement as HTMLButtonElement,
-			);
+			const index = choices.indexOf(document.activeElement as HTMLElement);
 			const next =
 				event.key === "Home"
 					? 0
@@ -91,10 +96,10 @@ export function MenuPanel({
 		>
 			{title && <h2>{title}</h2>}
 			{children}
-			{onBack && (
-				<button type="button" className="back" onClick={onBack}>
-					Back
-				</button>
+			{onBack && showBack && (
+				<footer className="panel-actions">
+					<BackButton onClick={onBack} />
+				</footer>
 			)}
 		</section>
 	);

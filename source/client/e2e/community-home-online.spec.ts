@@ -12,7 +12,7 @@ test.afterEach(async ({ page }) => {
 });
 
 async function exitGame(page: Page) {
-	await page.getByRole("button", { name: "Menu", exact: true }).click();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await page.getByRole("button", { name: "Save & Exit", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "Continue", exact: true }),
@@ -51,7 +51,7 @@ test("home opens Community directly; cancel preserves save and Continue preserve
 		page.getByRole("button", { name: "Continue", exact: true }),
 	).toHaveCount(0);
 	await expect(
-		page.getByRole("button", { name: "Community Tower", exact: true }),
+		page.getByRole("button", { name: "Community", exact: true }),
 	).toHaveCount(0);
 	await expect(
 		page.getByRole("button", { name: "Leaderboard", exact: true }),
@@ -69,7 +69,7 @@ test("home opens Community directly; cancel preserves save and Continue preserve
 	await page.reload();
 	await page.getByRole("button", { name: "Continue", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "Menu", exact: true }),
+		page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 	).toBeVisible();
 	await exitGame(page);
 	expect(
@@ -109,7 +109,7 @@ test("stale Continue and New Game cannot replace a save changed in another tab",
 	).toHaveLength(2);
 	await page.getByRole("button", { name: "Continue", exact: true }).click();
 	await expect(
-		page.getByRole("button", { name: "Menu", exact: true }),
+		page.getByRole("button", { name: "Menu (Esc)", exact: true }),
 	).toBeVisible();
 });
 
@@ -166,7 +166,7 @@ test("late home responses cannot restore the previous Account's save or statisti
 		await delivery;
 	});
 	try {
-		await page.getByRole("button", { name: "Options", exact: true }).click();
+		await page.getByRole("button", { name: /^previous_/ }).click();
 		await page.getByRole("button", { name: "Back", exact: true }).click();
 		await requested;
 		await page.getByRole("button", { name: /^previous_/ }).click();
@@ -179,12 +179,16 @@ test("late home responses cannot restore the previous Account's save or statisti
 		).toHaveCount(0);
 		await expect(page.getByLabel("Total statistics")).toHaveCount(0);
 		const next = `next_${crypto.randomUUID().replaceAll("-", "").slice(0, 10)}`;
-		await page.getByRole("button", { name: "Sign In", exact: true }).click();
+		await page
+			.getByRole("button", { name: "Sign In / Log In", exact: true })
+			.click();
 		await page.getByLabel("Username", { exact: true }).fill(next);
 		await page
 			.getByLabel("Password", { exact: true })
 			.fill("A secure next account password");
-		await page.getByRole("button", { name: "Sign In", exact: true }).click();
+		await page
+			.getByRole("button", { name: "Sign In / Log In", exact: true })
+			.click();
 		await expect(
 			page.getByRole("button", { name: next, exact: true }),
 		).toBeVisible();

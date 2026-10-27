@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
+import mainMap from "../../common/maps/main-babe.json" with { type: "json" };
 
 test.skip(
 	process.env.JK_NETCODE_EXPERIMENT !== "true",
@@ -9,7 +10,7 @@ test("compares snapshot-only and prediction with the same deterministic delayed 
 	page,
 }) => {
 	await page.goto("/");
-	const measurements = await page.evaluate(async () => {
+	const measurements = await page.evaluate(async (map) => {
 		const requiredPath = "/src/required.ts";
 		const { required }: typeof import("../src/required") = await import(
 			requiredPath
@@ -18,8 +19,7 @@ test("compares snapshot-only and prediction with the same deterministic delayed 
 			predictionPath = "/src/game/netcode/Prediction.ts";
 		const { GameSimulation } = await import(simulationPath),
 			{ Prediction } = await import(predictionPath);
-		const map = await (await fetch("/shared/maps/main-babe.json")).json(),
-			stepMs = 1000 / 60;
+		const stepMs = 1000 / 60;
 		const idle = { left: false, right: false, jump: false };
 		const percentile = (values: number[]) => {
 			const sorted = [...values].sort((a, b) => a - b);
@@ -118,7 +118,7 @@ test("compares snapshot-only and prediction with the same deterministic delayed 
 				nonzeroCorrections: corrections.filter((value) => value > 0).length,
 			};
 		});
-	});
+	}, mainMap);
 	for (const sample of measurements) {
 		expect(sample.renderPositionErrorPixels.prediction.p95).toBe(0);
 		expect(sample.jumpVisibleFromChargeMs.prediction.p50).toBeLessThanOrEqual(

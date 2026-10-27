@@ -8,7 +8,6 @@ import java.util.List;
 import jumpking.config.NetworkSettings;
 import jumpking.game.*;
 import jumpking.network.GameEnvelope;
-import jumpking.support.MainBabeRoute;
 import org.junit.jupiter.api.Test;
 
 class RoomMatchTest {
@@ -53,8 +52,8 @@ class RoomMatchTest {
 
   @Test
   void preparedBananaDropsOnlyOnJumpInEveryMode() {
-    for (var mode : List.of("RACE", "HARDCORE", "TIME_LIMIT", "NO_WALK")) {
-      var match = match(new RoomSettings(mode, mode.equals("TIME_LIMIT") ? 5 : null, 10, true, 3));
+    for (var mode : List.of("RACE", "EASY", "HARDCORE", "NO_WALK")) {
+      var match = match(new RoomSettings(mode, null, 1, 3));
       var now = Instant.parse("2026-01-01T00:00:00Z");
       match.start(now);
       for (int i = 0; i < 30; i++) match.tick(1, now);
@@ -119,11 +118,11 @@ class RoomMatchTest {
   }
 
   @Test
-  void eachWinnerKeepsTheirOwnRavenEndingAndANewMatchResetsProgress() throws Exception {
-    var match = match();
+  void roomFinishKeepsRavenProgressWithoutStartingAnEndingAndResetsProgress() throws Exception {
+    var match = match(new RoomSettings("RACE", null, RoomSettings.FINAL_MAP_ID, null));
     var now = Instant.parse("2026-01-01T00:00:00Z");
     match.start(now);
-    var point = landing(10);
+    var point = landing(RoomSettings.FINAL_MAP_ID);
     match.ticks = point.ticks;
     for (var player : match.players.values()) player.game.physics().restore(point);
     var first = match.players.get("first");
@@ -137,8 +136,9 @@ class RoomMatchTest {
         .put("y", perch.path("y").asDouble() - perch.path("screen").asInt() * 360);
     first.game.adventure().restore(saved);
     match.tick(1_000_000_000L, now);
-    assertThat(first.ending).containsEntry("ravenDone", true);
-    assertThat(match.players.get("second").ending).containsEntry("ravenDone", false);
+    assertThat(first.ending).isNull();
+    assertThat(match.players.get("second").ending).isNull();
+    assertThat(match.write(1).ravenFinishers()).containsExactly(first.spec.owner());
     assertThat(match().players.get("first").game.adventure().ravenDone()).isFalse();
   }
 
@@ -251,7 +251,7 @@ class RoomMatchTest {
 
   @Test
   void hardcoreSplatRespawnsCurrentProgressWithoutResettingPeakOrCounters() {
-    var match = match(new RoomSettings("HARDCORE", null, RoomSettings.FULL_MAP_LEVEL, false, 3));
+    var match = match(new RoomSettings("HARDCORE", null, 1, null));
     var start = Instant.parse("2026-01-01T00:00:00Z");
     var player = match.players.get("first");
     match.start(start);
@@ -272,19 +272,54 @@ class RoomMatchTest {
   }
 
   @Test
+  void easySplatRestoresOnlyTheFallingPlayersSafeLandingAndKeepsPeakAndCounters() {
+    var match = match(new RoomSettings("EASY", null, 1, null));
+    var start = Instant.parse("2026-01-01T00:00:00Z");
+    var player = match.players.get("first");
+    var other = match.players.get("second");
+    match.start(start);
+    place(player, 77, 158, shared.tuning().gravity, true);
+    match.tick(1_000_000_000L, start);
+    place(player, 231, 110, -5, false);
+    match.tick(1_000_000_000L, start);
+    place(player, 231, 300, shared.tuning().maxFall, false);
+    var events = match.tick(1_000_000_000L, start);
+
+    assertThat(events.getFirst().effects().movement()).contains("SPLAT");
+    assertThat(player.currentProgress).isEqualTo(144);
+    assertThat(player.maximum).isEqualTo(197);
+    assertThat(player.peak).isEqualTo(2);
+    var state = player.game.physics().snapshot();
+    assertThat(state.x).isEqualTo(77);
+    assertThat(state.y).isEqualTo(158);
+    assertThat(state.ticks).isEqualTo(3);
+    assertThat(state.falls).isEqualTo(1);
+    assertThat(other.game.physics().snapshot().y).isEqualTo(302);
+    assertThat(other.game.physics().snapshot().falls).isZero();
+
+    match.finish("HOST_ENDED", start.plusSeconds(1));
+    assertThat(match.write(1).mode()).isEqualTo("EASY");
+    assertThat(match.write(1).runs().getFirst().progress()).isEqualTo(144);
+    var again = match(new RoomSettings("EASY", null, 1, null));
+    again.start(start);
+    place(again.players.get("first"), 231, 300, shared.tuning().maxFall, false);
+    again.tick(1_000_000_000L, start);
+    assertThat(again.players.get("first").game.physics().snapshot().y).isEqualTo(302);
+  }
+
+  @Test
   void everyLengthFinalizesOnItsOwnLandingAndOnlyFullMapOffersAnEnding() throws Exception {
     for (var goal : shared.roomMaps()) {
       var point = landing(goal.level());
-      var match = match(new RoomSettings("RACE", null, goal.level(), false, 3));
+      var match = match(new RoomSettings("RACE", null, goal.level(), null));
       var now = Instant.parse("2026-01-01T00:00:00Z");
       match.start(now);
       for (var player : match.players.values()) player.game.physics().restore(point);
       match.ticks = point.ticks;
       match.tick(1_000_000_000L, now.plusSeconds(300));
       assertThat(match.reason).as("map %s", goal.level()).isEqualTo("FINISH");
-      assertThat(match.results().get("mapLevel")).isEqualTo(goal.level());
-      for (var player : match.players.values())
-        assertThat(player.ending != null).isEqualTo(goal.level() == 10);
+      assertThat(match.results().get("mapId")).isEqualTo(goal.level());
+      for (var player : match.players.values()) assertThat(player.ending).isNull();
     }
   }
 
@@ -300,7 +335,7 @@ class RoomMatchTest {
     assertThat(match.players.get("second").game.physics().snapshot().ticks).isEqualTo(4);
     match.finish("HOST_ENDED", start.plusSeconds(2));
     assertThat(match.players.get("first").status).isEqualTo("UNFINISHED");
-    assertThat(match.players.values()).noneMatch(player -> player.winner);
+    assertThat(match.players.values()).allMatch(player -> player.rank != null);
     var write = match.write(1);
     assertThat(write.duration()).isEqualTo(7);
     assertThat(write.runs().get(1).status()).isEqualTo("DNF");
@@ -322,28 +357,40 @@ class RoomMatchTest {
 
   @Test
   void allPlayersOfTheFinishingTickAreProcessedBeforeResultsAndTies() throws Exception {
-    var match = match();
-    var before = MainBabeRoute.beforeFinish(shared, json);
+    var match = match(new RoomSettings("RACE", null, RoomSettings.FINAL_MAP_ID, null));
+    var before = landing(RoomSettings.FINAL_MAP_ID);
     var start = Instant.parse("2026-01-01T00:00:00Z");
     match.start(start);
-    match.ticks = before.physics().ticks;
+    match.ticks = before.ticks;
     for (var player : match.players.values()) {
-      player.game.restore(before);
+      player.game.physics().restore(before);
       player.maximum = player.game.physics().progress();
-      player.peak = before.physics().ticks;
+      player.peak = before.ticks;
     }
     match.tick(1_000_000_000L, start.plusSeconds(283));
-    assertThat(match.ticks).isEqualTo(16957);
+    assertThat(match.ticks).isEqualTo(before.ticks + 1);
     assertThat(match.reason).isEqualTo("FINISH");
     assertThat(match.players.values())
-        .allMatch(player -> player.winner && player.rank == 1 && player.finish == 16957);
+        .allMatch(player -> player.rank == 1 && player.finish == before.ticks + 1);
     assertThat(match.write(1).runs())
         .allMatch(
-            run -> run.status().equals("FINISHED") && run.ticks() == 16957 && run.rank() == 1);
+            run ->
+                run.status().equals("FINISHED")
+                    && run.ticks() == before.ticks + 1
+                    && run.rank() == 1);
   }
 
   private PlayerState landing(int level) throws Exception {
-    var sim = new Simulation(shared.roomMap(level), shared.tuning(), false, false);
+    var map = shared.roomMap(level);
+    if (level < 9) {
+      var state = new Simulation(map, shared.tuning(), false, false).snapshot();
+      state.screen = map.finish().screen();
+      state.x = map.finish().minCenterX() - shared.tuning().bodyWidth / 2.0;
+      state.y = map.progressOriginY() - shared.tuning().bodyHeight - map.finish().minProgress();
+      state.grounded = true;
+      return state;
+    }
+    var sim = new Simulation(map, shared.tuning(), false, false);
     try (var input =
         new org.springframework.core.io.ClassPathResource("fixtures/main-babe-checkpoints.json")
             .getInputStream()) {

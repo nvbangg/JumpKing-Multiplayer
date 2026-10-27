@@ -23,7 +23,7 @@ class RoomRunsIT {
   @Test
   void shortFinishesCountWinsWithoutGrantingTheFullMapCrownOrBestTime() throws Exception {
     var jdbc = TestDatabase.get().jdbc;
-    for (int level = 1; level <= 10; level++) {
+    for (int level = 1; level <= 9; level++) {
       var owners = new ArrayList<Long>();
       String match = UUID.randomUUID().toString();
       try {
@@ -37,7 +37,6 @@ class RoomRunsIT {
                 new RoomRuns.Run(
                     UUID.randomUUID().toString(),
                     owners.getFirst(),
-                    "Winner",
                     "FINISHED",
                     600,
                     5,
@@ -47,12 +46,10 @@ class RoomRunsIT {
                     600,
                     600L,
                     1,
-                    true,
                     ended),
                 new RoomRuns.Run(
                     UUID.randomUUID().toString(),
                     owners.getLast(),
-                    "Peer",
                     "UNFINISHED",
                     600,
                     4,
@@ -62,37 +59,28 @@ class RoomRunsIT {
                     600,
                     null,
                     2,
-                    false,
                     ended));
         var write =
             new RoomRuns.Write(
-                match, "ABCDEF", "RACE", null, level, false, 3, 1, started, ended, 600, "FINISH",
-                runs);
+                match, "ABCDEF", "RACE", null, level, 3, 1, started, ended, 600, "FINISH", runs,
+                Set.of());
         records.save(write);
         records.save(write);
         assertThat(
-                jdbc.queryForObject(
-                    "SELECT map_level FROM matches WHERE id=?", Integer.class, match))
+                jdbc.queryForObject("SELECT map_id FROM matches WHERE id=?", Integer.class, match))
             .isEqualTo(level);
         assertThat(
-                history
-                    .detail(owners.getFirst(), "ROOM", match)
-                    .path("room")
-                    .path("mapLevel")
-                    .asInt())
+                history.detail(owners.getFirst(), "ROOM", match).path("room").path("mapId").asInt())
             .isEqualTo(level);
         assertThat(
                 jdbc.queryForObject(
-                    "SELECT crown_unlocked FROM users WHERE id=?",
-                    Boolean.class,
-                    owners.getFirst()))
-            .isEqualTo(level == 10);
+                    "SELECT crown FROM users WHERE id=?", String.class, owners.getFirst()))
+            .isEqualTo(level == 9 ? "GOLD" : "NONE");
         var stats = history.statistics(owners.getFirst());
-        assertThat(stats.wins()).isEqualTo(1);
         assertThat(stats.finishes()).isEqualTo(1);
         assertThat(stats.totalJumps()).isEqualTo(5);
-        assertThat(stats.bestFinishTimeMs()).isEqualTo(level == 10 ? 10000L : null);
-        int changedLevel = level == 10 ? 1 : 10;
+        assertThat(stats.bestFinishTimeMs()).isEqualTo(level == 9 ? 10000L : null);
+        int changedLevel = level == 9 ? 1 : 9;
         assertThatThrownBy(
                 () ->
                     records.save(
@@ -102,14 +90,14 @@ class RoomRunsIT {
                             "RACE",
                             null,
                             changedLevel,
-                            false,
                             3,
                             2,
                             started,
                             ended,
                             600,
                             "FINISH",
-                            runs)))
+                            runs,
+                            Set.of())))
             .isInstanceOf(jumpking.exception.ApiException.class);
       } finally {
         jdbc.update("DELETE FROM play_runs WHERE match_id=?", match);
@@ -134,32 +122,28 @@ class RoomRunsIT {
       }
       String name = "writer_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
       jdbc.update(
-          "INSERT INTO users(username,password_hash,created_at) VALUES (?,'test-hash',UTC_TIMESTAMP(3))",
+          "INSERT INTO users(username,password_hash,crown,created_at) VALUES (?,'test-hash','NONE',UTC_TIMESTAMP(3))",
           name);
       users.add(jdbc.queryForObject("SELECT id FROM users WHERE username=?", Long.class, name));
       Instant started = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS),
           ended = started.plusSeconds(2);
-      var first =
-          new RoomRuns.Run(
-              a, users.get(0), "Player A", "ACTIVE", 0, 0, 0, 0, 0, 0, null, null, false, null);
-      var second =
-          new RoomRuns.Run(
-              b, users.get(1), "Player B", "ACTIVE", 0, 0, 0, 0, 0, 0, null, null, false, null);
+      var first = new RoomRuns.Run(a, users.get(0), "ACTIVE", 0, 0, 0, 0, 0, 0, null, null, null);
+      var second = new RoomRuns.Run(b, users.get(1), "ACTIVE", 0, 0, 0, 0, 0, 0, null, null, null);
       var start =
           new RoomRuns.Write(
               match,
               "ABCDEF",
               "RACE",
               null,
-              10,
-              false,
+              9,
               3,
               1,
               started,
               null,
               0,
               null,
-              List.of(first, second));
+              List.of(first, second),
+              Set.of());
       records.save(start);
       records.save(start);
       var update =
@@ -168,8 +152,7 @@ class RoomRunsIT {
               "ABCDEF",
               "RACE",
               null,
-              10,
-              false,
+              9,
               3,
               2,
               started,
@@ -178,35 +161,10 @@ class RoomRunsIT {
               null,
               List.of(
                   new RoomRuns.Run(
-                      a,
-                      users.get(0),
-                      "Player A",
-                      "ACTIVE",
-                      60,
-                      1,
-                      0,
-                      100,
-                      100,
-                      40,
-                      null,
-                      null,
-                      false,
-                      null),
+                      a, users.get(0), "ACTIVE", 60, 1, 0, 100, 100, 40, null, null, null),
                   new RoomRuns.Run(
-                      b,
-                      users.get(1),
-                      "Player B",
-                      "ACTIVE",
-                      60,
-                      1,
-                      0,
-                      90,
-                      120,
-                      40,
-                      null,
-                      null,
-                      false,
-                      null)));
+                      b, users.get(1), "ACTIVE", 60, 1, 0, 90, 120, 40, null, null, null)),
+              Set.of());
       records.save(update);
       records.save(start);
       var finish =
@@ -215,8 +173,7 @@ class RoomRunsIT {
               "ABCDEF",
               "RACE",
               null,
-              10,
-              false,
+              9,
               3,
               3,
               started,
@@ -225,35 +182,10 @@ class RoomRunsIT {
               "FINISH",
               List.of(
                   new RoomRuns.Run(
-                      a,
-                      users.get(0),
-                      "Player A",
-                      "FINISHED",
-                      61,
-                      2,
-                      0,
-                      200,
-                      200,
-                      61,
-                      61L,
-                      1,
-                      true,
-                      ended),
+                      a, users.get(0), "FINISHED", 61, 2, 0, 200, 200, 61, 61L, 1, ended),
                   new RoomRuns.Run(
-                      b,
-                      users.get(1),
-                      "Player B",
-                      "UNFINISHED",
-                      61,
-                      1,
-                      0,
-                      100,
-                      120,
-                      40,
-                      null,
-                      2,
-                      false,
-                      ended)));
+                      b, users.get(1), "UNFINISHED", 61, 1, 0, 100, 120, 40, null, 2, ended)),
+              Set.of(users.getFirst()));
       jdbc.execute(
           "CREATE TRIGGER "
               + trigger
@@ -277,20 +209,17 @@ class RoomRunsIT {
       assertThat(jdbc.queryForObject("SELECT jumps FROM play_runs WHERE id=?", Integer.class, a))
           .isEqualTo(1);
       assertThat(
-              jdbc.queryForObject(
-                  "SELECT crown_unlocked FROM users WHERE id=?", Boolean.class, users.get(0)))
-          .isFalse();
+              jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, users.get(0)))
+          .isEqualTo("NONE");
       records.save(finish);
       records.save(finish);
       records.save(update);
       assertThat(
-              jdbc.queryForObject(
-                  "SELECT crown_unlocked FROM users WHERE id=?", Boolean.class, users.get(0)))
-          .isTrue();
+              jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, users.get(0)))
+          .isEqualTo("BLACK");
       assertThat(
-              jdbc.queryForObject(
-                  "SELECT crown_unlocked FROM users WHERE id=?", Boolean.class, users.get(1)))
-          .isFalse();
+              jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, users.get(1)))
+          .isEqualTo("NONE");
       assertThat(
               jdbc.queryForObject(
                   "SELECT COUNT(*) FROM play_runs WHERE match_id=?", Integer.class, match))
@@ -299,7 +228,6 @@ class RoomRunsIT {
           .isEqualTo(users.get(0));
       assertThat(jdbc.queryForObject("SELECT jumps FROM play_runs WHERE id=?", Integer.class, a))
           .isEqualTo(2);
-      assertThat(history.statistics(users.get(0)).wins()).isEqualTo(1);
       assertThat(history.detail(users.get(0), "ROOM", match).path("participants").size())
           .isEqualTo(2);
       assertThatThrownBy(
@@ -310,15 +238,15 @@ class RoomRunsIT {
                           "ABCDEF",
                           "RACE",
                           null,
-                          10,
-                          false,
+                          9,
                           3,
                           4,
                           started,
                           null,
                           62,
                           null,
-                          update.runs())))
+                          update.runs(),
+                          Set.of())))
           .isInstanceOf(jumpking.exception.ApiException.class);
     } finally {
       jdbc.execute("DROP TRIGGER IF EXISTS " + trigger);

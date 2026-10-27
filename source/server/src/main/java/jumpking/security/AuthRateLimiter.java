@@ -19,10 +19,14 @@ public class AuthRateLimiter {
     this.settings = settings;
   }
 
-  public synchronized void check(String ip, String identity) {
+  public synchronized void checkIp(String ip) {
     refreshWindow();
     consume("ip:" + ip, settings.authRatePerMinute());
-    if (identity != null) consume("identity:" + identity, settings.authRatePerMinute());
+  }
+
+  public synchronized void checkAccount(long owner) {
+    refreshWindow();
+    consume("account:" + owner, settings.authRatePerMinute());
   }
 
   private void refreshWindow() {
@@ -37,7 +41,7 @@ public class AuthRateLimiter {
     Integer old = buckets.get(key);
     if ((old == null && buckets.size() >= settings.rateBucketLimit())
         || (old != null && old >= limit)) {
-      throw new ApiException(429, "RATE_LIMIT", "Too many requests; try again later");
+      throw new ApiException(429, "RATE_LIMITED", "Too many requests; try again later");
     }
     buckets.put(key, old == null ? 1 : old + 1);
   }
