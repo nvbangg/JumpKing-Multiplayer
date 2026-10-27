@@ -10,8 +10,7 @@ import jumpking.service.RoomRuns;
 
 /** State trận chỉ được đọc/ghi trên actor của Room; không thực hiện I/O. */
 final class RoomMatch {
-  record Spec(String playerId, long owner, String nickname, int color, long generation) {
-  }
+  record Spec(String playerId, long owner, String nickname, int color, long generation) {}
 
   static final class Player {
     final Spec spec;
@@ -33,8 +32,7 @@ final class RoomMatch {
     }
   }
 
-  record Events(Player player, GameSimulation.Events effects) {
-  }
+  record Events(Player player, GameSimulation.Events effects) {}
 
   final String id = UUID.randomUUID().toString(), roomId;
   final RoomSettings settings;
@@ -46,7 +44,8 @@ final class RoomMatch {
   long ticks, revision;
   long savedRevision;
   RoomRuns.Write terminalWrite;
-  final java.util.concurrent.CompletableFuture<Void> durable = new java.util.concurrent.CompletableFuture<>();
+  final java.util.concurrent.CompletableFuture<Void> durable =
+      new java.util.concurrent.CompletableFuture<>();
   String reason, saveStatus = "PENDING";
 
   RoomMatch(
@@ -65,9 +64,11 @@ final class RoomMatch {
     var map = shared.roomMap(settings.mapId());
     var physics = shared.tuning();
     tickRate = physics.tickRate;
-    items = new RoomItems(
-        physics, shared.rules().path("items"), java.util.random.RandomGenerator.getDefault());
-    limitTicks = settings.timeLimitMinutes() == null ? 0 : settings.timeLimitMinutes() * 60L * tickRate;
+    items =
+        new RoomItems(
+            physics, shared.rules().path("items"), java.util.random.RandomGenerator.getDefault());
+    limitTicks =
+        settings.timeLimitMinutes() == null ? 0 : settings.timeLimitMinutes() * 60L * tickRate;
     JsonNode adventure = shared.adventure();
     for (var spec : roster) {
       var input = new InputFrames(limits.inputFrames(), limits.inputTimeoutMs());
@@ -89,28 +90,21 @@ final class RoomMatch {
   }
 
   void start(Instant now) {
-    if (startedAt != null)
-      throw new IllegalStateException("Match has already started");
+    if (startedAt != null) throw new IllegalStateException("Match has already started");
     startedAt = millis(now);
-    if (settings.itemCooldownMinutes() != null)
-      items.start(players.keySet());
+    if (settings.itemCooldownMinutes() != null) items.start(players.keySet());
   }
 
   List<Events> tick(long now, Instant instant) {
-    if (startedAt == null || endedAt != null)
-      return List.of();
+    if (startedAt == null || endedAt != null) return List.of();
     ticks++;
-    if (settings.itemCooldownMinutes() != null)
-      items.advance(ticks);
+    if (settings.itemCooldownMinutes() != null) items.advance(ticks);
     var events = new ArrayList<Events>();
     for (var player : players.values()) {
-      if (!player.status.equals("ACTIVE"))
-        continue;
+      if (!player.status.equals("ACTIVE")) continue;
       var input = player.input.poll(now);
-      if (input.cancel())
-        player.game.physics().cancelInput();
-      if (settings.itemCooldownMinutes() != null)
-        items.hit(player.game.physics(), ticks);
+      if (input.cancel()) player.game.physics().cancelInput();
+      if (settings.itemCooldownMinutes() != null) items.hit(player.game.physics(), ticks);
       var effect = player.game.tick(input.input(), settings.mode());
       if (settings.itemCooldownMinutes() != null && effect.movement().contains("JUMP"))
         items.takeoff(
@@ -133,8 +127,7 @@ final class RoomMatch {
     }
     if (players.values().stream().anyMatch(player -> player.finish != null))
       finish("FINISH", instant);
-    else if (limitTicks > 0 && ticks >= limitTicks)
-      finish("TIME_LIMIT", instant);
+    else if (limitTicks > 0 && ticks >= limitTicks) finish("TIME_LIMIT", instant);
     return events;
   }
 
@@ -150,8 +143,7 @@ final class RoomMatch {
 
   void abandon(String id, Instant now) {
     var player = players.get(id);
-    if (player == null || !player.status.equals("ACTIVE"))
-      return;
+    if (player == null || !player.status.equals("ACTIVE")) return;
     player.input.clear();
     player.game.physics().cancelInput();
     player.status = "DNF";
@@ -159,54 +151,55 @@ final class RoomMatch {
   }
 
   void finish(String reason, Instant now) {
-    if (startedAt == null || endedAt != null)
-      return;
+    if (startedAt == null || endedAt != null) return;
     this.reason = reason;
     items.clear();
     endedAt = millis(now);
     for (var player : players.values()) {
       player.input.clear();
       player.game.physics().cancelInput();
-      if (player.status.equals("ACTIVE"))
-        player.status = "UNFINISHED";
-      if (player.endedAt == null)
-        player.endedAt = endedAt;
+      if (player.status.equals("ACTIVE")) player.status = "UNFINISHED";
+      if (player.endedAt == null) player.endedAt = endedAt;
     }
-    var scores = players.values().stream()
-        .map(
-            player -> new RoomRanking.Score(
-                player.spec.playerId,
-                player.status,
-                player.currentProgress,
-                player.maximum,
-                player.finish))
-        .toList();
-    for (var result : RoomRanking.rank(scores, settings.mode(), settings.timeLimitMinutes() != null)) {
+    var scores =
+        players.values().stream()
+            .map(
+                player ->
+                    new RoomRanking.Score(
+                        player.spec.playerId,
+                        player.status,
+                        player.currentProgress,
+                        player.maximum,
+                        player.finish))
+            .toList();
+    for (var result :
+        RoomRanking.rank(scores, settings.mode(), settings.timeLimitMinutes() != null)) {
       var player = players.get(result.score().playerId());
       player.rank = result.rank();
     }
   }
 
   RoomRuns.Write write(long revision) {
-    var runs = players.values().stream()
-        .map(
-            player -> {
-              var pose = player.game.physics().snapshot();
-              return new RoomRuns.Run(
-                  player.runId,
-                  player.spec.owner,
-                  player.status,
-                  pose.ticks,
-                  pose.jumps,
-                  pose.falls,
-                  player.currentProgress,
-                  player.maximum,
-                  player.peak,
-                  player.finish,
-                  player.rank,
-                  player.endedAt);
-            })
-        .toList();
+    var runs =
+        players.values().stream()
+            .map(
+                player -> {
+                  var pose = player.game.physics().snapshot();
+                  return new RoomRuns.Run(
+                      player.runId,
+                      player.spec.owner,
+                      player.status,
+                      pose.ticks,
+                      pose.jumps,
+                      pose.falls,
+                      player.currentProgress,
+                      player.maximum,
+                      player.peak,
+                      player.finish,
+                      player.rank,
+                      player.endedAt);
+                })
+            .toList();
     return new RoomRuns.Write(
         id,
         roomId,
@@ -223,31 +216,33 @@ final class RoomMatch {
         settings.mapId() == RoomSettings.FINAL_MAP_ID
             ? players.values().stream()
                 .filter(
-                    player -> player.status.equals("FINISHED") && player.game.adventure().ravenDone())
+                    player ->
+                        player.status.equals("FINISHED") && player.game.adventure().ravenDone())
                 .map(player -> player.spec.owner())
                 .collect(java.util.stream.Collectors.toSet())
             : Set.of());
   }
 
   Map<String, Object> results() {
-    var rows = players.values().stream()
-        .sorted(
-            Comparator.comparingInt(
-                (Player player) -> player.rank == null ? Integer.MAX_VALUE : player.rank)
-                .thenComparing(player -> player.spec.playerId))
-        .map(
-            player -> {
-              var row = new LinkedHashMap<String, Object>();
-              row.put("playerId", player.spec.playerId);
-              row.put("nickname", player.spec.nickname);
-              row.put("status", player.status);
-              row.put("rank", player.rank);
-              row.put("currentProgress", player.currentProgress);
-              row.put("maxProgress", player.maximum);
-              row.put("finishTimeMs", player.finish == null ? null : ms(player.finish));
-              return row;
-            })
-        .toList();
+    var rows =
+        players.values().stream()
+            .sorted(
+                Comparator.comparingInt(
+                        (Player player) -> player.rank == null ? Integer.MAX_VALUE : player.rank)
+                    .thenComparing(player -> player.spec.playerId))
+            .map(
+                player -> {
+                  var row = new LinkedHashMap<String, Object>();
+                  row.put("playerId", player.spec.playerId);
+                  row.put("nickname", player.spec.nickname);
+                  row.put("status", player.status);
+                  row.put("rank", player.rank);
+                  row.put("currentProgress", player.currentProgress);
+                  row.put("maxProgress", player.maximum);
+                  row.put("finishTimeMs", player.finish == null ? null : ms(player.finish));
+                  return row;
+                })
+            .toList();
     return Map.of(
         "playId",
         id,
@@ -264,16 +259,18 @@ final class RoomMatch {
   }
 
   List<jumpking.dto.PlayerStanding> standings(Set<String> members) {
-    var scores = players.values().stream()
-        .filter(player -> members.contains(player.spec.playerId))
-        .map(
-            player -> new RoomRanking.Score(
-                player.spec.playerId,
-                player.status,
-                player.currentProgress,
-                player.maximum,
-                player.finish))
-        .toList();
+    var scores =
+        players.values().stream()
+            .filter(player -> members.contains(player.spec.playerId))
+            .map(
+                player ->
+                    new RoomRanking.Score(
+                        player.spec.playerId,
+                        player.status,
+                        player.currentProgress,
+                        player.maximum,
+                        player.finish))
+            .toList();
     return RoomRanking.rank(scores, settings.mode(), settings.timeLimitMinutes() != null).stream()
         .map(
             row -> {

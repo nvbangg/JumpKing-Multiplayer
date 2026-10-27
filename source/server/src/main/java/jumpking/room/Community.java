@@ -24,16 +24,17 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class Community implements GameCommandHandler, AutoCloseable {
-  private static final Set<String> COMMANDS = Set.of(
-      "JOIN_COMMUNITY",
-      "GET_ROOM_STATE",
-      "LEAVE_ROOM",
-      "PLAYER_INPUT",
-      "CANCEL_INPUT",
-      "RECONNECT",
-      "SET_COMMUNITY_PAUSED",
-      "CHAT_SEND",
-      "SET_SPECTATE");
+  private static final Set<String> COMMANDS =
+      Set.of(
+          "JOIN_COMMUNITY",
+          "GET_ROOM_STATE",
+          "LEAVE_ROOM",
+          "PLAYER_INPUT",
+          "CANCEL_INPUT",
+          "RECONNECT",
+          "SET_COMMUNITY_PAUSED",
+          "CHAT_SEND",
+          "SET_SPECTATE");
   private final GameWorkers workers;
   private final RoomDirectory directory;
   private final Memberships memberships;
@@ -49,8 +50,9 @@ public class Community implements GameCommandHandler, AutoCloseable {
   private final List<SharedData.RoomScene> sceneMarkers;
   private final JsonNode adventure, rules;
   private final Map<String, Tower> towers = new ConcurrentHashMap<>();
-  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
-      Thread.ofPlatform().daemon().name("world-clock").factory());
+  private final ScheduledExecutorService scheduler =
+      Executors.newSingleThreadScheduledExecutor(
+          Thread.ofPlatform().daemon().name("world-clock").factory());
   private final PersistenceWorkers database;
   private final jumpking.service.CrownService crowns;
   private final long checkpointMs;
@@ -140,8 +142,9 @@ public class Community implements GameCommandHandler, AutoCloseable {
   private final class Tower {
     final String id;
     final LinkedHashMap<String, Member> players = new LinkedHashMap<>();
-    final ChatLog chat = new ChatLog(
-        clock, time, limits.chatCodePoints(), limits.chatHistory(), limits.chatIntervalMs());
+    final ChatLog chat =
+        new ChatLog(
+            clock, time, limits.chatCodePoints(), limits.chatHistory(), limits.chatIntervalMs());
     final SerialExecutor actor;
     final AtomicBoolean tickQueued = new AtomicBoolean();
     long serverTick, lastSnapshotTick, eventSeq, nextTick = time.nanos();
@@ -149,37 +152,39 @@ public class Community implements GameCommandHandler, AutoCloseable {
 
     Tower(String id) {
       this.id = id;
-      actor = new SerialExecutor(
-          workers.executor(),
-          limits.commandQueue(),
-          database.completionCapacity(rules.path("capacity").asInt()),
-          error -> players
-              .values()
-              .forEach(
-                  player -> {
-                    player.paused = true;
-                    player.saveStatus = "FAILED";
-                  }));
-      timer = scheduler.scheduleAtFixedRate(
-          () -> {
-            if (!tickQueued.compareAndSet(false, true))
-              return;
-            try {
-              actor.execute(
-                  () -> {
-                    try {
-                      advance();
-                    } finally {
-                      tickQueued.set(false);
-                    }
-                  });
-            } catch (RejectedExecutionException busy) {
-              tickQueued.set(false);
-            }
-          },
-          0,
-          1_000_000_000L / physics.tickRate,
-          TimeUnit.NANOSECONDS);
+      actor =
+          new SerialExecutor(
+              workers.executor(),
+              limits.commandQueue(),
+              database.completionCapacity(rules.path("capacity").asInt()),
+              error ->
+                  players
+                      .values()
+                      .forEach(
+                          player -> {
+                            player.paused = true;
+                            player.saveStatus = "FAILED";
+                          }));
+      timer =
+          scheduler.scheduleAtFixedRate(
+              () -> {
+                if (!tickQueued.compareAndSet(false, true)) return;
+                try {
+                  actor.execute(
+                      () -> {
+                        try {
+                          advance();
+                        } finally {
+                          tickQueued.set(false);
+                        }
+                      });
+                } catch (RejectedExecutionException busy) {
+                  tickQueued.set(false);
+                }
+              },
+              0,
+              1_000_000_000L / physics.tickRate,
+              TimeUnit.NANOSECONDS);
     }
 
     void advance() {
@@ -195,10 +200,9 @@ public class Community implements GameCommandHandler, AutoCloseable {
           dropConnection(this, player);
           changed = true;
         }
-        if (player.loading || player.operation || player.leaving)
-          continue;
+        if (player.loading || player.operation || player.leaving) continue;
         if ((player.connection == null
-            && now - player.disconnectedAt >= rules.path("reconnectMs").asLong() * 1_000_000L)
+                && now - player.disconnectedAt >= rules.path("reconnectMs").asLong() * 1_000_000L)
             || (player.connection != null
                 && player.paused
                 && now - player.pausedAt >= rules.path("communityPauseMs").asLong() * 1_000_000L)) {
@@ -210,10 +214,8 @@ public class Community implements GameCommandHandler, AutoCloseable {
             && now - player.lastPhysical >= rules.path("afkMs").asLong() * 1_000_000L) {
           pause(player);
           changed = true;
-          if (player.paused)
-            save(this, player, true, () -> runState(player));
-          else
-            runState(player);
+          if (player.paused) save(this, player, true, () -> runState(player));
+          else runState(player);
         }
       }
       // Giữ nợ tick khi còn mô phỏng; mỗi lượt actor vẫn chỉ xử lý tối đa 5 bước.
@@ -221,8 +223,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
         nextTick += 1_000_000_000L / physics.tickRate;
         tick(now);
       }
-      if (!needsSimulation())
-        nextTick = now + 1_000_000_000L / physics.tickRate;
+      if (!needsSimulation()) nextTick = now + 1_000_000_000L / physics.tickRate;
       if (changed) {
         broadcast(this);
         snapshots(this);
@@ -240,14 +241,11 @@ public class Community implements GameCommandHandler, AutoCloseable {
       boolean changed = false;
       var effects = new ArrayList<ObjectNode>();
       for (Member player : List.copyOf(players.values())) {
-        if (player.loading || player.operation)
-          continue;
-        if (player.finished || player.leaving && player.paused)
-          continue;
+        if (player.loading || player.operation) continue;
+        if (player.finished || player.leaving && player.paused) continue;
         if (!player.paused) {
           var frame = player.input.poll(now);
-          if (frame.cancel() || player.pausePending)
-            player.game.physics().cancelInput();
+          if (frame.cancel() || player.pausePending) player.game.physics().cancelInput();
           var input = player.pausePending ? PlayerInput.NEUTRAL : frame.input();
           var events = player.game.tick(input);
           double progress = player.game.physics().progress();
@@ -304,7 +302,8 @@ public class Community implements GameCommandHandler, AutoCloseable {
                     .put("terrain", pose.snow ? "SNOW" : pose.ice ? "ICE" : "NORMAL"));
           if (player.game.finished()) {
             changed = true;
-            player.ending = Map.of("screen", pose.screen, "ravenDone", player.game.adventure().ravenDone());
+            player.ending =
+                Map.of("screen", pose.screen, "ravenDone", player.game.adventure().ravenDone());
             player.finished = true;
             player.finishedAt = clock.instant();
             player.paused = true;
@@ -321,10 +320,8 @@ public class Community implements GameCommandHandler, AutoCloseable {
                 player,
                 true,
                 () -> {
-                  if (player.leaving)
-                    remove(this, player);
-                  else
-                    runState(player);
+                  if (player.leaving) remove(this, player);
+                  else runState(player);
                 });
           }
         }
@@ -335,19 +332,20 @@ public class Community implements GameCommandHandler, AutoCloseable {
             && !player.pausePending
             && !player.saveStatus.equals("FAILED")
             && now - player.lastSave >= checkpointMs * 1_000_000L)
-          save(this, player, false, () -> {
-          });
+          save(this, player, false, () -> {});
       }
       if (!effects.isEmpty())
         for (Member receiver : players.values())
           if (receiver.connection != null && !receiver.loading) {
             var target = receiver.watching == null ? receiver : players.get(receiver.watching);
             int screen = (target == null ? receiver : target).game.physics().snapshot().screen;
-            var visible = effects.stream()
-                .filter(
-                    event -> event.path("screen").asInt() == screen
-                        || event.path("playerId").asText().equals(receiver.id))
-                .toList();
+            var visible =
+                effects.stream()
+                    .filter(
+                        event ->
+                            event.path("screen").asInt() == screen
+                                || event.path("playerId").asText().equals(receiver.id))
+                    .toList();
             if (!visible.isEmpty())
               receiver.connection.send("PLAYER_EFFECTS", Map.of("roomId", id, "events", visible));
           }
@@ -358,10 +356,8 @@ public class Community implements GameCommandHandler, AutoCloseable {
 
   @Override
   public boolean supports(GameConnection connection, GameEnvelope command) {
-    if (!COMMANDS.contains(command.type()))
-      return false;
-    if (command.type().equals("JOIN_COMMUNITY"))
-      return true;
+    if (!COMMANDS.contains(command.type())) return false;
+    if (command.type().equals("JOIN_COMMUNITY")) return true;
     if (command.type().equals("RECONNECT")) {
       var info = directory.find(command.payload().path("roomId").asText());
       return info != null && info.kind().equals("COMMUNITY");
@@ -381,136 +377,134 @@ public class Community implements GameCommandHandler, AutoCloseable {
     if (tower == null)
       throw new ApiException(404, "ROOM_NOT_FOUND", "Community membership not found");
     tower.actor.execute(
-        () -> safely(
-            connection,
-            command,
-            () -> {
-              if (!membership.equals(memberships.find(connection.identity().owner())))
-                throw new ApiException(
-                    409, "CONFLICT", "Membership changed before the command was processed");
-              Member player = tower.players.get(membership.playerId());
-              if (player == null)
-                throw new ApiException(404, "ROOM_NOT_FOUND", "Community membership has ended");
-              if (command.type().equals("RECONNECT")) {
-                reconnect(tower, player, connection, command);
-                return;
-              }
-              if (player.connection != connection)
-                throw new ApiException(
-                    409, "INVALID_RECONNECT", "Reconnect with your saved token");
-              if (player.loading)
-                throw new ApiException(409, "CONFLICT", "Community save is still loading");
-              if (player.operation
-                  && !Set.of("GET_ROOM_STATE", "CHAT_SEND").contains(command.type()))
-                throw new ApiException(409, "CONFLICT", "Community save is changing");
-              switch (command.type()) {
-                case "GET_ROOM_STATE" -> {
-                  GameEnvelope.fields(command.payload(), Set.of());
-                  connection.reply(command, "ROOM_STATE", state(tower));
-                }
-                case "LEAVE_ROOM" -> {
-                  GameEnvelope.fields(command.payload(), Set.of());
-                  requestLeave(tower, player, command);
-                }
-                case "PLAYER_INPUT", "CANCEL_INPUT" -> {
-                  var current = player.input.offer(command, time.nanos(), flags.flyEnabled());
-                  if (player.paused || player.pausePending || player.finished)
-                    player.input.clear();
-                  else {
-                    if (command.type().equals("CANCEL_INPUT"))
-                      player.game.physics().cancelInput();
-                    else {
-                      if (!current.equals(player.lastPhysicalInput)) {
-                        player.lastPhysical = time.nanos();
-                        player.lastPhysicalInput = current;
-                      }
-                    }
-                  }
-                }
-                case "SET_SPECTATE" -> {
-                  GameEnvelope.fields(command.payload(), Set.of("playerId"));
-                  if (!command.payload().has("playerId"))
-                    throw GameEnvelope.invalid();
-                  String targetId = command.payload().path("playerId").isNull()
-                      ? null
-                      : GameEnvelope.text(command.payload(), "playerId");
-                  var target = targetId == null ? null : tower.players.get(targetId);
-                  if (targetId != null
-                      && (target == null
-                          || target == player
-                          || target.loading
-                          || target.finished
-                          || target.leaving
-                          || target.connection == null
-                          || !target.connection.open()))
+        () ->
+            safely(
+                connection,
+                command,
+                () -> {
+                  if (!membership.equals(memberships.find(connection.identity().owner())))
                     throw new ApiException(
-                        409,
-                        "INVALID_SPECTATE_TARGET",
-                        "Player is no longer available to watch");
-                  if (targetId != null) {
-                    if (player.finished)
-                      throw new ApiException(409, "CONFLICT", "Your run has ended");
-                    pause(player);
-                    if (player.paused)
-                      save(tower, player, true, () -> runState(player));
-                  }
-                  player.watching = targetId;
-                  connection.reply(
-                      command,
-                      "SPECTATE_STATE",
-                      json.createObjectNode()
-                          .put("roomId", tower.id)
-                          .put("playerId", targetId));
-                  snapshots(tower);
-                }
-                case "SET_COMMUNITY_PAUSED" -> {
-                  GameEnvelope.fields(command.payload(), Set.of("paused"));
-                  boolean paused = GameEnvelope.bool(command.payload(), "paused", false);
-                  if (!paused)
-                    player.watching = null;
-                  if (!paused && player.saveStatus.equals("FAILED")) {
-                    player.operation = true;
-                    player.operationCommand = command;
-                    save(
-                        tower,
-                        player,
-                        true,
-                        () -> {
-                          player.operation = false;
-                          player.operationCommand = null;
-                          resume(player);
-                          if (player.connection != null)
-                            player.connection.reply(
-                                command, "COMMUNITY_RUN_STATE", runPayload(player));
-                          snapshots(tower);
-                        });
+                        409, "CONFLICT", "Membership changed before the command was processed");
+                  Member player = tower.players.get(membership.playerId());
+                  if (player == null)
+                    throw new ApiException(404, "ROOM_NOT_FOUND", "Community membership has ended");
+                  if (command.type().equals("RECONNECT")) {
+                    reconnect(tower, player, connection, command);
                     return;
                   }
-                  if (paused)
-                    pause(player);
-                  else
-                    resume(player);
-                  if (paused && player.paused)
-                    save(tower, player, true, () -> runState(player));
-                  connection.reply(command, "COMMUNITY_RUN_STATE", runPayload(player));
-                  snapshots(tower);
-                }
-                case "CHAT_SEND" -> {
-                  GameEnvelope.fields(command.payload(), Set.of("text"));
-                  var message = tower.chat.send(
-                      player.id,
-                      player.identity.username(),
-                      player.slot.color(),
-                      GameEnvelope.text(command.payload(), "text"));
-                  var payload = Map.of("roomId", tower.id, "messages", List.of(message));
-                  connection.reply(command, "CHAT_MESSAGE", payload);
-                  for (Member peer : tower.players.values())
-                    if (peer != player && peer.connection != null && !peer.loading)
-                      peer.connection.send("CHAT_MESSAGE", payload);
-                }
-                default -> throw GameEnvelope.invalid();
-              }
-            }));
+                  if (player.connection != connection)
+                    throw new ApiException(
+                        409, "INVALID_RECONNECT", "Reconnect with your saved token");
+                  if (player.loading)
+                    throw new ApiException(409, "CONFLICT", "Community save is still loading");
+                  if (player.operation
+                      && !Set.of("GET_ROOM_STATE", "CHAT_SEND").contains(command.type()))
+                    throw new ApiException(409, "CONFLICT", "Community save is changing");
+                  switch (command.type()) {
+                    case "GET_ROOM_STATE" -> {
+                      GameEnvelope.fields(command.payload(), Set.of());
+                      connection.reply(command, "ROOM_STATE", state(tower));
+                    }
+                    case "LEAVE_ROOM" -> {
+                      GameEnvelope.fields(command.payload(), Set.of());
+                      requestLeave(tower, player, command);
+                    }
+                    case "PLAYER_INPUT", "CANCEL_INPUT" -> {
+                      var current = player.input.offer(command, time.nanos(), flags.flyEnabled());
+                      if (player.paused || player.pausePending || player.finished)
+                        player.input.clear();
+                      else {
+                        if (command.type().equals("CANCEL_INPUT"))
+                          player.game.physics().cancelInput();
+                        else {
+                          if (!current.equals(player.lastPhysicalInput)) {
+                            player.lastPhysical = time.nanos();
+                            player.lastPhysicalInput = current;
+                          }
+                        }
+                      }
+                    }
+                    case "SET_SPECTATE" -> {
+                      GameEnvelope.fields(command.payload(), Set.of("playerId"));
+                      if (!command.payload().has("playerId")) throw GameEnvelope.invalid();
+                      String targetId =
+                          command.payload().path("playerId").isNull()
+                              ? null
+                              : GameEnvelope.text(command.payload(), "playerId");
+                      var target = targetId == null ? null : tower.players.get(targetId);
+                      if (targetId != null
+                          && (target == null
+                              || target == player
+                              || target.loading
+                              || target.finished
+                              || target.leaving
+                              || target.connection == null
+                              || !target.connection.open()))
+                        throw new ApiException(
+                            409,
+                            "INVALID_SPECTATE_TARGET",
+                            "Player is no longer available to watch");
+                      if (targetId != null) {
+                        if (player.finished)
+                          throw new ApiException(409, "CONFLICT", "Your run has ended");
+                        pause(player);
+                        if (player.paused) save(tower, player, true, () -> runState(player));
+                      }
+                      player.watching = targetId;
+                      connection.reply(
+                          command,
+                          "SPECTATE_STATE",
+                          json.createObjectNode()
+                              .put("roomId", tower.id)
+                              .put("playerId", targetId));
+                      snapshots(tower);
+                    }
+                    case "SET_COMMUNITY_PAUSED" -> {
+                      GameEnvelope.fields(command.payload(), Set.of("paused"));
+                      boolean paused = GameEnvelope.bool(command.payload(), "paused", false);
+                      if (!paused) player.watching = null;
+                      if (!paused && player.saveStatus.equals("FAILED")) {
+                        player.operation = true;
+                        player.operationCommand = command;
+                        save(
+                            tower,
+                            player,
+                            true,
+                            () -> {
+                              player.operation = false;
+                              player.operationCommand = null;
+                              resume(player);
+                              if (player.connection != null)
+                                player.connection.reply(
+                                    command, "COMMUNITY_RUN_STATE", runPayload(player));
+                              snapshots(tower);
+                            });
+                        return;
+                      }
+                      if (paused) pause(player);
+                      else resume(player);
+                      if (paused && player.paused)
+                        save(tower, player, true, () -> runState(player));
+                      connection.reply(command, "COMMUNITY_RUN_STATE", runPayload(player));
+                      snapshots(tower);
+                    }
+                    case "CHAT_SEND" -> {
+                      GameEnvelope.fields(command.payload(), Set.of("text"));
+                      var message =
+                          tower.chat.send(
+                              player.id,
+                              player.identity.username(),
+                              player.slot.color(),
+                              GameEnvelope.text(command.payload(), "text"));
+                      var payload = Map.of("roomId", tower.id, "messages", List.of(message));
+                      connection.reply(command, "CHAT_MESSAGE", payload);
+                      for (Member peer : tower.players.values())
+                        if (peer != player && peer.connection != null && !peer.loading)
+                          peer.connection.send("CHAT_MESSAGE", payload);
+                    }
+                    default -> throw GameEnvelope.invalid();
+                  }
+                }));
   }
 
   private void resume(Member player) {
@@ -527,11 +521,11 @@ public class Community implements GameCommandHandler, AutoCloseable {
       throw new ApiException(403, "ACCOUNT_REQUIRED", "Sign in to play Community.");
     GameEnvelope.fields(command.payload(), Set.of("newRun", "expectedRunId"));
     boolean replace = GameEnvelope.bool(command.payload(), "newRun", false);
-    if (!command.payload().has("expectedRunId"))
-      throw GameEnvelope.invalid();
-    String expected = command.payload().hasNonNull("expectedRunId")
-        ? GameEnvelope.text(command.payload(), "expectedRunId")
-        : null;
+    if (!command.payload().has("expectedRunId")) throw GameEnvelope.invalid();
+    String expected =
+        command.payload().hasNonNull("expectedRunId")
+            ? GameEnvelope.text(command.payload(), "expectedRunId")
+            : null;
     if (memberships.find(connection.identity().owner()) != null)
       throw new ApiException(409, "ALREADY_IN_ROOM", "Leave your current room first");
     var slot = directory.community();
@@ -552,14 +546,15 @@ public class Community implements GameCommandHandler, AutoCloseable {
               database.execute(
                   () -> {
                     try {
-                      var game = new GameSimulation(
-                          map, physics, adventure, sceneMarkers, flags.flyEnabled(), false);
-                      var stored = records.open(player.identity.owner(), replace, expected, game.snapshot());
+                      var game =
+                          new GameSimulation(
+                              map, physics, adventure, sceneMarkers, flags.flyEnabled(), false);
+                      var stored =
+                          records.open(player.identity.owner(), replace, expected, game.snapshot());
                       game.restore(stored.snapshot());
                       game.physics().cancelInput();
                       var crown = crowns.crown(player.identity.owner());
-                      if (crown != Crown.NONE)
-                        game.adventure().complete();
+                      if (crown != Crown.NONE) game.adventure().complete();
                       tower.actor.complete(
                           () -> {
                             player.game = game;
@@ -572,8 +567,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
                             player.loading = false;
                             player.input.reset(stored.id(), player.generation);
                             player.lastPhysical = time.nanos();
-                            if (player.connection == null)
-                              pause(player);
+                            if (player.connection == null) pause(player);
                             if (connection.open() && player.identity.sessionId() != null)
                               sessions.valid(sessions.find(player.identity.sessionId()), true);
                             connection.reply(command, "ROOM_JOINED", joined(player));
@@ -620,7 +614,8 @@ public class Community implements GameCommandHandler, AutoCloseable {
       throw new ApiException(403, "INVALID_RECONNECT", "Invalid reconnect context");
     if (player.loading
         || (player.connection == null
-            && time.nanos() - player.disconnectedAt >= rules.path("reconnectMs").asLong() * 1_000_000L))
+            && time.nanos() - player.disconnectedAt
+                >= rules.path("reconnectMs").asLong() * 1_000_000L))
       throw new ApiException(409, "RECONNECT_EXPIRED", "Reconnect is no longer available");
     player.watching = null;
     var old = player.connection;
@@ -641,16 +636,13 @@ public class Community implements GameCommandHandler, AutoCloseable {
 
   private void pause(Member player) {
     player.input.clear();
-    if (player.game == null)
-      return;
+    if (player.game == null) return;
     player.game.physics().cancelInput();
     if (stable(player)) {
-      if (!player.paused)
-        player.pausedAt = time.nanos();
+      if (!player.paused) player.pausedAt = time.nanos();
       player.paused = true;
       player.pausePending = false;
-    } else
-      player.pausePending = true;
+    } else player.pausePending = true;
   }
 
   private boolean stable(Member player) {
@@ -668,38 +660,34 @@ public class Community implements GameCommandHandler, AutoCloseable {
     player.leaving = true;
     player.leaveCommand = command;
     pause(player);
-    if (player.paused || player.finished)
-      save(tower, player, true, () -> remove(tower, player));
+    if (player.paused || player.finished) save(tower, player, true, () -> remove(tower, player));
   }
 
   private void save(Tower tower, Member player, boolean flush, Runnable committed) {
-    if (player.loading)
-      return;
+    if (player.loading) return;
     if (player.finished && player.terminalQueued) {
-      if (player.savedRevision == player.revision && !player.saving)
-        committed.run();
-      else
-        player.terminalActions.add(committed);
+      if (player.savedRevision == player.revision && !player.saving) committed.run();
+      else player.terminalActions.add(committed);
       return;
     }
-    if (player.finished)
-      player.terminalQueued = true;
+    if (player.finished) player.terminalQueued = true;
     var snapshot = player.game.snapshot();
     long revision = ++player.revision;
     player.saveStatus = "PENDING";
     player.saving = true;
     player.pendingWrites++;
     player.lastSave = time.nanos();
-    var write = new CommunityRuns.Write(
-        player.stored.id(),
-        player.identity.owner(),
-        revision,
-        player.finished ? "FINISHED" : "ACTIVE",
-        snapshot,
-        player.currentProgress,
-        player.maximum,
-        player.peakTicks,
-        player.finished ? player.finishedAt : null);
+    var write =
+        new CommunityRuns.Write(
+            player.stored.id(),
+            player.identity.owner(),
+            revision,
+            player.finished ? "FINISHED" : "ACTIVE",
+            snapshot,
+            player.currentProgress,
+            player.maximum,
+            player.peakTicks,
+            player.finished ? player.finishedAt : null);
     runState(player);
     try {
       player.writer.submit(
@@ -724,14 +712,14 @@ public class Community implements GameCommandHandler, AutoCloseable {
                   () -> {
                     player.savedRevision = Math.max(player.savedRevision, revision);
                     player.saving = --player.pendingWrites > 0;
-                    player.saveStatus = player.savedRevision == player.revision ? "SAVED" : "PENDING";
+                    player.saveStatus =
+                        player.savedRevision == player.revision ? "SAVED" : "PENDING";
                     if (player.connection != null)
                       player.connection.send(
                           "SAVE_STATUS",
                           Map.of(
                               "playId", write.id(), "revision", revision, "saveStatus", "SAVED"));
-                    if (flush)
-                      committed.run();
+                    if (flush) committed.run();
                     if (write.status().equals("FINISHED")) {
                       finishNotice(player);
                       var actions = List.copyOf(player.terminalActions);
@@ -744,8 +732,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
                   () -> {
                     player.saving = --player.pendingWrites > 0;
                     player.saveStatus = "FAILED";
-                    if (write.status().equals("FINISHED"))
-                      player.terminalQueued = false;
+                    if (write.status().equals("FINISHED")) player.terminalQueued = false;
                     pause(player);
                     player.leaving = false;
                     player.operation = false;
@@ -791,8 +778,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
   }
 
   private void remove(Tower tower, Member player) {
-    if (tower.players.remove(player.id) == null)
-      return;
+    if (tower.players.remove(player.id) == null) return;
     tower.chat.leave(player.id);
     memberships.release(player.identity.owner(), new Memberships.Membership(tower.id, player.id));
     boolean empty = directory.release(player.slot);
@@ -800,8 +786,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
     if (player.connection != null && !player.loading) {
       if (player.leaveCommand != null)
         player.connection.reply(player.leaveCommand, "ROOM_LEFT", Map.of("roomId", tower.id));
-      else
-        player.connection.send("ROOM_LEFT", Map.of("roomId", tower.id));
+      else player.connection.send("ROOM_LEFT", Map.of("roomId", tower.id));
     }
     if (empty) {
       towers.remove(tower.id, tower);
@@ -816,14 +801,12 @@ public class Community implements GameCommandHandler, AutoCloseable {
   public void disconnected(GameConnection connection) {
     var membership = memberships.find(connection.identity().owner());
     var tower = membership == null ? null : towers.get(membership.roomId());
-    if (tower == null)
-      return;
+    if (tower == null) return;
     try {
       tower.actor.complete(
           () -> {
             var player = tower.players.get(membership.playerId());
-            if (player == null || player.connection != connection)
-              return;
+            if (player == null || player.connection != connection) return;
             dropConnection(tower, player);
             broadcast(tower);
             snapshots(tower);
@@ -839,13 +822,11 @@ public class Community implements GameCommandHandler, AutoCloseable {
     player.disconnectedAt = time.nanos();
     pause(player);
     if (!player.loading && !player.operation && !player.leaving && player.paused)
-      save(tower, player, true, () -> {
-      });
+      save(tower, player, true, () -> {});
   }
 
   private void safely(GameConnection connection, GameEnvelope command, Runnable action) {
-    if (!connection.open())
-      return;
+    if (!connection.open()) return;
     try {
       action.run();
       if (connection.identity().sessionId() != null)
@@ -859,10 +840,11 @@ public class Community implements GameCommandHandler, AutoCloseable {
   }
 
   private ObjectNode state(Tower tower) {
-    var value = json.createObjectNode()
-        .put("roomId", tower.id)
-        .put("kind", "COMMUNITY")
-        .put("state", "PLAYING");
+    var value =
+        json.createObjectNode()
+            .put("roomId", tower.id)
+            .put("kind", "COMMUNITY")
+            .put("state", "PLAYING");
     for (String field : List.of("hostPlayerId", "settings", "currentPlay", "result"))
       value.putNull(field);
     var players = value.putArray("members");
@@ -882,7 +864,8 @@ public class Community implements GameCommandHandler, AutoCloseable {
 
   private void broadcast(Tower tower) {
     var state = state(tower);
-    tower.players
+    tower
+        .players
         .values()
         .forEach(
             player -> {
@@ -898,11 +881,9 @@ public class Community implements GameCommandHandler, AutoCloseable {
   }
 
   private void finishNotice(Member player) {
-    if (!player.finished || !player.saveStatus.equals("SAVED"))
-      return;
+    if (!player.finished || !player.saveStatus.equals("SAVED")) return;
     player.crown = player.crown.finish(player.game.adventure().ravenDone());
-    if (player.endingNotified || player.connection == null || player.ending == null)
-      return;
+    if (player.endingNotified || player.connection == null || player.ending == null) return;
     var ending = new LinkedHashMap<>(player.ending);
     ending.put("crown", player.crown);
     player.connection.send(
@@ -979,8 +960,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
       return;
     if (tower.needsSimulation()
         && tower.lastSnapshotTick != 0
-        && tower.serverTick <= tower.lastSnapshotTick)
-      return;
+        && tower.serverTick <= tower.lastSnapshotTick) return;
     tower.serverTick = Math.max(tower.serverTick, tower.lastSnapshotTick + 1);
     tower.lastSnapshotTick = tower.serverTick;
     var captured = new HashMap<String, PlayerSnapshot>();
@@ -1021,22 +1001,23 @@ public class Community implements GameCommandHandler, AutoCloseable {
                 })
             .toList();
     for (Member self : tower.players.values()) {
-      if (self.loading || self.connection == null)
-        continue;
-      var value = json.createObjectNode()
-          .put("roomId", tower.id)
-          .put("serverTick", tower.serverTick)
-          .put("playId", self.stored.id())
-          .put("generation", self.generation)
-          .put("elapsedTimeMs", ms(captured.get(self.id).ticks()))
-          .putNull("remainingTimeMs");
+      if (self.loading || self.connection == null) continue;
+      var value =
+          json.createObjectNode()
+              .put("roomId", tower.id)
+              .put("serverTick", tower.serverTick)
+              .put("playId", self.stored.id())
+              .put("generation", self.generation)
+              .put("elapsedTimeMs", ms(captured.get(self.id).ticks()))
+              .putNull("remainingTimeMs");
       value.putPOJO("players", standings);
-      var state = value
-          .putObject("self")
-          .put("lastProcessedInputSeq", self.input.processed())
-          .put("status", self.finished ? "FINISHED" : "ACTIVE")
-          .put("crown", self.crown.name())
-          .put("paused", self.paused || self.pausePending);
+      var state =
+          value
+              .putObject("self")
+              .put("lastProcessedInputSeq", self.input.processed())
+              .put("status", self.finished ? "FINISHED" : "ACTIVE")
+              .put("crown", self.crown.name())
+              .put("paused", self.paused || self.pausePending);
       state.putPOJO("simulation", captured.get(self.id).simulation());
       var target = self.watching == null ? null : tower.players.get(self.watching);
       if (target != null
@@ -1045,10 +1026,8 @@ public class Community implements GameCommandHandler, AutoCloseable {
               || target.finished
               || target.leaving
               || target.connection == null
-              || !target.connection.open()))
-        target = null;
-      if (target == null)
-        self.watching = null;
+              || !target.connection.open())) target = null;
+      if (target == null) self.watching = null;
       value.putPOJO(
           "spectating",
           target == null
@@ -1093,7 +1072,8 @@ public class Community implements GameCommandHandler, AutoCloseable {
       try {
         tower.actor.complete(
             () -> {
-              var saves = tower.players.values().stream().filter(player -> !player.loading).toList();
+              var saves =
+                  tower.players.values().stream().filter(player -> !player.loading).toList();
               if (saves.isEmpty()) {
                 flushed.complete(null);
                 return;
@@ -1106,8 +1086,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
                     player,
                     true,
                     () -> {
-                      if (count.decrementAndGet() == 0)
-                        flushed.complete(null);
+                      if (count.decrementAndGet() == 0) flushed.complete(null);
                     });
               }
             });
