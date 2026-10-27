@@ -29,6 +29,57 @@ body {
 	margin: 0;
 	min-width: 280px;
 }
+.app-content {
+	display: contents;
+}
+.app-content[inert] {
+	display: block;
+	visibility: hidden;
+	height: 100dvh;
+	overflow: hidden;
+}
+.landscape-gate {
+	position: fixed;
+	inset: 0;
+	z-index: 10000;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 16px;
+	padding: 24px;
+	background: var(--surface);
+	text-align: center;
+	outline: none;
+}
+.fullscreen-toggle {
+	position: fixed;
+	top: max(12px, env(safe-area-inset-top));
+	right: max(12px, env(safe-area-inset-right));
+	z-index: 10001;
+	width: 40px;
+	height: 40px;
+	padding: 8px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: var(--surface-raised);
+	color: inherit;
+}
+.fullscreen-toggle svg {
+	width: 18px;
+	height: 18px;
+}
+@media (pointer: fine) {
+	.fullscreen-toggle {
+		display: none;
+	}
+}
+.landscape-gate > .lucide {
+	width: 64px;
+	height: 64px;
+	color: var(--green);
+	transform: rotate(90deg);
+}
 button,
 input,
 select,
@@ -199,6 +250,16 @@ code {
 	font: inherit;
 	font-variant-numeric: tabular-nums;
 	letter-spacing: 0.06em;
+}
+.landscape-gate h1 {
+	font-size: 24px;
+}
+.landscape-gate p {
+	max-width: 28ch;
+	color: var(--muted);
+}
+.landscape-gate [role="status"] {
+	margin: 0;
 }
 .home {
 	min-height: 100dvh;
@@ -1574,6 +1635,9 @@ td:first-child {
 		background: var(--surface);
 		margin-top: 6px;
 		padding-block: 10px 0;
+	}
+	.screen-password .panel-actions {
+		position: static;
 	}
 	:where(.single-panel) .panel-actions button {
 		min-height: 40px;
