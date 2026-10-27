@@ -55,6 +55,7 @@ test("Private rooms accept IDs and host pause keeps every player in the game men
 		);
 		await startRoom(host, peer);
 		await host.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
+		await host.screenshot({ path: info.outputPath("host-menu.png") });
 		await host
 			.getByRole("button", { name: "Pause Match", exact: true })
 			.click();

@@ -1,5 +1,6 @@
 import {
 	Banana,
+	CircleStop,
 	Clock3,
 	Footprints,
 	LogOut,
@@ -7,7 +8,6 @@ import {
 	Mountain,
 	Pause,
 	Play,
-	Square,
 	Timer,
 } from "lucide-react";
 import {
@@ -964,6 +964,7 @@ export function OnlineGame({
 													void command("SET_ROOM_PAUSED", { paused: true })
 												}
 											>
+												<Pause aria-hidden="true" />
 												Pause Match
 											</button>
 										)}
@@ -972,11 +973,11 @@ export function OnlineGame({
 										(room.state === "PLAYING" || room.state === "PAUSED") && (
 											<button
 												type="button"
-												className="button-warning end-match"
+												className="button-danger"
 												disabled={pending || disconnected}
 												onClick={() => void command("END_MATCH")}
 											>
-												<Square aria-hidden="true" />
+												<CircleStop aria-hidden="true" />
 												End Match
 											</button>
 										)}
