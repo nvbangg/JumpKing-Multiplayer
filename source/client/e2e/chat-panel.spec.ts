@@ -58,7 +58,12 @@ test("chat input stays visible while history expires, reopens on hover and new m
 	await expect(message).toBeVisible();
 	await expect(page.locator(".chat-panel > summary")).toHaveCount(0);
 	await expect(history).toHaveAttribute("data-hidden", "false");
-	await page.clock.fastForward(5000);
+	await page.evaluate(() =>
+		(window as unknown as { appendChat: () => void }).appendChat(),
+	);
+	await page.clock.fastForward(14_999);
+	await expect(history).toHaveAttribute("data-hidden", "false");
+	await page.clock.fastForward(1);
 	await expect(history).toHaveAttribute("data-hidden", "true");
 	await expect(message).toBeVisible();
 	await history.hover();
@@ -66,9 +71,9 @@ test("chat input stays visible while history expires, reopens on hover and new m
 	await page.clock.fastForward(10000);
 	await expect(history).toHaveAttribute("data-hidden", "false");
 	await page.mouse.move(0, 0);
-	await page.clock.fastForward(1000);
+	await page.clock.fastForward(14_999);
 	await expect(history).toHaveAttribute("data-hidden", "false");
-	await page.clock.fastForward(1100);
+	await page.clock.fastForward(1);
 	await expect(history).toHaveAttribute("data-hidden", "true");
 	await page.evaluate(() =>
 		(window as unknown as { appendChat: () => void }).appendChat(),
@@ -76,12 +81,19 @@ test("chat input stays visible while history expires, reopens on hover and new m
 	await expect(history).toHaveAttribute("data-hidden", "false");
 	await message.fill("draft");
 	await expect(history).toHaveAttribute("data-hidden", "false");
-	await page.clock.fastForward(10000);
+	await page.clock.fastForward(14_999);
+	await expect(history).toHaveAttribute("data-hidden", "false");
+	await page.clock.fastForward(1);
 	await expect(history).toHaveAttribute("data-hidden", "true");
 	await expect(message).toBeVisible();
 	await expect(message).toHaveValue("draft");
+	await message.evaluate((input) => input.blur());
+	await message.evaluate((input) => input.focus());
+	await expect(history).toHaveAttribute("data-hidden", "false");
 	await message.press("Escape");
-	await page.clock.fastForward(2000);
+	await page.clock.fastForward(14_999);
+	await expect(history).toHaveAttribute("data-hidden", "false");
+	await page.clock.fastForward(1);
 	await expect(history).toHaveAttribute("data-hidden", "true");
 	await expect(message).toHaveValue("draft");
 });
