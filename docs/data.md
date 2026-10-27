@@ -83,7 +83,7 @@ Ticks đổi sang ms bằng floor(ticks×1000/tickRate), theo [nhịp mô phỏn
 
 - `match_id IS NULL` xác định lượt Community; có `match_id` xác định lượt Room. Rank chỉ áp dụng cho Room; server chốt rank cho toàn bộ roster với mọi `end_reason`. Snapshot chỉ dùng cho lượt Community đang ACTIVE. API có thể trả `kind` như trường phân loại suy ra từ `match_id`, nhưng không lưu trùng trong `play_runs`.
 - Backend quản lý vòng đời và tập giá trị hợp lệ của `status`, `end_reason`, `mode`, `crown` cùng các giới hạn nghiệp vụ. Database lưu chúng bằng cột chuỗi, không dùng ENUM hoặc CHECK liệt kê giá trị hợp lệ. Database chỉ giữ các ràng buộc cấu trúc như khóa, kiểu dữ liệu, bộ đếm không âm, quan hệ thời gian và JSON hợp lệ.
-- `map_id` là ID map độc lập, không biểu thị level/độ khó; backend chọn map mặc định 1. `time_limit_minutes` NULL nghĩa là không giới hạn; nếu có giá trị thì backend kiểm tra 1–10 phút. `item_cooldown_minutes` NULL nghĩa là tắt Items; chọn 1–10 phút sẽ bật Items với cooldown đó. Room mới mặc định không giới hạn thời gian và tắt Items. Database không đặt default hoặc giới hạn nghiệp vụ cho các trường này.
+- `map_id` là ID map độc lập, không biểu thị level/độ khó; backend chọn map mặc định 1. `time_limit_minutes` NULL nghĩa là không giới hạn; nếu có giá trị thì backend kiểm tra 1–10 phút. `item_cooldown_minutes` NULL nghĩa là tắt Items; chọn 1–5 phút sẽ bật Items với cooldown đó. Room mới mặc định không giới hạn thời gian và tắt Items. Database không đặt default hoặc giới hạn nghiệp vụ cho các trường này.
 - Indexes: unique username và google_id, unique (match_id,user_id), (user_id,ended_at,id), (match_id,status). `active_community_user_id` là cột generated phục vụ unique index, nhận user_id khi lượt Community đang ACTIVE; unique bảo đảm tối đa một checkpoint đang dở/Account. Đây là ràng buộc duy nhất dựa vào trạng thái trong database để bảo vệ tính duy nhất khi ghi đồng thời. Startup kiểm tra đúng bảng/cột của unique indexes, không tự sửa schema.
 
 ## Transaction và ghi dữ liệu
@@ -122,7 +122,7 @@ Phòng hết người giữ payload chưa commit để retry trong quota. Shutdo
 | Stats tổng | SUM counters/ticks đã commit; số Finish, số trận Room, số Room Wins; MIN finish_ticks của lượt full map |
 | Leaderboard | Chỉ Community, một best run/Account; comparator theo [gameplay](gameplay.md#community) |
 
-ACTIVE/match chưa finalize không vào History; metrics đã commit vẫn góp Stats/leaderboard. Room ngắn góp counters/finishes, không góp Best Finish Time/crown. Không lưu thêm tổng cộng dồn trong users; giữ các hàng metrics làm nguồn tổng và lịch sử.
+ACTIVE/match chưa finalize không vào History; metrics đã commit vẫn góp Stats/leaderboard. Chỉ Community có status FINISHED mới góp Finishes; Room không góp Finishes dù người chơi hoàn thành map Room. Room Wins được tính riêng; Room ngắn không góp Best Finish Time/crown. Không lưu thêm tổng cộng dồn trong users; giữ các hàng metrics làm nguồn tổng và lịch sử.
 
 Room Wins đếm lượt Room hạng 1 trong trận đã finalize, kể cả đồng hạng; chỉ nhận FINISHED/UNFINISHED và loại trận ABORTED. Tính trực tiếp từ rank/status/match, không lưu thêm cờ winner hoặc bộ đếm trong database.
 

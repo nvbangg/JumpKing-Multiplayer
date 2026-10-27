@@ -19,7 +19,7 @@ const room: RoomState = {
 	kind: "ROOM",
 	state: "WAITING",
 	hostPlayerId: "host",
-	visibility: "PRIVATE",
+	visibility: "PUBLIC",
 	settings: {
 		mode: "RACE",
 		timeLimitMinutes: null,
@@ -78,6 +78,9 @@ function findSelect(
 }
 
 test("a confirmed host can start alone, while an unconfirmed host cannot start", () => {
+	expect(markup()).toContain(
+		'<option value="PUBLIC" selected="">Public</option>',
+	);
 	expect(markup()).toMatch(
 		/<button(?=[^>]*aria-label="Start")(?![^>]*disabled)[^>]*>/,
 	);
@@ -96,7 +99,7 @@ test("a confirmed host can start alone, while an unconfirmed host cannot start",
 	).not.toContain(">Start</button>");
 });
 
-test("time limit and item cooldown choices stop at ten minutes", () => {
+test("time limit stops at ten minutes and item cooldown at five", () => {
 	expect(markup()).toContain(
 		'<option value="UNLIMITED" selected="">Unlimited</option>',
 	);
@@ -110,15 +113,19 @@ test("time limit and item cooldown choices stop at ten minutes", () => {
 			mode: "RACE",
 			timeLimitMinutes: 10,
 			mapId: 1,
-			itemCooldownMinutes: 10,
+			itemCooldownMinutes: 5,
 		},
 	};
 	const html = markup(configured);
-	expect(html).toContain('<option value="10" selected="">10 min</option>');
+	expect(html).toContain('<option value="5" selected="">5 min</option>');
 	expect(
 		html.match(/<option value="10"(?: selected="")?>10 min<\/option>/g),
-	).toHaveLength(2);
-	expect(html).not.toContain('<option value="11">11 min</option>');
+	).toHaveLength(1);
+	const itemSelect = html.match(
+		/<select aria-label="Items cooldown">([\s\S]*?)<\/select>/,
+	)?.[1];
+	expect(itemSelect).toBeDefined();
+	expect(itemSelect).not.toContain('<option value="6">6 min</option>');
 });
 
 test("dropdowns update unlimited, time limit, and item settings independently", () => {
