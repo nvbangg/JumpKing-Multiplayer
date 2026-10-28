@@ -95,7 +95,7 @@ Writer nhận payload bất biến, xử lý theo thứ tự lượt/trận; có
 - Chỉ nhận revision mới hơn; cùng revision/nội dung là no-op, khác nội dung là CONFLICT. Counters/peak không giảm; lượt terminal giữ metrics, Room rank chốt khi finalize. Autosave không phục hồi lượt kết thúc hoặc upsert lượt đã mất.
 - Mọi thao tác cạnh tranh cùng Account/run/match được tuần tự hóa trong transaction; dùng thứ tự khóa thống nhất, không ghi đè payload mới bằng payload cũ.
 - Retry cùng ID/kết quả không tạo hàng hoặc cộng tổng lần nữa. PENDING/SAVED/FAILED phản ánh đúng trạng thái; SAVED chỉ sau commit, retry có giới hạn và cấu hình tập trung phía backend.
-- users.crown nhận NONE/GOLD/BLACK (không đeo/vàng/kim cương), chỉ nâng cấp khi Finish full map theo [gameplay](gameplay.md#nội-dung-và-nhận-diện), cùng transaction với kết quả. Server lấy tiến độ quạ của chính người Finish trong lượt đó; không nhận quyền crown từ client. Password/session theo [protocol](protocol.md#xác-thực-và-bảo-mật).
+- users.crown nhận NONE/GOLD/BLACK (không đeo/vàng/kim cương), chỉ nâng cấp khi Finish Community full map theo [gameplay](gameplay.md#nội-dung-và-nhận-diện), cùng transaction với kết quả. Server lấy tiến độ quạ của chính người Finish trong lượt đó; không nhận quyền crown từ client. Password/session theo [protocol](protocol.md#xác-thực-và-bảo-mật).
 
 ## Checkpoint Community
 

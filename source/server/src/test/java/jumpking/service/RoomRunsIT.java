@@ -22,7 +22,7 @@ class RoomRunsIT {
   @org.springframework.beans.factory.annotation.Autowired RecordsService history;
 
   @Test
-  void shortFinishesCountWinsWithoutGrantingTheFullMapCrownOrBestTime() throws Exception {
+  void roomFinishesDoNotGrantCrowns() throws Exception {
     var jdbc = TestDatabase.get().jdbc;
     for (int level = 1; level <= RoomSettings.FINAL_MAP_ID; level++) {
       var owners = new ArrayList<Long>();
@@ -76,7 +76,7 @@ class RoomRunsIT {
         assertThat(
                 jdbc.queryForObject(
                     "SELECT crown FROM users WHERE id=?", String.class, owners.getFirst()))
-            .isEqualTo(level == RoomSettings.FINAL_MAP_ID ? "GOLD" : "NONE");
+            .isEqualTo("NONE");
         var stats = history.statistics(owners.getFirst());
         assertThat(stats.finishes()).isZero();
         assertThat(stats.totalJumps()).isEqualTo(5);
@@ -218,7 +218,7 @@ class RoomRunsIT {
       records.save(update);
       assertThat(
               jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, users.get(0)))
-          .isEqualTo("BLACK");
+          .isEqualTo("NONE");
       assertThat(
               jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, users.get(1)))
           .isEqualTo("NONE");

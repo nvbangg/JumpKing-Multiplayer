@@ -66,30 +66,19 @@ const freshReadable = (): ReadableState => ({
 });
 type Bird = "raven" | "whiteRaven";
 const BIRDS: Bird[] = ["raven", "whiteRaven"];
-const freshRaven = (height: number, bird: Bird): RavenState => {
-	const first = required(data[bird].positions[0]);
-	return {
-		index: 0,
-		x: first.x,
-		y: first.y - first.screen * height,
-		vx: 0,
-		vy: 0,
-		flying: false,
-		ticks: 0,
-		done: false,
-	};
-};
-
 export class Adventure {
 	private state: AdventureState;
-	constructor(readonly map: GameMap) {
+	constructor(
+		readonly map: GameMap,
+		private readonly roomStartScreen?: number,
+	) {
 		this.state = {
 			codecVersion: 2,
 			flags: [],
 			dialogue: {},
 			readables: {},
-			raven: freshRaven(map.screenHeight, "raven"),
-			whiteRaven: freshRaven(map.screenHeight, "whiteRaven"),
+			raven: this.freshRaven("raven"),
+			whiteRaven: this.freshRaven("whiteRaven"),
 		};
 		for (const npc of data.npcs)
 			this.state.dialogue[npc.id] = {
@@ -107,6 +96,30 @@ export class Adventure {
 			};
 		for (const readable of data.readables)
 			this.state.readables[readable.id] = freshReadable();
+	}
+	private screen(
+		bird: Bird,
+		position: (typeof data)[Bird]["positions"][number],
+	): number {
+		if (this.roomStartScreen === undefined) return position.screen;
+		return (
+			position.screen +
+			this.roomStartScreen -
+			required(data[bird].positions[0]).screen
+		);
+	}
+	private freshRaven(bird: Bird): RavenState {
+		const first = required(data[bird].positions[0]);
+		return {
+			index: 0,
+			x: first.x,
+			y: first.y - this.screen(bird, first) * this.map.screenHeight,
+			vx: 0,
+			vy: 0,
+			flying: false,
+			ticks: 0,
+			done: false,
+		};
 	}
 	view(): ReadView<AdventureState> {
 		return this.state;
@@ -131,7 +144,7 @@ export class Adventure {
 		if (s.done) return;
 		if (
 			!s.flying &&
-			player.screen === pos.screen &&
+			player.screen === this.screen(bird, pos) &&
 			(Math.trunc(player.x) + P.bodyWidth / 2 - s.x) ** 2 +
 				(Math.trunc(player.y) + P.bodyHeight / 2 - s.y) ** 2 <
 				data.raven.triggerRadius ** 2
@@ -150,7 +163,7 @@ export class Adventure {
 		}
 		s.x += s.vx * data.raven.motionScale;
 		s.y += s.vy * data.raven.motionScale;
-		const localY = s.y + pos.screen * this.map.screenHeight;
+		const localY = s.y + this.screen(bird, pos) * this.map.screenHeight;
 		if (
 			s.x < 0 ||
 			s.x >= this.map.width ||
@@ -165,7 +178,7 @@ export class Adventure {
 			s.flying = false;
 			const next = required(positions[s.index]);
 			s.x = next.x;
-			s.y = next.y - next.screen * this.map.screenHeight;
+			s.y = next.y - this.screen(bird, next) * this.map.screenHeight;
 		}
 	}
 	private worldRect(rect: Rect, screen: number): Rect {

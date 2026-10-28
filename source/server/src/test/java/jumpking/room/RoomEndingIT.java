@@ -98,7 +98,7 @@ class RoomEndingIT {
   }
 
   @Test
-  void roomCommitKeepsItsCrownAcrossRetryAndReconnectWithoutAnEnding() throws Exception {
+  void roomCommitDoesNotGrantACrownAcrossRetryAndReconnect() throws Exception {
     var jdbc = TestDatabase.get().jdbc;
     String trigger = "ending_" + UUID.randomUUID().toString().replace("-", "");
     try (var a = new GameClient(port);
@@ -157,7 +157,7 @@ class RoomEndingIT {
                   .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED")))
           .isEmpty();
       assertThat(jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, a.owner))
-          .isEqualTo("BLACK");
+          .isEqualTo("NONE");
       assertThat(jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, b.owner))
           .isEqualTo("NONE");
       assertThat(
@@ -184,7 +184,7 @@ class RoomEndingIT {
       a.await(
           message ->
               message.path("type").asText().equals("GAME_SNAPSHOT")
-                  && message.path("payload").path("self").path("crown").asText().equals("BLACK"));
+                  && message.path("payload").path("self").path("crown").asText().equals("NONE"));
       assertThat(
               a.messages.stream()
                   .filter(message -> message.path("type").asText().equals("PLAYER_FINISHED")))

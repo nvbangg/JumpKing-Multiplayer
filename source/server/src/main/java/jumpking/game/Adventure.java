@@ -15,13 +15,19 @@ public final class Adventure {
   private final JsonNode data, tuning;
   private final GameMap map;
   private final Physics physics;
+  private final Integer roomStartScreen;
   private ObjectNode state;
 
   public Adventure(JsonNode definitions, GameMap map, Physics physics) {
+    this(definitions, map, physics, null);
+  }
+
+  public Adventure(JsonNode definitions, GameMap map, Physics physics, Integer roomStartScreen) {
     data = definitions;
     tuning = data.path("tuning");
     this.map = map;
     this.physics = physics;
+    this.roomStartScreen = roomStartScreen;
     state = JSON.objectNode().put("codecVersion", 2);
     state.putArray("flags");
     state.putObject("dialogue");
@@ -82,12 +88,18 @@ public final class Adventure {
     return JSON.objectNode()
         .put("index", 0)
         .put("x", number(first, "x"))
-        .put("y", number(first, "y") - first.path("screen").asInt() * map.screenHeight())
+        .put("y", number(first, "y") - screen(bird, first) * map.screenHeight())
         .put("vx", 0)
         .put("vy", 0)
         .put("flying", false)
         .put("ticks", 0)
         .put("done", false);
+  }
+
+  private int screen(String bird, JsonNode position) {
+    if (roomStartScreen == null) return position.path("screen").asInt();
+    int first = data.path(bird).path("positions").get(0).path("screen").asInt();
+    return position.path("screen").asInt() + roomStartScreen - first;
   }
 
   public boolean ravenDone() {
@@ -102,7 +114,7 @@ public final class Adventure {
     double dx = (int) player.x + physics.bodyWidth / 2.0 - number(s, "x"),
         dy = (int) player.y + physics.bodyHeight / 2.0 - number(s, "y");
     if (!s.path("flying").asBoolean()
-        && player.screen == pos.path("screen").asInt()
+        && player.screen == screen(bird, pos)
         && dx * dx + dy * dy < Math.pow(number(data.path("raven"), "triggerRadius"), 2)) {
       s.put("flying", true).put("ticks", 0);
       s.put("vy", number(data.path("raven"), "launchVelocityY")).put("vx", 0);
@@ -118,7 +130,7 @@ public final class Adventure {
     }
     s.put("x", number(s, "x") + number(s, "vx") * number(data.path("raven"), "motionScale"));
     s.put("y", number(s, "y") + number(s, "vy") * number(data.path("raven"), "motionScale"));
-    double localY = number(s, "y") + pos.path("screen").asInt() * map.screenHeight();
+    double localY = number(s, "y") + screen(bird, pos) * map.screenHeight();
     if (number(s, "x") < 0
         || number(s, "x") >= map.width()
         || localY < 0
@@ -132,7 +144,7 @@ public final class Adventure {
       var next = positions.get(index);
       s.put("flying", false)
           .put("x", number(next, "x"))
-          .put("y", number(next, "y") - next.path("screen").asInt() * map.screenHeight());
+          .put("y", number(next, "y") - screen(bird, next) * map.screenHeight());
     }
   }
 

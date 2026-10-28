@@ -64,8 +64,7 @@ export class AdventureVisuals {
 				!!state &&
 					!state.done &&
 					!frame.ending &&
-					required(ADVENTURE[id].positions[state.index]).screen ===
-						frame.self.state.screen,
+					Math.ceil(-state.y / V.height) === frame.self.state.screen,
 			);
 			if (state) {
 				const perch = required(ADVENTURE[id].positions[state.index]);
