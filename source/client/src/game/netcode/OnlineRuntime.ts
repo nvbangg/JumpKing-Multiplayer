@@ -71,6 +71,7 @@ export class OnlineRuntime implements GameRuntime {
 	private ending?: EndingSignal;
 	private desiredFlight: boolean | undefined;
 	private accumulatedMs = 0;
+	private lastAckAt = performance.now();
 	private sequence = 0;
 	private prediction: Prediction;
 	private peers = new PeerInterpolation(PHYSICS.tickRate);
@@ -186,6 +187,13 @@ export class OnlineRuntime implements GameRuntime {
 			throw new Error("Server acknowledged an unsent input");
 		if (!this.latest || value.playId !== this.latest.playId)
 			this.desiredFlight = value.self.simulation.physics.freeFlight;
+		if (
+			value.self.paused ||
+			this.latest?.self.paused ||
+			value.self.lastProcessedInputSeq !==
+				this.latest?.self.lastProcessedInputSeq
+		)
+			this.lastAckAt = performance.now();
 		if (value.self.paused) this.prediction.reset();
 		if (
 			value.spectating?.player.playerId !==
@@ -226,12 +234,31 @@ export class OnlineRuntime implements GameRuntime {
 			this.accumulatedMs = 0;
 			return;
 		}
+		if (this.prediction.pending === 0) this.lastAckAt = performance.now();
+		if (
+			this.prediction.pending > 0 &&
+			performance.now() - this.lastAckAt >= NETWORK.timeoutMs
+		) {
+			this.fail("The game server is not responding. Reconnect to continue.");
+			return;
+		}
+		const step = 1000 / PHYSICS.tickRate;
+		const { pingMs } = this.socket.getNetworkQuality();
+		const inputWindow = Math.min(
+			NETWORK.maxInputFrames,
+			Math.ceil((pingMs || NETWORK.initialPingMs) / step) +
+				2 * Math.ceil(PHYSICS.tickRate / rules.snapshotRate),
+		);
 		this.accumulatedMs += Math.max(
 			0,
 			Math.min(PRESENTATION.maxFrameMs, deltaMs),
 		);
-		const step = 1000 / PHYSICS.tickRate;
 		while (this.accumulatedMs >= step) {
+			// Chờ ACK để FIFO thoát dồn; không giữ nợ render rồi gửi bù thành một đợt input.
+			if (this.prediction.pending >= inputWindow) {
+				this.accumulatedMs = 0;
+				return;
+			}
 			this.accumulatedMs -= step;
 			const input = { ...this.readInput(), freeFlight: this.flying };
 			if (this.menu) break;
@@ -241,11 +268,9 @@ export class OnlineRuntime implements GameRuntime {
 				if (movement.length)
 					this.onMovement(movement, this.game.physics.snapshot());
 			} catch (cause) {
-				this.menu = true;
-				const message =
-					cause instanceof Error ? cause.message : "Input queue is full";
-				this.socket.fail(message);
-				this.failed(message);
+				this.fail(
+					cause instanceof Error ? cause.message : "Input queue is full",
+				);
 				return;
 			}
 			this.socket.input("PLAYER_INPUT", {
@@ -255,6 +280,11 @@ export class OnlineRuntime implements GameRuntime {
 				...input,
 			});
 		}
+	}
+	private fail(message: string): void {
+		this.menu = true;
+		this.socket.fail(message);
+		this.failed(message);
 	}
 	cancel(): void {
 		if (!this.latest) return;

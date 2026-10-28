@@ -1,4 +1,11 @@
 import { expect, test } from "@playwright/test";
+import type { OnlineSnapshot } from "../src/game/netcode/OnlineRuntime";
+import {
+	createRoom,
+	leaveOnline,
+	newCommunity,
+	registerOnline,
+} from "./support/online";
 
 test.skip(
 	process.env.E2E_AUTH_ONLINE !== "true",
@@ -179,5 +186,140 @@ test("two independent browser identities use real WS and logout revokes only the
 	} finally {
 		await first.close();
 		await second.close();
+	}
+});
+
+test("input pacing survives latency, clock drift and a snapshot stall in both modes", async ({
+	page,
+}) => {
+	test.setTimeout(90_000);
+	let latest: OnlineSnapshot | undefined,
+		sent = 0,
+		ack = 0,
+		peak = 0,
+		hold = false;
+	const current = () => latest;
+	const held: (() => void)[] = [],
+		errors: string[] = [];
+	const timers = new Set<ReturnType<typeof setTimeout>>();
+	page.on("pageerror", (error) => errors.push(error.message));
+	await page.addInitScript(() =>
+		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false })),
+	);
+	await page.routeWebSocket("**/ws/game", (socket) => {
+		const server = socket.connectToServer();
+		let closed = false;
+		server.onClose((code, reason) => {
+			closed = true;
+			socket.close({ code, reason });
+		});
+		socket.onMessage((message) => {
+			const packet = JSON.parse(message.toString());
+			if (packet.type === "PLAYER_INPUT") {
+				sent = packet.payload.seq;
+				peak = Math.max(peak, sent - ack);
+			}
+			server.send(message);
+		});
+		server.onMessage((message) => {
+			const deliver = () => {
+				if (closed) return;
+				const packet = JSON.parse(message.toString());
+				if (packet.type === "GAME_SNAPSHOT") {
+					latest = packet.payload;
+					ack = packet.payload.self.lastProcessedInputSeq;
+				}
+				socket.send(message);
+			};
+			// Socket thật vẫn nối backend; chỉ trì hoãn chiều nhận để mô phỏng RTT khoảng 260 ms.
+			const timer = setTimeout(() => {
+				timers.delete(timer);
+				if (hold) held.push(deliver);
+				else deliver();
+			}, 260);
+			timers.add(timer);
+		});
+	});
+	try {
+		await registerOnline(page, "ack_pacing");
+		await expect(page).toHaveTitle(/JumpKing/);
+		await page.evaluate(async () => {
+			const path = "/src/game/netcode/OnlineRuntime.ts";
+			const { OnlineRuntime } = await import(path);
+			const advance = OnlineRuntime.prototype.advance;
+			// Lệch clock phải được điều tiết; không sửa simulation hoặc giả ACK.
+			OnlineRuntime.prototype.advance = function (delta: number) {
+				advance.call(this, delta * 1.2);
+			};
+		});
+		for (const kind of ["COMMUNITY", "ROOM"]) {
+			latest = undefined;
+			sent = ack = peak = 0;
+			if (kind === "COMMUNITY") await newCommunity(page);
+			else {
+				await createRoom(page);
+				await page.getByRole("button", { name: "Start", exact: true }).click();
+				await expect(
+					page.getByRole("button", { name: "Menu (Esc)", exact: true }),
+				).toBeVisible();
+				await expect.poll(() => current()?.self.paused).toBe(false);
+				if (
+					await page
+						.getByRole("button", { name: "Resume", exact: true })
+						.isVisible()
+				)
+					await page
+						.getByRole("button", { name: "Resume", exact: true })
+						.click();
+				await page.locator("canvas").click();
+			}
+			await expect
+				.poll(() => current()?.self.simulation.physics.ticks ?? 0)
+				.toBeGreaterThan(120);
+			const before = current()?.self.simulation.physics.ticks ?? 0;
+			hold = true;
+			await page.waitForTimeout(800);
+			hold = false;
+			for (const deliver of held.splice(0)) deliver();
+			await expect
+				.poll(() => current()?.self.simulation.physics.ticks ?? 0, {
+					timeout: 15_000,
+				})
+				.toBeGreaterThan(before + 600);
+			expect(peak).toBeLessThan(90);
+			await expect(
+				page.getByRole("button", { name: "Reconnect", exact: true }),
+			).toHaveCount(0);
+			await expect(
+				page.getByRole("button", { name: "Resume", exact: true }),
+			).toHaveCount(0);
+			const jumps = current()?.self.simulation.physics.jumps ?? 0;
+			await page.keyboard.down("Space");
+			await page.waitForTimeout(200);
+			await page.keyboard.up("Space");
+			await expect
+				.poll(() => current()?.self.simulation.physics.jumps ?? 0)
+				.toBeGreaterThan(jumps);
+			if (kind === "ROOM" && process.env.E2E_ACK_SCREENSHOT)
+				await page.screenshot({ path: process.env.E2E_ACK_SCREENSHOT });
+			await page
+				.getByRole("button", { name: "Menu (Esc)", exact: true })
+				.click();
+			await page
+				.getByRole("button", {
+					name: kind === "ROOM" ? "Leave Room" : "Save & Exit",
+					exact: true,
+				})
+				.click();
+			await expect(
+				page.getByRole("button", { name: "New Game", exact: true }),
+			).toBeVisible();
+		}
+		expect(errors).toEqual([]);
+	} finally {
+		hold = false;
+		for (const deliver of held.splice(0)) deliver();
+		await leaveOnline(page);
+		for (const timer of timers) clearTimeout(timer);
 	}
 });

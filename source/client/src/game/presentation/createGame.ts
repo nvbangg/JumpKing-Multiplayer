@@ -18,6 +18,7 @@ export function createGame(
 		height: PRESENTATION.height,
 		parent,
 		pixelArt: true,
+		fps: { smoothStep: false },
 		roundPixels: true,
 		backgroundColor: "#000000",
 		scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
