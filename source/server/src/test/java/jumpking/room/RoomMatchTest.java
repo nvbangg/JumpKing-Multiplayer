@@ -124,9 +124,11 @@ class RoomMatchTest {
       int startScreen = player.game.physics().snapshot().screen;
       for (String bird : List.of("raven", "whiteRaven")) {
         var raven = player.game.adventure().snapshot().path(bird);
-        int screen = (int) Math.ceil(-raven.path("y").asDouble() / shared.geometry().screenHeight());
+        int screen =
+            (int) Math.ceil(-raven.path("y").asDouble() / shared.geometry().screenHeight());
         if (level == 1) {
-          int original = shared.adventure().path(bird).path("positions").get(0).path("screen").asInt();
+          int original =
+              shared.adventure().path(bird).path("positions").get(0).path("screen").asInt();
           assertThat(screen).as("%s on map %s", bird, level).isEqualTo(original);
         } else assertThat(screen).as("%s on map %s", bird, level).isEqualTo(startScreen);
       }

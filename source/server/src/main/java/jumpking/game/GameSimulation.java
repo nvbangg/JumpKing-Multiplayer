@@ -30,7 +30,12 @@ public final class GameSimulation {
   }
 
   public GameSimulation(
-      GameMap map, Physics p, JsonNode data, boolean flyAllowed, boolean noWalk, boolean roomAdventure) {
+      GameMap map,
+      Physics p,
+      JsonNode data,
+      boolean flyAllowed,
+      boolean noWalk,
+      boolean roomAdventure) {
     this.map = map;
     this.p = p;
     this.data = data;
