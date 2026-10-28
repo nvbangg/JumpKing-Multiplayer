@@ -82,7 +82,8 @@ function fallingPeerSnapshot(
 	];
 	return value;
 }
-test("missing acknowledgements stops input and requests disconnect; a new generation resumes cleanly", () => {
+test("input waits within its window, disconnects only after the ACK deadline and resets on reconnect", () => {
+	const now = vi.spyOn(performance, "now").mockReturnValue(0);
 	const socket = new GameSocket(
 		() => {},
 		() => {},
@@ -105,9 +106,16 @@ test("missing acknowledgements stops input and requests disconnect; a new genera
 	runtime.receive(snapshot(game, 1, 0) as unknown as Record<string, unknown>);
 	for (let index = 0; index <= NETWORK.maxInputFrames; index++)
 		runtime.advance(1000 / 60);
+	expect(runtime.menu).toBe(false);
+	expect(send.mock.calls.length).toBeLessThan(NETWORK.maxInputFrames);
+	now.mockReturnValue(NETWORK.timeoutMs - 1);
+	runtime.advance(1000 / 60);
+	expect(fail).not.toHaveBeenCalled();
+	now.mockReturnValue(NETWORK.timeoutMs);
+	runtime.advance(1000 / 60);
 	expect(runtime.menu).toBe(true);
 	expect(fail).toHaveBeenCalledExactlyOnceWith(
-		expect.stringContaining("too far behind"),
+		expect.stringContaining("not responding"),
 	);
 	expect(failed).toHaveBeenCalledOnce();
 	const sent = send.mock.calls.length;
@@ -118,12 +126,77 @@ test("missing acknowledgements stops input and requests disconnect; a new genera
 		snapshot(game, 2, 0, 2) as unknown as Record<string, unknown>,
 	);
 	runtime.menu = false;
+	now.mockReturnValue(NETWORK.timeoutMs * 3);
 	runtime.advance(1000 / 60);
+	expect(fail).toHaveBeenCalledOnce();
 	expect(send).toHaveBeenLastCalledWith(
 		"PLAYER_INPUT",
 		expect.objectContaining({ generation: 2, seq: 1 }),
 	);
+	now.mockRestore();
 });
+test.each(["COMMUNITY", "ROOM"] as const)(
+	"input pacing bounds FIFO under clock drift and a temporary snapshot stall in %s",
+	(kind) => {
+		const socket = new GameSocket(
+			() => {},
+			() => {},
+		);
+		socket.selfId = "self";
+		socket.playContext = { playId: "run", generation: 1 };
+		socket.recordPing(50);
+		const queued: { seq: number; input: typeof right }[] = [];
+		vi.spyOn(socket, "input").mockImplementation((_type, input) => {
+			queued.push({
+				seq: Number(input.seq),
+				input: input as unknown as typeof right,
+			});
+		});
+		const fail = vi.spyOn(socket, "fail");
+		const runtime = new OnlineRuntime(
+			map,
+			socket,
+			{
+				...room,
+				kind,
+				settings:
+					kind === "ROOM"
+						? {
+								mode: "RACE",
+								mapId: 1,
+								timeLimitMinutes: null,
+								itemCooldownMinutes: null,
+							}
+						: null,
+			},
+			() => right,
+			() => {},
+			false,
+		);
+		const server = new GameSimulation(runtime.game.physics.map);
+		let ack = 0,
+			maximum = 0;
+		runtime.receive(
+			snapshot(server, 0, ack) as unknown as Record<string, unknown>,
+		);
+		for (let tick = 1; tick <= 900; tick++) {
+			runtime.advance(20);
+			maximum = Math.max(maximum, queued.length);
+			const frame = queued.shift();
+			if (frame) ack = frame.seq;
+			server.tick(frame?.input ?? right);
+			if (tick % 3 === 0 && (tick < 240 || tick > 270))
+				runtime.receive(
+					snapshot(server, tick, ack) as unknown as Record<string, unknown>,
+				);
+		}
+		expect(fail).not.toHaveBeenCalled();
+		expect(runtime.menu).toBe(false);
+		expect(maximum).toBeLessThan(30);
+		expect(ack).toBeGreaterThan(700);
+	},
+);
+
 test("online ending waits for the private committed notice and matching finished snapshot", () => {
 	const socket = new GameSocket(
 		() => {},
