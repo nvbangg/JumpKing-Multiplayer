@@ -53,6 +53,22 @@ test("Room maps keep the ten approved Finish boundaries", () => {
 	]);
 });
 
+test("Room maps place both ravens at the stage spawn", () => {
+	for (const { level } of ROOM_MAPS) {
+		const game = new GameSimulation(roomMap(map, level), false, false, true),
+			startScreen = game.physics.snapshot().screen;
+		for (const bird of ["raven", "whiteRaven"] as const) {
+			const raven = game.snapshot().adventure[bird],
+				screen = Math.max(0, Math.ceil(-raven.y / game.map.screenHeight));
+			if (level === 1)
+				expect(screen, `${bird} on map ${level}`).toBe(
+					required(ADVENTURE[bird].positions[0]).screen,
+				);
+			else expect(screen, `${bird} on map ${level}`).toBe(startScreen);
+		}
+	}
+});
+
 test("Room labels follow the asset regions and requested early split", () => {
 	expect(ROOM_MAPS.map((goal) => goal.name)).toEqual([
 		"Green Woods",

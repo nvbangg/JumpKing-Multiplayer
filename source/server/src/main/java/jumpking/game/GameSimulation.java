@@ -20,19 +20,30 @@ public final class GameSimulation {
   private final GameMap map;
   private final Physics p;
   private final JsonNode data;
-  private final boolean flyAllowed, noWalk;
+  private final boolean flyAllowed, noWalk, roomAdventure;
   private Simulation physics;
   private Adventure adventure;
   private ObjectNode world;
 
   public GameSimulation(GameMap map, Physics p, JsonNode data, boolean flyAllowed, boolean noWalk) {
+    this(map, p, data, flyAllowed, noWalk, false);
+  }
+
+  public GameSimulation(
+      GameMap map, Physics p, JsonNode data, boolean flyAllowed, boolean noWalk, boolean roomAdventure) {
     this.map = map;
     this.p = p;
     this.data = data;
     this.flyAllowed = flyAllowed;
     this.noWalk = noWalk;
+    this.roomAdventure = roomAdventure;
     physics = new Simulation(map, p, flyAllowed, noWalk);
-    adventure = new Adventure(data, map, p);
+    adventure =
+        new Adventure(
+            data,
+            map,
+            p,
+            roomAdventure && physics.snapshot().screen > 0 ? physics.snapshot().screen : null);
     world = JsonNodeFactory.instance.objectNode().put("lastTick", 0).put("weatherWind", 0);
     world.putArray("registeredScreens");
     var walls = world.putObject("walls");
@@ -102,7 +113,7 @@ public final class GameSimulation {
           || state.path("fadeTicks").asInt() > data.path("tuning").path("wallFadeTicks").asInt())
         throw new IllegalArgumentException("Invalid wall snapshot");
     }
-    var candidate = new GameSimulation(map, p, data, flyAllowed, noWalk);
+    var candidate = new GameSimulation(map, p, data, flyAllowed, noWalk, roomAdventure);
     candidate.physics.restore(saved.physics());
     candidate.adventure.restore(saved.adventure());
     physics = candidate.physics;

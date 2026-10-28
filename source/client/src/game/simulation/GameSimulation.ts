@@ -38,9 +38,14 @@ export class GameSimulation {
 		readonly map: GameMap,
 		flyAllowed = false,
 		noWalk = false,
+		roomAdventure = false,
 	) {
 		this.physics = new Simulation(map, flyAllowed, noWalk);
-		this.adventure = new Adventure(map);
+		const startScreen = this.physics.snapshot().screen;
+		this.adventure = new Adventure(
+			map,
+			roomAdventure && startScreen > 0 ? startScreen : undefined,
+		);
 		this.world = {
 			lastTick: 0,
 			registeredScreens: [],

@@ -118,6 +118,22 @@ class RoomMatchTest {
   }
 
   @Test
+  void roomMapsPlaceBothRavensAtTheStageSpawn() {
+    for (int level = 1; level <= RoomSettings.FINAL_MAP_ID; level++) {
+      var player = match(new RoomSettings("RACE", null, level, null)).players.get("first");
+      int startScreen = player.game.physics().snapshot().screen;
+      for (String bird : List.of("raven", "whiteRaven")) {
+        var raven = player.game.adventure().snapshot().path(bird);
+        int screen = (int) Math.ceil(-raven.path("y").asDouble() / shared.geometry().screenHeight());
+        if (level == 1) {
+          int original = shared.adventure().path(bird).path("positions").get(0).path("screen").asInt();
+          assertThat(screen).as("%s on map %s", bird, level).isEqualTo(original);
+        } else assertThat(screen).as("%s on map %s", bird, level).isEqualTo(startScreen);
+      }
+    }
+  }
+
+  @Test
   void roomFinishKeepsRavenProgressAndNewMatchResetsIt() throws Exception {
     var match = match(new RoomSettings("RACE", null, RoomSettings.FINAL_MAP_ID, null));
     var now = Instant.parse("2026-01-01T00:00:00Z");
