@@ -75,7 +75,6 @@ public class RoomRuns {
   private final MatchRepository matchRepository;
   private final PlayRunRepository runRepository;
   private final RunOwners owners;
-  private final CrownService crowns;
   private final Clock clock;
   private final int capacity;
   private final int itemCooldownMin;
@@ -85,13 +84,11 @@ public class RoomRuns {
       MatchRepository matchRepository,
       PlayRunRepository runRepository,
       RunOwners owners,
-      CrownService crowns,
       Clock clock,
       jumpking.game.SharedData shared) {
     this.matchRepository = matchRepository;
     this.runRepository = runRepository;
     this.owners = owners;
-    this.crowns = crowns;
     this.clock = clock;
     capacity = shared.rules().path("roomCapacity").asInt();
     itemCooldownMin = shared.rules().path("items").path("cooldownMinMinutes").asInt();
@@ -189,8 +186,6 @@ public class RoomRuns {
             entity.setPeakReachedTicks(run.peak);
             entity.setFinishTicks(run.finish);
             entity.setRank(run.rank);
-            if (run.status.equals("FINISHED") && write.mapId == RoomSettings.FINAL_MAP_ID)
-              crowns.unlock(run.owner, write.ravenFinishers.contains(run.owner));
             entity.setEndedAt(run.endedAt);
             entity.setUpdatedAt(clock.instant());
             runRepository.save(entity);
