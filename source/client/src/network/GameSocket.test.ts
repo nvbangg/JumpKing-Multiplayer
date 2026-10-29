@@ -643,7 +643,8 @@ test.each(["RECONNECT_EXPIRED", "ROOM_NOT_FOUND"])(
 	"Reconnect clears stored context and rejects when the server reports %s",
 	async (code) => {
 		vi.mocked(clearReconnect).mockClear();
-		const game = new GameSocket(vi.fn(), vi.fn()),
+		const received = vi.fn(),
+			game = new GameSocket(received, vi.fn()),
 			restoring = game.restore("profile"),
 			socket = required(Socket.instances.at(-1));
 		socket.open();
@@ -668,6 +669,7 @@ test.each(["RECONNECT_EXPIRED", "ROOM_NOT_FOUND"])(
 		await rejected;
 		expect(clearReconnect).toHaveBeenCalledExactlyOnceWith("profile");
 		expect(game.selfId).toBeNull();
+		expect(received).not.toHaveBeenCalled();
 		game.close();
 	},
 );
