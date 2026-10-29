@@ -115,6 +115,7 @@ export function OnlineGame({
 	const [players, setPlayers] = useState<PlayerStanding[]>([]);
 	const [watching, setWatching] = useState<SpectatorView | null>(null);
 	const viewedPlayer = useRef<string | null>(null);
+	const switchingView = useRef(false);
 	// ACK hủy xem có thể tới trước snapshot; tránh nhầm với việc mất mục tiêu.
 	const returningToSelf = useRef(false);
 	const [region, setRegion] = useState("");
@@ -260,7 +261,8 @@ export function OnlineGame({
 			return;
 		}
 		pauseRevision.current++;
-		if (!runtime.current || runtime.current.menu) return;
+		if (!runtime.current || (runtime.current.menu && !switchingView.current))
+			return;
 		runtime.current.menu = true;
 		runtime.current.cancel();
 		flight.current?.cancel();
@@ -483,7 +485,8 @@ export function OnlineGame({
 						!session.menu &&
 						(!view || room.kind === "ROOM")
 					) {
-						if (room.kind === "ROOM") hostPausedRef.current = true;
+						if (room.kind === "ROOM" && latestRoom.current.state === "PAUSED")
+							hostPausedRef.current = true;
 						session.menu = true;
 						controls.cancel();
 						setMenu(true);
@@ -626,10 +629,7 @@ export function OnlineGame({
 	};
 	const resume = async (ownGame = false) => {
 		const revision = pauseRevision.current;
-		if (
-			room.kind === "COMMUNITY" &&
-			(!runtime.current?.latest?.spectating || ownGame)
-		) {
+		if (room.kind === "COMMUNITY") {
 			setPending(true);
 			try {
 				await socket.command("SET_COMMUNITY_PAUSED", { paused: false });
@@ -678,7 +678,9 @@ export function OnlineGame({
 	};
 	const watch = async (playerId: string | null) => {
 		const session = runtime.current;
-		if (!session || pending || disconnected) return;
+		if (!session || pending || disconnected || switchingView.current) return;
+		const revision = pauseRevision.current;
+		switchingView.current = true;
 		setPending(true);
 		setError("");
 		session.menu = true;
@@ -689,6 +691,7 @@ export function OnlineGame({
 		returningToSelf.current = playerId === null;
 		try {
 			await socket.command("SET_SPECTATE", { playerId });
+			if (revision !== pauseRevision.current) return;
 			if (playerId === null) await resume(true);
 			else {
 				session.menu = false;
@@ -701,6 +704,7 @@ export function OnlineGame({
 			setMenu(true);
 			await reportFailure(cause, "Unable to watch player");
 		} finally {
+			switchingView.current = false;
 			setPending(false);
 		}
 	};
@@ -1024,7 +1028,7 @@ export function OnlineGame({
 					<div className="game-hud">
 						<span className="timer" role="timer" aria-label="Play time">
 							<Clock3 aria-hidden="true" />
-							{duration(watching?.elapsedTimeMs ?? elapsed)}
+							{duration(elapsed)}
 						</span>
 						{remaining !== null && (
 							<span className="timer" role="timer" aria-label="Time left">

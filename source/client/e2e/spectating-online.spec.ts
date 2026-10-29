@@ -17,8 +17,9 @@ test.skip(
 
 async function resume(page: Page) {
 	await page.bringToFront();
+	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	const button = page.getByRole("button", { name: "Resume", exact: true });
-	if (await button.isVisible()) await button.click();
+	await button.click();
 	await page.locator("canvas").click();
 }
 // Quan sát frame renderer thật; không thay đổi simulation hoặc input của ứng dụng.
@@ -36,6 +37,32 @@ async function observeView(page: Page) {
 				String(result.self.state.screen),
 			);
 			return result;
+		};
+	});
+}
+
+// Giữ ACK ở phía UI để tái hiện ESC tới trong lúc đang đổi camera.
+async function delayNextSpectateAck(page: Page) {
+	await page.evaluate(async () => {
+		const path = "/src/network/GameSocket.ts";
+		const { GameSocket } = await import(path);
+		const command = GameSocket.prototype.command;
+		let waiting = true;
+		const gate = new Promise<void>((resolve) => {
+			(
+				window as unknown as { releaseSpectateAck: () => void }
+			).releaseSpectateAck = resolve;
+		});
+		GameSocket.prototype.command = async function (
+			type: string,
+			payload: Record<string, unknown>,
+		) {
+			const reply = await command.call(this, type, payload);
+			if (type === "SET_SPECTATE" && waiting) {
+				waiting = false;
+				await gate;
+			}
+			return reply;
 		};
 	});
 }
@@ -59,10 +86,20 @@ for (const kind of ["COMMUNITY", "ROOM"] as const)
 			page.on("pageerror", (e) => errors.push(e.message));
 		try {
 			const name = await registerOnline(target, "watch_target");
-			await registerOnline(viewer, "watch_viewer");
+			const ownName = await registerOnline(viewer, "watch_viewer");
 			if (kind === "COMMUNITY") {
+				await target.bringToFront();
 				await newCommunity(target);
+				await target
+					.getByRole("button", { name: "Menu (Esc)", exact: true })
+					.click();
+				await expect.poll(() => targetState.snapshot?.self.paused).toBe(true);
+				await viewer.bringToFront();
 				await newCommunity(viewer);
+				await viewer
+					.getByRole("button", { name: "Menu (Esc)", exact: true })
+					.click();
+				await expect.poll(() => ownState.snapshot?.self.paused).toBe(true);
 			} else {
 				const code = await createRoom(target);
 				await joinRoom(viewer, code);
@@ -119,6 +156,10 @@ for (const kind of ["COMMUNITY", "ROOM"] as const)
 				String(screen),
 			);
 			const own = required(ownState.snapshot).self.simulation.physics;
+			const elapsed = required(ownState.snapshot).elapsedTimeMs;
+			await expect
+				.poll(() => ownState.snapshot?.elapsedTimeMs ?? 0)
+				.toBeGreaterThan(elapsed + 1000);
 			await viewer.keyboard.press("d");
 			await viewer.keyboard.press("Space");
 			await expect(
@@ -126,7 +167,7 @@ for (const kind of ["COMMUNITY", "ROOM"] as const)
 			).toBeHidden();
 			expect(required(ownState.snapshot).playId).toBe(run);
 			if (kind === "COMMUNITY") {
-				await expect.poll(() => ownState.snapshot?.self.paused).toBe(true);
+				await expect.poll(() => ownState.snapshot?.self.paused).toBe(false);
 				expect(required(ownState.snapshot).self.simulation.physics.x).toBe(
 					own.x,
 				);
@@ -144,7 +185,7 @@ for (const kind of ["COMMUNITY", "ROOM"] as const)
 				await target.keyboard.up("ArrowUp");
 			}
 			await viewer.bringToFront();
-			// Resume sau khi mất focus chỉ tiếp tục xem, không chạy lại lượt Community của người xem.
+			// Resume giao diện phải giữ mục tiêu đang xem.
 			const button = viewer.getByRole("button", {
 				name: "Resume",
 				exact: true,
@@ -157,9 +198,27 @@ for (const kind of ["COMMUNITY", "ROOM"] as const)
 					),
 				)
 				.not.toBe(screen);
+			await viewer.keyboard.press("Escape");
+			await expect(button).toBeVisible();
+			await button.click();
+			await expect(viewer.locator("canvas")).toHaveAttribute(
+				"data-view-player",
+				required(targetId),
+			);
+			await delayNextSpectateAck(viewer);
 			await viewer
-				.getByRole("button", { name: "Back to My Game", exact: true })
+				.getByRole("button", { name: `Watch ${ownName}`, exact: true })
 				.click();
+			await viewer.keyboard.press("Escape");
+			await expect(button).toBeVisible();
+			await viewer.evaluate(() =>
+				(
+					window as unknown as { releaseSpectateAck: () => void }
+				).releaseSpectateAck(),
+			);
+			await expect(button).toBeEnabled();
+			await expect(button).toBeVisible();
+			await button.click();
 			await expect(
 				viewer.getByRole("button", { name: "Back to My Game", exact: true }),
 			).toBeHidden();
