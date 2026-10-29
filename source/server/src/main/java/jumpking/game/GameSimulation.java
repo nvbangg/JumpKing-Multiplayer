@@ -121,7 +121,12 @@ public final class GameSimulation {
     if (map.roomBottomY() != null
         && (previousY > map.roomBottomY() || player.y > map.roomBottomY())) {
       boolean alreadyFell = movement.contains("SPLAT");
-      physics.respawnAt(map.spawn().x(), map.spawn().y(), !alreadyFell);
+      var safe =
+          mode.equals("EASY") ? world.path("safePosition") : JsonNodeFactory.instance.missingNode();
+      physics.respawnAt(
+          safe.path("x").asDouble(map.spawn().x()),
+          safe.path("y").asDouble(map.spawn().y()),
+          !alreadyFell);
       if (!alreadyFell) {
         movement = new ArrayList<>(movement);
         movement.add("SPLAT");
