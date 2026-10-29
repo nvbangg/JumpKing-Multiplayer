@@ -397,8 +397,11 @@ test("Community New Game keeps old History and metrics while replacing only the 
 		.poll(() => observed.snapshots.at(-1)?.self.simulation.physics.jumps)
 		.toBe(1);
 	await leave(page);
-	page.once("dialog", (dialog) => dialog.accept());
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
+	await page
+		.getByRole("dialog", { name: "Replace your unfinished game?" })
+		.getByRole("button", { name: "Confirm", exact: true })
+		.click();
 	await expect.poll(() => observed.snapshots.at(-1)?.playId).not.toBe(first);
 	expect(
 		required(observed.snapshots.at(-1)).self.simulation.physics.jumps,

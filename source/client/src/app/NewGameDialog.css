@@ -1,0 +1,16 @@
+.new-game-dialog {
+	border: 0;
+	padding: 0;
+	background: transparent;
+	color: inherit;
+	max-width: min(440px, calc(100vw - 24px));
+	max-height: calc(100dvh - 24px);
+	overflow: auto;
+}
+.new-game-dialog::backdrop {
+	background: #000a;
+}
+.new-game-dialog .menu-panel {
+	width: 100%;
+	min-width: 0;
+}
