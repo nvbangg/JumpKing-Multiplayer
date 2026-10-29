@@ -6,10 +6,40 @@ import ravenTrace from "../../../../common/fixtures/raven-trace.json";
 import whiteRavenTrace from "../../../../common/fixtures/white-raven-trace.json";
 import map from "../../../../common/maps/main-babe.json";
 import { required } from "../../required";
-import { Adventure } from "./Adventure";
+import { ADVENTURE, Adventure } from "./Adventure";
 import { GameSimulation } from "./GameSimulation";
+import { ROOM_MAPS, roomMap } from "./roomMaps";
 import { Simulation } from "./Simulation";
 import { NEUTRAL_INPUT } from "./types";
+
+test("Room birds start at the first configured perch in the stage and survive restore", () => {
+	const expectedPerches = {
+		raven: [0, 1, 2, 3, 4, 9, 12, -1, -1, -1],
+		whiteRaven: [0, 3, 5, 9, 13, -1, -1, -1, -1, -1],
+	};
+	for (const { level } of ROOM_MAPS) {
+		const stage = roomMap(map, level);
+		const adventure = new Adventure(stage);
+		for (const bird of ["raven", "whiteRaven"] as const) {
+			const positions = ADVENTURE[bird].positions;
+			const expected = required(expectedPerches[bird][level - 1]);
+			const state = adventure.snapshot()[bird];
+			expect(state.done).toBe(expected === -1);
+			if (expected !== -1) {
+				expect(state.index).toBe(expected);
+				const perch = required(positions[expected]);
+				expect(state).toMatchObject({
+					x: perch.x,
+					y: perch.y - perch.screen * stage.screenHeight,
+				});
+			}
+		}
+		const saved = adventure.snapshot();
+		const restored = new Adventure(stage);
+		restored.restore(saved);
+		expect(restored.snapshot()).toEqual(saved);
+	}
+});
 
 test("raven requires the same screen and strictly less than forty pixels", () => {
 	const adventure = new Adventure(map);

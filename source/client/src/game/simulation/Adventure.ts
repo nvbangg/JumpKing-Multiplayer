@@ -66,17 +66,28 @@ const freshReadable = (): ReadableState => ({
 });
 type Bird = "raven" | "whiteRaven";
 const BIRDS: Bird[] = ["raven", "whiteRaven"];
-const freshRaven = (height: number, bird: Bird): RavenState => {
-	const first = required(data[bird].positions[0]);
+const freshRaven = (map: GameMap, bird: Bird): RavenState => {
+	const positions = data[bird].positions;
+	const bottom = map.roomBottomY;
+	const index =
+		bottom === undefined
+			? 0
+			: positions.findIndex(
+					(pos) =>
+						pos.y - pos.screen * map.screenHeight <= bottom &&
+						pos.screen <= map.finish.screen,
+				);
+	const selected = index === -1 ? positions.length - 1 : index;
+	const first = required(positions[selected]);
 	return {
-		index: 0,
+		index: selected,
 		x: first.x,
-		y: first.y - first.screen * height,
+		y: first.y - first.screen * map.screenHeight,
 		vx: 0,
 		vy: 0,
 		flying: false,
 		ticks: 0,
-		done: false,
+		done: index === -1,
 	};
 };
 
@@ -88,8 +99,8 @@ export class Adventure {
 			flags: [],
 			dialogue: {},
 			readables: {},
-			raven: freshRaven(map.screenHeight, "raven"),
-			whiteRaven: freshRaven(map.screenHeight, "whiteRaven"),
+			raven: freshRaven(map, "raven"),
+			whiteRaven: freshRaven(map, "whiteRaven"),
 		};
 		for (const npc of data.npcs)
 			this.state.dialogue[npc.id] = {
