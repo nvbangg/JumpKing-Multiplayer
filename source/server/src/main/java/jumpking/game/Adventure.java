@@ -78,16 +78,29 @@ public final class Adventure {
   }
 
   private ObjectNode freshRaven(String bird) {
-    var first = data.path(bird).path("positions").get(0);
+    var positions = data.path(bird).path("positions");
+    int index = 0;
+    if (map.roomBottomY() != null) {
+      while (index < positions.size()) {
+        var perch = positions.get(index);
+        if (number(perch, "y") - perch.path("screen").asInt() * map.screenHeight()
+                <= map.roomBottomY()
+            && perch.path("screen").asInt() <= map.finish().screen()) break;
+        index++;
+      }
+    }
+    boolean done = index == positions.size();
+    if (done) index = positions.size() - 1;
+    var first = positions.get(index);
     return JSON.objectNode()
-        .put("index", 0)
+        .put("index", index)
         .put("x", number(first, "x"))
         .put("y", number(first, "y") - first.path("screen").asInt() * map.screenHeight())
         .put("vx", 0)
         .put("vy", 0)
         .put("flying", false)
         .put("ticks", 0)
-        .put("done", false);
+        .put("done", done);
   }
 
   public boolean ravenDone() {

@@ -41,6 +41,27 @@ class AdventureTest {
   }
 
   @Test
+  void roomBirdsStartAtConfiguredPerchesWithinTheStageAndKeepTheirStateAfterRestore() {
+    var expectedPerches =
+        Map.of(
+            "raven", List.of(0, 1, 2, 3, 4, 9, 12, -1, -1, -1),
+            "whiteRaven", List.of(0, 3, 5, 9, 13, -1, -1, -1, -1, -1));
+    for (int level = 1; level <= 10; level++) {
+      var stage = shared.roomMap(level);
+      var adventure = new Adventure(shared.adventure(), stage, physics);
+      for (String bird : List.of("raven", "whiteRaven")) {
+        int expected = expectedPerches.get(bird).get(level - 1);
+        var state = adventure.snapshot().path(bird);
+        assertThat(state.path("done").asBoolean()).isEqualTo(expected == -1);
+        if (expected != -1) assertThat(state.path("index").asInt()).isEqualTo(expected);
+      }
+      var restored = new Adventure(shared.adventure(), stage, physics);
+      restored.restore(adventure.snapshot());
+      assertThat(restored.snapshot()).isEqualTo(adventure.snapshot());
+    }
+  }
+
+  @Test
   void ravenRequiresTheSameScreenAndStrictlyLessThanFortyPixels() {
     var adventure = adventure();
     var player = new Simulation(map, physics, false, false).snapshot();
