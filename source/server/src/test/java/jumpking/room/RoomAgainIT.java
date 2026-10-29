@@ -62,6 +62,29 @@ class RoomAgainIT {
   }
 
   @Test
+  void offlineUnconfirmedSlotDoesNotBlockTheConnectedHost() throws Exception {
+    try (var host = new GameClient(port);
+        var peer = new GameClient(port)) {
+      for (var client : List.of(host, peer)) {
+        client.register();
+        client.connect();
+      }
+      var joined = host.ok("CREATE_ROOM", Map.of());
+      peer.ok("JOIN_ROOM", Map.of("roomId", joined.path("roomId").asText()));
+      peer.ok("SET_ROOM_CONFIRMED", Map.of("confirmed", false));
+      peer.disconnect();
+      host.await(
+          m ->
+              m.path("type").asText().equals("ROOM_STATE")
+                  && m.path("payload").path("members").size() == 2
+                  && !m.path("payload").path("members").get(1).path("connected").asBoolean());
+      host.ok("START_GAME", Map.of());
+      assertThat(host.ok("GET_ROOM_STATE", Map.of()).path("members")).hasSize(1);
+      host.ok("LEAVE_ROOM", Map.of());
+    }
+  }
+
+  @Test
   void oneConnectedHostCanStartSaveAndPlayAgainAlone() throws Exception {
     try (var host = new GameClient(port)) {
       host.register();

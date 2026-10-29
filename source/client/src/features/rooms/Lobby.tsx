@@ -92,6 +92,9 @@ export function Lobby({
 							disabled={
 								pending ||
 								!confirmed ||
+								members.some(
+									(member) => member.connected && !member.nextMatchConfirmed,
+								) ||
 								members.filter(
 									(member) =>
 										member.connected && member.nextMatchConfirmed === true,

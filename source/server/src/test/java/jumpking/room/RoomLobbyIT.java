@@ -58,6 +58,9 @@ class RoomLobbyIT {
         assertThat(member.path("nextMatchJoined").asBoolean()).isTrue();
       }
       peer.ok("SET_ROOM_CONFIRMED", Map.of("confirmed", false));
+      assertThat(host.command("START_GAME", Map.of()).path("payload").path("code").asText())
+          .isEqualTo("CONFLICT");
+      assertThat(host.ok("GET_ROOM_STATE", Map.of()).path("members")).hasSize(2);
       host.await(
           message ->
               message.path("type").asText().equals("ROOM_STATE")
@@ -81,6 +84,8 @@ class RoomLobbyIT {
       var restored = peer.ok("GET_ROOM_STATE", Map.of());
       assertThat(restored.path("members")).hasSize(2);
       assertThat(member(restored, playerId).path("nextMatchConfirmed").asBoolean()).isFalse();
+      assertThat(host.command("START_GAME", Map.of()).path("payload").path("code").asText())
+          .isEqualTo("CONFLICT");
       peer.ok("SET_ROOM_CONFIRMED", Map.of("confirmed", true));
       assertThat(
               member(host.ok("GET_ROOM_STATE", Map.of()), playerId)

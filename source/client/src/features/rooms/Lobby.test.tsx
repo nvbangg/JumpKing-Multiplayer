@@ -128,6 +128,29 @@ test("time limit stops at ten minutes and item cooldown at five", () => {
 	expect(itemSelect).not.toContain('<option value="6">6 min</option>');
 });
 
+test("Cancel blocks Start until every connected Lobby player confirms; offline slots do not block", () => {
+	const peer = { ...member("peer"), nextMatchConfirmed: false };
+	const waiting = { ...room, members: [...room.members, peer] };
+	expect(markup(waiting)).toMatch(
+		/<button(?=[^>]*aria-label="Start")[^>]*disabled/,
+	);
+	expect(
+		markup({
+			...waiting,
+			members: [...room.members, { ...peer, nextMatchConfirmed: true }],
+		}),
+	).toMatch(/<button(?=[^>]*aria-label="Start")(?![^>]*disabled)[^>]*>/);
+	expect(
+		markup({
+			...waiting,
+			members: [...room.members, { ...peer, connected: false }],
+		}),
+	).toMatch(/<button(?=[^>]*aria-label="Start")(?![^>]*disabled)[^>]*>/);
+	expect(markup(waiting)).toMatch(
+		/<button(?=[^>]*aria-label="Start")[^>]*disabled/,
+	);
+});
+
 test("dropdowns update unlimited, time limit, and item settings independently", () => {
 	const command = vi.fn();
 	const tree = Lobby({ room, selfId: "host", pending: false, command });
