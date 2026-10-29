@@ -5,7 +5,6 @@ import {
 	Footprints,
 	LogOut,
 	Menu,
-	Mountain,
 	Pause,
 	Play,
 	Timer,
@@ -50,6 +49,7 @@ import { SoundButton } from "../settings/SoundButton";
 import { createGameControls } from "./gameControls";
 import { NetworkStatusBadge } from "./NetworkStatusBadge";
 import { PlayersPanel } from "./PlayersPanel";
+import { RockIcon } from "./RockIcon";
 import { TouchControls } from "./TouchControls";
 import { TutorialGuide } from "./TutorialGuide";
 import {
@@ -998,7 +998,7 @@ export function OnlineGame({
 								) : items?.held === "BOOTS" ? (
 									<Footprints className="tone-purple" aria-hidden="true" />
 								) : items?.held === "ROCK" ? (
-									<Mountain aria-hidden="true" />
+									<RockIcon />
 								) : null}
 								{items?.held === "BANANA"
 									? items.bananaArmed
