@@ -797,6 +797,11 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     if (!host.confirmed || roster.size() < rules.path("minimumRoomPlayers").asInt())
       throw new ApiException(
           409, "NOT_ENOUGH_PLAYERS", "The connected Host must confirm before starting");
+    if (room.players.values().stream()
+        .anyMatch(
+            player -> player.connection != null && player.nextMatchJoined && !player.confirmed))
+      throw new ApiException(
+          409, "CONFLICT", "All connected Lobby players must confirm before starting");
     if (room.match != null && room.match.endedAt != null && !room.match.saveStatus.equals("SAVED"))
       throw new ApiException(409, "SAVE_PENDING", "Wait for the previous results to be saved");
     for (var player : List.copyOf(room.players.values()))
