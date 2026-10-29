@@ -255,6 +255,7 @@ export function OnlineGame({
 	const hostPausedRef = useRef(false);
 	const pauseRef = useRef<() => void>(() => {});
 	const pauseRevision = useRef(0);
+	const lostTargetPauseRevision = useRef(-1);
 	const pause = () => {
 		if (endingActive.current) {
 			skipEnding.current?.();
@@ -456,9 +457,16 @@ export function OnlineGame({
 					if (
 						viewedPlayer.current &&
 						!view &&
-						!session.menu &&
+						(!session.menu ||
+							(room.kind === "COMMUNITY" && !switchingView.current)) &&
 						!returningToSelf.current
 					) {
+						if (room.kind === "COMMUNITY") {
+							lostTargetPauseRevision.current = ++pauseRevision.current;
+							void socket
+								.command("SET_COMMUNITY_PAUSED", { paused: true })
+								.catch((cause) => reportFailure(cause, "Pause failed"));
+						}
 						session.menu = true;
 						controls.cancel();
 						setMenu(true);
@@ -658,7 +666,10 @@ export function OnlineGame({
 		}
 		// Pause mới khi đang chờ ACK phải được ưu tiên hơn Resume cũ.
 		if (revision !== pauseRevision.current) {
-			if (room.kind === "COMMUNITY") {
+			if (
+				room.kind === "COMMUNITY" &&
+				lostTargetPauseRevision.current !== pauseRevision.current
+			) {
 				void socket
 					.command("SET_COMMUNITY_PAUSED", { paused: true })
 					.catch((cause) => reportFailure(cause, "Pause failed"));
