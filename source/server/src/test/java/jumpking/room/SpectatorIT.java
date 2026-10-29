@@ -88,7 +88,34 @@ class SpectatorIT {
   }
 
   @Test
-  void communityPausesOnlyTheViewerAndRejectsForeignTargets() throws Exception {
+  void watchingPastTheAfkDeadlineKeepsTheViewerClockRunning() throws Exception {
+    try (var viewer = player();
+        var target = player()) {
+      viewer.ok("JOIN_COMMUNITY", viewer.communityRequest());
+      var other = target.ok("JOIN_COMMUNITY", target.communityRequest());
+      String id = other.path("playerId").asText();
+      viewer.ok("SET_SPECTATE", Map.of("playerId", id));
+      var before = watching(viewer, id);
+      time.advance(61_000);
+      var after =
+          viewer
+              .await(
+                  m ->
+                      m.path("type").asText().equals("GAME_SNAPSHOT")
+                          && m.path("payload").path("elapsedTimeMs").asLong()
+                              > before.path("elapsedTimeMs").asLong() + 1000)
+              .path("payload");
+      assertThat(after.path("self").path("paused").asBoolean()).isFalse();
+      assertThat(after.path("spectating").path("player").path("playerId").asText()).isEqualTo(id);
+      viewer.ok("SET_SPECTATE", stop());
+      assertThat(viewer.ok("GET_ROOM_STATE", Map.of()).path("members").isEmpty()).isFalse();
+      viewer.ok("LEAVE_ROOM", Map.of());
+      target.ok("LEAVE_ROOM", Map.of());
+    }
+  }
+
+  @Test
+  void communityKeepsViewerClockRunningAndRejectsForeignTargets() throws Exception {
     try (var viewer = player();
         var target = player();
         var outsider = player()) {
@@ -112,24 +139,29 @@ class SpectatorIT {
           .isTrue();
       assertThat(view.path("spectating").has("simulation")).isFalse();
       assertThat(view.path("spectating").has("reconnectToken")).isFalse();
-      viewer.await(
-          m ->
-              m.path("type").asText().equals("GAME_SNAPSHOT")
-                  && m.path("payload").path("self").path("paused").asBoolean());
-      var own = viewer.snapshot().path("self").path("simulation");
+      assertThat(view.path("self").path("paused").asBoolean()).isFalse();
+      long elapsed = view.path("elapsedTimeMs").asLong();
       long previous = viewer.snapshot().path("serverTick").asLong();
       viewer.await(
           m ->
               m.path("type").asText().equals("GAME_SNAPSHOT")
                   && m.path("payload").path("serverTick").asLong() > previous + 5);
-      assertThat(viewer.snapshot().path("self").path("simulation")).isEqualTo(own);
+      assertThat(viewer.snapshot().path("elapsedTimeMs").asLong()).isGreaterThan(elapsed);
+      viewer.ok("SET_COMMUNITY_PAUSED", Map.of("paused", true));
+      viewer.await(
+          m ->
+              m.path("type").asText().equals("GAME_SNAPSHOT")
+                  && m.path("payload").path("self").path("paused").asBoolean());
+      viewer.ok("SET_COMMUNITY_PAUSED", Map.of("paused", false));
+      var resumed = watching(viewer, id);
+      assertThat(resumed.path("spectating").path("player").path("playerId").asText()).isEqualTo(id);
       target.ok("LEAVE_ROOM", Map.of());
       viewer.await(
           m ->
               m.path("type").asText().equals("GAME_SNAPSHOT")
                   && m.path("payload").path("serverTick").asLong() > previous + 5
                   && m.path("payload").path("spectating").isNull());
-      assertThat(viewer.snapshot().path("self").path("paused").asBoolean()).isTrue();
+      assertThat(viewer.snapshot().path("self").path("paused").asBoolean()).isFalse();
       viewer.ok("SET_SPECTATE", stop());
       viewer.ok("SET_COMMUNITY_PAUSED", Map.of("paused", false));
       viewer.ok("LEAVE_ROOM", Map.of());
@@ -366,6 +398,7 @@ class SpectatorIT {
         var target = player()) {
       viewer.ok("JOIN_COMMUNITY", viewer.communityRequest());
       var other = target.ok("JOIN_COMMUNITY", target.communityRequest());
+      viewer.ok("SET_COMMUNITY_PAUSED", Map.of("paused", true));
       viewer.ok("SET_SPECTATE", Map.of("playerId", other.path("playerId").asText()));
       viewer.await(
           m ->

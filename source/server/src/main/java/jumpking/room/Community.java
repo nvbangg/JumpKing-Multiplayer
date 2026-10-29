@@ -200,6 +200,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
           requestLeave(this, player, null);
           changed = true;
         } else if (!player.finished
+            && player.watching == null
             && !player.paused
             && !player.pausePending
             && now - player.lastPhysical >= rules.path("afkMs").asLong() * 1_000_000L) {
@@ -237,7 +238,8 @@ public class Community implements GameCommandHandler, AutoCloseable {
         if (!player.paused) {
           var frame = player.input.poll(now);
           if (frame.cancel() || player.pausePending) player.game.physics().cancelInput();
-          var input = player.pausePending ? PlayerInput.NEUTRAL : frame.input();
+          var input =
+              player.pausePending || player.watching != null ? PlayerInput.NEUTRAL : frame.input();
           var events = player.game.tick(input);
           double progress = player.game.physics().progress();
           if (player.connection != null
@@ -402,8 +404,10 @@ public class Community implements GameCommandHandler, AutoCloseable {
                     }
                     case "PLAYER_INPUT", "CANCEL_INPUT" -> {
                       var current = player.input.offer(command, time.nanos(), flags.flyEnabled());
-                      if (player.paused || player.pausePending || player.finished)
-                        player.input.clear();
+                      if (player.paused
+                          || player.pausePending
+                          || player.finished
+                          || player.watching != null) player.input.clear();
                       else {
                         if (command.type().equals("CANCEL_INPUT"))
                           player.game.physics().cancelInput();
@@ -438,9 +442,11 @@ public class Community implements GameCommandHandler, AutoCloseable {
                       if (targetId != null) {
                         if (player.finished)
                           throw new ApiException(409, "CONFLICT", "Your run has ended");
-                        pause(player);
-                        if (player.paused) save(tower, player, true, () -> runState(player));
+                        player.input.clear();
+                        player.game.physics().cancelInput();
                       }
+                      if (player.watching != null && targetId == null)
+                        player.lastPhysical = time.nanos();
                       player.watching = targetId;
                       connection.reply(
                           command,
@@ -453,7 +459,6 @@ public class Community implements GameCommandHandler, AutoCloseable {
                     case "SET_COMMUNITY_PAUSED" -> {
                       GameEnvelope.fields(command.payload(), Set.of("paused"));
                       boolean paused = GameEnvelope.bool(command.payload(), "paused", false);
-                      if (!paused) player.watching = null;
                       if (!paused && player.saveStatus.equals("FAILED")) {
                         player.operation = true;
                         player.operationCommand = command;
