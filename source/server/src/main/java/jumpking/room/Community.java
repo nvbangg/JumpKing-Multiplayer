@@ -559,7 +559,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
                             player.lastPhysical = time.nanos();
                             if (player.connection == null) pause(player);
                             if (connection.open() && player.identity.sessionId() != null)
-                              sessions.valid(sessions.find(player.identity.sessionId()), true);
+                              sessions.touch(player.identity.sessionId());
                             connection.reply(command, "ROOM_JOINED", joined(player));
                             broadcast(tower);
                             chatHistory(tower, player);
@@ -819,7 +819,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
     try {
       action.run();
       if (connection.identity().sessionId() != null)
-        sessions.valid(sessions.find(connection.identity().sessionId()), true);
+        sessions.touch(connection.identity().sessionId());
     } catch (ApiException error) {
       connection.error(command, error);
     } catch (Exception error) {

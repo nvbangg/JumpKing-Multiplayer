@@ -67,10 +67,12 @@ export class OnlineRuntime implements GameRuntime {
 	readonly game: GameSimulation;
 	readonly finishMarker: GameRuntime["finishMarker"];
 	latest: OnlineSnapshot | null = null;
-	menu = false;
+	private menuOpen = false;
 	private ending?: EndingSignal;
 	private desiredFlight: boolean | undefined;
 	private accumulatedMs = 0;
+	private advancedAt?: number;
+	private lastAckAt = performance.now();
 	private sequence = 0;
 	private prediction: Prediction;
 	private peers = new PeerInterpolation(PHYSICS.tickRate);
@@ -101,6 +103,15 @@ export class OnlineRuntime implements GameRuntime {
 			NETWORK.maxInputFrames,
 			room.settings?.mode,
 		);
+	}
+	get menu(): boolean {
+		return this.menuOpen;
+	}
+	set menu(value: boolean) {
+		if (value === this.menuOpen) return;
+		this.menuOpen = value;
+		this.accumulatedMs = 0;
+		this.advancedAt = performance.now();
 	}
 	updateRoom(room: RoomState): void {
 		this.room = room;
@@ -179,6 +190,7 @@ export class OnlineRuntime implements GameRuntime {
 		) {
 			this.sequence = value.self.lastProcessedInputSeq;
 			this.accumulatedMs = 0;
+			this.advancedAt = this.latest ? performance.now() : undefined;
 			this.prediction.reset();
 			this.peers.reset();
 		}
@@ -186,11 +198,24 @@ export class OnlineRuntime implements GameRuntime {
 			throw new Error("Server acknowledged an unsent input");
 		if (!this.latest || value.playId !== this.latest.playId)
 			this.desiredFlight = value.self.simulation.physics.freeFlight;
+		if (
+			value.self.paused ||
+			this.latest?.self.paused ||
+			value.self.lastProcessedInputSeq !==
+				this.latest?.self.lastProcessedInputSeq
+		)
+			this.lastAckAt = performance.now();
+		if (value.self.paused || this.latest?.self.paused) {
+			this.accumulatedMs = 0;
+			this.advancedAt = performance.now();
+		}
 		if (value.self.paused) this.prediction.reset();
 		if (
 			value.spectating?.player.playerId !==
 			this.latest?.spectating?.player.playerId
 		) {
+			this.accumulatedMs = 0;
+			this.advancedAt = performance.now();
 			this.prediction.reset();
 			this.peers.reset();
 		}
@@ -207,7 +232,10 @@ export class OnlineRuntime implements GameRuntime {
 		this.changed(this.game.physics.snapshot(), value);
 		if (this.ending && this.ending.id !== value.playId) this.ending = undefined;
 	}
-	advance(deltaMs: number): void {
+	advance(_deltaMs: number): void {
+		const now = performance.now();
+		const elapsedMs = this.advancedAt === undefined ? 0 : now - this.advancedAt;
+		this.advancedAt = now;
 		if (
 			!this.latest ||
 			this.menu ||
@@ -226,11 +254,20 @@ export class OnlineRuntime implements GameRuntime {
 			this.accumulatedMs = 0;
 			return;
 		}
+		if (this.prediction.pending === 0) this.lastAckAt = now;
+		if (
+			this.prediction.pending > 0 &&
+			now - this.lastAckAt >= NETWORK.timeoutMs
+		) {
+			this.fail("The game server is not responding. Reconnect to continue.");
+			return;
+		}
+		const step = 1000 / PHYSICS.tickRate;
+		// Clock thực giữ input ở 60 Hz dù delta render đã được Phaser làm mượt.
 		this.accumulatedMs += Math.max(
 			0,
-			Math.min(PRESENTATION.maxFrameMs, deltaMs),
+			Math.min(PRESENTATION.maxFrameMs, elapsedMs),
 		);
-		const step = 1000 / PHYSICS.tickRate;
 		while (this.accumulatedMs >= step) {
 			this.accumulatedMs -= step;
 			const input = { ...this.readInput(), freeFlight: this.flying };
@@ -241,11 +278,9 @@ export class OnlineRuntime implements GameRuntime {
 				if (movement.length)
 					this.onMovement(movement, this.game.physics.snapshot());
 			} catch (cause) {
-				this.menu = true;
-				const message =
-					cause instanceof Error ? cause.message : "Input queue is full";
-				this.socket.fail(message);
-				this.failed(message);
+				this.fail(
+					cause instanceof Error ? cause.message : "Input queue is full",
+				);
 				return;
 			}
 			this.socket.input("PLAYER_INPUT", {
@@ -256,6 +291,11 @@ export class OnlineRuntime implements GameRuntime {
 			});
 		}
 	}
+	private fail(message: string): void {
+		this.menu = true;
+		this.socket.fail(message);
+		this.failed(message);
+	}
 	cancel(): void {
 		if (!this.latest) return;
 		if (
@@ -264,6 +304,8 @@ export class OnlineRuntime implements GameRuntime {
 				this.latest.generation !== this.socket.playContext.generation)
 		)
 			return;
+		this.accumulatedMs = 0;
+		this.advancedAt = performance.now();
 		const seq = ++this.sequence;
 		this.prediction.cancel(seq);
 		this.socket.input("CANCEL_INPUT", {

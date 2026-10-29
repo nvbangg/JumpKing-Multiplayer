@@ -59,8 +59,7 @@ public class AccountService {
               status ->
                   IdentityContext.accountView(
                       users.saveAndFlush(User.account(form.username(), hash, clock.instant()))));
-      authenticated.accept(account);
-      return account;
+      return completeLogin(null, Long.parseLong(account.id()), hash, authenticated);
     } catch (DataIntegrityViolationException duplicate) {
       throw new ApiException(409, "CONFLICT", "Username is unavailable");
     }
@@ -82,26 +81,37 @@ public class AccountService {
         if (existing.isEmpty()) throw conflict;
       }
     }
-    limits.checkAccount(existing.orElseThrow(AccountService::invalidCredentials).getId());
-    if (!AccountCredentials.passwordWithinBcrypt(form.password())) throw invalidCredentials();
+    var verified = existing.orElseThrow(AccountService::invalidCredentials);
+    long owner = verified.getId();
+    String verifiedHash = verified.getPasswordHash();
+    limits.checkAccount(owner);
+    if (verifiedHash == null || !AccountCredentials.passwordWithinBcrypt(form.password()))
+      throw invalidCredentials();
     try {
       authentication.authenticate(
           UsernamePasswordAuthenticationToken.unauthenticated(form.username(), form.password()));
     } catch (AuthenticationException invalid) {
       throw invalidCredentials();
     }
-    var account =
-        users
-            .findByUsername(form.username())
-            .map(IdentityContext::accountView)
-            .orElseThrow(AccountService::invalidCredentials);
+    return completeLogin(current, owner, verifiedHash, authenticated);
+  }
+
+  private AccountDto.Account completeLogin(
+      Long current, long owner, String verifiedHash, Consumer<AccountDto.Account> authenticated) {
     return memberships.changingIdentity(
         current,
-        Long.valueOf(account.id()),
-        () -> {
-          authenticated.accept(account);
-          return account;
-        });
+        owner,
+        () ->
+            transactions.execute(
+                status -> {
+                  var user = users.lockById(owner).orElseThrow(AccountService::invalidCredentials);
+                  // Dùng cùng khóa với đổi mật khẩu để không tạo phiên từ mật khẩu cũ.
+                  if (!java.util.Objects.equals(user.getPasswordHash(), verifiedHash))
+                    throw invalidCredentials();
+                  var account = IdentityContext.accountView(user);
+                  authenticated.accept(account);
+                  return account;
+                }));
   }
 
   public AccountDto.Account loginWithGoogle(
@@ -135,30 +145,30 @@ public class AccountService {
 
   private AccountDto.Account registerGoogleUser(GoogleTokenVerifier.Profile profile) {
     String base = sanitizeGoogleUsername(profile.name(), profile.email());
-    String candidate = base;
-    int suffix = 1;
-    while (users.findByUsername(candidate).isPresent()) {
-      candidate = base + "_" + suffix++;
-      if (candidate.length() > 32) {
-        base = base.substring(0, Math.min(base.length(), 26));
-        candidate = base + "_" + suffix;
+    for (int attempt = 0; attempt < 8; attempt++) {
+      String candidate =
+          attempt == 0
+              ? base
+              : usernamePrefix(base, 25)
+                  + "_"
+                  + java.util.UUID.randomUUID().toString().substring(0, 6);
+      try {
+        return transactions.execute(
+            status ->
+                IdentityContext.accountView(
+                    users.saveAndFlush(
+                        User.googleAccount(candidate, profile.googleId(), clock.instant()))));
+      } catch (DataIntegrityViolationException duplicate) {
+        var existing = users.findByGoogleId(profile.googleId());
+        if (existing.isPresent()) return IdentityContext.accountView(existing.get());
       }
     }
+    throw new ApiException(409, "CONFLICT", "Unable to create Google account");
+  }
 
-    final String finalUsername = candidate;
-    try {
-      return transactions.execute(
-          status ->
-              IdentityContext.accountView(
-                  users.saveAndFlush(
-                      User.googleAccount(finalUsername, profile.googleId(), clock.instant()))));
-    } catch (DataIntegrityViolationException duplicate) {
-      var existing = users.findByGoogleId(profile.googleId());
-      if (existing.isPresent()) {
-        return IdentityContext.accountView(existing.get());
-      }
-      throw new ApiException(409, "CONFLICT", "Unable to create Google account");
-    }
+  private static String usernamePrefix(String value, int maximum) {
+    return value.substring(
+        0, value.offsetByCodePoints(0, Math.min(maximum, value.codePointCount(0, value.length()))));
   }
 
   public static String sanitizeGoogleUsername(String name, String email) {
@@ -172,10 +182,7 @@ public class AccountService {
     if (base.length() < 3) {
       base = "Player_" + base;
     }
-    if (base.length() > 28) {
-      base = base.substring(0, 28);
-    }
-    return base;
+    return usernamePrefix(base, 28);
   }
 
   public void changePassword(long owner, AccountCredentials.PasswordChange form) {

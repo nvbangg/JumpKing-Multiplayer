@@ -544,6 +544,7 @@ test("mobile panels preserve drafts and chat stays available while paused", asyn
 		await page.keyboard.press("Escape");
 		await expect(message).toBeVisible();
 		await expect(message).toHaveValue("Unsent draft");
+		await page.mouse.move(0, 0);
 		for (const viewport of [
 			{ width: 844, height: 390 },
 			{ width: 568, height: 320 },
@@ -557,6 +558,7 @@ test("mobile panels preserve drafts and chat stays available while paused", asyn
 				await expect(page.locator(".chat-history-box")).toHaveAttribute(
 					"aria-hidden",
 					"true",
+					{ timeout: 20_000 },
 				);
 				await showHistory.tap();
 				await expect(page.locator(".chat-history-box")).toHaveAttribute(

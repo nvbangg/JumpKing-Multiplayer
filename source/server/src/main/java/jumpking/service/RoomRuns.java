@@ -49,13 +49,11 @@ public class RoomRuns {
       Instant endedAt,
       long duration,
       String reason,
-      List<Run> runs,
-      Set<Long> ravenFinishers) {
+      List<Run> runs) {
     public Write {
       startedAt = millis(startedAt);
       endedAt = millis(endedAt);
       runs = List.copyOf(runs);
-      ravenFinishers = Set.copyOf(ravenFinishers);
     }
   }
 
@@ -75,7 +73,6 @@ public class RoomRuns {
   private final MatchRepository matchRepository;
   private final PlayRunRepository runRepository;
   private final RunOwners owners;
-  private final CrownService crowns;
   private final Clock clock;
   private final int capacity;
   private final int itemCooldownMin;
@@ -85,13 +82,11 @@ public class RoomRuns {
       MatchRepository matchRepository,
       PlayRunRepository runRepository,
       RunOwners owners,
-      CrownService crowns,
       Clock clock,
       jumpking.game.SharedData shared) {
     this.matchRepository = matchRepository;
     this.runRepository = runRepository;
     this.owners = owners;
-    this.crowns = crowns;
     this.clock = clock;
     capacity = shared.rules().path("roomCapacity").asInt();
     itemCooldownMin = shared.rules().path("items").path("cooldownMinMinutes").asInt();
@@ -189,8 +184,6 @@ public class RoomRuns {
             entity.setPeakReachedTicks(run.peak);
             entity.setFinishTicks(run.finish);
             entity.setRank(run.rank);
-            if (run.status.equals("FINISHED") && write.mapId == RoomSettings.FINAL_MAP_ID)
-              crowns.unlock(run.owner, write.ravenFinishers.contains(run.owner));
             entity.setEndedAt(run.endedAt);
             entity.setUpdatedAt(clock.instant());
             runRepository.save(entity);
@@ -260,8 +253,7 @@ public class RoomRuns {
               deadline,
               match.duration,
               "ABORTED",
-              abandoned,
-              Set.of()));
+              abandoned));
     }
   }
 
@@ -339,10 +331,6 @@ public class RoomRuns {
         throw conflict();
       if (value.endedAt != null && run.status.equals("ACTIVE")) throw conflict();
     }
-    var fullFinishers = new HashSet<Long>();
-    if (value.mapId == RoomSettings.FINAL_MAP_ID)
-      for (var run : value.runs) if (run.status.equals("FINISHED")) fullFinishers.add(run.owner);
-    if (!fullFinishers.containsAll(value.ravenFinishers)) throw conflict();
     if (value.endedAt != null) {
       var scores =
           value.runs.stream()

@@ -63,6 +63,9 @@ class IdentityIT {
     @Primary
     jumpking.security.GoogleTokenVerifier testGoogleVerifier() {
       return idToken -> {
+        if (idToken.startsWith("collision:"))
+          return new jumpking.security.GoogleTokenVerifier.Profile(
+              idToken, "collision@example.test", idToken.split(":")[1]);
         if ("valid-google-token".equals(idToken)) {
           return new jumpking.security.GoogleTokenVerifier.Profile(
               "google-test-id-123", "tester@gmail.com", "Google Tester");
@@ -345,6 +348,68 @@ class IdentityIT {
       assertThat(client.cookie("JSESSIONID")).isEqualTo(session);
       assertThat(accountCount()).isEqualTo(count);
     }
+  }
+
+  @Test
+  void passwordChangeRejectsLoginThatAlreadyVerifiedTheOldPassword() throws Exception {
+    String name = unique(), oldPassword = "Old_" + unique(), newPassword = "New_" + unique();
+    var verified = new java.util.concurrent.CountDownLatch(1);
+    var release = new java.util.concurrent.CountDownLatch(1);
+    var intercepted = new java.util.concurrent.atomic.AtomicBoolean();
+    try (var owner = client();
+        var stale = client();
+        var executor = Executors.newSingleThreadExecutor()) {
+      owner.token();
+      assertThat(owner.send("/auth/login", "POST", credentials(name, oldPassword)).statusCode())
+          .isEqualTo(200);
+      owner.token();
+      stale.token();
+      doAnswer(
+              call -> {
+                var result = call.callRealMethod();
+                if (intercepted.compareAndSet(false, true)) {
+                  verified.countDown();
+                  assertThat(release.await(10, TimeUnit.SECONDS)).isTrue();
+                }
+                return result;
+              })
+          .when(passwords)
+          .matches(
+              org.mockito.ArgumentMatchers.eq(oldPassword),
+              org.mockito.ArgumentMatchers.anyString());
+      var login =
+          executor.submit(() -> stale.send("/auth/login", "POST", credentials(name, oldPassword)));
+      try {
+        assertThat(verified.await(10, TimeUnit.SECONDS)).isTrue();
+        assertThat(
+                owner
+                    .send(
+                        "/auth/password",
+                        "POST",
+                        json.createObjectNode()
+                            .put("currentPassword", oldPassword)
+                            .put("newPassword", newPassword)
+                            .toString())
+                    .statusCode())
+            .isEqualTo(200);
+      } finally {
+        release.countDown();
+      }
+      assertThat(login.get(10, TimeUnit.SECONDS).statusCode()).isEqualTo(401);
+      assertThat(tree(stale.send("/auth/me", "GET", null)).path("authenticated").asBoolean())
+          .isFalse();
+    }
+  }
+
+  @Test
+  void googleAccountsWithTheSameDisplayNameReceiveDistinctUsernames() {
+    String name = unique();
+    String first = "collision:" + name + ":first", second = "collision:" + name + ":second";
+    var a = accounts.loginWithGoogle(first, null, account -> {});
+    var b = accounts.loginWithGoogle(second, null, account -> {});
+    assertThat(a.id()).isNotEqualTo(b.id());
+    assertThat(a.username()).isNotEqualTo(b.username());
+    assertThat(accounts.loginWithGoogle(second, null, account -> {}).id()).isEqualTo(b.id());
   }
 
   @Test

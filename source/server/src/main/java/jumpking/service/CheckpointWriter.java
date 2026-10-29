@@ -98,7 +98,7 @@ public final class CheckpointWriter<T> {
                       });
                 } catch (RejectedExecutionException stopped) {
                   finish(job, Outcome.FAILED, stopped);
-                  next();
+                  rejectPending(stopped);
                 }
               },
               retryDelayMs,
@@ -114,6 +114,20 @@ public final class CheckpointWriter<T> {
     }
     finish(job, Outcome.SAVED, null);
     return true;
+  }
+
+  private void rejectPending(Throwable error) {
+    for (; ; ) {
+      Job<T> job;
+      synchronized (this) {
+        job = queue.poll();
+        if (job == null) {
+          running = false;
+          return;
+        }
+      }
+      finish(job, Outcome.FAILED, error);
+    }
   }
 
   private void finish(Job<T> job, Outcome outcome, Throwable error) {

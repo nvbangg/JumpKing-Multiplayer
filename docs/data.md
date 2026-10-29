@@ -95,7 +95,7 @@ Writer nhận payload bất biến, xử lý theo thứ tự lượt/trận; có
 - Chỉ nhận revision mới hơn; cùng revision/nội dung là no-op, khác nội dung là CONFLICT. Counters/peak không giảm; lượt terminal giữ metrics, Room rank chốt khi finalize. Autosave không phục hồi lượt kết thúc hoặc upsert lượt đã mất.
 - Mọi thao tác cạnh tranh cùng Account/run/match được tuần tự hóa trong transaction; dùng thứ tự khóa thống nhất, không ghi đè payload mới bằng payload cũ.
 - Retry cùng ID/kết quả không tạo hàng hoặc cộng tổng lần nữa. PENDING/SAVED/FAILED phản ánh đúng trạng thái; SAVED chỉ sau commit, retry có giới hạn và cấu hình tập trung phía backend.
-- users.crown nhận NONE/GOLD/BLACK (không đeo/vàng/kim cương), chỉ nâng cấp khi Finish full map theo [gameplay](gameplay.md#nội-dung-và-nhận-diện), cùng transaction với kết quả. Server lấy tiến độ quạ của chính người Finish trong lượt đó; không nhận quyền crown từ client. Password/session theo [protocol](protocol.md#xác-thực-và-bảo-mật).
+- users.crown nhận NONE/GOLD/BLACK (không đeo/vàng/kim cương), chỉ nâng cấp khi Finish Community full map theo [gameplay](gameplay.md#nội-dung-và-nhận-diện), cùng transaction với kết quả. Server lấy tiến độ quạ của chính người Finish trong lượt đó; không nhận quyền crown từ client. Password/session theo [protocol](protocol.md#xác-thực-và-bảo-mật).
 
 ## Checkpoint Community
 
@@ -119,10 +119,10 @@ Phòng hết người giữ payload chưa commit để retry trong quota. Shutdo
 | --- | --- |
 | History | Community terminal theo run ID; Room đã finalize theo match ID; mới nhất trước theo ended_at rồi ID |
 | Chi tiết Room | Account từng tham gia xem roster/kết quả; username lấy từ `users` |
-| Stats tổng | SUM counters/ticks đã commit; số Finish, số trận Room, số Room Wins; MIN finish_ticks của lượt full map |
+| Stats tổng | SUM counters/ticks đã commit; số Finish, số trận Room, số Room Wins; MIN finish_ticks của Community FINISHED |
 | Leaderboard | Chỉ Community, một best run/Account; comparator theo [gameplay](gameplay.md#community) |
 
-ACTIVE/match chưa finalize không vào History; metrics đã commit vẫn góp Stats/leaderboard. Chỉ Community có status FINISHED mới góp Finishes; Room không góp Finishes dù người chơi hoàn thành map Room. Room Wins được tính riêng; Room ngắn không góp Best Finish Time/crown. Không lưu thêm tổng cộng dồn trong users; giữ các hàng metrics làm nguồn tổng và lịch sử.
+ACTIVE/match chưa finalize không vào History; metrics đã commit vẫn góp Stats/leaderboard. Chỉ Community có status FINISHED mới góp Finishes; Room không góp Finishes dù người chơi hoàn thành map Room. Room Wins được tính riêng; Room không góp Best Finish Time. Không lưu thêm tổng cộng dồn trong users; giữ các hàng metrics làm nguồn tổng và lịch sử.
 
 Room Wins đếm lượt Room hạng 1 trong trận đã finalize, kể cả đồng hạng; chỉ nhận FINISHED/UNFINISHED và loại trận ABORTED. Tính trực tiếp từ rank/status/match, không lưu thêm cờ winner hoặc bộ đếm trong database.
 

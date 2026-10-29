@@ -21,7 +21,7 @@ import org.springframework.test.context.DynamicPropertySource;
     classes = JumpKingApplication.class,
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class AccountBrowserIT {
-  private static final String ALL_SPECS = "e2e/.*-online.spec.ts";
+  private static final String ALL_SPECS = "e2e/(.*-online|mobile-display).spec.ts";
   private static final int VITE_PORT = BrowserHarness.freePort();
   @LocalServerPort int port;
   @Autowired PasswordEncoder passwords;
@@ -143,7 +143,7 @@ class AccountBrowserIT {
             "E2E_ADVENTURE_PASSWORD", adventure.password,
             "E2E_HISTORY_USERNAME", history.username(),
             "E2E_HISTORY_PASSWORD", history.password()),
-        Duration.ofSeconds(900));
+        Duration.ofMinutes(20));
     // Các fixtures này chỉ được hoàn tất khi chạy toàn bộ scenarios online.
     if (specs.equals(ALL_SPECS)) {
       var jdbc = TestDatabase.get().jdbc;

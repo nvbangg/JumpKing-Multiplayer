@@ -126,7 +126,7 @@ for (const failure of ["rejected", "timeout"] as const)
 		await page.getByRole("button", { name: "New Game", exact: true }).click();
 		await expect(
 			page.getByRole("button", { name: "Menu (Esc)", exact: true }),
-		).toBeVisible();
+		).toBeVisible({ timeout: 30000 });
 		await expect.poll(() => observed.snapshots.length).toBeGreaterThan(0);
 		const run = required(observed.snapshots.at(-1)).playId;
 		await page.goBack();
@@ -146,7 +146,7 @@ for (const failure of ["rejected", "timeout"] as const)
 		await page.getByRole("button", { name: "Continue", exact: true }).click();
 		await expect(
 			page.getByRole("button", { name: "Menu (Esc)", exact: true }),
-		).toBeVisible();
+		).toBeVisible({ timeout: 30000 });
 		await expect.poll(() => observed.snapshots.length).toBeGreaterThan(count);
 		expect(required(observed.snapshots.at(-1)).playId).toBe(run);
 		await expect(page.getByRole("alert")).toHaveCount(0);

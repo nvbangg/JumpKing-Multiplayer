@@ -114,6 +114,11 @@ public class SessionAuthority implements HttpSessionListener, HttpSessionIdListe
     }
   }
 
+  public boolean touch(String id) {
+    Entry entry = sessions.get(id);
+    return entry != null && valid(entry.session, true);
+  }
+
   public HttpSession find(String id) {
     Entry entry = sessions.get(id);
     return entry != null && valid(entry.session, false) ? entry.session : null;

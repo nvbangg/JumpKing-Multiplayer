@@ -29,8 +29,9 @@ class GoogleAccountTest {
 
   @Test
   void truncatesLongNames() {
-    String longName = "A".repeat(50);
-    assertThat(AccountService.sanitizeGoogleUsername(longName, "long@gmail.com").length())
-        .isLessThanOrEqualTo(28);
+    String longName = "𠮷".repeat(50);
+    String username = AccountService.sanitizeGoogleUsername(longName, "long@gmail.com");
+    assertThat(username.codePointCount(0, username.length())).isEqualTo(28);
+    assertThat(username).endsWith("𠮷");
   }
 }

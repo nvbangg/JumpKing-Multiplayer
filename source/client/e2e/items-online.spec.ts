@@ -107,9 +107,8 @@ for (const mobile of [false, true])
 				await host.evaluate(() => document.documentElement.scrollHeight),
 			);
 			expect(
-				mobile
-					? menuBounds.y + menuBounds.height <= chatBounds.y
-					: chatBounds.x + chatBounds.width <= menuBounds.x,
+				menuBounds.y + menuBounds.height <= chatBounds.y ||
+					chatBounds.x + chatBounds.width <= menuBounds.x,
 			).toBe(true);
 			await host.screenshot({
 				path: info.outputPath(

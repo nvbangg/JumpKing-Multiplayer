@@ -198,15 +198,7 @@ final class RoomMatch {
         endedAt,
         ticks,
         reason,
-        runs,
-        settings.mapId() == RoomSettings.FINAL_MAP_ID
-            ? players.values().stream()
-                .filter(
-                    player ->
-                        player.status.equals("FINISHED") && player.game.adventure().ravenDone())
-                .map(player -> player.spec.owner())
-                .collect(java.util.stream.Collectors.toSet())
-            : Set.of());
+        runs);
   }
 
   Map<String, Object> results() {

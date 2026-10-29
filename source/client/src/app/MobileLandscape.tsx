@@ -1,11 +1,7 @@
 import { Maximize, RotateCw, Smartphone } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { useMobileDisplay } from "./useMobileDisplay";
+import { requestLandscape, useMobileDisplay } from "./useMobileDisplay";
 import { useMobilePortrait } from "./useMobilePortrait";
-
-type LockableOrientation = ScreenOrientation & {
-	lock?: (orientation: "landscape") => Promise<void>;
-};
 
 export function MobileLandscape({ children }: { children: ReactNode }) {
 	useMobileDisplay();
@@ -31,23 +27,6 @@ export function MobileLandscape({ children }: { children: ReactNode }) {
 				previous.focus({ preventScroll: true });
 		};
 	}, [portrait]);
-	const requestLandscape = async () => {
-		try {
-			if (!document.fullscreenElement)
-				await document.documentElement.requestFullscreen?.({
-					navigationUI: "hide",
-				});
-		} catch {
-			// Thử khóa hướng dù browser từ chối fullscreen.
-		}
-		try {
-			await (screen.orientation as LockableOrientation | undefined)?.lock?.(
-				"landscape",
-			);
-		} catch {
-			// Nếu không hỗ trợ, người chơi có thể xoay thiết bị thủ công.
-		}
-	};
 	return (
 		<>
 			<div className="app-content" inert={portrait}>
@@ -57,8 +36,9 @@ export function MobileLandscape({ children }: { children: ReactNode }) {
 				<button
 					aria-label="Enter full screen"
 					className="fullscreen-toggle"
-					onClick={() => {
-						void document.documentElement.requestFullscreen?.().catch(() => {});
+					onClick={(event) => {
+						event.stopPropagation();
+						void requestLandscape();
 					}}
 					title="Enter full screen"
 					type="button"
