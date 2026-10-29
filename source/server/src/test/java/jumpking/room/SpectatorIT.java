@@ -42,6 +42,14 @@ class SpectatorIT {
   }
 
   @org.springframework.beans.factory.annotation.Autowired MovingTime time;
+  @org.springframework.beans.factory.annotation.Autowired jumpking.game.SharedData shared;
+
+  @org.springframework.beans.factory.annotation.Autowired
+  com.fasterxml.jackson.databind.ObjectMapper json;
+
+  @org.springframework.beans.factory.annotation.Autowired
+  jumpking.service.CommunityRuns communityRuns;
+
   private static final int VITE_PORT = jumpking.support.BrowserHarness.freePort();
   @LocalServerPort int port;
 
@@ -408,6 +416,58 @@ class SpectatorIT {
       viewer.await(m -> m.path("type").asText().equals("ROOM_LEFT"));
       assertThat(viewer.request("/community/current", "GET", null).path("run").isNull()).isFalse();
       target.ok("LEAVE_ROOM", Map.of());
+    }
+  }
+
+  @Test
+  @org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(
+      named = "E2E_BROWSER_PATH",
+      matches = ".+")
+  void browsersPauseCommunityWhenTheWatchedPlayerLeavesDisconnectsOrFinishes() throws Exception {
+    String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+    String alternativeName = "watch_alt_" + suffix;
+    String finishName = "watch_finish_" + suffix;
+    try (var alternative = new GameClient(port);
+        var finisher = new GameClient(port);
+        var heartbeats = java.util.concurrent.Executors.newSingleThreadScheduledExecutor()) {
+      alternative.register(alternativeName);
+      alternative.connect();
+      alternative.ok("JOIN_COMMUNITY", alternative.communityRequest());
+      finisher.register(finishName);
+      var before = jumpking.support.MainBabeRoute.beforeFinish(shared, json);
+      // Giữ checkpoint trước đích để browser kịp chọn xem; input thật sẽ hạ xuống nền Finish.
+      before.physics().freeFlight = true;
+      before.physics().grounded = false;
+      before.physics().vx = before.physics().vy = 0;
+      communityRuns.open(finisher.owner, true, null, before);
+      // Fixture không có browser; giữ kết nối bằng heartbeat như client thật.
+      var keepAlive =
+          heartbeats.scheduleAtFixedRate(
+              () -> {
+                try {
+                  alternative.ok("HEARTBEAT", Map.of("nonce", "spectate-loss-fixture"));
+                } catch (Exception failure) {
+                  throw new java.util.concurrent.CompletionException(failure);
+                }
+              },
+              0,
+              10,
+              java.util.concurrent.TimeUnit.SECONDS);
+      jumpking.support.BrowserHarness.run(
+          port,
+          VITE_PORT,
+          "spectating-loss",
+          "e2e/spectating-loss-online.spec.ts",
+          Map.of(
+              "E2E_SPECTATE_ONLINE",
+              "true",
+              "E2E_SPECTATE_ALTERNATIVE",
+              alternativeName,
+              "E2E_SPECTATE_FINISH_USERNAME",
+              finishName));
+      assertThat(keepAlive.isDone()).isFalse();
+      keepAlive.cancel(false);
+      alternative.ok("LEAVE_ROOM", Map.of());
     }
   }
 
