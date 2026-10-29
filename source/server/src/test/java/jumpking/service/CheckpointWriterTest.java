@@ -35,6 +35,48 @@ class CheckpointWriterTest {
   }
 
   @Test
+  void rejectedRetryFailsPendingBarriersWithoutWritingOnSchedulerAndAllowsRecovery()
+      throws Exception {
+    var scheduled = new ArrayDeque<Runnable>();
+    var rejected = new java.util.concurrent.atomic.AtomicBoolean();
+    var attempted = new CopyOnWriteArrayList<Integer>();
+    var failed = new CountDownLatch(2);
+    try (var retries = Executors.newSingleThreadScheduledExecutor()) {
+      var writer =
+          new CheckpointWriter<Integer>(
+              task -> {
+                if (rejected.get()) throw new RejectedExecutionException();
+                scheduled.add(task);
+              },
+              retries,
+              value -> {
+                attempted.add(value);
+                if (value == 1) throw new TransientDataAccessResourceException("Unavailable");
+              },
+              4,
+              3,
+              1);
+      for (int id = 1; id <= 2; id++)
+        writer.submit(
+            id,
+            true,
+            (outcome, error) -> {
+              if (outcome == CheckpointWriter.Outcome.FAILED) failed.countDown();
+            });
+      rejected.set(true);
+      scheduled.remove().run();
+      assertThat(failed.await(2, TimeUnit.SECONDS)).isTrue();
+      assertThat(attempted).containsExactly(1);
+      rejected.set(false);
+      // Đợi callback cuối trả quyền sở hữu queue trước lần submit tiếp.
+      retries.submit(() -> {}).get(2, TimeUnit.SECONDS);
+      writer.submit(3, true, (outcome, error) -> {});
+      scheduled.remove().run();
+      assertThat(attempted).containsExactly(1, 3);
+    }
+  }
+
+  @Test
   void fullFlushQueueRejectsWithoutDroppingEarlierWork() {
     var workers = new ArrayDeque<Runnable>();
     var saved = new ArrayList<Integer>();

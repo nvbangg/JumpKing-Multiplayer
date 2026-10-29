@@ -562,8 +562,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     }
     room.players.put(player.id, player);
     chooseHost(room);
-    if (player.identity.sessionId() != null)
-      sessions.valid(sessions.find(player.identity.sessionId()), true);
+    if (player.identity.sessionId() != null) sessions.touch(player.identity.sessionId());
     player.connection.reply(command, "ROOM_JOINED", joined(room, player));
     broadcast(room);
     chatHistory(room, player);
@@ -610,7 +609,6 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     broadcast(room);
     chatHistory(room, player);
     snapshots(room);
-    updateCrown(room, player);
   }
 
   private void chooseHost(Room room) {
@@ -740,7 +738,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     try {
       action.run();
       if (connection.identity().sessionId() != null)
-        sessions.valid(sessions.find(connection.identity().sessionId()), true);
+        sessions.touch(connection.identity().sessionId());
     } catch (ApiException error) {
       connection.error(command, error);
     } catch (Exception error) {
@@ -943,8 +941,6 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
                   if (match.endedAt != null && match.saveStatus.equals("SAVED")) {
                     match.durable.complete(null);
                     if (room.retired) dispose(room);
-                    if (room.match == match)
-                      for (var player : room.players.values()) updateCrown(room, player);
                   }
                   var status =
                       json.createObjectNode()
@@ -963,19 +959,6 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
           player.connection.send(
               "ERROR", Map.of("code", "SAVE_FAILED", "message", "Room results could not be saved"));
     }
-  }
-
-  private void updateCrown(Room room, Member member) {
-    var match = room.match;
-    if (match == null
-        || match.settings.mapId() != RoomSettings.FINAL_MAP_ID
-        || !match.saveStatus.equals("SAVED")) return;
-    var player = match.players.get(member.id);
-    if (player == null
-        || !"FINISH".equals(match.reason)
-        || !"FINISHED".equals(player.status)
-        || !Objects.equals(player.rank, 1)) return;
-    member.crown = member.crown.finish(player.game.adventure().ravenDone());
   }
 
   private void emit(Room room, List<RoomMatch.Events> events) {

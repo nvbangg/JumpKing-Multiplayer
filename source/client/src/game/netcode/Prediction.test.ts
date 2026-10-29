@@ -1,4 +1,4 @@
-import { expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import easyFixture from "../../../../common/fixtures/easy-respawn.json";
 import mapData from "../../../../common/maps/main-babe.json";
 import { NETWORK } from "../../network/config";
@@ -31,6 +31,43 @@ const room: RoomState = {
 		},
 	],
 };
+let clockMs = 0;
+let started = new WeakSet<OnlineRuntime>();
+beforeEach(() => {
+	clockMs = 0;
+	started = new WeakSet<OnlineRuntime>();
+	vi.spyOn(performance, "now").mockImplementation(() => clockMs);
+});
+afterEach(() => vi.restoreAllMocks());
+function advance(
+	runtime: OnlineRuntime,
+	deltaMs: number,
+	elapsedMs = deltaMs,
+): void {
+	if (!started.has(runtime)) {
+		// Frame đầu khởi tạo clock sau khi Scene/assets sẵn sàng.
+		runtime.advance(0);
+		started.add(runtime);
+	}
+	clockMs += elapsedMs;
+	runtime.advance(deltaMs);
+}
+const tickMs = 1000 / 60;
+function activeRoom(kind: "COMMUNITY" | "ROOM"): RoomState {
+	return {
+		...room,
+		kind,
+		settings:
+			kind === "ROOM"
+				? {
+						mode: "RACE",
+						mapId: 1,
+						timeLimitMinutes: null,
+						itemCooldownMinutes: null,
+					}
+				: null,
+	};
+}
 function snapshot(
 	game: GameSimulation,
 	tick: number,
@@ -82,7 +119,74 @@ function fallingPeerSnapshot(
 	];
 	return value;
 }
-test("missing acknowledgements stops input and requests disconnect; a new generation resumes cleanly", () => {
+test.each(["COMMUNITY", "ROOM"] as const)(
+	"prediction keeps every tick and a 200 ms jump charge through a 450 ms snapshot gap in %s",
+	(kind) => {
+		const socket = new GameSocket(
+			() => {},
+			() => {},
+		);
+		socket.selfId = "self";
+		socket.recordPing(1);
+		const queued: { seq: number; input: typeof right }[] = [];
+		const send = vi
+			.spyOn(socket, "input")
+			.mockImplementation((_type, input) => {
+				queued.push({
+					seq: Number(input.seq),
+					input: input as unknown as typeof right,
+				});
+			});
+		const fail = vi.spyOn(socket, "fail");
+		let jump = false;
+		const runtime = new OnlineRuntime(
+			map,
+			socket,
+			activeRoom(kind),
+			() => ({ left: false, right: false, jump }),
+			() => {},
+			false,
+		);
+		const server = new GameSimulation(runtime.game.physics.map);
+		const neutral = { left: false, right: false, jump: false };
+		for (let tick = 0; tick < 60; tick++) server.tick(neutral);
+		let ack = 0,
+			maximumCharge = 0,
+			maximumCorrection = 0;
+		runtime.receive(
+			snapshot(server, 0, ack) as unknown as Record<string, unknown>,
+		);
+		advance(runtime, tickMs / 2);
+		for (let tick = 1; tick <= 120; tick++) {
+			jump = tick >= 70 && tick < 82;
+			const before = runtime.game.physics.snapshot().ticks;
+			advance(runtime, 1000 / 60, tickMs);
+			expect(runtime.game.physics.snapshot().ticks - before).toBe(1);
+			const frame = required(queued.shift());
+			ack = frame.seq;
+			server.tick(frame.input);
+			maximumCharge = Math.max(maximumCharge, server.physics.snapshot().charge);
+			// Snapshot cuối ở 950 ms; bản tiếp theo tới ở 1.400 ms, input vẫn đi bình thường.
+			if (tick % 3 === 0 && (tick < 60 || tick >= 84)) {
+				const predicted = runtime.game.physics.snapshot().ticks;
+				runtime.receive(
+					snapshot(server, tick, ack) as unknown as Record<string, unknown>,
+				);
+				maximumCorrection = Math.max(
+					maximumCorrection,
+					Math.abs(runtime.game.physics.snapshot().ticks - predicted),
+				);
+			}
+		}
+		expect(send).toHaveBeenCalledTimes(120);
+		expect(maximumCharge).toBe(12);
+		expect(server.physics.snapshot().jumps).toBe(1);
+		expect(maximumCorrection).toBe(0);
+		expect(fail).not.toHaveBeenCalled();
+	},
+);
+
+test("unacknowledged input stays bounded and a new generation restarts its clock and sequence", () => {
 	const socket = new GameSocket(
 		() => {},
 		() => {},
@@ -103,27 +207,207 @@ test("missing acknowledgements stops input and requests disconnect; a new genera
 		failed,
 	);
 	runtime.receive(snapshot(game, 1, 0) as unknown as Record<string, unknown>);
-	for (let index = 0; index <= NETWORK.maxInputFrames; index++)
-		runtime.advance(1000 / 60);
-	expect(runtime.menu).toBe(true);
+	advance(runtime, tickMs / 2);
+	for (let index = 0; index < NETWORK.maxInputFrames; index++)
+		advance(runtime, tickMs);
+	expect(runtime.menu).toBe(false);
+	expect(send).toHaveBeenCalledTimes(NETWORK.maxInputFrames);
+	advance(runtime, tickMs);
 	expect(fail).toHaveBeenCalledExactlyOnceWith(
 		expect.stringContaining("too far behind"),
 	);
 	expect(failed).toHaveBeenCalledOnce();
-	const sent = send.mock.calls.length;
-	runtime.advance(100);
-	expect(send).toHaveBeenCalledTimes(sent);
+	advance(runtime, 100);
+	expect(send).toHaveBeenCalledTimes(NETWORK.maxInputFrames);
+	clockMs += NETWORK.timeoutMs * 3;
 	socket.playContext = { playId: "run", generation: 2 };
 	runtime.receive(
 		snapshot(game, 2, 0, 2) as unknown as Record<string, unknown>,
 	);
 	runtime.menu = false;
-	runtime.advance(1000 / 60);
+	advance(runtime, tickMs);
+	expect(fail).toHaveBeenCalledOnce();
 	expect(send).toHaveBeenLastCalledWith(
 		"PLAYER_INPUT",
 		expect.objectContaining({ generation: 2, seq: 1 }),
 	);
 });
+
+test("loading the scene does not create an initial input burst", () => {
+	const socket = new GameSocket(
+		() => {},
+		() => {},
+	);
+	const send = vi.spyOn(socket, "input");
+	const runtime = new OnlineRuntime(
+		map,
+		socket,
+		room,
+		() => right,
+		() => {},
+		false,
+	);
+	runtime.receive(
+		snapshot(new GameSimulation(map), 1, 0) as unknown as Record<
+			string,
+			unknown
+		>,
+	);
+	clockMs += 2000;
+	runtime.advance(2000);
+	expect(send).not.toHaveBeenCalled();
+	advance(runtime, 17);
+	expect(send).toHaveBeenCalledTimes(1);
+});
+
+test("closing the menu after five seconds without render frames sends only the next input tick", () => {
+	const socket = new GameSocket(
+		() => {},
+		() => {},
+	);
+	const send = vi.spyOn(socket, "input"),
+		fail = vi.spyOn(socket, "fail");
+	const runtime = new OnlineRuntime(
+		map,
+		socket,
+		room,
+		() => right,
+		() => {},
+		false,
+	);
+	runtime.receive(
+		snapshot(new GameSimulation(map), 1, 0) as unknown as Record<
+			string,
+			unknown
+		>,
+	);
+	advance(runtime, 17);
+	expect(send).toHaveBeenCalledTimes(1);
+	runtime.menu = true;
+	clockMs += 5000;
+	runtime.menu = false;
+	advance(runtime, 17);
+	expect(send).toHaveBeenCalledTimes(2);
+	expect(send).toHaveBeenLastCalledWith(
+		"PLAYER_INPUT",
+		expect.objectContaining({ seq: 2 }),
+	);
+	expect(fail).not.toHaveBeenCalled();
+});
+
+test("the ACK deadline still detects an unresponsive server after a render stall", () => {
+	const socket = new GameSocket(
+		() => {},
+		() => {},
+	);
+	const fail = vi.spyOn(socket, "fail");
+	vi.spyOn(socket, "input");
+	const runtime = new OnlineRuntime(
+		map,
+		socket,
+		room,
+		() => right,
+		() => {},
+		false,
+	);
+	runtime.receive(
+		snapshot(new GameSimulation(map), 1, 0) as unknown as Record<
+			string,
+			unknown
+		>,
+	);
+	advance(runtime, tickMs);
+	advance(runtime, 0, NETWORK.timeoutMs);
+	expect(fail).toHaveBeenCalledExactlyOnceWith(
+		expect.stringContaining("not responding"),
+	);
+});
+
+test.each(["COMMUNITY", "ROOM"] as const)(
+	"monotonic time keeps FIFO below its deadline despite render drift and network stalls in %s",
+	(kind) => {
+		const socket = new GameSocket(
+			() => {},
+			() => {},
+		);
+		socket.selfId = "self";
+		socket.playContext = { playId: "run", generation: 1 };
+		socket.recordPing(1);
+		const transit: { seq: number; input: typeof right; arrivesAt: number }[] =
+			[];
+		const queued: { seq: number; input: typeof right; receivedAt: number }[] =
+			[];
+		const snapshots: { value: OnlineSnapshot; arrivesAt: number }[] = [];
+		const send = vi
+			.spyOn(socket, "input")
+			.mockImplementation((_type, input) => {
+				transit.push({
+					seq: Number(input.seq),
+					input: input as unknown as typeof right,
+					arrivesAt: clockMs + 50,
+				});
+			});
+		const fail = vi.spyOn(socket, "fail");
+		const runtime = new OnlineRuntime(
+			map,
+			socket,
+			activeRoom(kind),
+			() => right,
+			() => {},
+			false,
+		);
+		const server = new GameSimulation(runtime.game.physics.map);
+		let ack = 0,
+			maximum = 0,
+			oldestMs = 0,
+			held = right;
+		runtime.receive(
+			snapshot(server, 0, ack) as unknown as Record<string, unknown>,
+		);
+		advance(runtime, tickMs / 2);
+		for (let tick = 1; tick <= 900; tick++) {
+			// Delta render lệch 20%; đồng hồ thực và server vẫn chạy ở 60 Hz.
+			advance(runtime, 20, tickMs);
+			// Uplink 50 ms, bị dồn gói trong 10 tick nhưng vẫn giữ thứ tự WebSocket.
+			if (tick < 300 || tick >= 310)
+				while (transit[0] && transit[0].arrivesAt <= clockMs) {
+					const frame = required(transit.shift());
+					queued.push({ ...frame, receivedAt: clockMs });
+				}
+			maximum = Math.max(maximum, queued.length);
+			if (queued[0])
+				oldestMs = Math.max(oldestMs, clockMs - queued[0].receivedAt);
+			const frame = queued.shift();
+			if (frame) {
+				ack = frame.seq;
+				held = frame.input;
+			}
+			server.tick(held);
+			if (tick % 3 === 0)
+				snapshots.push({
+					value: snapshot(server, tick, ack),
+					arrivesAt: clockMs + 100,
+				});
+			// Downlink 100 ms, thêm một đoạn ngừng snapshot 500 ms.
+			if (tick < 240 || tick > 270)
+				while (snapshots[0] && snapshots[0].arrivesAt <= clockMs)
+					runtime.receive(
+						required(snapshots.shift()).value as unknown as Record<
+							string,
+							unknown
+						>,
+					);
+		}
+		expect(send).toHaveBeenCalledTimes(900);
+		expect(ack).toBeGreaterThanOrEqual(885);
+		expect(maximum).toBeGreaterThanOrEqual(10);
+		expect(maximum).toBeLessThanOrEqual(12);
+		expect(oldestMs).toBeGreaterThan(100);
+		expect(oldestMs).toBeLessThan(500);
+		expect(fail).not.toHaveBeenCalled();
+	},
+);
+
 test("online ending waits for the private committed notice and matching finished snapshot", () => {
 	const socket = new GameSocket(
 		() => {},
@@ -195,19 +479,19 @@ test("flight intent survives an older ACK and resets for a new run while the gat
 		);
 	runtime.receive(snapshot(game, 1, 0) as unknown as Record<string, unknown>);
 	runtime.setFlight(true);
-	runtime.advance(17);
+	advance(runtime, 17);
 	expect(socket.input).toHaveBeenLastCalledWith(
 		"PLAYER_INPUT",
 		expect.objectContaining({ freeFlight: true, up: true }),
 	);
 	runtime.receive(snapshot(game, 2, 0) as unknown as Record<string, unknown>);
-	runtime.advance(17);
+	advance(runtime, 17);
 	expect(socket.input).toHaveBeenLastCalledWith(
 		"PLAYER_INPUT",
 		expect.objectContaining({ freeFlight: true }),
 	);
 	runtime.setFlight(false);
-	runtime.advance(17);
+	advance(runtime, 17);
 	expect(socket.input).toHaveBeenLastCalledWith(
 		"PLAYER_INPUT",
 		expect.objectContaining({ freeFlight: false }),
@@ -385,7 +669,7 @@ test("server Pause discards inputs canceled by the actor so Resume cannot replay
 			false,
 		);
 	runtime.receive(snapshot(server, 1, 0) as unknown as Record<string, unknown>);
-	runtime.advance(51);
+	advance(runtime, 51);
 	expect(runtime.game.physics.snapshot().charge).toBeGreaterThan(0);
 	const paused = snapshot(server, 2, 0);
 	paused.self.paused = true;
@@ -668,7 +952,7 @@ test("runtime ignores stale snapshots and clears sequence/prediction on generati
 			false,
 		);
 	runtime.receive(snapshot(server, 1, 0) as unknown as Record<string, unknown>);
-	runtime.advance(51);
+	advance(runtime, 51);
 	expect(runtime.game.physics.snapshot().x).toBeGreaterThan(map.spawn.x);
 	expect(socket.input).toHaveBeenCalledTimes(3);
 	server.tick(right);
@@ -679,7 +963,7 @@ test("runtime ignores stale snapshots and clears sequence/prediction on generati
 	runtime.receive(
 		snapshot(server, 2, 0, 2) as unknown as Record<string, unknown>,
 	);
-	runtime.advance(17);
+	advance(runtime, 17);
 	expect(socket.input).toHaveBeenLastCalledWith(
 		"PLAYER_INPUT",
 		expect.objectContaining({ generation: 2, seq: 1 }),
@@ -690,7 +974,7 @@ test("runtime ignores stale snapshots and clears sequence/prediction on generati
 	expect(required(runtime.latest).generation).toBe(2);
 	socket.playContext = { playId: "run", generation: 3 };
 	const count = vi.mocked(socket.input).mock.calls.length;
-	runtime.advance(100);
+	advance(runtime, 100);
 	runtime.cancel();
 	expect(socket.input).toHaveBeenCalledTimes(count);
 	runtime.receive({
@@ -722,15 +1006,15 @@ test("self movement sounds follow prediction before ACK and never replay during 
 		(events) => heard.push(...events),
 	);
 	runtime.receive(snapshot(server, 1, 0) as unknown as Record<string, unknown>);
-	runtime.advance(1000 / 60);
+	advance(runtime, 1000 / 60);
 	jump = false;
-	runtime.advance(1000 / 60);
+	advance(runtime, 1000 / 60);
 	expect(heard.filter((e) => e === "JUMP")).toHaveLength(1);
 	const count = heard.length;
 	// Chưa ACK input nào: reconcile phải replay cả cú nhảy nhưng không phát lại tiếng.
 	runtime.receive(snapshot(server, 2, 0) as unknown as Record<string, unknown>);
 	expect(heard).toHaveLength(count);
 	runtime.menu = true;
-	runtime.advance(100);
+	advance(runtime, 100);
 	expect(heard).toHaveLength(count);
 });

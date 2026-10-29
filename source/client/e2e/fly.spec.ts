@@ -55,6 +55,9 @@ test("Flight follows the server permission and double Space toggles real Communi
 	).toBeVisible();
 	await page.keyboard.press("Space");
 	await page.keyboard.press("Space");
+	await expect
+		.poll(() => observed.snapshot?.self.simulation.physics.freeFlight)
+		.toBe(false);
 	await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 	await expect.poll(() => observed.snapshot?.self.paused).toBe(true);
 	const off = required(observed.snapshot).self.simulation.physics;

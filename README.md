@@ -7,7 +7,7 @@ Chơi tại [jumpking-multiplayer.pages.dev](https://jumpking-multiplayer.pages.
 | Kiểu chơi | Phạm vi |
 | --- | --- |
 | Community | Tự ghép sảnh, lưu tiến độ theo Account, Continue và leaderboard |
-| Room | Public/Private, Join Public hoặc ID; Race, Easy, Hardcore, No Walk; chọn chặng 1–9, giới hạn thời gian và Items tùy chọn |
+| Room | Public/Private, Join Public hoặc ID; Race, Easy, Hardcore, No Walk; chọn chặng 1–10, giới hạn thời gian và Items tùy chọn |
 
 Cả hai yêu cầu đăng nhập. Username chưa có được tạo khi Sign In; có đổi mật khẩu bằng mật khẩu hiện tại. Google Sign-In có sẵn Client ID mặc định theo [hướng dẫn](docs/google-oauth-setup.md); Account chỉ dùng Google không có thao tác đổi mật khẩu. Luật đầy đủ tại [gameplay](docs/gameplay.md).
 

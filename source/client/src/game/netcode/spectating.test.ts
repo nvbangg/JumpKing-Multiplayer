@@ -1,9 +1,16 @@
-import { expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import mapData from "../../../../common/maps/main-babe.json";
 import { GameSocket, type RoomState } from "../../network/GameSocket";
 import { GameSimulation } from "../simulation/GameSimulation";
 import { parseMap } from "../simulation/map";
 import { OnlineRuntime, type OnlineSnapshot } from "./OnlineRuntime";
+
+let clockMs = 0;
+beforeEach(() => {
+	clockMs = 0;
+	vi.spyOn(performance, "now").mockImplementation(() => clockMs);
+});
+afterEach(() => vi.restoreAllMocks());
 
 const map = parseMap(mapData);
 const room: RoomState = {
@@ -73,6 +80,7 @@ test("watching changes the rendered player and scene without restoring target st
 		peers: [view.player],
 	};
 	runtime.receive(snapshot as unknown as Record<string, unknown>);
+	clockMs += 100;
 	runtime.advance(100);
 	expect(send).not.toHaveBeenCalled();
 	expect(runtime.game.snapshot()).toEqual(own);
@@ -105,6 +113,7 @@ test("watching changes the rendered player and scene without restoring target st
 	expect(runtime.frame().self.id).toBe("self");
 	expect(runtime.frame().self.crown).toBe("GOLD");
 	expect(runtime.frame().self.state).toEqual(own.physics);
+	clockMs += 1000 / 60;
 	runtime.advance(1000 / 60);
 	expect(send).toHaveBeenCalledWith(
 		"PLAYER_INPUT",
@@ -162,7 +171,9 @@ test("returning discards cancelled frames from watching before reconciling the v
 		peers: [],
 	};
 	runtime.receive(state as unknown as Record<string, unknown>);
+	clockMs += 100;
 	runtime.cancel();
+	clockMs += 5000;
 	runtime.receive({
 		...state,
 		serverTick: 2,

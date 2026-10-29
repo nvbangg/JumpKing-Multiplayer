@@ -129,11 +129,11 @@ Effects JUMP/LAND/SPLAT/BUMP, terrain NORMAL/ICE/SNOW. Âm thanh chuyển độn
 
 ## Đồng bộ và khôi phục kết nối
 
-1. Client gửi full input mỗi tick. Server áp dụng tối đa một frame/player/tick FIFO; thiếu frame giữ input cuối và không tăng ACK, quá timeout thì cancel. Backlog quá hạn khi input mới vẫn tới: đóng 1013/resync, không âm thầm bỏ cạnh nhấn/thả hoặc ACK frame chưa xử lý.
+1. Client gửi full input mỗi tick theo monotonic clock; delta render và snapshot đến chậm không làm dừng prediction hoặc đổi thời lượng giữ nút. Server áp dụng tối đa một frame/player/tick FIFO; thiếu frame giữ input cuối và không tăng ACK, quá timeout thì cancel. Backlog quá hạn khi input mới vẫn tới: đóng 1013/resync, không âm thầm bỏ cạnh nhấn/thả hoặc ACK frame chưa xử lý.
 2. ACK/state cùng tick. Client restore snapshot mới hơn, bỏ input đã ACK và replay phần còn lại; đổi playId/generation thì xóa buffers. Peers nội suy với buffer 50 ms, không extrapolate; snap khi positionRevision/screen/falls đổi hoặc ticks lùi, không dùng ngưỡng khoảng cách cố định để đoán teleport. Nhịp tick theo [architecture](architecture.md#xử-lý-đồng-thời).
 3. Mở Pause/menu/chat phải cancel, không tạo release-jump. Heartbeat đo RTT/jitter/stall; RTT không chứng minh one-way latency, packet loss hoặc TCP retransmission.
 4. Duplicate requestId cùng type/payload trả kết quả cũ; khác nội dung trả CONFLICT. Timeout control dùng GET_ROOM_STATE/reconnect, không tự gửi lại Start/New Run/End. Bỏ phản hồi socket/context cũ; đóng socket kết thúc pending requests.
-5. Mất kết nối/đầy input chưa ACK: dừng input và cho Reconnect/Back to Menu. Reconnect xác thực owner/token, nhận full state/generation trước Resume; không dùng Resume/Save & Exit trên socket đã đóng.
+5. Mất kết nối, đầy bộ đệm input chưa ACK hoặc ACK không tiến triển trong 8 giây khi còn input chờ: dừng input và cho Reconnect/Back to Menu. Reconnect xác thực owner/token, nhận full state/generation trước Resume; không dùng Resume/Save & Exit trên socket đã đóng.
 6. Context lưu IndexedDB theo backend origin và Account; chỉ xóa sau Leave được xác nhận hoặc membership hết hạn. Offline Back to Menu không báo Leave/SAVED thành công. ROOM_LEFT chủ động, RECONNECT_EXPIRED/ROOM_NOT_FOUND hoặc roomId=null kết thúc membership, giữ Account/checkpoint.
 7. Lobby Room có nút Reconnect và tự thử lại tối đa 5 lần với thời gian chờ 1/2/4/8/16 giây; khi trình duyệt báo offline thì chờ sự kiện online. Hai thao tác dùng chung một yêu cầu khôi phục, không mở thêm socket khi đang kết nối. Hết lượt tự động vẫn cho thử thủ công. Ý định Leave dừng tự khôi phục ngay cả khi mất ACK; vẫn giữ context tới khi server xác nhận. Rời Lobby hoặc membership kết thúc thì dọn timer/listener; không áp dụng tự reconnect cho Community hoặc game đang chạy.
 

@@ -67,7 +67,12 @@ public final class SerialExecutor implements Executor {
       try {
         next.run();
       } catch (Throwable error) {
-        failure.accept(error);
+        try {
+          failure.accept(error);
+        } catch (Throwable handlerFailure) {
+          org.slf4j.LoggerFactory.getLogger(SerialExecutor.class)
+              .error("Game actor failure handler failed", handlerFailure);
+        }
       }
     }
   }

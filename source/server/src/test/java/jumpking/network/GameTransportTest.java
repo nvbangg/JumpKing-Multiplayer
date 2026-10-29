@@ -172,7 +172,14 @@ class GameTransportTest {
     var scheduled = new ArrayDeque<Runnable>();
     var failures = new AtomicInteger();
     var order = new ArrayList<Integer>();
-    var serial = new SerialExecutor(scheduled::add, 3, error -> failures.incrementAndGet());
+    var serial =
+        new SerialExecutor(
+            scheduled::add,
+            3,
+            error -> {
+              failures.incrementAndGet();
+              throw new IllegalStateException("Handler failed too");
+            });
     serial.execute(() -> order.add(1));
     serial.execute(
         () -> {

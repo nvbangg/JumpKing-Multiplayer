@@ -523,6 +523,10 @@ class CommunityLifecycleIT {
                   .path("ticks")
                   .asLong())
           .isEqualTo(ticks);
+      // Để scheduler tự cập nhật clock khi nghỉ, không gọi advance() thủ công trước Resume.
+      Thread.sleep(100);
+      time.advance(900);
+      Thread.sleep(100);
       var resume = client.ok("SET_COMMUNITY_PAUSED", Map.of("paused", false));
       assertThat(resume.path("generation").asLong()).isEqualTo(2);
       time.advance(50);

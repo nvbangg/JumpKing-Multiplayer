@@ -35,7 +35,7 @@ class RecordsServiceIT {
           "INSERT INTO matches(id,room_code,mode,map_id,started_at,ended_at,duration_ticks,end_reason) VALUES (?,'ABCDEF','RACE',10,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),180,'FINISH')",
           match);
       for (boolean room : java.util.List.of(false, true)) {
-        long ticks = room ? 180 : 61;
+        long ticks = room ? 180 : 600;
         jdbc.update(
             "INSERT INTO play_runs(id,user_id,match_id,status,play_ticks,jumps,falls,current_progress,max_progress,peak_reached_ticks,finish_ticks,`rank`,started_at,ended_at,updated_at) VALUES (?,?,?,'FINISHED',?,2,1,100,100,?,?,?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             UUID.randomUUID().toString(),
@@ -52,11 +52,11 @@ class RecordsServiceIT {
           peer,
           owner);
       var total = records.statistics(owner);
-      assertThat(total.totalPlayTimeMs()).isEqualTo(BigInteger.valueOf(4016));
+      assertThat(total.totalPlayTimeMs()).isEqualTo(BigInteger.valueOf(13000));
       assertThat(total.totalJumps()).isEqualTo(4);
       assertThat(total.totalFalls()).isEqualTo(2);
       assertThat(total.finishes()).isEqualTo(1);
-      assertThat(total.bestFinishTimeMs()).isEqualTo(1016);
+      assertThat(total.bestFinishTimeMs()).isEqualTo(10000);
       assertThat(total.matchesPlayed()).isEqualTo(1);
       assertThat(total.roomWins()).isEqualTo(1);
       assertThat(records.statistics(peer).roomWins()).isEqualTo(1);

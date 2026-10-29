@@ -1,4 +1,15 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+
+async function mockPublicApi(page: Page) {
+	await page.route("**/api/auth/me", (route) =>
+		route.fulfill({ json: { authenticated: false, account: null } }),
+	);
+	await page.route("**/api/game-config", (route) =>
+		route.fulfill({
+			json: { features: { flyEnabled: false }, auth: { googleClientId: null } },
+		}),
+	);
+}
 
 for (const kind of ["mobile", "desktop", "unsupported"] as const)
 	test(`landscape layout remains usable on ${kind} browser`, async ({
@@ -13,6 +24,7 @@ for (const kind of ["mobile", "desktop", "unsupported"] as const)
 			isMobile: kind !== "desktop",
 		});
 		const page = await context.newPage();
+		await mockPublicApi(page);
 		const errors: string[] = [];
 		page.on("pageerror", (error) => errors.push(error.message));
 		await page.addInitScript((kind) => {
@@ -74,6 +86,26 @@ for (const kind of ["mobile", "desktop", "unsupported"] as const)
 					).displayProbe,
 			);
 			if (kind === "mobile") {
+				await page.evaluate(() => {
+					const probe = (
+						window as unknown as { displayProbe: { fullscreen: boolean } }
+					).displayProbe;
+					probe.fullscreen = false;
+					document.dispatchEvent(new Event("fullscreenchange"));
+				});
+				await expect(
+					page.getByRole("button", { name: "Enter full screen" }),
+				).toBeVisible();
+				await page.getByLabel("Username", { exact: true }).click();
+				await expect
+					.poll(() =>
+						page.evaluate(
+							() =>
+								(window as unknown as { displayProbe: { locks: string[] } })
+									.displayProbe.locks.length,
+						),
+					)
+					.toBeGreaterThan(state.locks.length);
 				expect(state.requests).toBeGreaterThan(0);
 				expect(state.locks).toContain("landscape");
 			} else {
@@ -108,14 +140,12 @@ for (const viewport of [
 			});
 			try {
 				const page = await context.newPage();
+				await mockPublicApi(page);
 				const errors: string[] = [];
 				page.on("pageerror", (error) => errors.push(error.message));
 				page.on("console", (message) => {
 					if (message.type() === "error") errors.push(message.text());
 				});
-				await page.route("**/api/auth/me", (route) =>
-					route.fulfill({ json: { authenticated: false, account: null } }),
-				);
 				await page.addInitScript((capability) => {
 					const probe = { locks: 0 };
 					Object.assign(window, { orientationProbe: probe });
@@ -210,6 +240,7 @@ test("a shorter viewport cannot bypass a physical portrait lock", async ({
 	});
 	try {
 		const page = await context.newPage();
+		await mockPublicApi(page);
 		await page.addInitScript(() => {
 			Object.defineProperty(screen.orientation, "type", {
 				value: "portrait-primary",
@@ -236,6 +267,7 @@ test("legacy portrait detection ignores a shorter virtual keyboard viewport", as
 	});
 	try {
 		const page = await context.newPage();
+		await mockPublicApi(page);
 		await page.addInitScript(() => {
 			Object.defineProperty(screen, "orientation", { value: undefined });
 			Object.defineProperty(screen, "width", { value: 390 });

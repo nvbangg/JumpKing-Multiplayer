@@ -22,7 +22,7 @@ class RoomRunsIT {
   @org.springframework.beans.factory.annotation.Autowired RecordsService history;
 
   @Test
-  void shortFinishesCountWinsWithoutGrantingTheFullMapCrownOrBestTime() throws Exception {
+  void roomFinishesCountWinsWithoutGrantingCrownsOrBestTime() throws Exception {
     var jdbc = TestDatabase.get().jdbc;
     for (int level = 1; level <= RoomSettings.FINAL_MAP_ID; level++) {
       var owners = new ArrayList<Long>();
@@ -63,8 +63,7 @@ class RoomRunsIT {
                     ended));
         var write =
             new RoomRuns.Write(
-                match, "ABCDEF", "RACE", null, level, 3, 1, started, ended, 600, "FINISH", runs,
-                Set.of());
+                match, "ABCDEF", "RACE", null, level, 3, 1, started, ended, 600, "FINISH", runs);
         records.save(write);
         records.save(write);
         assertThat(
@@ -76,12 +75,12 @@ class RoomRunsIT {
         assertThat(
                 jdbc.queryForObject(
                     "SELECT crown FROM users WHERE id=?", String.class, owners.getFirst()))
-            .isEqualTo(level == RoomSettings.FINAL_MAP_ID ? "GOLD" : "NONE");
+            .isEqualTo("NONE");
         var stats = history.statistics(owners.getFirst());
         assertThat(stats.finishes()).isZero();
         assertThat(stats.totalJumps()).isEqualTo(5);
-        assertThat(stats.bestFinishTimeMs())
-            .isEqualTo(level == RoomSettings.FINAL_MAP_ID ? 10000L : null);
+        assertThat(stats.bestFinishTimeMs()).isNull();
+        assertThat(stats.roomWins()).isEqualTo(1);
         int changedLevel = level == RoomSettings.FINAL_MAP_ID ? 1 : RoomSettings.FINAL_MAP_ID;
         assertThatThrownBy(
                 () ->
@@ -98,8 +97,7 @@ class RoomRunsIT {
                             ended,
                             600,
                             "FINISH",
-                            runs,
-                            Set.of())))
+                            runs)))
             .isInstanceOf(jumpking.exception.ApiException.class);
       } finally {
         jdbc.update("DELETE FROM play_runs WHERE match_id=?", match);
@@ -144,8 +142,7 @@ class RoomRunsIT {
               null,
               0,
               null,
-              List.of(first, second),
-              Set.of());
+              List.of(first, second));
       records.save(start);
       records.save(start);
       var update =
@@ -165,8 +162,7 @@ class RoomRunsIT {
                   new RoomRuns.Run(
                       a, users.get(0), "ACTIVE", 60, 1, 0, 100, 100, 40, null, null, null),
                   new RoomRuns.Run(
-                      b, users.get(1), "ACTIVE", 60, 1, 0, 90, 120, 40, null, null, null)),
-              Set.of());
+                      b, users.get(1), "ACTIVE", 60, 1, 0, 90, 120, 40, null, null, null)));
       records.save(update);
       records.save(start);
       var finish =
@@ -186,8 +182,7 @@ class RoomRunsIT {
                   new RoomRuns.Run(
                       a, users.get(0), "FINISHED", 61, 2, 0, 200, 200, 61, 61L, 1, ended),
                   new RoomRuns.Run(
-                      b, users.get(1), "UNFINISHED", 61, 1, 0, 100, 120, 40, null, 2, ended)),
-              Set.of(users.getFirst()));
+                      b, users.get(1), "UNFINISHED", 61, 1, 0, 100, 120, 40, null, 2, ended)));
       jdbc.execute(
           "CREATE TRIGGER "
               + trigger
@@ -218,7 +213,7 @@ class RoomRunsIT {
       records.save(update);
       assertThat(
               jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, users.get(0)))
-          .isEqualTo("BLACK");
+          .isEqualTo("NONE");
       assertThat(
               jdbc.queryForObject("SELECT crown FROM users WHERE id=?", String.class, users.get(1)))
           .isEqualTo("NONE");
@@ -247,8 +242,7 @@ class RoomRunsIT {
                           null,
                           62,
                           null,
-                          update.runs(),
-                          Set.of())))
+                          update.runs())))
           .isInstanceOf(jumpking.exception.ApiException.class);
     } finally {
       jdbc.execute("DROP TRIGGER IF EXISTS " + trigger);

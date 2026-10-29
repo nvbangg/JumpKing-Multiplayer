@@ -219,6 +219,14 @@ class RoomItemsIT {
       assertThat(hit.path("self").path("simulation").path("physics").path("vy").asDouble())
           .isGreaterThanOrEqualTo(0);
       a.disconnect();
+      b.await(
+          message ->
+              message.path("type").asText().equals("ROOM_STATE")
+                  && message
+                      .path("payload")
+                      .path("hostPlayerId")
+                      .asText()
+                      .equals(other.path("playerId").asText()));
       a.connect();
       a.ok(
           "RECONNECT",
