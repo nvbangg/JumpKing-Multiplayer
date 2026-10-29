@@ -15,7 +15,7 @@ export function PlayersPanel({
 	watchingId?: string;
 	watchableIds: string[];
 	disabled: boolean;
-	onWatch: (id: string) => void;
+	onWatch: (id: string | null) => void;
 }) {
 	return (
 		<details
@@ -39,13 +39,15 @@ export function PlayersPanel({
 							type="button"
 							className="watch-player"
 							aria-label={`Watch ${player.nickname}`}
-							aria-pressed={player.playerId === watchingId}
+							aria-pressed={player.playerId === (watchingId ?? selfId)}
 							disabled={
 								disabled ||
-								player.playerId === selfId ||
+								(player.playerId === selfId && !watchingId) ||
 								!watchableIds.includes(player.playerId)
 							}
-							onClick={() => onWatch(player.playerId)}
+							onClick={() =>
+								onWatch(player.playerId === selfId ? null : player.playerId)
+							}
 							style={{
 								color:
 									rules.appearanceColors[
