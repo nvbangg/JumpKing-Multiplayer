@@ -31,6 +31,33 @@ class EasyTest {
     return new GameSimulation(map, physics, shared.adventure(), true, false);
   }
 
+  @Test
+  void lowerRoomBoundaryRestoresEasySafePointAndKeepsOtherModesAtSpawn() {
+    var stage = shared.roomMap(2);
+    for (String mode : List.of("EASY", "RACE", "HARDCORE", "NO_WALK")) {
+      var game = new GameSimulation(stage, physics, shared.adventure(), false, false);
+      var saved = game.snapshot();
+      ((ObjectNode) saved.world())
+          .putObject("safePosition")
+          .put("x", stage.spawn().x() + 8)
+          .put("y", stage.spawn().y() - 360);
+      saved.physics().y = stage.spawn().y() + 30;
+      saved.physics().grounded = false;
+      game.restore(saved);
+      var replay = new GameSimulation(stage, physics, shared.adventure(), false, false);
+      replay.restore(game.snapshot());
+      assertThat(game.tick(PlayerInput.NEUTRAL, mode).movement()).contains("SPLAT");
+      replay.tick(PlayerInput.NEUTRAL, mode);
+      assertThat(json.<JsonNode>valueToTree(replay.snapshot()))
+          .isEqualTo(json.<JsonNode>valueToTree(game.snapshot()));
+      assertThat(game.snapshot().physics().x)
+          .isEqualTo(stage.spawn().x() + (mode.equals("EASY") ? 8 : 0));
+      assertThat(game.snapshot().physics().y)
+          .isEqualTo(stage.spawn().y() - (mode.equals("EASY") ? 360 : 0));
+      assertThat(game.snapshot().physics().falls).isEqualTo(saved.physics().falls + 1);
+    }
+  }
+
   private void startFall(GameSimulation game) {
     var pose = game.physics().snapshot();
     pose.x = 200;

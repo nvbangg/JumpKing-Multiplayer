@@ -129,7 +129,11 @@ export class GameSimulation {
 			(previousY > this.map.roomBottomY || player.y > this.map.roomBottomY)
 		) {
 			const alreadyFell = movement.includes("SPLAT");
-			this.physics.respawnAt(this.map.spawn.x, this.map.spawn.y, !alreadyFell);
+			const safe =
+				mode === "EASY"
+					? (this.world.safePosition ?? this.map.spawn)
+					: this.map.spawn;
+			this.physics.respawnAt(safe.x, safe.y, !alreadyFell);
 			if (!alreadyFell) movement.push("SPLAT");
 			player = this.physics.snapshot();
 		} else if (movement.includes("SPLAT")) {

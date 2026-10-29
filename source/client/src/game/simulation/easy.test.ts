@@ -3,9 +3,34 @@ import fixture from "../../../../common/fixtures/easy-respawn.json";
 import raw from "../../../../common/maps/main-babe.json";
 import { GameSimulation } from "./GameSimulation";
 import { parseMap } from "./map";
+import { roomMap } from "./roomMaps";
 import { NEUTRAL_INPUT } from "./types";
 
 const map = parseMap(raw);
+
+test("Easy restores its saved point across the lower Room boundary, including snapshot replay", () => {
+	for (const mode of ["EASY", "RACE", "HARDCORE", "NO_WALK"]) {
+		const stage = roomMap(map, 2);
+		const game = new GameSimulation(stage);
+		const saved = game.snapshot();
+		const safe = { x: stage.spawn.x + 8, y: stage.spawn.y - 360 };
+		saved.world.safePosition = safe;
+		saved.physics.y = stage.spawn.y + 30;
+		saved.physics.grounded = false;
+		game.restore(saved);
+		const before = game.snapshot();
+		const replay = new GameSimulation(stage);
+		replay.restore(before);
+		expect(game.tick(NEUTRAL_INPUT, mode).movement).toContain("SPLAT");
+		replay.tick(NEUTRAL_INPUT, mode);
+		expect(replay.snapshot()).toEqual(game.snapshot());
+		expect(game.physics.snapshot()).toMatchObject({
+			...(mode === "EASY" ? safe : stage.spawn),
+			falls: before.physics.falls + 1,
+		});
+		expect(game.snapshot().world.safePosition).toEqual(safe);
+	}
+});
 
 function rememberSafe(game: GameSimulation) {
 	game.physics.restore({
