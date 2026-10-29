@@ -34,6 +34,7 @@ import {
 import { loadReconnect } from "../network/reconnect";
 import { required } from "../required";
 import { LoadErrorNotice, usePreloadError } from "./LoadErrorNotice";
+import { NewGameDialog } from "./NewGameDialog";
 
 type Screen =
 	| "home"
@@ -91,6 +92,7 @@ export function App() {
 	const [options, setOptions] = useState(readOptions);
 	const [error, setError] = useState("");
 	const [pending, setPending] = useState(false);
+	const [confirmNewGame, setConfirmNewGame] = useState(false);
 	const socket = useRef<GameSocket | null>(null);
 	const leaveRequested = useRef(false);
 	const exitScreen = useRef<Screen | null>(null);
@@ -409,15 +411,17 @@ export function App() {
 			await connection.command(type, payload);
 		});
 	};
-	const enterCommunity = (newRun: boolean) => {
+	const enterCommunity = (newRun: boolean, confirmed = false) => {
 		setConnectionNotice("");
 		if (!identity.account) {
 			setScreen("sign-in");
 			return;
 		}
 		if (pending || homeLoading || !home || (!newRun && !home.run)) return;
-		if (newRun && home.run && !window.confirm("Replace your unfinished game?"))
+		if (newRun && home.run && !confirmed) {
+			setConfirmNewGame(true);
 			return;
+		}
 		void execute(async () => {
 			try {
 				const connection = await connectedSocket();
@@ -783,6 +787,15 @@ export function App() {
 					<StatisticsPanel statistics={home.statistics} />
 				)}
 			</div>
+			{screen === "home" && confirmNewGame && (
+				<NewGameDialog
+					onCancel={() => setConfirmNewGame(false)}
+					onConfirm={() => {
+						setConfirmNewGame(false);
+						enterCommunity(true, true);
+					}}
+				/>
+			)}
 			{screen === "lobby" && room && socket.current && (
 				<LobbyChat socket={socket.current} />
 			)}
