@@ -483,10 +483,10 @@ export class GameSocket {
 					this.playContext = { playId, generation };
 				}
 			}
-			// Form chat và thao tác item tự hiển thị lỗi từ Promise, không lặp lại ở màn hình khác.
+			// Caller xử lý lỗi chat, item và reconnect từ Promise, không lặp lại ở màn hình khác.
 			if (
 				message.type !== "ERROR" ||
-				!["CHAT_SEND", "USE_ITEM"].includes(request?.type || "")
+				!["CHAT_SEND", "USE_ITEM", "RECONNECT"].includes(request?.type || "")
 			)
 				this.onMessage(
 					message.type,

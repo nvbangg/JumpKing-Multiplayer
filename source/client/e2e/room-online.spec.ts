@@ -465,3 +465,47 @@ for (const mode of ["RACE", "HARDCORE", "NO_WALK"] as const)
 			await leaveOnline(page);
 		}
 	});
+
+test("opening Home clears an expired room reconnect without displaying an error", async ({
+	page,
+}) => {
+	const name = await registerOnline(page, "expired_room");
+	try {
+		await createRoom(page);
+		const { account } = await (await page.request.get("/api/auth/me")).json();
+		const profile = await page.evaluate(async (accountId: string) => {
+			const path = "/src/network/api.ts";
+			const { backendOrigin } = await import(path);
+			return `${backendOrigin()}:account:${accountId}`;
+		}, account.id);
+		const readContext = () =>
+			page.evaluate(async (profile) => {
+				const path = "/src/network/reconnect.ts";
+				return (await import(path)).loadReconnect(profile);
+			}, profile);
+		await expect.poll(readContext).not.toBeNull();
+		const context = required(await readContext());
+		await page.getByRole("button", { name: "Leave", exact: true }).click();
+		await expect(
+			page.getByRole("button", { name: "New Game", exact: true }),
+		).toBeVisible();
+		await expect.poll(readContext).toBeNull();
+		await page.evaluate(
+			async ({ profile, context }) => {
+				const path = "/src/network/reconnect.ts";
+				await (await import(path)).saveReconnect(profile, context);
+			},
+			{ profile, context },
+		);
+		await page.reload();
+		await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
+		await expect.poll(readContext).toBeNull();
+		await expect(page.getByRole("alert")).toHaveCount(0);
+		await createRoom(page);
+		await expect(
+			page.getByRole("button", { name: "Start", exact: true }),
+		).toBeEnabled();
+	} finally {
+		await leaveOnline(page);
+	}
+});
