@@ -581,7 +581,6 @@ export function OnlineGame({
 						void socket
 							.command("GAME_READY", socket.playContext)
 							.catch((cause) => setError(cause.message));
-					if (document.hidden || !document.hasFocus()) pauseRef.current();
 				},
 				setError,
 				{

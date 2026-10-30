@@ -15,6 +15,7 @@ export function createGameControls({
 	pauseWhenIdle: () => boolean;
 }) {
 	let lastActivity = performance.now();
+
 	const input = new InputController(
 		() => {
 			lastActivity = performance.now();
@@ -23,22 +24,43 @@ export function createGameControls({
 		cancel,
 		jump,
 	);
+
 	const afk = window.setInterval(() => {
-		if (pauseWhenIdle() && performance.now() - lastActivity >= rules.afkMs)
+		if (
+			!document.hidden &&
+			document.hasFocus() &&
+			pauseWhenIdle() &&
+			performance.now() - lastActivity >= rules.afkMs
+		) {
 			pause();
+		}
 	}, PRESENTATION.afkPollMs);
-	const hidden = () => {
-		if (document.hidden) pause();
+
+	const releaseInput = () => {
+		input.releaseAll();
+		lastActivity = performance.now();
 	};
+
+	const hidden = () => {
+		if (document.hidden) releaseInput();
+	};
+
+	const focused = () => {
+		lastActivity = performance.now();
+	};
+
 	document.addEventListener("visibilitychange", hidden);
-	window.addEventListener("blur", pause);
+	window.addEventListener("blur", releaseInput);
+	window.addEventListener("focus", focused);
+
 	return {
 		input,
 		dispose() {
 			clearInterval(afk);
 			input.dispose();
 			document.removeEventListener("visibilitychange", hidden);
-			window.removeEventListener("blur", pause);
+			window.removeEventListener("blur", releaseInput);
+			window.removeEventListener("focus", focused);
 		},
 	};
 }

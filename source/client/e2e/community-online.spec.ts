@@ -422,44 +422,6 @@ test("Community New Game keeps old History and metrics while replacing only the 
 	).not.toBe(first);
 	expect(observed.errors).toEqual([]);
 });
-test("window blur cancels charging and keeps Community time frozen until explicit Resume", async ({
-	page,
-}) => {
-	await page.addInitScript(() =>
-		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false })),
-	);
-	const observed = observe(page);
-	await account(page, "pause_ui");
-	await page.getByRole("button", { name: "New Game", exact: true }).click();
-	await expect(
-		page.getByRole("button", { name: "Menu (Esc)", exact: true }),
-	).toBeVisible({ timeout: 15_000 });
-	await page.keyboard.down("Space");
-	await page.waitForTimeout(100);
-	await page.evaluate(() => window.dispatchEvent(new Event("blur")));
-	await page.keyboard.up("Space");
-	await expect(
-		page.getByRole("button", { name: "Resume", exact: true }),
-	).toBeVisible();
-	await expect.poll(() => observed.snapshots.at(-1)?.self.paused).toBe(true);
-	const ticks = required(observed.snapshots.at(-1)).self.simulation.physics
-		.ticks;
-	await page.waitForTimeout(1100);
-	expect(
-		required(observed.snapshots.at(-1)).self.simulation.physics.ticks,
-	).toBe(ticks);
-	expect(
-		required(observed.snapshots.at(-1)).self.simulation.physics.jumps,
-	).toBe(0);
-	await page.getByRole("button", { name: "Resume", exact: true }).click();
-	await expect.poll(() => observed.snapshots.at(-1)?.generation).toBe(2);
-	await jump(page);
-	await expect
-		.poll(() => observed.snapshots.at(-1)?.self.simulation.physics.jumps)
-		.toBe(1);
-	await leave(page);
-	expect(observed.errors).toEqual([]);
-});
 test("transport disconnect reconnects the same identity and run while confirmed Leave clears its token", async ({
 	page,
 }) => {
