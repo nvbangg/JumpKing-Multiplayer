@@ -25,7 +25,7 @@ Giữ physics gốc: charge quyết định lực nhảy, đủ charge tự bậ
 
 Giải movement/collision trước input/launch; tick thả Jump vẫn tăng charge. Tuning tập trung trong `source/common/physics.json`, fixtures xác nhận thứ tự và kết quả; nhịp mô phỏng theo [architecture](architecture.md#xử-lý-đồng-thời). Không đơn giản hóa physics khi refactor giao diện hoặc networking.
 
-Menu, chat, mất focus và disconnect hủy input/charge, không biến hủy thành nhảy. Touch cancel phải nhả input; lỗi gamepad không chặn keyboard/touch. Ẩn tab, mất focus hoặc không đổi input điều khiển trong 1 phút mở menu. Giữ nguyên phím, chat và heartbeat không tính là hoạt động điều khiển. Community Pause bản thân; Room vẫn chạy; trở lại phải Resume. Các thời hạn tập trung trong `source/common/rules.json`.
+Menu, chat, mất focus và disconnect hủy input/charge, không biến hủy thành nhảy. Touch cancel phải nhả input; lỗi gamepad không chặn keyboard/touch. Mở menu chủ động hoặc 1 phút không tương tác thì Pause; bàn phím, chuột, cảm ứng và chat đều là tương tác. Spectate khi tab đang hoạt động không bị AFK; heartbeat không tính là tương tác. Client quản lý AFK; server quyết định Pause và thời gian chính thức. Chuyển tab/cửa sổ chỉ nhả input, không tự Pause hoặc Resume. Community Pause bản thân; menu cá nhân trong Room không dừng trận. Các thời hạn tập trung trong `source/common/rules.json`.
 
 ## Map và camera
 
@@ -99,7 +99,7 @@ Tối đa 64 bẫy Banana/phòng, cấu hình trong rules. Chạm trần thì h�
 
 Leave kết thúc membership; khi trang còn hoạt động phải đợi server xác nhận. Đóng tab gửi Leave best effort, thất bại xử lý như disconnect. Đổi tab/blur hoặc chuyển Results/Lobby không phải Leave.
 
-Disconnect hủy input/charge, giữ slot 5 phút. Reconnect đúng Account/player/token giữ tiến độ, không tự bật điều khiển; Community trở lại Pause và tính lại hạn Pause. Hết hạn Community vẫn giữ checkpoint. Room còn người connected vẫn chạy; all-offline chờ reconnect, hết hạn thì finalize. Trong Room, Leave/hết hạn chốt DNF, đóng băng metrics.
+Disconnect hủy input/charge, giữ slot 5 phút. Community chờ 3 giây từ khi server xác nhận ngắt kết nối rồi yêu cầu Pause; nếu còn trên không vẫn chờ đáp nền. Phát hiện kết nối treo dùng heartbeat/timeout hiện có, không suy mất mạng từ một snapshot tới chậm. Reconnect đúng Account/player/token giữ tiến độ, không tự bật điều khiển; Community trở lại Pause và tính lại hạn Pause. Hết hạn Community vẫn giữ checkpoint. Room còn người connected vẫn chạy; all-offline chờ reconnect, hết hạn thì finalize. Trong Room, Leave/hết hạn chốt DNF, đóng băng metrics.
 
 Lobby mất kết nối hiển thị Reconnect và tự thử lại có giới hạn khi có mạng; dùng chung thao tác khôi phục với nút thủ công theo [protocol](protocol.md#đồng-bộ-và-khôi-phục-kết-nối). Trong trận giữ nút Reconnect thủ công. Leave đã xác nhận, Kick hoặc membership hết hạn dừng khôi phục; không tự Join mới.
 
@@ -143,7 +143,7 @@ Trên thiết bị có con trỏ chính là cảm ứng (`pointer: coarse`), c�
 
 Chọn người connected trong Players cùng Community hoặc Room PLAYING để xem screen/nhân vật/môi trường/NPC/quạ/âm thanh của họ; người được xem rõ 100%, peers 70%. Không điều khiển họ, xem nối tiếp mục tiêu họ đang xem hoặc phát ending của họ.
 
-Room vẫn mô phỏng bản thân/clock; Community Pause bản thân và không tăng active time khi đã paused. Cho chat/menu/đổi mục tiêu; Back to My Game chủ động Resume. Mục tiêu Leave/disconnect/Finish thì về bản thân/menu Resume; Room kết thúc tới Results. Reconnect không khôi phục mục tiêu. AFK không mở menu khi đang xem, mất focus vẫn mở.
+Spectate vẫn mô phỏng bản thân và tính thời gian trong cả Room lẫn Community; không tự Pause khi bắt đầu xem. Cho chat/menu/đổi mục tiêu; Back to My Game chủ động Resume. Mục tiêu Leave/disconnect/Finish thì về bản thân/menu Resume; Room kết thúc tới Results. Reconnect không khôi phục mục tiêu. AFK không mở menu khi đang xem trong tab còn hoạt động; rời tab/cửa sổ vẫn áp dụng hạn AFK 1 phút.
 
 ## Fly Mode
 

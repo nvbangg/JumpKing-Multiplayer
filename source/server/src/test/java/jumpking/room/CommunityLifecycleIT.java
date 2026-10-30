@@ -369,37 +369,19 @@ class CommunityLifecycleIT {
   }
 
   @Test
-  void neutralFramesDoNotResetAfkAndPausedSlotExpiresExactlyAtFifteenMinutes() throws Exception {
+  void clientPauseKeepsChatAvailableAndSlotExpiresExactlyAtFifteenMinutes() throws Exception {
     try (var client = new GameClient(port)) {
       client.register();
       client.connect();
       var join = client.ok("JOIN_COMMUNITY", client.communityRequest());
       client.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
-      step(client, 29_999);
-      client.ok("CHAT_SEND", Map.of("text", "Chat does not count as a movement input"));
-      client.input(
-          Map.of(
-              "playId",
-              join.path("playId").asText(),
-              "generation",
-              1,
-              "seq",
-              1,
-              "left",
-              false,
-              "right",
-              false,
-              "jump",
-              false));
-      client.ok("GET_ROOM_STATE", Map.of());
-      step(client, 30_000);
+      step(client, 60_001);
       assertThat(client.snapshot().path("self").path("paused").asBoolean()).isFalse();
-      time.advance(1);
+      client.ok("SET_COMMUNITY_PAUSED", Map.of("paused", true));
       client.await(
           message ->
               message.path("type").asText().equals("GAME_SNAPSHOT")
                   && message.path("payload").path("self").path("paused").asBoolean());
-      assertThat(client.snapshot().path("self").path("paused").asBoolean()).isTrue();
       long stoppedTicks =
           client.snapshot().path("self").path("simulation").path("physics").path("ticks").asLong();
       client.ok("CHAT_SEND", Map.of("text", "Chat is available while paused"));
@@ -561,8 +543,30 @@ class CommunityLifecycleIT {
       client.connect();
       var joined = client.ok("JOIN_COMMUNITY", client.communityRequest());
       client.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
-      client.ok("SET_COMMUNITY_PAUSED", Map.of("paused", true));
+      var membership = memberships.find(client.owner);
+      Object tower =
+          ((Map<?, ?>) ReflectionTestUtils.getField(server, "towers")).get(membership.roomId());
+      Object player =
+          ((Map<?, ?>) ReflectionTestUtils.getField(tower, "players")).get(membership.playerId());
       client.disconnect();
+      GameClient.until(() -> ReflectionTestUtils.getField(player, "connection") == null);
+      var checked = new CompletableFuture<Void>();
+      ((SerialExecutor) ReflectionTestUtils.getField(tower, "actor"))
+          .execute(
+              () -> {
+                try {
+                  time.advance(2999);
+                  ReflectionTestUtils.invokeMethod(tower, "advance");
+                  assertThat(ReflectionTestUtils.getField(player, "paused")).isEqualTo(false);
+                  time.advance(1);
+                  ReflectionTestUtils.invokeMethod(tower, "advance");
+                  assertThat(ReflectionTestUtils.getField(player, "paused")).isEqualTo(true);
+                  checked.complete(null);
+                } catch (Throwable error) {
+                  checked.completeExceptionally(error);
+                }
+              });
+      checked.get(8, TimeUnit.SECONDS);
       GameClient.until(
           () ->
               TestDatabase.get()
@@ -571,8 +575,8 @@ class CommunityLifecycleIT {
                           "SELECT revision FROM play_runs WHERE id=?",
                           Long.class,
                           joined.path("playId").asText())
-                  >= 3);
-      time.advance(299_999);
+                  >= 2);
+      time.advance(296_999);
       Thread.sleep(50);
       assertThat(memberships.find(client.owner)).isNotNull();
       time.advance(1);

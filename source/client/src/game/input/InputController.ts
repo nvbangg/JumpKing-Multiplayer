@@ -133,16 +133,17 @@ export class InputController {
 				k.has("KeyS") || k.has("ArrowDown") || touch.has("down") || pad.down,
 		};
 	}
-	cancel(): void {
+	release(): void {
 		this.keys.clear();
 		this.pointers.clear();
 		this.padBlocked = true;
+	}
+	cancel(): void {
+		this.release();
 		this.canceled = true;
 	}
 	resume(): void {
-		this.keys.clear();
-		this.pointers.clear();
-		this.padBlocked = true;
+		this.release();
 		this.canceled = false;
 		this.onActivity();
 	}

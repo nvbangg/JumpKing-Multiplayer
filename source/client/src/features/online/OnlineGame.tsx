@@ -318,10 +318,11 @@ export function OnlineGame({
 			},
 			jump: (now) => flight.current?.press(now),
 			pauseWhenIdle: () =>
-				latestRoom.current.kind === "ROOM" &&
 				!!runtime.current &&
 				!runtime.current.menu &&
-				!runtime.current.latest?.spectating,
+				(!runtime.current.latest?.spectating ||
+					document.hidden ||
+					!document.hasFocus()),
 		});
 		const controls = bindings.input;
 		input.current = controls;
@@ -581,7 +582,6 @@ export function OnlineGame({
 						void socket
 							.command("GAME_READY", socket.playContext)
 							.catch((cause) => setError(cause.message));
-					if (document.hidden || !document.hasFocus()) pauseRef.current();
 				},
 				setError,
 				{

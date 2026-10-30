@@ -422,7 +422,7 @@ test("Community New Game keeps old History and metrics while replacing only the 
 	).not.toBe(first);
 	expect(observed.errors).toEqual([]);
 });
-test("window blur cancels charging and keeps Community time frozen until explicit Resume", async ({
+test("window blur cancels charging without pausing Community or blocking subsequent input", async ({
 	page,
 }) => {
 	await page.addInitScript(() =>
@@ -440,19 +440,18 @@ test("window blur cancels charging and keeps Community time frozen until explici
 	await page.keyboard.up("Space");
 	await expect(
 		page.getByRole("button", { name: "Resume", exact: true }),
-	).toBeVisible();
-	await expect.poll(() => observed.snapshots.at(-1)?.self.paused).toBe(true);
+	).not.toBeVisible();
 	const ticks = required(observed.snapshots.at(-1)).self.simulation.physics
 		.ticks;
-	await page.waitForTimeout(1100);
-	expect(
-		required(observed.snapshots.at(-1)).self.simulation.physics.ticks,
-	).toBe(ticks);
+	await expect
+		.poll(
+			() => required(observed.snapshots.at(-1)).self.simulation.physics.ticks,
+		)
+		.toBeGreaterThan(ticks);
+	expect(required(observed.snapshots.at(-1)).self.paused).toBe(false);
 	expect(
 		required(observed.snapshots.at(-1)).self.simulation.physics.jumps,
 	).toBe(0);
-	await page.getByRole("button", { name: "Resume", exact: true }).click();
-	await expect.poll(() => observed.snapshots.at(-1)?.generation).toBe(2);
 	await jump(page);
 	await expect
 		.poll(() => observed.snapshots.at(-1)?.self.simulation.physics.jumps)

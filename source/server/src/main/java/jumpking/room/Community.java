@@ -109,7 +109,6 @@ public class Community implements GameCommandHandler, AutoCloseable {
         peakTicks,
         disconnectedAt,
         pausedAt,
-        lastPhysical = time.nanos(),
         lastSave = time.nanos();
     double currentProgress, maximum;
     boolean loading = true, paused, pausePending, leaving, finished, terminalQueued, operation;
@@ -119,7 +118,6 @@ public class Community implements GameCommandHandler, AutoCloseable {
     boolean endingNotified;
     int pendingWrites;
     String saveStatus = "SAVED";
-    PlayerInput lastPhysicalInput = new PlayerInput(false, false, false, false, false, false);
     GameEnvelope leaveCommand;
     GameEnvelope operationCommand;
 
@@ -199,11 +197,12 @@ public class Community implements GameCommandHandler, AutoCloseable {
                 && now - player.pausedAt >= rules.path("communityPauseMs").asLong() * 1_000_000L)) {
           requestLeave(this, player, null);
           changed = true;
-        } else if (!player.finished
-            && player.watching == null
+        } else if (player.connection == null
+            && !player.finished
             && !player.paused
             && !player.pausePending
-            && now - player.lastPhysical >= rules.path("afkMs").asLong() * 1_000_000L) {
+            && now - player.disconnectedAt
+                >= rules.path("disconnectPauseMs").asLong() * 1_000_000L) {
           pause(player);
           changed = true;
           if (player.paused) save(this, player, true, () -> runState(player));
@@ -403,21 +402,13 @@ public class Community implements GameCommandHandler, AutoCloseable {
                       requestLeave(tower, player, command);
                     }
                     case "PLAYER_INPUT", "CANCEL_INPUT" -> {
-                      var current = player.input.offer(command, time.nanos(), flags.flyEnabled());
+                      player.input.offer(command, time.nanos(), flags.flyEnabled());
                       if (player.paused
                           || player.pausePending
                           || player.finished
                           || player.watching != null) player.input.clear();
-                      else {
-                        if (command.type().equals("CANCEL_INPUT"))
-                          player.game.physics().cancelInput();
-                        else {
-                          if (!current.equals(player.lastPhysicalInput)) {
-                            player.lastPhysical = time.nanos();
-                            player.lastPhysicalInput = current;
-                          }
-                        }
-                      }
+                      else if (command.type().equals("CANCEL_INPUT"))
+                        player.game.physics().cancelInput();
                     }
                     case "SET_SPECTATE" -> {
                       GameEnvelope.fields(command.payload(), Set.of("playerId"));
@@ -445,8 +436,6 @@ public class Community implements GameCommandHandler, AutoCloseable {
                         player.input.clear();
                         player.game.physics().cancelInput();
                       }
-                      if (player.watching != null && targetId == null)
-                        player.lastPhysical = time.nanos();
                       player.watching = targetId;
                       connection.reply(
                           command,
@@ -506,7 +495,6 @@ public class Community implements GameCommandHandler, AutoCloseable {
   private void resume(Member player) {
     if (!player.leaving && !player.finished && (player.paused || player.pausePending)) {
       player.paused = player.pausePending = false;
-      player.lastPhysical = time.nanos();
       player.generation++;
       player.input.reset(player.stored.id(), player.generation);
     }
@@ -561,8 +549,6 @@ public class Community implements GameCommandHandler, AutoCloseable {
                             player.peakTicks = stored.peak();
                             player.loading = false;
                             player.input.reset(stored.id(), player.generation);
-                            player.lastPhysical = time.nanos();
-                            if (player.connection == null) pause(player);
                             if (connection.open() && player.identity.sessionId() != null)
                               sessions.touch(player.identity.sessionId());
                             connection.reply(command, "ROOM_JOINED", joined(player));
@@ -814,7 +800,8 @@ public class Community implements GameCommandHandler, AutoCloseable {
     player.watching = null;
     player.connection = null;
     player.disconnectedAt = time.nanos();
-    pause(player);
+    player.input.clear();
+    if (player.game != null) player.game.physics().cancelInput();
     if (!player.loading && !player.operation && !player.leaving && player.paused)
       save(tower, player, true, () -> {});
   }
