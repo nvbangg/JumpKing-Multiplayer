@@ -57,6 +57,10 @@ public class User {
     return username;
   }
 
+  public void setUsername(String value) {
+    username = value;
+  }
+
   public String getPasswordHash() {
     return passwordHash;
   }

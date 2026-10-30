@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import jumpking.dto.AccountCredentials;
 import jumpking.dto.AccountDto;
+import jumpking.exception.ApiException;
 import jumpking.security.IdentityContext;
 import jumpking.service.AccountService;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
@@ -67,11 +68,36 @@ public class AccountController {
     return new AccountDto.Me(true, account);
   }
 
+  @PostMapping("/username")
+  public AccountDto.Me username(
+      @Valid @RequestBody AccountCredentials.UsernameChange form,
+      HttpServletRequest request,
+      HttpServletResponse response) {
+    long owner = Long.parseLong(identity.requireAccount().id());
+    var account =
+        accounts.changeUsername(
+            owner,
+            form,
+            value -> {
+              var session = request.getSession(false);
+              if (!authority.valid(session, false))
+                throw new ApiException(401, "SESSION_EXPIRED", "Your session has expired");
+              authority.revokeAccount(owner, session.getId());
+              try {
+                request.changeSessionId();
+              } catch (IllegalStateException expired) {
+                throw new ApiException(401, "SESSION_EXPIRED", "Your session has expired");
+              }
+              csrf.saveToken(null, request, response);
+            });
+    return new AccountDto.Me(true, account);
+  }
+
   @PostMapping("/password")
   public Map<String, Boolean> password(@Valid @RequestBody AccountCredentials.PasswordChange form) {
     var account = identity.requireAccount();
     accounts.changePassword(Long.parseLong(account.id()), form);
-    authority.revokeAccount(account.username());
+    authority.revokeAccount(Long.parseLong(account.id()));
     SecurityContextHolder.clearContext();
     return Map.of("ok", true);
   }
@@ -103,7 +129,7 @@ public class AccountController {
     var context = SecurityContextHolder.createEmptyContext();
     context.setAuthentication(
         UsernamePasswordAuthenticationToken.authenticated(
-            account.username(), null, List.of(new SimpleGrantedAuthority("ROLE_ACCOUNT"))));
+            Long.valueOf(account.id()), null, List.of(new SimpleGrantedAuthority("ROLE_ACCOUNT"))));
     SecurityContextHolder.setContext(context);
     contexts.saveContext(context, request, response);
     csrf.saveToken(null, request, response);

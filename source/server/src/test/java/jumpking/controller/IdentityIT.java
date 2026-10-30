@@ -28,6 +28,8 @@ import jumpking.security.SessionAuthority;
 import jumpking.support.TestDatabase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -108,6 +110,7 @@ class IdentityIT {
   @Autowired SessionAuthority sessions;
   @Autowired ObjectMapper json;
   @Autowired jumpking.service.AccountService accounts;
+  @Autowired jumpking.room.Memberships applicationMemberships;
   @MockitoSpyBean org.springframework.security.crypto.password.PasswordEncoder passwords;
 
   @BeforeEach
@@ -201,6 +204,174 @@ class IdentityIT {
       assertThat(tree(reopened)).isEqualTo(tree(created));
       assertThat(accountCount()).isEqualTo(count + 1);
       assertThat(passwordHash(name)).isEqualTo(hash);
+    }
+  }
+
+  @Test
+  void sessionsKeepTheirOwnerWhenAnOldUsernameIsReused() throws Exception {
+    String oldName = unique(), newName = unique(), password = "Stable identity password";
+    try (var original = client();
+        var replacement = client()) {
+      original.token();
+      var created = tree(original.send("/auth/login", "POST", credentials(oldName, password)));
+      long owner = created.path("account").path("id").asLong();
+      var session = sessions.find(original.cookie("JSESSIONID"));
+      var context =
+          (org.springframework.security.core.context.SecurityContext)
+              session.getAttribute(
+                  org.springframework.security.web.context.HttpSessionSecurityContextRepository
+                      .SPRING_SECURITY_CONTEXT_KEY);
+      assertThat(context.getAuthentication().getPrincipal()).isEqualTo(owner);
+      TestDatabase.get().jdbc.update("UPDATE users SET username=? WHERE id=?", newName, owner);
+      replacement.token();
+      var other = tree(replacement.send("/auth/login", "POST", credentials(oldName, password)));
+      assertThat(other.path("account").path("id").asLong()).isNotEqualTo(owner);
+      var current = tree(original.send("/auth/me", "GET", null));
+      assertThat(current.path("account").path("id").asLong()).isEqualTo(owner);
+      assertThat(current.path("account").path("username").asText()).isEqualTo(newName);
+      original.token();
+      assertThat(
+              original
+                  .send(
+                      "/auth/password",
+                      "POST",
+                      json.createObjectNode()
+                          .put("currentPassword", password)
+                          .put("newPassword", "New stable identity password")
+                          .toString())
+                  .statusCode())
+          .isEqualTo(200);
+      assertThat(tree(original.send("/auth/me", "GET", null)).path("authenticated").asBoolean())
+          .isFalse();
+      assertThat(tree(replacement.send("/auth/me", "GET", null))).isEqualTo(other);
+    }
+  }
+
+  @Test
+  void usernameChangeValidatesNameAndMembershipAndRotatesSessionsAfterCommit() throws Exception {
+    String oldName = unique(),
+        taken = unique(),
+        newName = unique().substring(0, 8) + "𠮷".repeat(24);
+    String password = "Rename account password";
+    try (var owner = client();
+        var second = client();
+        var other = client()) {
+      owner.token();
+      var before = tree(owner.send("/auth/login", "POST", credentials(oldName, password)));
+      long id = before.path("account").path("id").asLong();
+      second.token();
+      second.send("/auth/login", "POST", credentials(oldName, password));
+      other.token();
+      other.send("/auth/login", "POST", credentials(taken, password));
+      owner.token();
+      String oldSession = owner.cookie("JSESSIONID"), oldCsrf = owner.csrf;
+      var retainedSession = sessions.find(oldSession);
+      assertThat(owner.send("/auth/username", "POST", "{\"username\":\"x\"}").statusCode())
+          .isEqualTo(400);
+      assertThat(
+              owner
+                  .send(
+                      "/auth/username",
+                      "POST",
+                      json.createObjectNode()
+                          .put("username", taken.toUpperCase(java.util.Locale.ROOT))
+                          .toString())
+                  .statusCode())
+          .isEqualTo(409);
+      var memberships = applicationMemberships;
+      var membership = new jumpking.room.Memberships.Membership("123456", unique());
+      memberships.claim(id, membership);
+      try {
+        assertThat(
+                owner
+                    .send(
+                        "/auth/username",
+                        "POST",
+                        json.createObjectNode().put("username", newName).toString())
+                    .statusCode())
+            .isEqualTo(409);
+      } finally {
+        memberships.release(id, membership);
+      }
+      assertThat(owner.cookie("JSESSIONID")).isEqualTo(oldSession);
+      var renamed =
+          owner.send(
+              "/auth/username",
+              "POST",
+              json.createObjectNode().put("username", " " + newName + " ").toString());
+      assertThat(renamed.statusCode()).isEqualTo(200);
+      assertThat(tree(renamed).path("account").path("id"))
+          .isEqualTo(before.path("account").path("id"));
+      assertThat(tree(renamed).path("account").path("username").asText()).isEqualTo(newName);
+      assertThat(owner.cookie("JSESSIONID")).isNotEqualTo(oldSession);
+      assertThat(sessions.find(owner.cookie("JSESSIONID"))).isSameAs(retainedSession);
+      assertThat(tree(owner.send("/auth/me", "GET", null))).isEqualTo(tree(renamed));
+      assertThat(tree(second.send("/auth/me", "GET", null)).path("authenticated").asBoolean())
+          .isFalse();
+      assertThat(
+              tree(other.send("/auth/me", "GET", null)).path("account").path("username").asText())
+          .isEqualTo(taken);
+      owner.csrf = oldCsrf;
+      assertThat(owner.send("/auth/logout", "POST", null).statusCode()).isEqualTo(403);
+      second.token();
+      assertThat(tree(second.send("/auth/login", "POST", credentials(newName, password))))
+          .isEqualTo(tree(renamed));
+    }
+  }
+
+  @Test
+  void renamedGoogleAccountStillUsesTheSameGoogleIdentity() throws Exception {
+    String token = "collision:" + unique() + ":rename", name = unique();
+    try (var owner = client()) {
+      owner.token();
+      String body = json.createObjectNode().put("idToken", token).toString();
+      var before = tree(owner.send("/auth/google", "POST", body));
+      owner.token();
+      var after =
+          tree(
+              owner.send(
+                  "/auth/username",
+                  "POST",
+                  json.createObjectNode().put("username", name).toString()));
+      assertThat(after.path("account").path("id")).isEqualTo(before.path("account").path("id"));
+      assertThat(after.path("account").path("hasPassword").asBoolean()).isFalse();
+      owner.token();
+      owner.send("/auth/logout", "POST", null);
+      owner.token();
+      var signedIn = tree(owner.send("/auth/google", "POST", body));
+      assertThat(signedIn).isEqualTo(after);
+      assertThat(signedIn.path("account").path("username").asText()).isEqualTo(name);
+    }
+  }
+
+  @Test
+  void concurrentUsernameChangesCannotClaimTheSameName() throws Exception {
+    String name = unique(), password = "Concurrent rename password";
+    try (var a = client();
+        var b = client();
+        var executor = Executors.newFixedThreadPool(2)) {
+      for (var client : java.util.List.of(a, b)) {
+        client.token();
+        client.send("/auth/login", "POST", credentials(unique(), password));
+        client.token();
+      }
+      long count = accountCount();
+      String body = json.createObjectNode().put("username", name).toString();
+      var first = executor.submit(() -> a.send("/auth/username", "POST", body));
+      var second = executor.submit(() -> b.send("/auth/username", "POST", body));
+      assertThat(
+              java.util.List.of(
+                  first.get(10, TimeUnit.SECONDS).statusCode(),
+                  second.get(10, TimeUnit.SECONDS).statusCode()))
+          .containsExactlyInAnyOrder(200, 409);
+      assertThat(accountCount()).isEqualTo(count);
+      assertThat(
+              TestDatabase.get()
+                  .jdbc
+                  .queryForObject("SELECT COUNT(*) FROM users WHERE username=?", Long.class, name))
+          .isEqualTo(1L);
+      assertThat(tree(a.send("/auth/me", "GET", null)).path("authenticated").asBoolean()).isTrue();
+      assertThat(tree(b.send("/auth/me", "GET", null)).path("authenticated").asBoolean()).isTrue();
     }
   }
 
@@ -350,8 +521,10 @@ class IdentityIT {
     }
   }
 
-  @Test
-  void passwordChangeRejectsLoginThatAlreadyVerifiedTheOldPassword() throws Exception {
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void accountChangeRejectsLoginThatAlreadyVerifiedTheOldCredentials(boolean rename)
+      throws Exception {
     String name = unique(), oldPassword = "Old_" + unique(), newPassword = "New_" + unique();
     var verified = new java.util.concurrent.CountDownLatch(1);
     var release = new java.util.concurrent.CountDownLatch(1);
@@ -384,12 +557,14 @@ class IdentityIT {
         assertThat(
                 owner
                     .send(
-                        "/auth/password",
+                        rename ? "/auth/username" : "/auth/password",
                         "POST",
-                        json.createObjectNode()
-                            .put("currentPassword", oldPassword)
-                            .put("newPassword", newPassword)
-                            .toString())
+                        rename
+                            ? json.createObjectNode().put("username", unique()).toString()
+                            : json.createObjectNode()
+                                .put("currentPassword", oldPassword)
+                                .put("newPassword", newPassword)
+                                .toString())
                     .statusCode())
             .isEqualTo(200);
       } finally {

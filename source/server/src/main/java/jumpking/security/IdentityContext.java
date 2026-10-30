@@ -18,9 +18,11 @@ public class IdentityContext {
 
   public Account account() {
     var auth = SecurityContextHolder.getContext().getAuthentication();
-    if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken)
-      return null;
-    return users.findByUsername(auth.getName()).map(IdentityContext::accountView).orElse(null);
+    if (auth == null
+        || !auth.isAuthenticated()
+        || auth instanceof AnonymousAuthenticationToken
+        || !(auth.getPrincipal() instanceof Long owner)) return null;
+    return users.findById(owner).map(IdentityContext::accountView).orElse(null);
   }
 
   public static Account accountView(User user) {

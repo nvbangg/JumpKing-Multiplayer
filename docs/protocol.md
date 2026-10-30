@@ -6,9 +6,11 @@ HTTP JSON tại `/api` phục vụ tài khoản/dữ liệu; WebSocket thuần t
 
 ## Xác thực và bảo mật
 
+- Sau xác thực bằng username/password hoặc Google, session lưu `users.id` kiểu số; phân quyền và thu hồi phiên dùng ID, không dùng username.
 - Spring Security quản lý session; cookie host-only, Path=/, HttpOnly, SameSite=Lax mặc định và Secure khi HTTPS; frontend khác site theo [deployment](deployment.md#cloudflare-pages-và-vps). HTTP gửi credentials; mutation cần CSRF token. Đăng nhập đổi session ID/CSRF; password băm BCrypt. Auth giới hạn 20 requests/phút/IP; xác thực hoặc đổi mật khẩu còn giới hạn theo Account ID trước BCrypt, kể cả username khác chữ hoa/dấu cùng trỏ tới một Account.
 - Sign In nhận username/password: username chưa tồn tại thì tạo Account, đã có thì xác thực; sai password không tạo/sửa Account. Username 3–32 ký tự chữ/số/underscore/hyphen; password ít nhất 6 Unicode code points, tối đa 72 UTF-8 bytes. Khi tạo trùng username đồng thời, chỉ đăng nhập bằng mật khẩu của Account đã được tạo. Không đổi Account khi còn membership.
 - Google Sign-In tùy chọn qua POST /auth/google: backend cung cấp Client ID theo [deployment](deployment.md), xác minh chữ ký/audience/issuer/thời hạn bằng GoogleIdTokenVerifier rồi nhận diện theo google_id; không ghép Account theo email. Khóa công khai được thư viện cache, không gửi ID token tới tokeninfo. Client ID rỗng thì ẩn nút và từ chối endpoint; tên Google được chuẩn hóa thành username hợp lệ.
+- Đổi username chỉ khi không còn membership, giữ ID/tiến độ/thành tích và Google ID; tên phải hợp lệ và duy nhất. Sau commit giữ phiên đang đổi tên, xoay session ID/CSRF và thu hồi các phiên/socket khác; không gia hạn tuổi phiên. Tên cũ có thể được tài khoản mới sử dụng.
 - Logout hủy phiên. Đổi mật khẩu cần currentPassword, chỉ thành công sau commit và thu hồi mọi phiên/socket của Account; tài khoản chỉ dùng Google trả CONFLICT. Không có email hoặc khôi phục mật khẩu.
 - Session idle/absolute và cookie đều 30 ngày; heartbeat không gia hạn idle. Hết phiên xử lý như disconnect, giữ checkpoint. Restart giữ phiên còn hạn, không gia hạn deadline; cấu hình theo [deployment](deployment.md#giữ-phiên-đăng-nhập).
 - CORS/WS kiểm tra Origin trong allowlist; không wildcard với credentials, preflight trước authentication. WS bắt buộc Account, owner/tên lấy từ session. Kiểm tra lại quyền và state khi thực thi lệnh.
@@ -25,6 +27,7 @@ Các path có prefix `/api`. Lỗi dạng `{error:{code,message}}`; không cache
 | GET /auth/me | → {authenticated,account:null hoặc {id,username,crown,hasPassword}}; crown=NONE/GOLD/BLACK |
 | POST /auth/login | {username,password} → cùng response /auth/me, authenticated=true; Sign In như trên |
 | POST /auth/google | {idToken} → cùng response /auth/me, authenticated=true |
+| POST /auth/username | {username} → cùng response /auth/me, authenticated=true |
 | POST /auth/password | {currentPassword,newPassword} → {ok:true} |
 | POST /auth/logout | → {ok:true} |
 | GET /game-config | → {features:{flyEnabled:boolean},auth:{googleClientId:string|null}} |

@@ -142,7 +142,8 @@ public class SecurityConfiguration {
                         "/api/community/**",
                         "/api/profile/**",
                         "/api/history/**",
-                        "/api/auth/password")
+                        "/api/auth/password",
+                        "/api/auth/username")
                     .hasRole("ACCOUNT")
                     .anyRequest()
                     .permitAll())
