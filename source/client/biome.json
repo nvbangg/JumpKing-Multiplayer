@@ -8,5 +8,17 @@
 	},
 	"files": {
 		"includes": ["src/**", "e2e/**", "*.ts", "*.json", "index.html"]
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["index.html"],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noArguments": "off"
+					}
+				}
+			}
+		}
+	]
 }
