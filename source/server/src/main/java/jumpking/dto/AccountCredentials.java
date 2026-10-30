@@ -15,14 +15,7 @@ public final class AccountCredentials {
     }
 
     public void validate() {
-      if (username == null
-          || username.codePointCount(0, username.length()) < 3
-          || username.codePointCount(0, username.length()) > 32
-          || !username.matches("[\\p{L}\\p{N}_-]+"))
-        throw new ApiException(
-            400,
-            "VALIDATION",
-            "Username must contain 3–32 letters, numbers, underscores or hyphens");
+      validateUsername(username);
       validatePassword(password);
     }
   }
@@ -34,9 +27,24 @@ public final class AccountCredentials {
     }
   }
 
+  public record UsernameChange(@NotNull String username) {
+    public UsernameChange {
+      username = username == null ? null : username.strip();
+    }
+  }
+
   public record PasswordChange(@NotNull String currentPassword, @NotNull String newPassword) {}
 
   public record GoogleLogin(@NotBlank String idToken) {}
+
+  public static void validateUsername(String username) {
+    if (username == null
+        || username.codePointCount(0, username.length()) < 3
+        || username.codePointCount(0, username.length()) > 32
+        || !username.matches("[\\p{L}\\p{N}_-]+"))
+      throw new ApiException(
+          400, "VALIDATION", "Username must contain 3–32 letters, numbers, underscores or hyphens");
+  }
 
   public static void validatePassword(String password) {
     if (password == null

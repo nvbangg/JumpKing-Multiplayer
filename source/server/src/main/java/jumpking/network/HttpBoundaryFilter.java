@@ -23,7 +23,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 public class HttpBoundaryFilter extends OncePerRequestFilter {
   private static final Set<String> AUTH_MUTATIONS =
-      Set.of("/api/auth/login", "/api/auth/google", "/api/auth/password");
+      Set.of("/api/auth/login", "/api/auth/google", "/api/auth/password", "/api/auth/username");
   private final SecuritySettings settings;
   private final SessionAuthority sessions;
   private final AuthRateLimiter limits;

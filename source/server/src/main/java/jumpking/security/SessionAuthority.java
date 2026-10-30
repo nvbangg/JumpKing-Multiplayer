@@ -124,7 +124,11 @@ public class SessionAuthority implements HttpSessionListener, HttpSessionIdListe
     return entry != null && valid(entry.session, false) ? entry.session : null;
   }
 
-  public void revokeAccount(String username) {
+  public void revokeAccount(long owner) {
+    revokeAccount(owner, null);
+  }
+
+  public void revokeAccount(long owner, String retainedSessionId) {
     for (var entry : java.util.List.copyOf(sessions.values())) {
       try {
         Object value =
@@ -133,7 +137,8 @@ public class SessionAuthority implements HttpSessionListener, HttpSessionIdListe
                     .SPRING_SECURITY_CONTEXT_KEY);
         if (value instanceof org.springframework.security.core.context.SecurityContext context
             && context.getAuthentication() != null
-            && username.equals(context.getAuthentication().getName())) entry.session.invalidate();
+            && Long.valueOf(owner).equals(context.getAuthentication().getPrincipal())
+            && !entry.session.getId().equals(retainedSessionId)) entry.session.invalidate();
       } catch (IllegalStateException expired) {
         /* Phiên đã hết hạn trong lúc duyệt. */
       }

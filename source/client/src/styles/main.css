@@ -1627,7 +1627,7 @@ td:first-child {
 		min-height: 0;
 		display: flex;
 	}
-	:is(.screen-account, .screen-password) .single-panel {
+	:is(.screen-account, .screen-password, .screen-username) .single-panel {
 		width: min(100%, 460px);
 	}
 	.single-panel > .menu-panel {
@@ -1654,7 +1654,7 @@ td:first-child {
 		margin-top: 6px;
 		padding-block: 10px 0;
 	}
-	.screen-password .panel-actions {
+	:is(.screen-password, .screen-username) .panel-actions {
 		position: static;
 	}
 	:where(.single-panel) .panel-actions button {

@@ -1,4 +1,11 @@
 import { expect, test } from "@playwright/test";
+import {
+	createRoom,
+	leaveOnline,
+	newCommunity,
+	observeOnline,
+	registerOnline,
+} from "./support/online";
 
 test.skip(
 	process.env.E2E_AUTH_ONLINE !== "true",
@@ -184,4 +191,113 @@ test("public map/config match the server contract and a rejected handshake close
 		rejected: true,
 	});
 	expect(connections).toBe(1);
+});
+
+test("Change Username keeps the same account and checkpoint and uses the new name in rooms", async ({
+	page,
+	browser,
+}, info) => {
+	test.setTimeout(60000);
+	const name = await registerOnline(page, "rename");
+	const errors: string[] = [];
+	page.on("pageerror", (error) => errors.push(error.message));
+	const observed = observeOnline(page);
+	const renameAttempt = async () => {
+		const { token, headerName } = await (
+			await page.request.get("/api/auth/csrf")
+		).json();
+		return page.request.post("/api/auth/username", {
+			headers: { [headerName]: token },
+			data: { username: `${name}_blocked` },
+		});
+	};
+	try {
+		const identity = await (await page.request.get("/api/auth/me")).json();
+		await newCommunity(page);
+		expect((await renameAttempt()).status()).toBe(409);
+		await page.keyboard.down("Space");
+		await page.waitForTimeout(200);
+		await page.keyboard.up("Space");
+		await expect
+			.poll(() => observed.snapshot?.self.simulation.physics.jumps ?? 0)
+			.toBeGreaterThan(0);
+		await page.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
+		await page
+			.getByRole("button", { name: "Save & Exit", exact: true })
+			.click();
+		await expect(
+			page.getByRole("button", { name: "Continue", exact: true }),
+		).toBeVisible();
+		const saved = await (
+			await page.request.get("/api/community/current")
+		).json();
+		const statistics = await (await page.request.get("/api/profile/me")).json();
+		await page.getByRole("button", { name, exact: true }).click();
+		await page
+			.getByRole("button", { name: "Change Username", exact: true })
+			.click();
+		await expect(
+			page.getByRole("button", { name: "Change Username", exact: true }),
+		).toBeDisabled();
+		const newName = `${name}_new`;
+		await page.getByLabel("New Username", { exact: true }).fill(newName);
+		await expect(page).toHaveTitle(/JumpKing/);
+		await expect(page.locator("vite-error-overlay")).toHaveCount(0);
+		await page.screenshot({ path: info.outputPath("username-desktop.png") });
+		const mobile = await browser.newContext({
+			storageState: await page.context().storageState(),
+			viewport: { width: 844, height: 390 },
+			hasTouch: true,
+			isMobile: true,
+		});
+		try {
+			const mobilePage = await mobile.newPage();
+			await mobilePage.goto("/account");
+			await mobilePage
+				.getByRole("button", { name: "Change Username", exact: true })
+				.click();
+			await mobilePage
+				.getByLabel("New Username", { exact: true })
+				.fill(newName);
+			await expect(
+				mobilePage.getByRole("img", { name: "JumpKing", exact: true }),
+			).toBeHidden();
+			expect(
+				await mobilePage.evaluate(
+					() => document.documentElement.scrollWidth <= innerWidth,
+				),
+			).toBe(true);
+			const panel = await mobilePage.locator(".menu-panel").boundingBox();
+			expect(panel?.width).toBeLessThan(600);
+			await expect(
+				mobilePage.getByRole("button", { name: "Back", exact: true }),
+			).toBeVisible();
+			await mobilePage.screenshot({
+				path: info.outputPath("username-mobile.png"),
+			});
+		} finally {
+			await mobile.close();
+		}
+		await page
+			.getByRole("button", { name: "Change Username", exact: true })
+			.click();
+		await expect(page.getByText(newName, { exact: true })).toBeVisible();
+		const renamed = await (await page.request.get("/api/auth/me")).json();
+		expect(renamed.account).toEqual({ ...identity.account, username: newName });
+		expect(
+			await (await page.request.get("/api/community/current")).json(),
+		).toEqual(saved);
+		expect(
+			(await (await page.request.get("/api/profile/me")).json()).total,
+		).toEqual(statistics.total);
+		await page.reload();
+		await expect(page.getByText(newName, { exact: true })).toBeVisible();
+		await page.getByRole("button", { name: "Back", exact: true }).click();
+		await createRoom(page);
+		await expect(page.getByText(newName, { exact: true })).toBeVisible();
+		expect((await renameAttempt()).status()).toBe(409);
+		expect(errors).toEqual([]);
+	} finally {
+		await leaveOnline(page);
+	}
 });

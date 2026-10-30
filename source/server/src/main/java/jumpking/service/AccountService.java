@@ -59,7 +59,8 @@ public class AccountService {
               status ->
                   IdentityContext.accountView(
                       users.saveAndFlush(User.account(form.username(), hash, clock.instant()))));
-      return completeLogin(null, Long.parseLong(account.id()), hash, authenticated);
+      return completeLogin(
+          null, Long.parseLong(account.id()), account.username(), hash, authenticated);
     } catch (DataIntegrityViolationException duplicate) {
       throw new ApiException(409, "CONFLICT", "Username is unavailable");
     }
@@ -93,11 +94,15 @@ public class AccountService {
     } catch (AuthenticationException invalid) {
       throw invalidCredentials();
     }
-    return completeLogin(current, owner, verifiedHash, authenticated);
+    return completeLogin(current, owner, verified.getUsername(), verifiedHash, authenticated);
   }
 
   private AccountDto.Account completeLogin(
-      Long current, long owner, String verifiedHash, Consumer<AccountDto.Account> authenticated) {
+      Long current,
+      long owner,
+      String verifiedUsername,
+      String verifiedHash,
+      Consumer<AccountDto.Account> authenticated) {
     return memberships.changingIdentity(
         current,
         owner,
@@ -105,8 +110,10 @@ public class AccountService {
             transactions.execute(
                 status -> {
                   var user = users.lockById(owner).orElseThrow(AccountService::invalidCredentials);
-                  // Dùng cùng khóa với đổi mật khẩu để không tạo phiên từ mật khẩu cũ.
-                  if (!java.util.Objects.equals(user.getPasswordHash(), verifiedHash))
+                  // Dùng cùng khóa với đổi tên/mật khẩu để không tạo phiên từ thông tin đã thay
+                  // đổi.
+                  if (!user.getUsername().equals(verifiedUsername)
+                      || !java.util.Objects.equals(user.getPasswordHash(), verifiedHash))
                     throw invalidCredentials();
                   var account = IdentityContext.accountView(user);
                   authenticated.accept(account);
@@ -137,10 +144,17 @@ public class AccountService {
     return memberships.changingIdentity(
         current,
         Long.valueOf(account.id()),
-        () -> {
-          authenticated.accept(account);
-          return account;
-        });
+        () ->
+            transactions.execute(
+                status -> {
+                  var user =
+                      users
+                          .lockById(Long.parseLong(account.id()))
+                          .orElseThrow(AccountService::invalidCredentials);
+                  var currentAccount = IdentityContext.accountView(user);
+                  authenticated.accept(currentAccount);
+                  return currentAccount;
+                }));
   }
 
   private AccountDto.Account registerGoogleUser(GoogleTokenVerifier.Profile profile) {
@@ -183,6 +197,33 @@ public class AccountService {
       base = "Player_" + base;
     }
     return usernamePrefix(base, 28);
+  }
+
+  public AccountDto.Account changeUsername(
+      long owner, AccountCredentials.UsernameChange form, Consumer<AccountDto.Account> changed) {
+    limits.checkAccount(owner);
+    AccountCredentials.validateUsername(form.username());
+    return memberships.changingIdentity(
+        owner,
+        null,
+        () -> {
+          AccountDto.Account account;
+          try {
+            account =
+                transactions.execute(
+                    status -> {
+                      var user =
+                          users.lockById(owner).orElseThrow(AccountService::invalidCredentials);
+                      user.setUsername(form.username());
+                      users.flush();
+                      return IdentityContext.accountView(user);
+                    });
+          } catch (DataIntegrityViolationException duplicate) {
+            throw new ApiException(409, "CONFLICT", "Username is unavailable");
+          }
+          changed.accept(account);
+          return account;
+        });
   }
 
   public void changePassword(long owner, AccountCredentials.PasswordChange form) {

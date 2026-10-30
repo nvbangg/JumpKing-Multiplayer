@@ -8,12 +8,14 @@ import {
 	Play,
 	Search,
 	UserRound,
+	UserRoundPen,
 	UserRoundPlus,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MenuPanel } from "../components/MenuPanel";
 import { AuthForm } from "../features/account/AuthForm";
 import { ChangePassword } from "../features/account/ChangePassword";
+import { ChangeUsername } from "../features/account/ChangeUsername";
 import { LobbyChat } from "../features/chat/Chat";
 import { OnlineGame } from "../features/online/OnlineGame";
 import { HistoryDetail } from "../features/records/HistoryDetail";
@@ -44,6 +46,7 @@ type Screen =
 	| "history"
 	| "detail"
 	| "password"
+	| "username"
 	| "public-rooms"
 	| "lobby"
 	| "results";
@@ -142,7 +145,9 @@ export function App() {
 	const home = homeData?.accountId === accountId ? homeData : null;
 	const back = () => {
 		const next =
-			screen === "password" || (screen === "history" && identity.account)
+			screen === "password" ||
+			screen === "username" ||
+			(screen === "history" && identity.account)
 				? "account"
 				: screen === "detail"
 					? "history"
@@ -529,6 +534,7 @@ export function App() {
 									{
 										"sign-in": "Sign In / Log In",
 										password: "Change Password",
+										username: "Change Username",
 										account: "Account",
 										history: "History",
 										detail: "Game Details",
@@ -663,6 +669,11 @@ export function App() {
 								History
 								<ChevronRight className="trailing-icon" aria-hidden="true" />
 							</button>
+							<button type="button" onClick={() => setScreen("username")}>
+								<UserRoundPen className="tone-green" aria-hidden="true" />
+								Change Username
+								<ChevronRight className="trailing-icon" aria-hidden="true" />
+							</button>
 							{identity.account.hasPassword && (
 								<button type="button" onClick={() => setScreen("password")}>
 									<LockKeyhole className="tone-amber" aria-hidden="true" />
@@ -689,6 +700,19 @@ export function App() {
 								Sign Out
 							</button>
 						</>
+					)}
+					{screen === "username" && identity.account && (
+						<ChangeUsername
+							username={identity.account.username}
+							onChanged={(value) => {
+								socket.current?.close();
+								socket.current = null;
+								setDisconnected(false);
+								setIdentity(value);
+								setError("");
+								setScreen("account");
+							}}
+						/>
 					)}
 					{screen === "password" && identity.account?.hasPassword && (
 						<ChangePassword
