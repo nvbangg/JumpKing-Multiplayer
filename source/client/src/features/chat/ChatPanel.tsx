@@ -8,9 +8,11 @@ const CHAT_HISTORY_IDLE_MS = 15_000;
 export function ChatMessages({
 	messages,
 	colors,
+	visible,
 }: {
 	messages: ChatMessage[];
 	colors: readonly string[];
+	visible: boolean;
 }) {
 	const list = useRef<HTMLDivElement>(null);
 	const follow = useRef(true);
@@ -19,7 +21,7 @@ export function ChatMessages({
 	// biome-ignore lint/correctness/useExhaustiveDependencies: Khôi phục vị trí đọc sau khi danh sách tin thay đổi.
 	useLayoutEffect(() => {
 		const element = list.current;
-		if (!element) return;
+		if (!element || !visible) return;
 		const restore = () => {
 			if (follow.current) element.scrollTop = element.scrollHeight;
 			else if (anchor.current) {
@@ -36,7 +38,7 @@ export function ChatMessages({
 			}
 		};
 		restore();
-	}, [messages]);
+	}, [messages, visible]);
 	return (
 		<>
 			<div
@@ -46,6 +48,7 @@ export function ChatMessages({
 				aria-label="Messages"
 				aria-live="polite"
 				onScroll={(event) => {
+					if (!visible) return;
 					const element = event.currentTarget;
 					follow.current =
 						element.scrollHeight - element.clientHeight - element.scrollTop <=
@@ -146,6 +149,10 @@ export function ChatPanel({
 		<section
 			className="chat-panel"
 			aria-label="Room chat"
+			onPointerEnter={() => {
+				setHistoryVisible(true);
+				hideLater(CHAT_HISTORY_IDLE_MS);
+			}}
 			onFocus={() => {
 				setHistoryVisible(true);
 				hideLater(CHAT_HISTORY_IDLE_MS);
@@ -171,7 +178,7 @@ export function ChatPanel({
 					Chat
 				</h3>
 			)}
-			{autoHide && messages.length > 0 && (
+			{autoHide && historyVisible && messages.length > 0 && (
 				<button
 					className="chat-history-toggle"
 					type="button"
@@ -202,7 +209,11 @@ export function ChatPanel({
 						hideLater(CHAT_HISTORY_IDLE_MS);
 					}}
 				>
-					<ChatMessages messages={messages} colors={colors} />
+					<ChatMessages
+						messages={messages}
+						colors={colors}
+						visible={historyVisible}
+					/>
 				</section>
 			)}
 			<section className="chat-input-box" aria-label="Chat input">

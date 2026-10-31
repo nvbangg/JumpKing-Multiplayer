@@ -35,7 +35,9 @@ export function mountChatPanel() {
 
 export function mountChatHistory() {
 	const parent = document.createElement("div");
-	parent.style.cssText = "position:fixed;inset:0;z-index:100;background:black";
+	parent.className = "game-chat";
+	parent.style.cssText =
+		"position:fixed;left:12px;bottom:12px;z-index:100;--play-height:calc(100dvh - 24px)";
 	document.body.append(parent);
 	let append = () => {};
 	function History() {

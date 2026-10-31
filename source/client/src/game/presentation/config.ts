@@ -10,7 +10,7 @@ export const PRESENTATION = Object.freeze({
 	afkPollMs: 1000,
 	nameFontSize: 10,
 	nameGap: 3,
-	inGameLeaderboardLimit: 10,
+	inGameLeaderboardLimit: 20,
 	gamepadDeadZone: 0.35,
 	effectVolume: 0.65,
 	peerEffectVolume: 0.35,

@@ -776,9 +776,6 @@ button.sound-switch {
 	}
 }
 @media (max-width: 680px) {
-	.game-chat .chat-history-box[data-hidden="true"] {
-		display: none;
-	}
 	.game-chat .chat-messages {
 		max-height: min(160px, max(30px, calc(var(--play-height) - 120px)));
 	}

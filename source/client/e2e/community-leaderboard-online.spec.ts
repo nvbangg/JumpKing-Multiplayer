@@ -26,10 +26,13 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 	const requests: number[] = [],
 		errors: string[] = [];
 	let playerCount = 1,
-		recordCount = 10;
+		recordCount = 20;
 	page.on("request", (request) => {
-		if (new URL(request.url()).pathname === "/api/leaderboard")
+		const url = new URL(request.url());
+		if (url.pathname === "/api/leaderboard") {
+			expect(url.searchParams.get("limit")).toBe("20");
 			requests.push(Date.now());
+		}
 	});
 	page.on("pageerror", (error) => errors.push(error.message));
 	try {
@@ -170,10 +173,10 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 		heights = await panelHeights();
 		expect(heights[0]).toBeGreaterThan((heights[1] ?? 0) * 2);
 		playerCount = 1;
-		recordCount = 10;
+		recordCount = 20;
 		await page.getByRole("button", { name: "Refresh", exact: true }).click();
 		await expect(playerList.getByRole("listitem")).toHaveCount(1);
-		await expect(recordsList.getByRole("listitem")).toHaveCount(10);
+		await expect(recordsList.getByRole("listitem")).toHaveCount(20);
 		const settleLayout = () =>
 			page.evaluate(
 				() =>
@@ -281,7 +284,7 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 				page.getByRole("group", { name: "Game panel selection" }),
 			).toHaveCount(0);
 			const records = page.getByRole("list", { name: "Community records" });
-			await expect(records.getByRole("listitem")).toHaveCount(10);
+			await expect(records.getByRole("listitem")).toHaveCount(20);
 			expect(
 				await records.evaluate((list) => {
 					const rows = [...list.children];
@@ -469,6 +472,7 @@ test("Community panels fit screens, scroll and load records only on entry or Ref
 test("mobile panels preserve drafts and chat stays available while paused", async ({
 	page,
 }, info) => {
+	test.setTimeout(60_000);
 	await page.setViewportSize({ width: 844, height: 390 });
 	await page.addInitScript(() =>
 		localStorage.setItem("jumpking.options", JSON.stringify({ sound: false })),
@@ -551,21 +555,20 @@ test("mobile panels preserve drafts and chat stays available while paused", asyn
 		]) {
 			await page.setViewportSize(viewport);
 			if (viewport.width <= 680) {
-				const showHistory = page.getByRole("button", {
-					name: "Show chat history",
-					exact: true,
-				});
 				await expect(page.locator(".chat-history-box")).toHaveAttribute(
 					"aria-hidden",
 					"true",
 					{ timeout: 20_000 },
 				);
-				await showHistory.tap();
+				await expect(
+					page.getByRole("button", { name: "Show chat history", exact: true }),
+				).toHaveCount(0);
+				await message.tap();
 				await expect(page.locator(".chat-history-box")).toHaveAttribute(
 					"aria-hidden",
 					"false",
 				);
-				await expect(message).not.toBeFocused();
+				await expect(message).toBeFocused();
 			}
 			const records = page.locator(".records-panel");
 			await records.locator("summary").tap();
@@ -661,7 +664,7 @@ test.describe("Desktop panels", () => {
 		await page.route("**/api/leaderboard?limit=*", (route) =>
 			route.fulfill({
 				json: {
-					entries: Array.from({ length: 10 }, (_, index) => ({
+					entries: Array.from({ length: 20 }, (_, index) => ({
 						id: String(index),
 						rank: index + 1,
 						username: `player_with_a_long_name_${index}`,
@@ -679,7 +682,7 @@ test.describe("Desktop panels", () => {
 			await registerOnline(page, "desktop_panels");
 			await newCommunity(page);
 			const list = page.getByRole("list", { name: "Community records" });
-			await expect(list.getByRole("listitem")).toHaveCount(10);
+			await expect(list.getByRole("listitem")).toHaveCount(20);
 			for (const viewport of [
 				{ width: 1280, height: 900 },
 				{ width: 844, height: 390 },

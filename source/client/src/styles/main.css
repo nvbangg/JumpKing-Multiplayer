@@ -1031,11 +1031,8 @@ td:first-child {
 .chat-history-toggle {
 	display: none;
 }
-.chat-history-box[data-hidden="true"] {
-	opacity: 0;
-}
-.chat-history-box[data-hidden="true"] > * {
-	visibility: hidden;
+.chat-panel .chat-history-box[data-hidden="true"] {
+	display: none;
 }
 .spinning {
 	animation: spin 1.5s linear infinite;

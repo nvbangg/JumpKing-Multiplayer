@@ -44,7 +44,7 @@ test("a delayed chat acknowledgement preserves the next draft and input focus", 
 
 test("chat input stays visible while history expires, reopens on hover and new messages", async ({
 	page,
-}) => {
+}, info) => {
 	await page.clock.install();
 	await page.goto("/");
 	await page.evaluate(async () => {
@@ -58,6 +58,16 @@ test("chat input stays visible while history expires, reopens on hover and new m
 	await expect(message).toBeVisible();
 	await expect(page.locator(".chat-panel > summary")).toHaveCount(0);
 	await expect(history).toHaveAttribute("data-hidden", "false");
+	const toggle = page.getByRole("button", {
+		name: "Show chat history",
+		exact: true,
+	});
+	await expect(toggle).toBeVisible();
+	expect(
+		await toggle.evaluate((element) => element.getBoundingClientRect().bottom),
+	).toBeLessThanOrEqual(
+		await message.evaluate((element) => element.getBoundingClientRect().top),
+	);
 	await page.evaluate(() =>
 		(window as unknown as { appendChat: () => void }).appendChat(),
 	);
@@ -66,6 +76,32 @@ test("chat input stays visible while history expires, reopens on hover and new m
 	await page.clock.fastForward(1);
 	await expect(history).toHaveAttribute("data-hidden", "true");
 	await expect(message).toBeVisible();
+	await expect(history).toBeHidden();
+	await expect(toggle).toHaveCount(0);
+	await expect(page.locator(".chat-input-box button")).toHaveCount(1);
+	const panel = page.getByRole("region", { name: "Room chat", exact: true });
+	const sizes = await panel.evaluate((element) => {
+		const css = getComputedStyle(element);
+		const input = element.querySelector(".chat-input-box");
+		if (!input) throw new Error("Missing chat input");
+		return {
+			panel: element.getBoundingClientRect().height,
+			input:
+				input.getBoundingClientRect().height +
+				parseFloat(css.paddingTop) +
+				parseFloat(css.paddingBottom) +
+				parseFloat(css.borderTopWidth) +
+				parseFloat(css.borderBottomWidth),
+		};
+	});
+	expect(sizes.panel).toBeCloseTo(sizes.input, 1);
+	await panel.screenshot({ path: info.outputPath("chat-collapsed.png") });
+	if (info.project.use.isMobile) await message.tap();
+	else await panel.hover();
+	await expect(history).toHaveAttribute("data-hidden", "false");
+	await expect(toggle).toBeVisible();
+	if (info.project.use.isMobile) await expect(message).toBeFocused();
+	else await expect(message).not.toBeFocused();
 	await history.hover();
 	await expect(history).toHaveAttribute("data-hidden", "false");
 	await page.clock.fastForward(10000);
@@ -79,6 +115,7 @@ test("chat input stays visible while history expires, reopens on hover and new m
 		(window as unknown as { appendChat: () => void }).appendChat(),
 	);
 	await expect(history).toHaveAttribute("data-hidden", "false");
+	await expect(history.locator("p").last()).toBeInViewport();
 	await message.fill("draft");
 	await expect(history).toHaveAttribute("data-hidden", "false");
 	await page.clock.fastForward(14_999);
@@ -101,6 +138,7 @@ test("chat input stays visible while history expires, reopens on hover and new m
 test("chat keeps the reading position when capped history advances and Latest returns to the end", async ({
 	page,
 }) => {
+	await page.clock.install();
 	await page.goto("/");
 	await page.evaluate(async () => {
 		const path = "/e2e/support/chat-panel.tsx";
@@ -123,6 +161,10 @@ test("chat keeps the reading position when capped history advances and Latest re
 	const before = await log
 		.locator('[data-message-id="10"]')
 		.evaluate((e) => e.getBoundingClientRect().top);
+	await page.clock.fastForward(15_000);
+	await expect(log).toBeHidden();
+	await page.getByRole("region", { name: "Room chat", exact: true }).hover();
+	await expect(log).toBeVisible();
 	await page.evaluate(() =>
 		(window as unknown as { appendChat: () => void }).appendChat(),
 	);
