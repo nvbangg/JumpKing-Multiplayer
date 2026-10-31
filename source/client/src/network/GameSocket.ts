@@ -230,7 +230,9 @@ export class GameSocket {
 			} catch (error) {
 				if (
 					error instanceof ApiError &&
-					["RECONNECT_EXPIRED", "ROOM_NOT_FOUND"].includes(error.code)
+					["RECONNECT_EXPIRED", "ROOM_NOT_FOUND", "INVALID_RECONNECT"].includes(
+						error.code,
+					)
 				) {
 					await clearReconnect(profile);
 					return;

@@ -22,6 +22,15 @@ test("expired reconnect returns home and Continue restores the last server check
 		const path = "/src/network/GameSocket.ts";
 		const { GameSocket } = await import(path);
 		const original = GameSocket.prototype.input;
+		const reconnect = GameSocket.prototype.reconnect;
+		GameSocket.prototype.reconnect = async () => {
+			throw new Error("Test connection unavailable");
+		};
+		Object.assign(window, {
+			restoreReconnect: () => {
+				GameSocket.prototype.reconnect = reconnect;
+			},
+		});
 		GameSocket.prototype.input = function (
 			type: "PLAYER_INPUT" | "CANCEL_INPUT",
 			payload: Record<string, unknown>,
@@ -59,6 +68,9 @@ test("expired reconnect returns home and Continue restores the last server check
 			connection.close();
 		}
 	});
+	await page.evaluate(() =>
+		(window as unknown as { restoreReconnect: () => void }).restoreReconnect(),
+	);
 	await page.getByRole("button", { name: "Reconnect", exact: true }).click();
 	await expect(
 		page.getByRole("button", { name: "Continue", exact: true }),
@@ -159,3 +171,45 @@ for (const scenario of [
 		).toBe(run);
 	});
 }
+
+test("an invalid reconnect token returns home automatically without offering another reconnect", async ({
+	page,
+}) => {
+	let corrupt = false;
+	await page.routeWebSocket("**/ws/game", (client) => {
+		const server = client.connectToServer();
+		client.onMessage((data) => {
+			const message = JSON.parse(data.toString());
+			if (corrupt && message.type === "RECONNECT") {
+				message.payload.reconnectToken = "x".repeat(43);
+				server.send(JSON.stringify(message));
+			} else server.send(data);
+		});
+	});
+	await registerOnline(page, "invalid_token");
+	await newCommunity(page);
+	corrupt = true;
+	await page.evaluate(async () => {
+		const path = "/src/network/GameSocket.ts";
+		const { GameSocket } = await import(path);
+		const original = GameSocket.prototype.input;
+		GameSocket.prototype.input = function (
+			type: "PLAYER_INPUT" | "CANCEL_INPUT",
+			payload: Record<string, unknown>,
+		) {
+			GameSocket.prototype.input = original;
+			original.call(this, type, payload);
+			this.fail("Test invalid token");
+		};
+	});
+	await expect(
+		page.getByRole("button", { name: "Continue", exact: true }),
+	).toBeEnabled();
+	await expect(page.locator("canvas")).toHaveCount(0);
+	await expect(
+		page.getByRole("button", { name: "Reconnect", exact: true }),
+	).toHaveCount(0);
+	await expect(
+		page.getByRole("status").filter({ hasText: /membership has ended/ }),
+	).toBeVisible();
+});

@@ -500,16 +500,15 @@ test("transport disconnect reconnects the same identity and run while confirmed 
 		connection.socket.close(4000, "Test transport disconnect");
 	});
 	await expect(
-		page.getByRole("button", { name: "Reconnect", exact: true }),
-	).toBeVisible();
-	expect(observed.leaves).toBe(0);
-	await page.getByRole("button", { name: "Reconnect", exact: true }).click();
-	await expect(
-		page.getByRole("button", { name: "Resume", exact: true }),
-	).toBeVisible({ timeout: 15_000 });
+		page.getByRole("heading", { name: "Disconnected", exact: true }),
+	).toHaveCount(0);
 	await expect
 		.poll(() => observed.snapshots.at(-1)?.generation)
 		.toBeGreaterThan(generation);
+	await expect(
+		page.getByRole("region", { name: "Game menu", exact: true }),
+	).toHaveCount(0);
+	expect(observed.leaves).toBe(0);
 	expect(required(observed.snapshots.at(-1)).playId).toBe(run);
 	expect(
 		required(observed.snapshots.at(-1)).self.simulation.physics.jumps,

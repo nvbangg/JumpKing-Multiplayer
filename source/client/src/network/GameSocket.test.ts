@@ -639,7 +639,7 @@ test("a late chat rejection after its command timeout cannot leak into the Lobby
 	game.close();
 });
 
-test.each(["RECONNECT_EXPIRED", "ROOM_NOT_FOUND"])(
+test.each(["RECONNECT_EXPIRED", "ROOM_NOT_FOUND", "INVALID_RECONNECT"])(
 	"Reconnect clears stored context and rejects when the server reports %s",
 	async (code) => {
 		vi.mocked(clearReconnect).mockClear();

@@ -33,6 +33,7 @@ import { PRESENTATION } from "../../game/presentation/config";
 import { parseMap } from "../../game/simulation/map";
 import { regionName } from "../../game/simulation/roomMaps";
 import { ApiError, api } from "../../network/api";
+import { NETWORK } from "../../network/config";
 import type {
 	GameConfig,
 	NetworkQuality,
@@ -120,6 +121,10 @@ export function OnlineGame({
 	const returningToSelf = useRef(false);
 	const [region, setRegion] = useState("");
 	const [disconnected, setDisconnected] = useState(false);
+	const [reconnectVisible, setReconnectVisible] = useState(false);
+	const menuRef = useRef(menu);
+	menuRef.current = menu;
+	const resumeRef = useRef<() => Promise<void>>(async () => {});
 	const [networkQuality, setNetworkQuality] = useState<NetworkQuality>(() =>
 		socket.getNetworkQuality(),
 	);
@@ -326,11 +331,86 @@ export function OnlineGame({
 		});
 		const controls = bindings.input;
 		input.current = controls;
+		let recovery: {
+			deadline: number;
+			timer: ReturnType<typeof setTimeout>;
+			retry?: ReturnType<typeof setTimeout>;
+			expired: boolean;
+			restored: boolean;
+			resuming: boolean;
+			resumed: boolean;
+			acknowledged?: number;
+			playing: boolean;
+			revision: number;
+			playId?: string;
+		} | null = null;
+		const clearRecovery = () => {
+			if (!recovery) return;
+			clearTimeout(recovery.timer);
+			clearTimeout(recovery.retry);
+			recovery = null;
+		};
+		const recover = () => {
+			const current = recovery;
+			if (!current || current.expired || disposed) return;
+			void socket.reconnect().catch((cause) => {
+				if (disposed || recovery !== current) return;
+				if (cause instanceof ApiError && cause.code === "RECONNECT_EXPIRED") {
+					clearRecovery();
+					onHome(removedNotice);
+				} else if (!current.expired) {
+					clearTimeout(current.retry);
+					current.retry = setTimeout(recover, 1000);
+				}
+			});
+		};
+		const recovered = (showMenu: boolean) => {
+			clearRecovery();
+			setDisconnected(false);
+			setReconnectVisible(false);
+			setError("");
+			if (showMenu) setMenu(true);
+		};
 		const unsubscribe = socket.subscribe((type, payload) => {
 			try {
 				if (type === "ERROR" && payload.code === "SAVE_FAILED")
 					setError(String(payload.message));
-				if (type === "GAME_SNAPSHOT") runtime.current?.receive(payload);
+				if (type === "GAME_SNAPSHOT") {
+					runtime.current?.receive(payload);
+					const current = recovery;
+					if (current?.restored) {
+						if (current.resumed) {
+							const ack =
+								runtime.current?.latest?.self.lastProcessedInputSeq ?? 0;
+							if (
+								current.acknowledged !== undefined &&
+								ack > current.acknowledged
+							)
+								recovered(false);
+							else current.acknowledged = ack;
+						} else if (!current.resuming) {
+							if (
+								current.playing &&
+								!current.expired &&
+								performance.now() < current.deadline &&
+								current.revision === pauseRevision.current &&
+								current.playId === payload.playId &&
+								latestRoom.current.state === "PLAYING" &&
+								!document.hidden &&
+								document.hasFocus() &&
+								runtime.current?.latest?.self.status === "ACTIVE"
+							) {
+								current.resuming = true;
+								void resumeRef.current().then(() => {
+									if (disposed || recovery !== current || !socket.selfId)
+										return;
+									current.resumed = !runtime.current?.menu;
+									if (!current.resumed) recovered(true);
+								});
+							} else recovered(true);
+						}
+					}
+				}
 				if (type === "PLAYER_FINISHED") runtime.current?.finish(payload);
 				if (
 					type === "ADVENTURE_EVENTS" &&
@@ -380,23 +460,63 @@ export function OnlineGame({
 					}
 				}
 				if (type === "CONNECTION_CLOSED") {
-					if (runtime.current) runtime.current.menu = true;
+					const session = runtime.current;
+					const interrupted = recovery !== null;
+					if (!recovery) {
+						recovery = {
+							deadline: performance.now() + NETWORK.reconnectGraceMs,
+							expired: false,
+							restored: false,
+							resuming: false,
+							resumed: false,
+							playing:
+								!menuRef.current &&
+								!endingActive.current &&
+								!session?.latest?.spectating &&
+								session?.latest?.self.status === "ACTIVE" &&
+								!session.latest.self.paused,
+							revision: pauseRevision.current,
+							playId: session?.latest?.playId,
+							timer: setTimeout(() => {
+								if (!recovery) return;
+								recovery.expired = true;
+								pauseRevision.current++;
+								socket.fail(
+									"The game connection could not be restored within 3 seconds",
+								);
+								setMenu(true);
+								setReconnectVisible(true);
+								setError(
+									String(
+										payload.message || "Disconnected from the game server",
+									),
+								);
+							}, NETWORK.reconnectGraceMs),
+						};
+					} else {
+						recovery.restored = false;
+						recovery.resuming = false;
+						recovery.resumed = false;
+						recovery.acknowledged = undefined;
+					}
+					if (session) session.menu = true;
 					controls.cancel();
+					flight.current?.cancel();
 					audio.current?.pause(true);
 					setDisconnected(true);
-					setMenu(true);
-					setError(
-						typeof payload.message === "string"
-							? payload.message
-							: "Disconnected from the game server",
-					);
+					clearTimeout(recovery.retry);
+					recovery.retry = setTimeout(recover, interrupted ? 1000 : 0);
 				}
 				if (type === "RECONNECT_OK") {
-					setDisconnected(false);
-					setError("");
 					if (runtime.current) runtime.current.menu = true;
 					controls.cancel();
-					setMenu(true);
+					if (recovery) recovery.restored = true;
+					else {
+						setDisconnected(false);
+						setReconnectVisible(false);
+						setError("");
+						setMenu(true);
+					}
 				}
 			} catch (cause) {
 				setError(cause instanceof Error ? cause.message : "Invalid game state");
@@ -490,12 +610,16 @@ export function OnlineGame({
 					setRegion(regionName(view?.player.state.screen ?? state.screen));
 					audio.current?.setScreen(view?.player.state.screen ?? state.screen);
 					if (
+						room.kind === "ROOM" &&
+						latestRoom.current.state === "PAUSED" &&
+						snapshot.self.paused
+					)
+						hostPausedRef.current = true;
+					if (
 						snapshot.self.paused &&
 						!session.menu &&
 						(!view || room.kind === "ROOM")
 					) {
-						if (room.kind === "ROOM" && latestRoom.current.state === "PAUSED")
-							hostPausedRef.current = true;
 						session.menu = true;
 						controls.cancel();
 						setMenu(true);
@@ -542,8 +666,10 @@ export function OnlineGame({
 				},
 				config.features.flyEnabled,
 				(message) => {
-					setError(message);
-					setMenu(true);
+					if (!recovery) {
+						setError(message);
+						setMenu(true);
+					}
 					controls.cancel();
 				},
 				(movement, state) => {
@@ -608,6 +734,7 @@ export function OnlineGame({
 		});
 		return () => {
 			disposed = true;
+			clearRecovery();
 			controller.abort();
 			unsubscribe();
 			bindings.dispose();
@@ -635,7 +762,7 @@ export function OnlineGame({
 			setPending(false);
 		}
 	};
-	const resume = async (ownGame = false) => {
+	const resume = async (ownGame = false, focus = true) => {
 		const revision = pauseRevision.current;
 		if (room.kind === "COMMUNITY") {
 			setPending(true);
@@ -678,12 +805,13 @@ export function OnlineGame({
 		}
 		socket.resumeRequired = false;
 		if (runtime.current) runtime.current.menu = false;
-		if (ownGame || !runtime.current?.latest?.spectating)
+		if (!chat.open && (ownGame || !runtime.current?.latest?.spectating))
 			input.current?.resume();
 		audio.current?.pause(false);
 		setMenu(false);
-		focusGame();
+		if (focus) focusGame();
 	};
+	resumeRef.current = () => resume(false, false);
 	const focusGame = () => {
 		container.current?.querySelector("canvas")?.focus({ preventScroll: true });
 	};
@@ -808,7 +936,7 @@ export function OnlineGame({
 						)}
 					</div>
 				)}
-				{menu && (
+				{((menu && !disconnected) || reconnectVisible) && (
 					<section className="game-overlay" aria-label="Game menu">
 						<MenuPanel
 							title={

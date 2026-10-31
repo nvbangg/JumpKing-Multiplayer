@@ -117,8 +117,9 @@ test("Easy returns only the falling player to their last safe platform and reset
 			).easyConnection;
 			connection.socket.close(4000, "Test Easy reconnect");
 		});
-		await a.getByRole("button", { name: "Reconnect", exact: true }).click();
-		await a.getByRole("button", { name: "Resume", exact: true }).click();
+		await expect(
+			a.getByRole("heading", { name: "Disconnected", exact: true }),
+		).toHaveCount(0);
 		await expect
 			.poll(() => own.snapshot?.self.simulation.physics.ticks)
 			.toBeGreaterThan(disconnectedAt);

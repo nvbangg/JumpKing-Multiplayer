@@ -1,5 +1,6 @@
 export const NETWORK = Object.freeze({
 	timeoutMs: 8000,
+	reconnectGraceMs: 3000,
 	heartbeatMs: 10000,
 	stallThresholdMs: 500,
 	maxPending: 64,

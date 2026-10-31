@@ -53,6 +53,21 @@ test("Private rooms accept IDs and host pause keeps every player in the game men
 		await expect(peer.getByLabel("Visibility", { exact: true })).toHaveValue(
 			"PRIVATE",
 		);
+		await peer.evaluate(async () => {
+			const path = "/src/network/GameSocket.ts";
+			const { GameSocket } = await import(path);
+			const original = GameSocket.prototype.input;
+			GameSocket.prototype.input = function (
+				type: "PLAYER_INPUT" | "CANCEL_INPUT",
+				payload: Record<string, unknown>,
+			) {
+				Object.assign(window, {
+					interruptPausedPeer: () =>
+						this.fail("Test reconnect during Host Pause"),
+				});
+				original.call(this, type, payload);
+			};
+		});
 		await startRoom(host, peer);
 		await host.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		await host.screenshot({ path: info.outputPath("host-menu.png") });
@@ -78,6 +93,22 @@ test("Private rooms accept IDs and host pause keeps every player in the game men
 		).toBeVisible();
 		await expect.poll(() => hostState.snapshot?.self.paused).toBe(true);
 		await expect.poll(() => peerState.snapshot?.self.paused).toBe(true);
+		const generation = peerState.snapshot?.generation ?? 0;
+		await peer.evaluate(() =>
+			(
+				window as unknown as { interruptPausedPeer: () => void }
+			).interruptPausedPeer(),
+		);
+		await expect
+			.poll(() => peerState.snapshot?.generation ?? 0)
+			.toBeGreaterThan(generation);
+		await expect(
+			peer.getByRole("heading", { name: "Disconnected", exact: true }),
+		).toHaveCount(0);
+		await expect(
+			peer.getByRole("heading", { name: "Match Paused", exact: true }),
+		).toBeVisible();
+		await expect.poll(() => peerState.snapshot?.self.paused).toBe(true);
 		const pausedTick = peerState.snapshot?.serverTick;
 		await peer.keyboard.press("ArrowRight");
 		await peer.waitForTimeout(400);
@@ -88,6 +119,9 @@ test("Private rooms accept IDs and host pause keeps every player in the game men
 		for (const page of [host, peer])
 			await expect(
 				page.getByRole("region", { name: "Game menu", exact: true }),
+				page === host
+					? "Host menu after Resume Match"
+					: "Peer menu after Resume Match",
 			).toHaveCount(0);
 		await expect.poll(() => peerState.snapshot?.self.paused).toBe(false);
 		await expect
