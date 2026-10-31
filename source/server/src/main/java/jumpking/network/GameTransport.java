@@ -56,18 +56,13 @@ public class GameTransport extends TextWebSocketHandler implements AutoCloseable
   }
 
   private static ThreadPoolExecutor pool(int threads, int queue, String name) {
-    var sequence = new java.util.concurrent.atomic.AtomicInteger();
     return new ThreadPoolExecutor(
         threads,
         threads,
         0,
         TimeUnit.MILLISECONDS,
         new ArrayBlockingQueue<>(queue),
-        task -> {
-          var thread = new Thread(task, name + sequence.incrementAndGet());
-          thread.setDaemon(true);
-          return thread;
-        },
+        Thread.ofPlatform().daemon().name(name, 1).factory(),
         new ThreadPoolExecutor.AbortPolicy());
   }
 

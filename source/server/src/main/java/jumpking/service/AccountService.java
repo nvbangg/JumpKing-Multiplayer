@@ -193,7 +193,7 @@ public class AccountService {
     }
     base = base.trim().replaceAll("\\s+", "_");
     base = base.replaceAll("[^\\p{L}\\p{N}_-]", "");
-    if (base.length() < 3) {
+    if (base.codePointCount(0, base.length()) < 3) {
       base = "Player_" + base;
     }
     return usernamePrefix(base, 28);

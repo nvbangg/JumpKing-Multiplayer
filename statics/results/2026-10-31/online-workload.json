@@ -1,0 +1,595 @@
+{
+  "recordedAt" : "2026-10-30T19:40:06.715523400Z",
+  "java" : "25.0.1",
+  "os" : "Windows 11",
+  "processors" : 16,
+  "sampleMs" : 30000,
+  "repeats" : 3,
+  "limitations" : [ "Đo trên loopback; client và server dùng chung JVM; CPU và heap bao gồm cả bộ tạo tải", "Mỗi mẫu đo 30 giây, lặp 3 lần; chưa đánh giá sức chứa production hoặc độ ổn định dài hạn", "Nhảy tại chỗ ở màn đầu, không dùng Items hoặc Fly; chưa đại diện cho cảnh nặng nhất", "Số byte là payload ứng dụng đã nhận, không tính phần đóng gói TCP, TLS và WebSocket", "RTT tính từ lúc gửi đến khi bộ nhận nhận được phản hồi; không đồng bộ đồng hồ hoặc ước lượng độ trễ một chiều", "Thời gian tính toán tick không bao gồm lập lịch, tuần tự hóa dữ liệu, socket và JDBC" ],
+  "scenarios" : [ {
+    "kind" : "COMMUNITY",
+    "rooms" : 1,
+    "playersPerRoom" : 1,
+    "seconds" : 30.0235718,
+    "rttMs" : {
+      "samples" : 238,
+      "p50" : 1.4062,
+      "p95" : 2.8,
+      "p99" : 5.1018
+    },
+    "snapshotIntervalMs" : {
+      "samples" : 599,
+      "p50" : 47.596,
+      "p95" : 64.2818,
+      "p99" : 65.5216
+    },
+    "snapshotsPerSecondPerClient" : {
+      "samples" : 1,
+      "p50" : 19.999215122622534,
+      "p95" : 19.999215122622534,
+      "p99" : 19.999215122622534
+    },
+    "simulationTicksPerSecondPerClient" : {
+      "samples" : 1,
+      "p50" : 59.9976453678676,
+      "p95" : 59.9976453678676,
+      "p99" : 59.9976453678676
+    },
+    "serverOutboundMessages" : 936,
+    "serverOutboundBytes" : 1419680,
+    "jvmCpuCorePercent" : 36.11745488589735,
+    "peakSampledHeapBytes" : 209563912,
+    "repeat" : 1
+  }, {
+    "kind" : "COMMUNITY",
+    "rooms" : 1,
+    "playersPerRoom" : 10,
+    "seconds" : 30.2603705,
+    "rttMs" : {
+      "samples" : 1150,
+      "p50" : 0.7654,
+      "p95" : 1.6672,
+      "p99" : 2.9697
+    },
+    "snapshotIntervalMs" : {
+      "samples" : 6050,
+      "p50" : 47.5025,
+      "p95" : 64.0114,
+      "p99" : 66.8491
+    },
+    "snapshotsPerSecondPerClient" : {
+      "samples" : 10,
+      "p50" : 20.003469560465778,
+      "p95" : 20.00414909197464,
+      "p99" : 20.00414909197464
+    },
+    "simulationTicksPerSecondPerClient" : {
+      "samples" : 10,
+      "p50" : 60.01040868139734,
+      "p95" : 60.01244727592392,
+      "p99" : 60.01244727592392
+    },
+    "serverOutboundMessages" : 8561,
+    "serverOutboundBytes" : 42457856,
+    "jvmCpuCorePercent" : 131.5664657840194,
+    "peakSampledHeapBytes" : 361357040,
+    "repeat" : 1
+  }, {
+    "kind" : "ROOM",
+    "rooms" : 1,
+    "playersPerRoom" : 2,
+    "seconds" : 30.0144619,
+    "rttMs" : {
+      "samples" : 422,
+      "p50" : 0.8356,
+      "p95" : 1.3066,
+      "p99" : 1.5793
+    },
+    "snapshotIntervalMs" : {
+      "samples" : 1198,
+      "p50" : 47.916,
+      "p95" : 64.111,
+      "p99" : 65.07
+    },
+    "snapshotsPerSecondPerClient" : {
+      "samples" : 2,
+      "p50" : 19.998194353349906,
+      "p95" : 19.99821698701768,
+      "p99" : 19.99821698701768
+    },
+    "simulationTicksPerSecondPerClient" : {
+      "samples" : 2,
+      "p50" : 59.99458306004972,
+      "p95" : 59.99465096105304,
+      "p99" : 59.99465096105304
+    },
+    "serverOutboundMessages" : 1822,
+    "serverOutboundBytes" : 3480944,
+    "jvmCpuCorePercent" : 17.127160290686405,
+    "peakSampledHeapBytes" : 381100880,
+    "finalSaveMs" : {
+      "samples" : 1,
+      "p50" : 28.515,
+      "p95" : 28.515,
+      "p99" : 28.515
+    },
+    "repeat" : 1
+  }, {
+    "kind" : "ROOM",
+    "rooms" : 1,
+    "playersPerRoom" : 10,
+    "seconds" : 30.1884248,
+    "rttMs" : {
+      "samples" : 1140,
+      "p50" : 0.7482,
+      "p95" : 1.4969,
+      "p99" : 2.0285
+    },
+    "snapshotIntervalMs" : {
+      "samples" : 6030,
+      "p50" : 47.4548,
+      "p95" : 77.8083,
+      "p99" : 80.6246
+    },
+    "snapshotsPerSecondPerClient" : {
+      "samples" : 10,
+      "p50" : 20.006272281550295,
+      "p95" : 20.006332286181554,
+      "p99" : 20.006332286181554
+    },
+    "simulationTicksPerSecondPerClient" : {
+      "samples" : 10,
+      "p50" : 60.01881684465088,
+      "p95" : 60.01899685854466,
+      "p99" : 60.01899685854466
+    },
+    "serverOutboundMessages" : 8530,
+    "serverOutboundBytes" : 42864489,
+    "jvmCpuCorePercent" : 57.65868910126108,
+    "peakSampledHeapBytes" : 365043312,
+    "finalSaveMs" : {
+      "samples" : 1,
+      "p50" : 40.3067,
+      "p95" : 40.3067,
+      "p99" : 40.3067
+    },
+    "repeat" : 1
+  }, {
+    "kind" : "ROOM",
+    "rooms" : 2,
+    "playersPerRoom" : 3,
+    "seconds" : 30.0563618,
+    "rttMs" : {
+      "samples" : 888,
+      "p50" : 0.7191,
+      "p95" : 1.2373,
+      "p99" : 1.8228
+    },
+    "snapshotIntervalMs" : {
+      "samples" : 3600,
+      "p50" : 47.7963,
+      "p95" : 64.2986,
+      "p99" : 78.7047
+    },
+    "snapshotsPerSecondPerClient" : {
+      "samples" : 6,
+      "p50" : 20.003544428037205,
+      "p95" : 20.003604182722963,
+      "p99" : 20.003604182722963
+    },
+    "simulationTicksPerSecondPerClient" : {
+      "samples" : 6,
+      "p50" : 60.01063328411161,
+      "p95" : 60.010812548168886,
+      "p99" : 60.010812548168886
+    },
+    "serverOutboundMessages" : 5196,
+    "serverOutboundBytes" : 12319019,
+    "jvmCpuCorePercent" : 43.35604584051819,
+    "peakSampledHeapBytes" : 426913584,
+    "finalSaveMs" : {
+      "samples" : 2,
+      "p50" : 16.2263,
+      "p95" : 24.6575,
+      "p99" : 24.6575
+    },
+    "repeat" : 1
+  }, {
+    "kind" : "COMMUNITY",
+    "rooms" : 1,
+    "playersPerRoom" : 1,
+    "seconds" : 30.0210449,
+    "rttMs" : {
+      "samples" : 239,
+      "p50" : 0.804,
+      "p95" : 1.3547,
+      "p99" : 1.95
+    },
+    "snapshotIntervalMs" : {
+      "samples" : 600,
+      "p50" : 47.6284,
+      "p95" : 63.7851,
+      "p99" : 65.3925
+    },
+    "snapshotsPerSecondPerClient" : {
+      "samples" : 1,
+      "p50" : 19.996544730380887,
+      "p95" : 19.996544730380887,
+      "p99" : 19.996544730380887
+    },
+    "simulationTicksPerSecondPerClient" : {
+      "samples" : 1,
+      "p50" : 59.98963419114266,
+      "p95" : 59.98963419114266,
+      "p99" : 59.98963419114266
+    },
+    "serverOutboundMessages" : 938,
+    "serverOutboundBytes" : 1422104,
+    "jvmCpuCorePercent" : 8.952053497644915,
+    "peakSampledHeapBytes" : 445259760,
+    "repeat" : 2
+  }, {
+    "kind" : "COMMUNITY",
+    "rooms" : 1,
+    "playersPerRoom" : 10,
+    "seconds" : 30.1990757,
+    "rttMs" : {
+      "samples" : 1150,
+      "p50" : 0.6763,
+      "p95" : 1.4454,
+      "p99" : 2.2172
+    },
+    "snapshotIntervalMs" : {
+      "samples" : 6030,
+      "p50" : 47.673,
+      "p95" : 62.9401,
+      "p99" : 66.8517
+    },
+    "snapshotsPerSecondPerClient" : {
+      "samples" : 10,
+      "p50" : 19.9990144432617,
+      "p95" : 19.999073011458258,
+      "p99" : 19.999073011458258
+    },
+    "simulationTicksPerSecondPerClient" : {
+      "samples" : 10,
+      "p50" : 59.99704332978509,
+      "p95" : 59.99721903437477,
+      "p99" : 59.99721903437477
+    },
+    "serverOutboundMessages" : 8188,
+    "serverOutboundBytes" : 42273596,
+    "jvmCpuCorePercent" : 67.67591234588679,
+    "peakSampledHeapBytes" : 518354248,
+    "repeat" : 2
+  }, {
+    "kind" : "ROOM",
+    "rooms" : 1,
+    "playersPerRoom" : 2,
+    "seconds" : 30.0256164,
+    "rttMs" : {
+      "samples" : 426,
+      "p50" : 0.7015,
+      "p95" : 1.1879,
+      "p99" : 2.0316
+    },
+    "snapshotIntervalMs" : {
+      "samples" : 1200,
+      "p50" : 47.3949,
+      "p95" : 65.3359,
+      "p99" : 78.6791
+    },
+    "snapshotsPerSecondPerClient" : {
+      "samples" : 2,
+      "p50" : 20.00412298310764,
+      "p95" : 20.004191544935047,
+      "p99" : 20.004191544935047
+    },
+    "simulationTicksPerSecondPerClient" : {
+      "samples" : 2,
+      "p50" : 60.01236894932291,
+      "p95" : 60.01257463480515,
+      "p99" : 60.01257463480515
+    },
+    "serverOutboundMessages" : 1824,
+    "serverOutboundBytes" : 3485396,
+    "jvmCpuCorePercent" : 17.276914255122502,
+    "peakSampledHeapBytes" : 514386272,
+    "finalSaveMs" : {
+      "samples" : 1,
+      "p50" : 27.726,
+      "p95" : 27.726,
+      "p99" : 27.726
+    },
+    "repeat" : 2
+  }, {
+    "kind" : "ROOM",
+    "rooms" : 1,
+    "playersPerRoom" : 10,
+    "seconds" : 30.2762914,
+    "rttMs" : {
+      "samples" : 1140,
+      "p50" : 0.7281,
+      "p95" : 1.5232,
+      "p99" : 2.05
+    },
+    "snapshotIntervalMs" : {
+      "samples" : 6050,
+      "p50" : 47.6097,
+      "p95" : 63.8231,
+      "p99" : 65.1373
+    },
+    "snapshotsPerSecondPerClient" : {
+      "samples" : 10,
+      "p50" : 20.00426828261829,
+      "p95" : 20.004483186541044,
+      "p99" : 20.004483186541044
+    },
+    "simulationTicksPerSecondPerClient" : {
+      "samples" : 10,
+      "p50" : 60.01280484785487,
+      "p95" : 60.013449559623126,
+      "p99" : 60.013449559623126
+    },
+    "serverOutboundMessages" : 8560,
+    "serverOutboundBytes" : 43023666,
+    "jvmCpuCorePercent" : 55.633465068314145,
+    "peakSampledHeapBytes" : 527284816,
+    "finalSaveMs" : {
+      "samples" : 1,
+      "p50" : 35.0391,
+      "p95" : 35.0391,
+      "p99" : 35.0391
+    },
+    "repeat" : 2
+  }, {
+    "kind" : "ROOM",
+    "rooms" : 2,
+    "playersPerRoom" : 3,
+    "seconds" : 30.1420898,
+    "rttMs" : {
+      "samples" : 888,
+      "p50" : 0.6894,
+      "p95" : 1.1462,
+      "p99" : 1.8388
+    },
+    "snapshotIntervalMs" : {
+      "samples" : 3606,
+      "p50" : 47.9704,
+      "p95" : 63.7293,
+      "p99" : 78.7918
+    },
+    "snapshotsPerSecondPerClient" : {
+      "samples" : 6,
+      "p50" : 19.96013280642081,
+      "p95" : 19.96040539736137,
+      "p99" : 19.96040539736137
+    },
+    "simulationTicksPerSecondPerClient" : {
+      "samples" : 6,
+      "p50" : 59.980033025617274,
+      "p95" : 59.98085215912585,
+      "p99" : 59.98085215912585
+    },
+    "serverOutboundMessages" : 5151,
+    "serverOutboundBytes" : 12327702,
+    "jvmCpuCorePercent" : 36.02727970109093,
+    "peakSampledHeapBytes" : 503522648,
+    "finalSaveMs" : {
+      "samples" : 2,
+      "p50" : 15.402,
+      "p95" : 21.8055,
+      "p99" : 21.8055
+    },
+    "repeat" : 2
+  }, {
+    "kind" : "COMMUNITY",
+    "rooms" : 1,
+    "playersPerRoom" : 1,
+    "seconds" : 30.1052196,
+    "rttMs" : {
+      "samples" : 239,
+      "p50" : 0.8251,
+      "p95" : 1.3901,
+      "p99" : 2.1177
+    },
+    "snapshotIntervalMs" : {
+      "samples" : 601,
+      "p50" : 47.826,
+      "p95" : 63.411,
+      "p99" : 65.5454
+    },
+    "snapshotsPerSecondPerClient" : {
+      "samples" : 1,
+      "p50" : 19.994259219016918,
+      "p95" : 19.994259219016918,
+      "p99" : 19.994259219016918
+    },
+    "simulationTicksPerSecondPerClient" : {
+      "samples" : 1,
+      "p50" : 59.98277765705075,
+      "p95" : 59.98277765705075,
+      "p99" : 59.98277765705075
+    },
+    "serverOutboundMessages" : 938,
+    "serverOutboundBytes" : 1425630,
+    "jvmCpuCorePercent" : 10.432161072826055,
+    "peakSampledHeapBytes" : 473492688,
+    "repeat" : 3
+  }, {
+    "kind" : "COMMUNITY",
+    "rooms" : 1,
+    "playersPerRoom" : 10,
+    "seconds" : 30.1819696,
+    "rttMs" : {
+      "samples" : 1150,
+      "p50" : 0.6716,
+      "p95" : 1.3829,
+      "p99" : 2.1742
+    },
+    "snapshotIntervalMs" : {
+      "samples" : 6030,
+      "p50" : 47.6272,
+      "p95" : 63.0275,
+      "p99" : 71.1329
+    },
+    "snapshotsPerSecondPerClient" : {
+      "samples" : 10,
+      "p50" : 19.999177081953967,
+      "p95" : 19.999227824175453,
+      "p99" : 19.999227824175453
+    },
+    "simulationTicksPerSecondPerClient" : {
+      "samples" : 10,
+      "p50" : 59.9975312458619,
+      "p95" : 59.997683472526354,
+      "p99" : 59.997683472526354
+    },
+    "serverOutboundMessages" : 8368,
+    "serverOutboundBytes" : 42307849,
+    "jvmCpuCorePercent" : 48.87023675220984,
+    "peakSampledHeapBytes" : 521280016,
+    "repeat" : 3
+  }, {
+    "kind" : "ROOM",
+    "rooms" : 1,
+    "playersPerRoom" : 2,
+    "seconds" : 30.1118425,
+    "rttMs" : {
+      "samples" : 424,
+      "p50" : 0.7111,
+      "p95" : 1.2054,
+      "p99" : 1.6994
+    },
+    "snapshotIntervalMs" : {
+      "samples" : 1202,
+      "p50" : 47.9429,
+      "p95" : 63.9603,
+      "p99" : 65.0992
+    },
+    "snapshotsPerSecondPerClient" : {
+      "samples" : 2,
+      "p50" : 19.991232730127876,
+      "p95" : 19.991240111342226,
+      "p99" : 19.991240111342226
+    },
+    "simulationTicksPerSecondPerClient" : {
+      "samples" : 2,
+      "p50" : 59.97369819038364,
+      "p95" : 59.97372033402668,
+      "p99" : 59.97372033402668
+    },
+    "serverOutboundMessages" : 1828,
+    "serverOutboundBytes" : 3491704,
+    "jvmCpuCorePercent" : 13.6989292501779,
+    "peakSampledHeapBytes" : 528709528,
+    "finalSaveMs" : {
+      "samples" : 1,
+      "p50" : 28.2612,
+      "p95" : 28.2612,
+      "p99" : 28.2612
+    },
+    "repeat" : 3
+  }, {
+    "kind" : "ROOM",
+    "rooms" : 1,
+    "playersPerRoom" : 10,
+    "seconds" : 30.1828813,
+    "rttMs" : {
+      "samples" : 1140,
+      "p50" : 0.7254,
+      "p95" : 1.4475,
+      "p99" : 1.9647
+    },
+    "snapshotIntervalMs" : {
+      "samples" : 6020,
+      "p50" : 47.6782,
+      "p95" : 64.3688,
+      "p99" : 80.4564
+    },
+    "snapshotsPerSecondPerClient" : {
+      "samples" : 10,
+      "p50" : 20.008489715190915,
+      "p95" : 20.0086808426287,
+      "p99" : 20.0086808426287
+    },
+    "simulationTicksPerSecondPerClient" : {
+      "samples" : 10,
+      "p50" : 60.02546914557274,
+      "p95" : 60.026042527886105,
+      "p99" : 60.026042527886105
+    },
+    "serverOutboundMessages" : 8430,
+    "serverOutboundBytes" : 42801304,
+    "jvmCpuCorePercent" : 43.27784305999971,
+    "peakSampledHeapBytes" : 528366432,
+    "finalSaveMs" : {
+      "samples" : 1,
+      "p50" : 37.0099,
+      "p95" : 37.0099,
+      "p99" : 37.0099
+    },
+    "repeat" : 3
+  }, {
+    "kind" : "ROOM",
+    "rooms" : 2,
+    "playersPerRoom" : 3,
+    "seconds" : 30.0700869,
+    "rttMs" : {
+      "samples" : 894,
+      "p50" : 0.6529,
+      "p95" : 1.1228,
+      "p99" : 1.8359
+    },
+    "snapshotIntervalMs" : {
+      "samples" : 3606,
+      "p50" : 47.8508,
+      "p95" : 64.0217,
+      "p99" : 65.4914
+    },
+    "snapshotsPerSecondPerClient" : {
+      "samples" : 6,
+      "p50" : 20.007128063685943,
+      "p95" : 20.007919873747298,
+      "p99" : 20.007919873747298
+    },
+    "simulationTicksPerSecondPerClient" : {
+      "samples" : 6,
+      "p50" : 60.021384191057834,
+      "p95" : 60.02375962124189,
+      "p99" : 60.02375962124189
+    },
+    "serverOutboundMessages" : 5139,
+    "serverOutboundBytes" : 12326918,
+    "jvmCpuCorePercent" : 31.38501072971625,
+    "peakSampledHeapBytes" : 501760560,
+    "finalSaveMs" : {
+      "samples" : 2,
+      "p50" : 14.2405,
+      "p95" : 27.1445,
+      "p99" : 27.1445
+    },
+    "repeat" : 3
+  } ],
+  "computeTicks" : [ {
+    "warmupTicks" : 600,
+    "over16_67ms" : 0,
+    "tickMs" : {
+      "samples" : 1800,
+      "p50" : 0.0173,
+      "p95" : 0.0202,
+      "p99" : 0.0298
+    },
+    "players" : 2
+  }, {
+    "warmupTicks" : 600,
+    "over16_67ms" : 0,
+    "tickMs" : {
+      "samples" : 1800,
+      "p50" : 0.0562,
+      "p95" : 0.0848,
+      "p99" : 0.1018
+    },
+    "players" : 10
+  } ]
+}

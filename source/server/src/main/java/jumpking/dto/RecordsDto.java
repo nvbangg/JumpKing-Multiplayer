@@ -18,13 +18,7 @@ public final class RecordsDto {
       long roomWins,
       Long bestFinishTimeMs) {}
 
-  public record Room(
-      String mode,
-      int mapId,
-      Integer itemCooldownMinutes,
-      String roomCode,
-      long durationMs,
-      Integer rank) {}
+  public record Room(String mode, int mapId, Integer itemCooldownMinutes, Integer rank) {}
 
   public record History(
       String id,

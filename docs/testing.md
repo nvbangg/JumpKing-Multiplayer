@@ -50,7 +50,7 @@ Windows không có Docker dùng runner từ root:
 ./source/database/test-mysql.ps1 -MySqlHome '<thư mục MySQL 8.4>' -JavaHome '<thư mục JDK 25>'
 ```
 
-Runner tạo instance/cổng riêng rồi dọn dữ liệu do nó tạo, không đổi service MySQL đang dùng. `-Web` kiểm tra bản đóng gói sau khi build client; `-IntegrationTest '<tên IT>'` chọn nhóm cần chạy. Nếu tự cấp MySQL test, dùng `JK_TEST_DATABASE_URL`, `JK_TEST_DATABASE_USERNAME`, `JK_TEST_DATABASE_PASSWORD` với database mới có tên bắt đầu bằng `jumpking_it`.
+Runner tạo instance/cổng riêng rồi dọn dữ liệu do nó tạo, không đổi service MySQL đang dùng. `-Web` kiểm tra bản đóng gói sau khi build client; `-DatabaseRecovery` kiểm tra restart, backup/restore và đối chiếu checksum; `-IntegrationTest '<tên IT>'` chọn nhóm cần chạy. Nếu tự cấp MySQL test, dùng `JK_TEST_DATABASE_URL`, `JK_TEST_DATABASE_USERNAME`, `JK_TEST_DATABASE_PASSWORD` với database mới có tên bắt đầu bằng `jumpking_it`.
 
 Browser tests:
 
@@ -91,3 +91,21 @@ Học phần yêu cầu [ít nhất một nhóm thực nghiệm](final-project/I
 Đo độ trễ phản hồi và sai lệch đồng bộ; dùng RTT, snapshot rate/jitter, tick time hoặc message/byte rate để giải thích khi cần. Thử nhiều clients và nhiều phòng để kiểm tra concurrency. Ghi baseline, phiên bản, môi trường, cấu hình, thời lượng, số mẫu và lệnh tái tạo; lặp phép đo và báo phân bố thay vì chỉ một giá trị trung bình.
 
 RTT không phải độ trễ một chiều; độ trễ giả lập không phải phép đo Internet. Chưa có số đo thì không kết luận sức chứa hoặc mức cải thiện. Kết quả, biểu đồ, phân tích và giới hạn thuộc [report/](../report/), không ghi vào đặc tả thiết kế.
+
+Hai phép đo opt-in dùng công cụ sẵn có, không thay đổi cấu hình server. Từ root, chạy tải HTTP/WS/MySQL thật với 1/10 người Community, 2/10 người Room và 2 Room × 3 người; mỗi cấu hình đo 30 giây, lặp 3 lần:
+
+```powershell
+$env:JK_WORKLOAD_RUN = 'true'
+./source/database/test-mysql.ps1 -MySqlHome '<thư mục MySQL>' -JavaHome '<thư mục JDK 25>' -IntegrationTest OnlineWorkloadIT
+Remove-Item Env:JK_WORKLOAD_RUN
+```
+
+So sánh snapshot-only và prediction/reconciliation bằng cùng input trong mô hình độ trễ xác định; chạy từ `source/client` với Chromium đã cài hoặc `E2E_BROWSER_PATH`:
+
+```powershell
+$env:JK_NETCODE_EXPERIMENT = 'true'
+npm run test:e2e -- e2e/netcode-experiment.spec.ts
+Remove-Item Env:JK_NETCODE_EXPERIMENT
+```
+
+Dữ liệu thô ở `.local/reports/online-workload.json` và `.local/reports/netcode-experiment.json`. Ghi commit, môi trường và giữ output của từng đợt đo trước khi chạy lại; không dùng số liệu từ bản cũ cho bản mới. Workload đo RTT, message/byte rate, snapshot/tick rate, CPU/heap JVM và thời gian chốt kết quả; baseline đo độ trễ nhìn thấy cú nhảy và sai lệch vị trí. CPU/heap gồm cả load driver cùng JVM; mô hình độ trễ không phải phép đo Internet, các mức tải này không chứng minh sức chứa tối đa.

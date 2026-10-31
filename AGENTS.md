@@ -11,7 +11,6 @@ Tham khảo các tài liệu liên quan đến tác vụ theo trách nhiệm sau
 - `docs/data.md`: Schema, transactions, checkpoint và thành tích.
 - `docs/deployment.md`: Cấu hình và triển khai.
 - `docs/testing.md`: Checks, tiêu chí nghiệm thu và phương pháp thực nghiệm.
-- `report/`: Kết quả thực nghiệm, phân tích và kết luận theo phiên bản.
 - `docs/final-project/`: Yêu cầu bài tập lớn và tài liệu học phần; chỉ đọc.
 
 Tài liệu thiết kế trong `docs/` quy định thiết kế đích. Mỗi quyết định có một nguồn chính; cập nhật đúng nguồn khi thay đổi, nơi khác tham chiếu thay vì sao chép.
@@ -28,6 +27,5 @@ Khi yêu cầu, tài liệu và code mâu thuẫn, xác định nguyên nhân v�
 
 1. Đảm bảo làm việc đúng nhánh và pull code trước khi sửa.
 2. Với tác vụ chỉnh sửa, thực hiện từng phần theo quy trình **Code → Test → Review → Commit**. Không push.
-3. Sau thay đổi cuối, chạy các checks bắt buộc theo `docs/testing.md`.
-4. Rà soát thay đổi qua `git status` và `git diff` để bảo đảm đúng yêu cầu và phạm vi; chỉ stage phần thuộc tác vụ và kiểm tra `git diff --cached` trước khi commit.
-5. Chỉ commit khi các checks bắt buộc đạt; amend commit gần nhất nếu cùng tác vụ và chưa push, nếu không thì tạo commit mới.
+3. Ưu tiên gộp các thay đổi vào những commit chưa push có cùng mục đích để lịch sử Git gọn và hợp lý.
+4. Trước khi commit, bảo đảm các checks bắt buộc theo `docs/testing.md` đạt; kiểm tra `git status`, chỉ stage thay đổi thuộc tác vụ và rà soát nội dung `git diff --cached` để xác nhận đúng yêu cầu và phạm vi.

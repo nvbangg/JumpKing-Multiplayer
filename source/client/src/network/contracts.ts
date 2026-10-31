@@ -45,8 +45,6 @@ export interface HistoryItem {
 		mode: string;
 		mapId: number;
 		itemCooldownMinutes: number | null;
-		roomCode: string;
-		durationMs: number;
 		rank: number;
 	};
 }

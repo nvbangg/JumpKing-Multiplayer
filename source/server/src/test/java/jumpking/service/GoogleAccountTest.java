@@ -24,7 +24,11 @@ class GoogleAccountTest {
 
   @Test
   void prefixesShortNames() {
-    assertThat(AccountService.sanitizeGoogleUsername("AB", "ab@gmail.com")).isEqualTo("Player_AB");
+    for (String name : new String[] {"AB", "𠮷𠮷"}) {
+      String username = AccountService.sanitizeGoogleUsername(name, "ab@gmail.com");
+      assertThat(username).isEqualTo("Player_" + name);
+      jumpking.dto.AccountCredentials.validateUsername(username);
+    }
   }
 
   @Test

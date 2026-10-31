@@ -9,7 +9,7 @@ Chơi tại [jumpking-multiplayer.pages.dev](https://jumpking-multiplayer.pages.
 | Community | Tự ghép sảnh, lưu tiến độ theo Account, Continue và leaderboard |
 | Room | Public/Private, Join Public hoặc ID; Race, Easy, Hardcore, No Walk; chọn chặng 1–10, giới hạn thời gian và Items tùy chọn |
 
-Cả hai yêu cầu đăng nhập. Username chưa có được tạo khi Sign In; có đổi mật khẩu bằng mật khẩu hiện tại. Google Sign-In có sẵn Client ID mặc định theo [hướng dẫn](docs/google-oauth-setup.md); Account chỉ dùng Google không có thao tác đổi mật khẩu. Luật đầy đủ tại [gameplay](docs/gameplay.md).
+Cả hai yêu cầu đăng nhập. Username chưa có được tạo khi Sign In; có thể đổi username; đổi mật khẩu cần mật khẩu hiện tại. Google Sign-In có sẵn Client ID mặc định theo [hướng dẫn](docs/google-oauth-setup.md); Account chỉ dùng Google không có thao tác đổi mật khẩu. Luật đầy đủ tại [gameplay](docs/gameplay.md).
 
 ## Kiến trúc và công nghệ
 
@@ -102,6 +102,6 @@ Người khác chỉ cần trình duyệt. Production dùng [Cloudflare Pages v�
 | [deployment](docs/deployment.md) | Cấu hình và triển khai |
 | [testing](docs/testing.md) | Biome, Spotless, Vitest, JUnit, Playwright; lệnh và tiêu chí nghiệm thu |
 
-`docs/` là thiết kế đích. Báo cáo viết riêng theo [yêu cầu học phần](docs/final-project/Instruction.md), dùng lại sơ đồ/quyết định và bổ sung bằng chứng. [Thực nghiệm](docs/testing.md#phương-pháp-thực-nghiệm) so sánh snapshot-only với prediction/reconciliation; [kết quả và đóng góp](report/report.md) phải gắn với phiên bản đã đo.
+`docs/` là thiết kế đích. Báo cáo viết riêng theo [yêu cầu học phần](docs/final-project/Instruction.md), dùng lại sơ đồ/quyết định và bổ sung bằng chứng. Đóng góp kỹ thuật được kiểm chứng bằng [thực nghiệm](docs/testing.md#phương-pháp-thực-nghiệm) so sánh phản hồi của snapshot-only với prediction/reconciliation trên cùng input, cùng phép đo tải nhiều người/phòng qua HTTP/WS/MySQL thật; [kết quả và đóng góp](report/) phải gắn với phiên bản đã đo. Dữ liệu thô và môi trường của đợt kiểm chứng hiện tại ở [statics/results](statics/results/2026-10-31/).
 
 Giới hạn: một backend; Room ở RAM, Community chỉ phục hồi tới checkpoint đã commit. Nguồn nội dung và tình trạng giấy phép tại [attribution](source/client/public/assets/ATTRIBUTION.md).

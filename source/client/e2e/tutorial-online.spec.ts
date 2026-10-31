@@ -180,8 +180,16 @@ for (const mobile of [false, true])
 				await expect(
 					page.getByRole("button", { name: "Continue", exact: true }),
 				).toBeVisible();
-				page.once("dialog", (dialog) => dialog.accept());
-				await newCommunity(page);
+				await page
+					.getByRole("button", { name: "New Game", exact: true })
+					.click();
+				await page
+					.getByRole("dialog")
+					.getByRole("button", { name: "Confirm", exact: true })
+					.click();
+				await expect(
+					page.getByRole("button", { name: "Menu (Esc)", exact: true }),
+				).toBeVisible();
 				await expect(guide).toHaveCount(0);
 			}
 		} finally {

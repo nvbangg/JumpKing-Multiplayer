@@ -48,7 +48,7 @@ Danh sách phòng chỉ có Public/WAITING còn chỗ. Room ID là chuỗi 6 ch�
 | LeaderboardEntry | RunSummary và rank, username |
 | Statistics | totalPlayTimeMs, totalJumps, totalFalls, finishes, matchesPlayed, roomWins, bestFinishTimeMs |
 | History summary | id, kind (derived from matchId), status, startedAt, endedAt, playTimeMs, jumps, falls, currentProgress, maxProgress, finishTimeMs, room |
-| History room | mode, mapId, itemCooldownMinutes (nullable; null nghĩa là Items tắt), roomCode, durationMs, rank; null ở Community |
+| History room | mode, mapId, itemCooldownMinutes (nullable; null nghĩa là Items tắt), rank; null ở Community |
 | Room detail | Summary và timeLimitMinutes, endReason, participants ở cấp ngoài cùng |
 | Participant | runId, username, status, rank, currentProgress, maxProgress, finishTimeMs, playTimeMs, jumps, falls |
 

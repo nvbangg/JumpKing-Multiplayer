@@ -28,11 +28,11 @@ public class RecordsRepository {
       """
         WITH history AS (
           SELECT id,'COMMUNITY' AS kind,status,started_at,ended_at,play_ticks,jumps,falls,current_progress,max_progress,finish_ticks,
-            NULL AS mode,NULL AS map_id,NULL AS item_cooldown_minutes,NULL AS room_code,NULL AS duration_ticks,NULL AS `rank`
+            NULL AS mode,NULL AS map_id,NULL AS item_cooldown_minutes,NULL AS `rank`
           FROM play_runs WHERE user_id=:owner AND match_id IS NULL AND status<>'ACTIVE'
           UNION ALL
           SELECT m.id,'ROOM',p.status,m.started_at,m.ended_at,p.play_ticks,p.jumps,p.falls,p.current_progress,p.max_progress,p.finish_ticks,
-            m.mode,m.map_id,m.item_cooldown_minutes,m.room_code,m.duration_ticks,p.`rank`
+            m.mode,m.map_id,m.item_cooldown_minutes,p.`rank`
           FROM play_runs p JOIN matches m ON m.id=p.match_id
           WHERE p.user_id=:owner AND m.ended_at IS NOT NULL
         ) SELECT * FROM history
@@ -207,8 +207,6 @@ public class RecordsRepository {
                 text(row, "mode"),
                 integer(row, "map_id"),
                 integer(row, "item_cooldown_minutes"),
-                text(row, "room_code"),
-                ms(number(row, "duration_ticks")),
                 integer(row, "rank"))
             : null);
   }

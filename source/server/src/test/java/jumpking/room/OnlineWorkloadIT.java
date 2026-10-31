@@ -40,7 +40,10 @@ class OnlineWorkloadIT {
   @Autowired NetworkSettings limits;
   @Autowired SharedData shared;
   private final ObjectMapper json = new ObjectMapper();
-  private static final long SAMPLE_MS = 5000;
+  private static final long SAMPLE_MS = 30_000;
+  private static final int REPEATS = 3;
+
+  private record Scenario(boolean community, int rooms, int players) {}
 
   private static final class Probe implements GameClient.Observer {
     final List<Long> snapshots = new CopyOnWriteArrayList<>();
@@ -87,23 +90,43 @@ class OnlineWorkloadIT {
   @Test
   void measuresOneTwoTenPlayersAndMultipleRoomsWithoutChangingServerLimits() throws Exception {
     var reports = new ArrayList<Map<String, Object>>();
-    reports.add(sample(true, 1, 1));
-    reports.add(sample(false, 1, 2));
-    reports.add(sample(false, 1, 10));
-    reports.add(sample(false, 2, 3));
+    var accounts = new ArrayList<GameClient>();
+    try {
+      // Tái dùng phiên đăng nhập để phép đo không phải nới quota xác thực/kết nối.
+      for (int index = 0; index < 10; index++) accounts.add(accountFixture());
+      var scenarios =
+          List.of(
+              new Scenario(true, 1, 1),
+              new Scenario(true, 1, 10),
+              new Scenario(false, 1, 2),
+              new Scenario(false, 1, 10),
+              new Scenario(false, 2, 3));
+      for (int repeat = 1; repeat <= REPEATS; repeat++) {
+        for (var scenario : scenarios) {
+          var result = sample(scenario.community, scenario.rooms, scenario.players, accounts);
+          result.put("repeat", repeat);
+          reports.add(result);
+        }
+      }
+    } finally {
+      accounts.forEach(GameClient::close);
+    }
     var output = new LinkedHashMap<String, Object>();
     output.put("recordedAt", Instant.now().toString());
     output.put("java", System.getProperty("java.version"));
     output.put("os", System.getProperty("os.name"));
     output.put("processors", Runtime.getRuntime().availableProcessors());
     output.put("sampleMs", SAMPLE_MS);
+    output.put("repeats", REPEATS);
     output.put(
         "limitations",
         List.of(
-            "Loopback; clients and server share one JVM; CPU and heap include the load driver",
-            "Five-second samples are smoke measurements, not a production capacity estimate",
-            "RTT measured from send to listener receipt; no clock synchronization or one-way latency estimate",
-            "Compute tick timings exclude scheduling, serialization, socket and JDBC"));
+            "Đo trên loopback; client và server dùng chung JVM; CPU và heap bao gồm cả bộ tạo tải",
+            "Mỗi mẫu đo 30 giây, lặp 3 lần; chưa đánh giá sức chứa production hoặc độ ổn định dài hạn",
+            "Nhảy tại chỗ ở màn đầu, không dùng Items hoặc Fly; chưa đại diện cho cảnh nặng nhất",
+            "Số byte là payload ứng dụng đã nhận, không tính phần đóng gói TCP, TLS và WebSocket",
+            "RTT tính từ lúc gửi đến khi bộ nhận nhận được phản hồi; không đồng bộ đồng hồ hoặc ước lượng độ trễ một chiều",
+            "Thời gian tính toán tick không bao gồm lập lịch, tuần tự hóa dữ liệu, socket và JDBC"));
     output.put("scenarios", reports);
     output.put("computeTicks", computeTicks());
     Path report = Path.of("../../.local/reports/online-workload.json");
@@ -111,7 +134,8 @@ class OnlineWorkloadIT {
     json.writerWithDefaultPrettyPrinter().writeValue(report.toFile(), output);
   }
 
-  private Map<String, Object> sample(boolean community, int rooms, int playersPerRoom)
+  private Map<String, Object> sample(
+      boolean community, int rooms, int playersPerRoom, List<GameClient> accounts)
       throws Exception {
     var clients = new ArrayList<GameClient>();
     var probes = new ArrayList<Probe>();
@@ -122,26 +146,26 @@ class OnlineWorkloadIT {
       for (int group = 0; group < rooms; group++) {
         String roomId = null;
         for (int index = 0; index < playersPerRoom; index++) {
-          var client = community ? new GameClient(port) : accountFixture();
+          var client = accounts.get(group * playersPerRoom + index);
+          client.messages.clear();
           clients.add(client);
           var probe = new Probe();
           probes.add(probe);
           client.observer = probe;
-          if (community) client.register();
           client.connect();
-          if (index == 0) {
+          if (community) {
+            var request = client.communityRequest();
+            request.put("newRun", true);
+            String joined = client.ok("JOIN_COMMUNITY", request).path("roomId").asText();
+            if (roomId == null) roomId = joined;
+            assertThat(joined).isEqualTo(roomId);
+          } else if (index == 0) {
             hosts.add(client);
-            roomId =
-                client
-                    .ok(
-                        community ? "JOIN_COMMUNITY" : "CREATE_ROOM",
-                        community ? client.communityRequest() : Map.of())
-                    .path("roomId")
-                    .asText();
-          } else client.ok("JOIN_ROOM", Map.of("roomId", roomId + index));
+            roomId = client.ok("CREATE_ROOM", Map.of()).path("roomId").asText();
+          } else client.ok("JOIN_ROOM", Map.of("roomId", roomId));
         }
       }
-      if (!community) for (var host : hosts) host.ok("START_GAME", Map.of());
+      for (var host : hosts) host.ok("START_GAME", Map.of());
       for (var client : clients)
         client.await(message -> message.path("type").asText().equals("GAME_SNAPSHOT"));
       var sequence = new AtomicLong();
@@ -229,26 +253,27 @@ class OnlineWorkloadIT {
           "serverOutboundBytes", probes.stream().mapToLong(probe -> probe.bytes.get()).sum());
       report.put("jvmCpuCorePercent", cpuSeconds / seconds * 100);
       report.put("peakSampledHeapBytes", heap);
-      for (var host : hosts)
-        if (!community) {
-          long begin = System.nanoTime();
-          host.ok("END_MATCH", Map.of());
-          host.await(
-              message ->
-                  message.path("type").asText().equals("ROOM_STATE")
-                      && message
-                          .path("payload")
-                          .path("result")
-                          .path("saveStatus")
-                          .asText()
-                          .equals("SAVED"));
-          report.put("lastFinalSaveMs", (System.nanoTime() - begin) / 1e6);
-        }
+      var finalSaves = new ArrayList<Double>();
+      for (var host : hosts) {
+        long begin = System.nanoTime();
+        host.ok("END_MATCH", Map.of());
+        host.await(
+            message ->
+                message.path("type").asText().equals("ROOM_STATE")
+                    && message
+                        .path("payload")
+                        .path("result")
+                        .path("saveStatus")
+                        .asText()
+                        .equals("SAVED"));
+        finalSaves.add((System.nanoTime() - begin) / 1e6);
+      }
+      if (!community) report.put("finalSaveMs", distribution(finalSaves));
       for (var client : clients) client.ok("LEAVE_ROOM", Map.of());
       return report;
     } finally {
       sender.shutdownNow();
-      for (var client : clients) client.close();
+      for (var client : clients) client.disconnect();
     }
   }
 
@@ -262,7 +287,7 @@ class OnlineWorkloadIT {
                       new RoomMatch.Spec(
                           "player-" + index, index + 1L, "Player " + index, index, 1))
               .toList();
-      var match = new RoomMatch("ABCDEF", RoomSettings.defaults(), roster, shared, limits, false);
+      var match = new RoomMatch("000000", RoomSettings.defaults(), roster, shared, limits, false);
       var instant = Instant.parse("2026-01-01T00:00:00Z");
       match.start(instant);
       var samples = new ArrayList<Double>();

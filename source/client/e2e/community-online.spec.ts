@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import type { OnlineSnapshot } from "../src/game/netcode/OnlineRuntime";
+import { PRESENTATION } from "../src/game/presentation/config";
 import { NETWORK } from "../src/network/config";
 import { required } from "../src/required";
 import { leaveOnline } from "./support/online";
@@ -299,13 +300,17 @@ test("two Accounts share server simulation, see each other jump, leave and Conti
 			(entry: { username: string }) => entry.username === nameA,
 		);
 		expect(best.id).toBe(runId);
-		const row = a
-			.getByLabel("Community records")
-			.getByRole("listitem")
-			.filter({ hasText: nameA });
-		await expect(row).toHaveCount(1);
-		await expect(row).toContainText(`${best.rank}. ${nameA}`);
-		await expect(row).toContainText(`${Math.floor(best.maxProgress)} px`);
+		await a.getByRole("button", { name: "Refresh", exact: true }).click();
+		await expect(
+			a.getByLabel("Community records").getByRole("listitem").locator("span"),
+		).toHaveText(
+			entries
+				.slice(0, PRESENTATION.inGameLeaderboardLimit)
+				.map(
+					(entry: { rank: number; username: string }) =>
+						`${entry.rank}. ${entry.username}`,
+				),
+		);
 		await leave(a);
 		await expect(
 			a.getByRole("button", { name: "Continue", exact: true }),

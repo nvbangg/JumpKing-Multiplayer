@@ -11,6 +11,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import jumpking.config.FeatureFlags;
 import jumpking.config.NetworkSettings;
+import jumpking.config.PersistenceSettings;
 import jumpking.entity.Crown;
 import jumpking.exception.ApiException;
 import jumpking.game.SharedData;
@@ -19,7 +20,6 @@ import jumpking.security.SessionAuthority;
 import jumpking.service.CheckpointWriter;
 import jumpking.service.PersistenceWorkers;
 import jumpking.service.RoomRuns;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /** Mỗi Room sở hữu một actor; registry chỉ giữ chỗ và không thực hiện I/O. */
@@ -79,7 +79,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
       PersistenceWorkers database,
       RoomRuns records,
       jumpking.service.CrownService crowns,
-      @Value("${app.checkpoint-interval-ms:1000}") long saveIntervalMs) {
+      PersistenceSettings persistence) {
     this.directory = directory;
     this.memberships = memberships;
     this.workers = workers;
@@ -94,9 +94,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
     this.database = database;
     this.records = records;
     this.crowns = crowns;
-    saveIntervalNs = saveIntervalMs * 1_000_000L;
-    if (saveIntervalMs < 1)
-      throw new IllegalArgumentException("Room save interval must be positive");
+    saveIntervalNs = persistence.checkpointIntervalMs() * 1_000_000L;
   }
 
   private final class Member {

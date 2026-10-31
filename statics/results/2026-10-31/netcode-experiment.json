@@ -1,0 +1,145 @@
+{
+  "recordedAt": "2026-10-30T18:56:02.735Z",
+  "limitations": [
+    "Mô hình truyền dữ liệu rời rạc có kiểm soát trên Chrome; không phải độ trễ Internet đo thực tế",
+    "Cùng input và mô phỏng cố định 60 Hz; không mất gói hoặc lệch đồng hồ; phép đo tải thực tế được thực hiện riêng",
+    "Độ trễ nhảy đã tính cùng thời gian giữ nhảy 21 tick ở cả hai phương án"
+  ],
+  "measurements": [
+    {
+      "modelOneWayMs": 0,
+      "jitterTicks": [
+        0,
+        2,
+        1,
+        0
+      ],
+      "ticks": 1800,
+      "jumpVisibleFromChargeMs": {
+        "prediction": {
+          "samples": 15,
+          "p50": 350,
+          "p95": 350,
+          "p99": 350
+        },
+        "snapshotOnly": {
+          "samples": 15,
+          "p50": 400,
+          "p95": 400,
+          "p99": 400
+        }
+      },
+      "renderPositionErrorPixels": {
+        "prediction": {
+          "samples": 1800,
+          "p50": 0,
+          "p95": 0,
+          "p99": 0
+        },
+        "snapshotOnly": {
+          "samples": 1800,
+          "p50": 0,
+          "p95": 9.085693359375,
+          "p99": 14.014251708984375
+        }
+      },
+      "correctionsPixels": {
+        "samples": 600,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "nonzeroCorrections": 0
+    },
+    {
+      "modelOneWayMs": 50,
+      "jitterTicks": [
+        0,
+        2,
+        1,
+        0
+      ],
+      "ticks": 1800,
+      "jumpVisibleFromChargeMs": {
+        "prediction": {
+          "samples": 15,
+          "p50": 350,
+          "p95": 350,
+          "p99": 350
+        },
+        "snapshotOnly": {
+          "samples": 15,
+          "p50": 483.33333333333337,
+          "p95": 483.33333333333337,
+          "p99": 483.33333333333337
+        }
+      },
+      "renderPositionErrorPixels": {
+        "prediction": {
+          "samples": 1800,
+          "p50": 0,
+          "p95": 0,
+          "p99": 0
+        },
+        "snapshotOnly": {
+          "samples": 1800,
+          "p50": 0,
+          "p95": 29.142852783203125,
+          "p99": 35.099945068359375
+        }
+      },
+      "correctionsPixels": {
+        "samples": 598,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "nonzeroCorrections": 0
+    },
+    {
+      "modelOneWayMs": 100,
+      "jitterTicks": [
+        0,
+        2,
+        1,
+        0
+      ],
+      "ticks": 1800,
+      "jumpVisibleFromChargeMs": {
+        "prediction": {
+          "samples": 15,
+          "p50": 350,
+          "p95": 350,
+          "p99": 350
+        },
+        "snapshotOnly": {
+          "samples": 15,
+          "p50": 566.6666666666667,
+          "p95": 566.6666666666667,
+          "p99": 566.6666666666667
+        }
+      },
+      "renderPositionErrorPixels": {
+        "prediction": {
+          "samples": 1800,
+          "p50": 0,
+          "p95": 0,
+          "p99": 0
+        },
+        "snapshotOnly": {
+          "samples": 1800,
+          "p50": 0,
+          "p95": 42.899993896484375,
+          "p99": 45.600006103515625
+        }
+      },
+      "correctionsPixels": {
+        "samples": 596,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0
+      },
+      "nonzeroCorrections": 0
+    }
+  ]
+}

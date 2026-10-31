@@ -11,6 +11,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import jumpking.config.FeatureFlags;
 import jumpking.config.NetworkSettings;
+import jumpking.config.PersistenceSettings;
 import jumpking.entity.Crown;
 import jumpking.exception.ApiException;
 import jumpking.game.*;
@@ -19,7 +20,6 @@ import jumpking.security.SessionAuthority;
 import jumpking.service.CheckpointWriter;
 import jumpking.service.CommunityRuns;
 import jumpking.service.PersistenceWorkers;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -70,7 +70,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
       Clock clock,
       MonotonicTime time,
       jumpking.service.CrownService crowns,
-      @Value("${app.checkpoint-interval-ms:1000}") long checkpointMs) {
+      PersistenceSettings persistence) {
     this.workers = workers;
     this.database = database;
     this.directory = directory;
@@ -83,9 +83,7 @@ public class Community implements GameCommandHandler, AutoCloseable {
     this.sessions = sessions;
     this.clock = clock;
     this.time = time;
-    this.checkpointMs = checkpointMs;
-    if (checkpointMs < 1)
-      throw new IllegalArgumentException("Checkpoint interval must be positive");
+    checkpointMs = persistence.checkpointIntervalMs();
     map = shared.geometry();
     physics = shared.tuning();
     adventure = shared.adventure();

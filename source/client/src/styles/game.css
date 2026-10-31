@@ -834,7 +834,7 @@ button.sound-switch {
 	.game-overlay .menu-panel {
 		width: min(420px, 100%);
 		padding: 8px 12px;
-		gap: 4px;
+		gap: 3px;
 	}
 	.game-overlay .menu-panel > h2 {
 		font-size: 20px;
@@ -846,11 +846,15 @@ button.sound-switch {
 		padding: 7px 12px;
 	}
 	.game-overlay .controls-help {
-		padding-block: 4px;
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		align-items: center;
+		gap: 8px;
+		padding-block: 2px;
 		margin-block: 0;
 	}
 	.game-overlay .controls-help h3 {
-		margin-bottom: 4px;
+		margin-bottom: 0;
 		font-size: 14px;
 	}
 	.game-overlay .controls-help dl {

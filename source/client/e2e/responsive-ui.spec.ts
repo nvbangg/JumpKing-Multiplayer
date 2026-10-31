@@ -20,8 +20,6 @@ const item = {
 		mode: "RACE",
 		mapId: 9,
 		itemCooldownMinutes: null,
-		roomCode: "001234",
-		durationMs: 684000,
 		rank: 1,
 	},
 };

@@ -39,6 +39,11 @@ test("Sound moves into the game menu, controls remain visible and the timer is a
 			.getByRole("region", { name: "Game menu", exact: true })
 			.getByRole("switch", { name: "Sound: On", exact: true }),
 	).toBeVisible();
+	await page.evaluate(() => {
+		Storage.prototype.setItem = () => {
+			throw new DOMException("Storage is blocked", "SecurityError");
+		};
+	});
 	await page.getByRole("switch", { name: "Sound: On", exact: true }).click();
 	await expect(
 		page.getByRole("switch", { name: "Sound: Off", exact: true }),

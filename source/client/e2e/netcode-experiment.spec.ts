@@ -136,9 +136,9 @@ test("compares snapshot-only and prediction with the same deterministic delayed 
 			{
 				recordedAt: new Date().toISOString(),
 				limitations: [
-					"Controlled discrete transport model in Chrome; not a measured Internet latency",
-					"Identical input and fixed 60 Hz simulation; no loss or clock drift; independent live workload measured separately",
-					"Jump latency includes the same 21-tick charge in both variants",
+					"Mô hình truyền dữ liệu rời rạc có kiểm soát trên Chrome; không phải độ trễ Internet đo thực tế",
+					"Cùng input và mô phỏng cố định 60 Hz; không mất gói hoặc lệch đồng hồ; phép đo tải thực tế được thực hiện riêng",
+					"Độ trễ nhảy đã tính cùng thời gian giữ nhảy 21 tick ở cả hai phương án",
 				],
 				measurements,
 			},

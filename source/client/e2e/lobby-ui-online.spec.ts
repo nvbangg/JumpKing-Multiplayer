@@ -84,7 +84,7 @@ test("mobile Lobby keeps its roster, header and primary actions visible", async 
 		await startRoom(host, peer);
 		await host.getByRole("button", { name: "Menu (Esc)", exact: true }).click();
 		const end = host.getByRole("button", { name: "End Match", exact: true });
-		await expect(end).toHaveClass(/button-warning/);
+		await expect(end).toHaveClass(/button-danger/);
 		expect(
 			await end.evaluate((element) => element.nextElementSibling?.className),
 		).toBe("sound-switch");

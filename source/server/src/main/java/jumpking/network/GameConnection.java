@@ -117,8 +117,7 @@ public final class GameConnection {
         replies.put(
             command.requestId(),
             new Cached(command.type(), command.payload().deepCopy(), envelope));
-        while (replies.size() > limits.controlMessages())
-          replies.remove(replies.keySet().iterator().next());
+        while (replies.size() > limits.controlMessages()) replies.pollFirstEntry();
       }
     }
     enqueue(envelope, false);

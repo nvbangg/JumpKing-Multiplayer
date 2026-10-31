@@ -13,5 +13,9 @@ export function readOptions(): Options {
 	}
 }
 export function saveOptions(options: Options): void {
-	localStorage.setItem(key, JSON.stringify(options));
+	try {
+		localStorage.setItem(key, JSON.stringify(options));
+	} catch {
+		// Vẫn dùng thiết lập trong RAM nếu trình duyệt không cho lưu.
+	}
 }

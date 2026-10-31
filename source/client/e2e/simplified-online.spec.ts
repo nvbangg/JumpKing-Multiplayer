@@ -91,13 +91,12 @@ test("Room entry, public lobby chat, server countdown and end/leave", async ({
 			peer = await register(b, "peer");
 		await a.getByRole("button", { name: "Create Room", exact: true }).click();
 		await expect(a.getByLabel("Visibility", { exact: true })).toHaveValue(
-			"PRIVATE",
+			"PUBLIC",
 		);
 		await expect(
 			a.getByRole("button", { name: "Chat", exact: true }),
 		).toHaveCount(0);
 		const room = required(await a.locator(".room-code code").textContent());
-		await a.getByLabel("Visibility", { exact: true }).selectOption("PUBLIC");
 		await b
 			.getByRole("button", { name: "Join Public Room", exact: true })
 			.click();

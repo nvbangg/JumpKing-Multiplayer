@@ -61,8 +61,11 @@ test("home opens Community directly; cancel preserves save and Continue preserve
 	const saved = (
 		await (await page.request.get("/api/community/current")).json()
 	).run;
-	page.once("dialog", (dialog) => dialog.dismiss());
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
+	await page
+		.getByRole("dialog")
+		.getByRole("button", { name: "Cancel", exact: true })
+		.click();
 	expect(
 		(await (await page.request.get("/api/community/current")).json()).run.id,
 	).toBe(saved.id);
@@ -95,8 +98,11 @@ test("stale Continue and New Game cannot replace a save changed in another tab",
 		(await (await page.request.get("/api/community/current")).json()).run.id,
 	).toBe(next);
 	const third = await replaceElsewhere(page, next);
-	page.once("dialog", (dialog) => dialog.accept());
 	await page.getByRole("button", { name: "New Game", exact: true }).click();
+	await page
+		.getByRole("dialog")
+		.getByRole("button", { name: "Confirm", exact: true })
+		.click();
 	await expect(page.getByRole("alert")).toContainText("Community save changed");
 	await expect(
 		page.getByRole("button", { name: "Continue", exact: true }),

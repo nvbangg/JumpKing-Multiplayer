@@ -1,0 +1,87 @@
+{
+  "recordedAt": "2026-10-30T19:34:41.517203+00:00",
+  "timezone": "Asia/Saigon",
+  "source": {
+    "baseCommit": "54d3877495dba0b5582825a54651d40f62e294bf",
+    "sourceDiffSha256": "6c29866c27706aba3798630f5c172a536ea0c55e6078528f1539ccaf09728a05",
+    "fingerprintCommand": "git diff --binary 54d3877495dba0b5582825a54651d40f62e294bf -- source"
+  },
+  "environment": {
+    "os": "Windows 11 Home 10.0.26300",
+    "cpu": "AMD Ryzen AI 7 H 350 w/ Radeon 860M",
+    "physicalCores": 8,
+    "logicalProcessors": 16,
+    "visibleMemoryBytes": 33598844928,
+    "java": "Oracle JDK 25.0.1+8-LTS-27",
+    "node": "24.18.0",
+    "mysql": "9.6.0 Community",
+    "chrome": "156.0.8078.48"
+  },
+  "measurements": {
+    "online-workload.json": {
+      "transport": "HTTP/1.1 + WebSocket trên loopback, dùng MySQL thật cô lập",
+      "serverLimits": "Giữ nguyên các giá trị mặc định trong application.properties",
+      "sampleMs": 30000,
+      "repeats": 3,
+      "workingDirectory": "Thư mục gốc dự án",
+      "commands": [
+        "$env:JK_WORKLOAD_RUN = 'true'",
+        "./source/database/test-mysql.ps1 -MySqlHome '<MySQL>' -JavaHome '<JDK25>' -IntegrationTest OnlineWorkloadIT",
+        "Remove-Item Env:JK_WORKLOAD_RUN"
+      ]
+    },
+    "netcode-experiment.json": {
+      "transport": "Mô hình rời rạc xác định trên Chrome",
+      "oneWayModelMs": [
+        0,
+        50,
+        100
+      ],
+      "workingDirectory": "source/client",
+      "commands": [
+        "$env:JK_NETCODE_EXPERIMENT = 'true'",
+        "npm run test:e2e -- e2e/netcode-experiment.spec.ts",
+        "Remove-Item Env:JK_NETCODE_EXPERIMENT"
+      ]
+    }
+  },
+  "limitations": [
+    "Đã kiểm thử local với MySQL 9.6; chưa kiểm chứng MySQL 8.4, VPS hoặc sức chứa qua Internet.",
+    "Dùng kích thước màn hình mobile giả lập trên Chrome; chưa kiểm thử điện thoại thật.",
+    "Phạm vi kiểm chứng gồm lượt quét toàn bộ và chạy lại các nhóm bị ảnh hưởng sau sửa; không cộng trùng số lần chạy.",
+    "Mã nguồn mô phỏng netcode và phép so sánh không thay đổi trong suốt lượt rà soát.",
+    "Chưa thử chấp thuận Google bằng tài khoản thật; các endpoint xác thực dùng bộ kiểm chứng có kiểm soát trong integration test."
+  ],
+  "verifiedAt": "2026-10-30T19:43:59.556957+00:00",
+  "verification": {
+    "frontend": {
+      "unitFiles": 29,
+      "unitPassed": 183,
+      "biomeTypeScriptBuild": "đạt"
+    },
+    "backendUnit": {
+      "passed": 120,
+      "failed": 0,
+      "skipped": 0
+    },
+    "integrationUniqueCases": {
+      "passed": 121,
+      "failed": 0,
+      "skipped": 0
+    },
+    "browser": {
+      "onlineUniquePassed": 106,
+      "standalonePassed": 31,
+      "finalMenuResponsiveRerunPassed": 9
+    },
+    "databaseRecovery": {
+      "restart": "đạt",
+      "backupRestore": "đạt",
+      "tableCountsAndChecksumsMatched": 3
+    },
+    "npmAuditVulnerabilities": 0,
+    "localDocsLinksAndAnchors": "đạt",
+    "gitDiffCheck": "đạt",
+    "packagedWebJar": "đạt"
+  }
+}
