@@ -16,11 +16,17 @@ export async function leaveOnline(page: Page): Promise<void> {
 				() => {},
 				() => {},
 			);
+		const reconnect = GameSocket.prototype.reconnect;
+		// Kết nối dọn phiên không được tranh membership với tự phục hồi của giao diện.
+		GameSocket.prototype.reconnect = async () => {
+			throw new Error("Test cleanup is leaving");
+		};
 		try {
 			await socket.restore(profile);
 			if (socket.selfId) await socket.command("LEAVE_ROOM");
 		} finally {
 			socket.close();
+			GameSocket.prototype.reconnect = reconnect;
 		}
 	});
 }

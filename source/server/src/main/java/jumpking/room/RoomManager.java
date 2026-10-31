@@ -952,7 +952,7 @@ public class RoomManager implements GameCommandHandler, AutoCloseable {
                           .put("saveStatus", match.saveStatus);
                   for (var player : room.players.values())
                     if (player.connection != null) player.connection.send("SAVE_STATUS", status);
-                  if (room.match == match) broadcast(room);
+                  if (barrier && room.match == match) broadcast(room);
                 });
           });
     } catch (RejectedExecutionException busy) {

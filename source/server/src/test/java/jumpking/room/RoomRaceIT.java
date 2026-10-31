@@ -427,14 +427,32 @@ class RoomRaceIT {
       b.await(
           message ->
               message.path("type").asText().equals("GAME_SNAPSHOT")
+                  && !message
+                      .path("payload")
+                      .path("peers")
+                      .get(0)
+                      .path("state")
+                      .path("grounded")
+                      .asBoolean()
                   && message
                           .path("payload")
                           .path("peers")
                           .get(0)
                           .path("state")
-                          .path("jumps")
-                          .asInt()
-                      == 1);
+                          .path("vy")
+                          .asDouble()
+                      < 0);
+      a.messages.clear();
+      time.advance(100);
+      a.await(
+          message ->
+              message.path("type").asText().equals("SAVE_STATUS")
+                  && message.path("payload").path("saveStatus").asText().equals("SAVED"));
+      a.ok("GET_ROOM_STATE", Map.of());
+      assertThat(
+              a.messages.stream()
+                  .filter(message -> message.path("type").asText().equals("ROOM_STATE")))
+          .allMatch(message -> message.has("requestId"));
       assertThat(b.command("END_MATCH", Map.of()).path("payload").path("code").asText())
           .isEqualTo("FORBIDDEN");
       var result = a.ok("END_MATCH", Map.of());

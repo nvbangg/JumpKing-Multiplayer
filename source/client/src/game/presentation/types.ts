@@ -17,12 +17,9 @@ export type RenderPose = Pick<
 	| "splat"
 	| "slipping"
 	| "knocked"
-	| "ice"
 	| "snow"
-	| "wind"
 	| "screen"
 	| "ticks"
-	| "jumps"
 	| "falls"
 >;
 export interface RenderPlayer {

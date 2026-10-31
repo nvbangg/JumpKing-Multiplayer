@@ -27,12 +27,9 @@ record PlayerSnapshot(GameSimulation.Snapshot simulation, PublicPlayer player) {
       int splat,
       @JsonInclude(JsonInclude.Include.NON_DEFAULT) boolean slipping,
       boolean knocked,
-      boolean ice,
       boolean snow,
-      boolean wind,
       int screen,
       long ticks,
-      int jumps,
       int falls) {
     Pose(PlayerState value) {
       this(
@@ -46,12 +43,9 @@ record PlayerSnapshot(GameSimulation.Snapshot simulation, PublicPlayer player) {
           value.splat,
           value.slipping,
           value.knocked,
-          value.ice,
           value.snow,
-          value.wind,
           value.screen,
           value.ticks,
-          value.jumps,
           value.falls);
     }
   }

@@ -220,15 +220,23 @@ test("two Accounts share server simulation, see each other jump, leave and Conti
 			.poll(() => observedA.snapshots.at(-1)?.self.simulation.physics.jumps)
 			.toBeGreaterThan(0);
 		await expect
-			.poll(() => observedB.snapshots.at(-1)?.peers[0]?.state.jumps)
-			.toBeGreaterThan(0);
+			.poll(() =>
+				observedB.snapshots.some(
+					(snapshot) => (snapshot.peers[0]?.state.vy ?? 0) < 0,
+				),
+			)
+			.toBe(true);
 		await jump(b);
 		await expect
 			.poll(() => observedB.snapshots.at(-1)?.self.simulation.physics.jumps)
 			.toBeGreaterThan(0);
 		await expect
-			.poll(() => observedA.snapshots.at(-1)?.peers[0]?.state.jumps)
-			.toBeGreaterThan(0);
+			.poll(() =>
+				observedA.snapshots.some(
+					(snapshot) => (snapshot.peers[0]?.state.vy ?? 0) < 0,
+				),
+			)
+			.toBe(true);
 		const sounds = await a.evaluate(
 			() =>
 				(

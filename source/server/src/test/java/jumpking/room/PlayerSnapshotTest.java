@@ -34,6 +34,10 @@ class PlayerSnapshotTest {
     assertThat(pose.path("ticks").asLong()).isZero();
     assertThat(pose.has("prevJump")).isFalse();
     assertThat(pose.has("freeFlight")).isFalse();
+    for (String field : List.of("jumps", "ice", "wind")) {
+      assertThat(pose.has(field)).as(field).isFalse();
+      assertThat(before.path("simulation").path("physics").has(field)).as(field).isTrue();
+    }
     assertThat(view.has("simulation")).isFalse();
     assertThat(view.has("lastProcessedInputSeq")).isFalse();
   }
